@@ -9,7 +9,8 @@
     "astro": "astro",
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
-    "smidgeon": "node scripts/create-smidgeon.js"
+    "smidgeon": "node scripts/create-smidgeon.js",
+    "date": "node scripts/current-date.js"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",

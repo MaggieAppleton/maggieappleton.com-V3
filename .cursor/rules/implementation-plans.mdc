@@ -1,0 +1,32 @@
+---
+description: Guidelines for writing feature implementation plans
+globs: 
+alwaysApply: false
+---
+# Feature Implementation Plan Standards
+
+When creating implementation plans for a single feature:
+
+- Keep the plan scoped to only that feature.
+- Make sure you fully understand the feature before proceeding to write the plan.
+- Ask the user questions to clarify your understanding. The user often won't have figured out all the details of a feature before they begin to build it. You should act like an expert product manager and help them think through the user experience and technical implementation of each feature.
+- New plans should be markdown files stored inside the "planning" folder. Create this folder if it doesn't exist yet.
+
+## Document Structure
+
+- Maintain a task checklist with checkboxes (- [ ] or - [x])
+- Include "Current Phase" and "Overall Progress" summaries
+- Write in present tense for current work, past tense for completed work
+- Include specific file names and locations when mentioning code changes
+- Make notes on completed tasks at the bottom with full details
+- Use consistent formatting for task IDs (P1.1, P1.2, etc.)
+- Always update "Last Updated" timestamp using `npm run date` which will give you today's date
+
+## Task Documentation
+
+Each completed task should include:
+- Files modified/created
+- Key features implemented
+- Technical improvements made
+- User experience enhancements
+- Any issues resolved
