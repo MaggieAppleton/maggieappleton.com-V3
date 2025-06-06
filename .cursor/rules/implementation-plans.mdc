@@ -22,6 +22,15 @@ When creating implementation plans for a single feature:
 - Use consistent formatting for task IDs (P1.1, P1.2, etc.)
 - Always update "Last Updated" timestamp using `npm run date` which will give you today's date
 
+## Phase Completion Workflow
+
+After completing each phase of implementation:
+- Ask the user to test the implementation and verify it looks correct
+- Update the planning document to mark completed tasks as done
+- Move detailed completion notes to the bottom of the document
+- Update the "Current Phase" and "Overall Progress" sections
+- Update the "Last Updated" timestamp
+
 ## Task Documentation
 
 Each completed task should include:

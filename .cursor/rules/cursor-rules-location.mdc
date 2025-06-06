@@ -1,80 +1,35 @@
 ---
-description: Standards for placing Cursor rule files in the correct directory
+description: Standards for placing Cursor rule files in the correct directory. Apply when creating new cursor rules, discussing rule organisation, or working with .mdc files.
 globs: 
 alwaysApply: false
 ---
----
-description: Cursor Rules Location
-globs: *.mdc
----
-# Cursor Rules Location
 
-Rules for placing and organizing Cursor rule files in the repository.
+# Cursor Rules Location Standards
 
-<rule>
-name: cursor-rules-location
-description: Standards for placing Cursor rule files in the correct directory
-filters:
-  # Match any .mdc files
-  - type: file_extension
-    pattern: "\\.mdc$"
-  # Match files that look like Cursor rules
-  - type: content
-    pattern: "(?s)<rule>.*?</rule>"
-  # Match file creation events
-  - type: event
-    pattern: "file_create"
+When creating Cursor rules, always follow these standards:
 
-actions:
-  - type: reject
-    conditions:
-      - pattern: "^(?!\\.\\/\\.cursor\\/rules\\/.*\\.mdc$)"
-        message: "Cursor rule files (.mdc) must be placed in the .cursor/rules directory"
+## Rule File Placement
+- Always place rule files in `PROJECT_ROOT/.cursor/rules/`
+- Use `.mdc` extension for all rule files
+- Use kebab-case for filenames
+- Make names descriptive of the rule's purpose
 
-  - type: suggest
-    message: |
-      When creating Cursor rules:
+## Directory Structure
+```
+PROJECT_ROOT/
+├── .cursor/
+│   └── rules/
+│       ├── your-rule-name.mdc
+│       ├── another-rule.mdc
+│       └── ...
+└── ...
+```
 
-      1. Always place rule files in PROJECT_ROOT/.cursor/rules/:
-         ```
-         .cursor/rules/
-         ├── your-rule-name.mdc
-         ├── another-rule.mdc
-         └── ...
-         ```
+## What NOT to do
+- Never place rule files in the project root
+- Never use subdirectories outside `.cursor/rules`
+- Never use extensions other than `.mdc`
 
-      2. Follow the naming convention:
-         - Use kebab-case for filenames
-         - Always use .mdc extension
-         - Make names descriptive of the rule's purpose
-
-      3. Directory structure:
-         ```
-         PROJECT_ROOT/
-         ├── .cursor/
-         │   └── rules/
-         │       ├── your-rule-name.mdc
-         │       └── ...
-         └── ...
-         ```
-
-      4. Never place rule files:
-         - In the project root
-         - In subdirectories outside .cursor/rules
-         - In any other location
-
-examples:
-  - input: |
-      # Bad: Rule file in wrong location
-      rules/my-rule.mdc
-      my-rule.mdc
-      .rules/my-rule.mdc
-
-      # Good: Rule file in correct location
-      .cursor/rules/my-rule.mdc
-    output: "Correctly placed Cursor rule file"
-
-metadata:
-  priority: high
-  version: 1.0
-</rule>
+## Examples
+✅ **Correct:** `.cursor/rules/my-rule.mdc`
+❌ **Wrong:** `rules/my-rule.mdc`, `my-rule.mdc`, `.rules/my-rule.mdc`

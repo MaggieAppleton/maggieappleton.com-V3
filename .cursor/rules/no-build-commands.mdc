@@ -1,0 +1,46 @@
+---
+description: Prevent AI from running build and dev server commands like npm run build, npm run dev, yarn dev, etc. Apply when discussing testing, building, running servers, or validation of features.
+globs: 
+alwaysApply: false
+---
+
+# No Build Commands
+
+**NEVER run these time-consuming commands:**
+- `npm run build` (takes too long)
+- `npm run dev` (long-running server)
+- `npm start` (long-running server)  
+- `yarn build/dev/start` (same issues)
+- `pnpm build/dev/start` (same issues)
+
+## Why This Rule Exists
+Build and development server commands are:
+- Time-consuming and slow down workflow
+- Long-running processes that the user should control
+- Better handled by the user in their own terminal
+
+## What To Do Instead
+
+### ✅ For Testing Changes
+Say: *"You can test this by running `npm run dev` in your terminal"*
+
+### ✅ For Validation  
+Use these verification methods instead:
+- Reading files to check syntax
+- Using grep/search to verify changes were applied
+- Checking imports and references
+
+### ✅ Acceptable Terminal Commands
+- File operations (`ls`, `cat`, etc.)
+- Quick syntax checks
+- Package installations (when explicitly requested)
+- Git operations  
+- Short-running utilities
+
+## Examples
+
+❌ **Wrong:** "Let me run `npm run build` to test this"
+✅ **Right:** "The changes are ready - start your dev server to test"
+
+❌ **Wrong:** "I'll run `npm run dev` to verify"  
+✅ **Right:** "Can you run `npm run dev` and check if the component renders correctly?"
