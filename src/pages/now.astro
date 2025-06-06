@@ -12,6 +12,7 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import NowSection from "../components/layouts/NowSection.astro";
 import Footnote from "../components/mdx/Footnote.astro";
 import ResourceBook from "../components/mdx/ResourceBook.astro";
+import { Icon } from "astro-icon/components";
 
 // Get all now entries and sort by date
 const nowEntries = await getCollection("now", ({ data }) => {
@@ -47,6 +48,12 @@ const components = {
 <Layout title="Now | Maggie Appleton">
 	<PageWrapper>
 		<header class="header">
+			<div class="back-link" slot="header-right">
+				<a href="/garden">
+					<Icon name="heroicons:arrow-left" size={16} />
+					<span> Back to Garden </span>
+				</a>
+			</div>
 			<Title1>Now</Title1>
 			<Title2>
 				A sporadically updated log of what I'm reading, exploring, and thinking about
@@ -94,5 +101,60 @@ const components = {
 		main {
 			max-width: 100%;
 		}
+	}
+
+	.back-link {
+		display: inline-flex;
+		align-items: center;
+		height: 100%;
+		margin-bottom: var(--space-s);
+	}
+
+	@media (max-width: 1440px) {
+		.back-link {
+			display: inline-flex;
+			top: 0;
+			margin: 0;
+			left: 1rem;
+		}
+	}
+
+	.back-link a {
+		display: inline-flex;
+		align-items: center;
+		position: relative;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: bold;
+		transition: all 0.8s cubic-bezier(0.2, 1, 0.8, 1);
+		margin: 0;
+		padding: 0;
+	}
+
+	.back-link svg {
+		width: 0;
+		transition: all 0.8s cubic-bezier(0.2, 1, 0.8, 1);
+		color: var(--color-gray-300);
+		position: relative;
+		top: 1px;
+	}
+
+	.back-link span {
+		display: inline-block;
+		transition: transform 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+		color: var(--color-gray-600);
+	}
+
+	.back-link a:hover svg {
+		width: 16px;
+		margin-right: 2px;
+		color: var(--color-sea-blue);
+	}
+
+	.back-link a:hover span {
+		transform: translate3d(3px, 0, 0);
+		color: var(--color-sea-blue);
 	}
 </style>
