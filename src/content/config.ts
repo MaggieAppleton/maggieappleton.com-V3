@@ -122,8 +122,10 @@ const nowCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/now" }),
   schema: z.object({
     title: z.string(),
-    date: z.coerce.date(),
+    startDate: z.coerce.date(),
     type: z.literal("now"),
+    topics: z.array(z.string()).optional(),
+    growthStage: z.string().default("evergreen"),
     draft: z.boolean().default(false),
   }),
 });

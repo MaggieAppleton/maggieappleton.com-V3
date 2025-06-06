@@ -12,6 +12,7 @@ const notes = await getCollection("notes", ({ data }) => !data.draft);
 const patterns = await getCollection("patterns", ({ data }) => !data.draft);
 const talks = await getCollection("talks", ({ data }) => !data.draft);
 const podcasts = await getCollection("podcasts");
+const now = await getCollection("now");
 // const smidgeons = await getCollection("smidgeons");
 
 // Combine all content into one array
@@ -21,6 +22,7 @@ const allPosts = [
 	...patterns,
 	...talks,
 	...podcasts,
+	...now,
 	// ...smidgeons,
 ];
 ---
@@ -30,8 +32,8 @@ const allPosts = [
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={allPosts}>The Garden</TitleWithCount>
 			<Title2>
-				A collection of essays, notes, talks, podcasts, and half-baked
-				explorations I'm always tending to.
+				A collection of essays, notes, talks, podcasts, and half-baked explorations I'm always
+				tending to.
 			</Title2>
 		</header>
 		<GardenFiltersAndHits allPostData={allPosts} />

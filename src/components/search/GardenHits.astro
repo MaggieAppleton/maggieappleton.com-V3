@@ -6,10 +6,15 @@ import PatternCard from "../cards/PatternCard.astro";
 import PodcastCard from "../cards/PodcastCard.astro";
 import TalkCard from "../cards/TalkCard.astro";
 import SmidgeonCard from "../cards/SmidgeonCard.astro";
+import NowCard from "../cards/NowCard.astro";
+import { extractPreview } from "../../utils/extractPreview";
 
 interface Post {
 	id: string;
 	collection: string;
+	body?: string;
+	render?: () => Promise<{ body: string }>;
+	preview?: string;
 	data: {
 		type?: string;
 		updated?: string;
@@ -34,7 +39,23 @@ interface Post {
 
 const { allPostData } = Astro.props;
 
-const sortedPosts = allPostData.sort((a: Post, b: Post) => {
+// Pre-process Now posts to extract preview text
+const processedPosts = await Promise.all(
+	allPostData.map(async (post: Post) => {
+		if (post.data.type === "now" && post.render) {
+			try {
+				const { body } = await post.render();
+				return { ...post, preview: extractPreview(body) };
+			} catch (error) {
+				console.warn(`Failed to extract preview for ${post.id}:`, error);
+				return { ...post, preview: "" };
+			}
+		}
+		return { ...post, preview: "" };
+	}),
+);
+
+const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	const dateA = new Date(a.data.updated || a.data.startDate).getTime();
 	const dateB = new Date(b.data.updated || b.data.startDate).getTime();
 	return dateB - dateA;
@@ -45,8 +66,7 @@ const sortedPosts = allPostData.sort((a: Post, b: Post) => {
 	<MasonryGrid>
 		{
 			sortedPosts.map((post: Post, i: number) => {
-				const isPodcast =
-					post.data.type === "podcast" || post.collection === "podcasts";
+				const isPodcast = post.data.type === "podcast" || post.collection === "podcasts";
 
 				if (!post) return null;
 
@@ -107,6 +127,9 @@ const sortedPosts = allPostData.sort((a: Post, b: Post) => {
 								conferences={post.data.conferences}
 							/>
 						)}
+						{post.data.type === "now" && (
+							<NowCard {...commonProps} title={post.data.title} preview={post.preview} />
+						)}
 						{post.data.type === "smidgeon" && post.data.title && (
 							<SmidgeonCard {...commonProps} title={post.data.title} />
 						)}
@@ -154,12 +177,9 @@ const sortedPosts = allPostData.sort((a: Post, b: Post) => {
 			const itemGrowthStage = htmlItem.dataset.growthStage;
 
 			const matchesTopic = !topic || itemTopics.includes(topic);
-			const matchesGrowthStage =
-				!growthStage || itemGrowthStage === growthStage;
+			const matchesGrowthStage = !growthStage || itemGrowthStage === growthStage;
 			const matchesType =
-				!type ||
-				itemType === type ||
-				(type === "podcast" && itemType === undefined);
+				!type || itemType === type || (type === "podcast" && itemType === undefined);
 
 			const isVisible = matchesTopic && matchesGrowthStage && matchesType;
 			htmlItem.classList.toggle("filtered-out", !isVisible);

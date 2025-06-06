@@ -69,6 +69,7 @@ const initialTopicsCount = 6;
 				<option value="pattern">Patterns</option>
 				<option value="talk">Talks</option>
 				<option value="podcast">Podcasts</option>
+				<option value="now">Now Updates</option>
 				<!-- <option value="smidgeon">Smidgeons</option> -->
 			</select>
 			<Icon name="heroicons:chevron-down" size={16} />
@@ -266,10 +267,8 @@ const initialTopicsCount = 6;
 
 	function handleToggleClick(e: Event) {
 		const toggleButton = e.currentTarget as HTMLButtonElement;
-		const isShowingMore =
-			toggleButton.getAttribute("data-show-more") === "true";
-		const topicButtons =
-			document.querySelectorAll<HTMLButtonElement>(".topic-button");
+		const isShowingMore = toggleButton.getAttribute("data-show-more") === "true";
+		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 
 		topicButtons.forEach((button, index) => {
 			if (index >= 7) {
@@ -285,11 +284,8 @@ const initialTopicsCount = 6;
 		const button = (e.target as HTMLElement).closest(".topic-button");
 		if (!button) return;
 
-		const topicButtons =
-			document.querySelectorAll<HTMLButtonElement>(".topic-button");
-		const topicsSelect = document.getElementById(
-			"topics-select",
-		) as HTMLSelectElement;
+		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
+		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
 		const wasSelected = button.classList.contains("selected");
 
 		// Remove selected class from all buttons
@@ -325,13 +321,9 @@ const initialTopicsCount = 6;
 			case "topics-select":
 				filterState.topic = select.value;
 				// Update topic buttons to match
-				const topicButtons =
-					document.querySelectorAll<HTMLButtonElement>(".topic-button");
+				const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 				topicButtons.forEach((btn) => {
-					btn.classList.toggle(
-						"selected",
-						btn.getAttribute("data-topic") === select.value,
-					);
+					btn.classList.toggle("selected", btn.getAttribute("data-topic") === select.value);
 				});
 				break;
 			case "growth-stages-select":
