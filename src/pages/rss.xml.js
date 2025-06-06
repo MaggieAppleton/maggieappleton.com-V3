@@ -91,7 +91,7 @@ export async function GET(context) {
 
         return {
           title: post.data.title,
-          pubDate: post.data.date,
+          pubDate: post.data.startDate,
           link: `/now-${post.id}/`,
           content: sanitizeHtml(processedContent, {
             allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
