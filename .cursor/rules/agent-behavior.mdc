@@ -16,3 +16,18 @@ For Substantial Features and Changes:
   - Ask clarifying questions about the intended user experience
   - Only ask one focused question at a time
   - Clarify edge cases and expected behaviors
+
+## Rule Fetching Behavior
+
+**Always proactively fetch relevant workspace rules using the `fetch_rules` tool when:**
+- About to test, validate, or verify functionality
+- Planning to run build commands, dev servers, or similar operations  
+- Working on implementation plans or substantial features
+- Discussing testing strategies or validation approaches
+
+**Available rules to fetch when relevant:**
+- `no-build-commands` - When considering any build/dev/test commands
+- `delegate-testing-to-user` - When about to test or validate features
+- `implementation-plans` - When creating feature implementation plans
+- `date-handling` - When working with dates in documentation
+- `cursor-rules-location` - When creating or organizing cursor rules
