@@ -1,5 +1,5 @@
 ---
-const { slug, title, date, id, preview } = Astro.props;
+const { slug, title, date, preview } = Astro.props;
 import RelativeDate from "../layouts/RelativeDate.astro";
 import { Icon } from "astro-icon/components";
 ---
@@ -9,7 +9,7 @@ import { Icon } from "astro-icon/components";
 		<Icon name="heroicons:clock" size={24} />
 		<div>
 			<h3>{title}</h3>
-			{preview && <p class="description">{preview.slice(0, 95)}...</p>}
+			{preview && <p class="description">{preview}...</p>}
 			<div class="metadata-container">
 				<span>Now Update</span>
 				<svg width="4px" height="10px">
@@ -47,6 +47,7 @@ import { Icon } from "astro-icon/components";
 		font-weight: 400;
 		margin-left: var(--space-xs);
 		margin-top: var(--space-2xs);
+		padding-right: var(--space-s);
 	}
 
 	.now-card {

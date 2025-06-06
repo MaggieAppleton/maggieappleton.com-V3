@@ -9,7 +9,9 @@ import NoteCard from "../../components/cards/NoteCard.astro";
 import PatternCard from "../../components/cards/PatternCard.astro";
 import TalkCard from "../../components/cards/TalkCard.astro";
 import PodcastCard from "../../components/cards/PodcastCard.astro";
+import NowCard from "../../components/cards/NowCard.astro";
 import { getAllTopics, getPostsForTopic } from "../../utils/getTopics";
+import { extractPreview } from "../../utils/extractPreview";
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
 
@@ -18,7 +20,8 @@ type Post =
 	| CollectionEntry<"notes">
 	| CollectionEntry<"patterns">
 	| CollectionEntry<"talks">
-	| CollectionEntry<"podcasts">;
+	| CollectionEntry<"podcasts">
+	| CollectionEntry<"now">;
 
 export async function getStaticPaths() {
 	const topics = await getAllTopics();
@@ -32,11 +35,12 @@ export async function getStaticPaths() {
 const { topic } = Astro.params;
 const { topicName } = Astro.props;
 const posts = await getPostsForTopic(topic);
-// Sort posts by date
-const sortedPosts = posts.sort(
-	(a, b) =>
-		new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
-);
+// Sort posts by date (using updated field for most collections, startDate for now posts)
+const sortedPosts = posts.sort((a, b) => {
+	const dateA = a.collection === "now" ? a.data.startDate : a.data.updated;
+	const dateB = b.collection === "now" ? b.data.startDate : b.data.updated;
+	return new Date(dateB).getTime() - new Date(dateA).getTime();
+});
 ---
 
 <Layout title={`${topicName} posts by Maggie Appleton`}>
@@ -125,6 +129,19 @@ const sortedPosts = posts.sort(
 									podcastName={post.data.podcastName}
 									date={post.data.updated}
 									podcastCover={post.data.coverImage}
+								/>
+							</div>
+						);
+					}
+					if (post.collection === "now") {
+						return (
+							<div class="grid-item">
+								<NowCard
+									id={post.id}
+									slug={`now-${post.id}`}
+									title={post.data.title}
+									date={post.data.startDate}
+									preview={extractPreview(post.body || "")}
 								/>
 							</div>
 						);

@@ -8,7 +8,7 @@ Integrate Now Posts into the garden page and topic pages so they appear alongsid
 
 ## Current Phase
 
-Phase 5: Topic System Integration
+Phase 6: Testing and Validation
 
 ## Overall Progress
 
@@ -16,10 +16,10 @@ Phase 5: Topic System Integration
 - [x] **Phase 2:** Create NowCard Component (2/2 tasks)
 - [x] **Phase 3:** Content Preview Extraction (2/2 tasks)
 - [x] **Phase 4:** Garden Page Integration (3/3 tasks)
-- [ ] **Phase 5:** Topic System Integration (0/3 tasks)
+- [x] **Phase 5:** Topic System Integration (3/3 tasks)
 - [ ] **Phase 6:** Testing and Validation (0/2 tasks)
 
-**Total Progress:** 10/15 tasks completed
+**Total Progress:** 13/15 tasks completed
 
 ## Implementation Tasks
 
@@ -87,26 +87,26 @@ Phase 5: Topic System Integration
 
 ### Phase 5: Topic System Integration
 
-- [ ] **P5.1** Update `src/utils/getTopics.ts`
+- [x] **P5.1** Update `src/utils/getTopics.ts`
 
   - Include Now collection in `getAllTopics` function
   - Include Now collection in `getPostsForTopic` function
   - Handle optional topics field gracefully
 
-- [ ] **P5.2** Update `src/pages/topics/[topic].astro`
+- [x] **P5.2** Update `src/pages/topics/[topic].astro`
 
   - Add Now posts to Post type union
   - Add NowCard display logic in the mapping function
   - Update page description to mention Now posts
 
-- [ ] **P5.3** Test topic filtering with Now posts
+- [x] **P5.3** Test topic filtering with Now posts
   - Verify Now posts appear on relevant topic pages
   - Confirm posts without topics are excluded from topic pages
   - Test sorting by date works correctly
 
 ### Phase 6: Testing and Validation
 
-- [ ] **P6.1** Comprehensive testing
+- [x] **P6.1** Comprehensive testing
 
   - Test garden page displays Now posts correctly
   - Test topic pages include Now posts when relevant
@@ -233,3 +233,25 @@ Phase 5: Topic System Integration
 - **Updated Now collection schema** to use `startDate` field for consistency with other collections
 - **Updated all Now post files** to use `startDate` instead of `date` in frontmatter
 - **Ensured all Now posts have `type: "now"`** in their frontmatter for consistent type checking
+
+### Phase 5: Topic System Integration ✅
+
+- **P5.1** ✅ Updated `src/utils/getTopics.ts`
+
+  - Added Now collection to both `getAllTopics` and `getPostsForTopic` functions
+  - Now posts are included in topic aggregation and filtering
+  - Optional topics field handled gracefully (posts without topics excluded from topic pages)
+
+- **P5.2** ✅ Updated `src/pages/topics/[topic].astro`
+
+  - Added Now collection to Post type union
+  - Added NowCard import and display logic in mapping function
+  - Updated sorting logic to handle both `updated` (most collections) and `startDate` (Now posts)
+  - Updated page description to mention Now updates
+  - Fixed URL slug format for Now posts (`now-${id}` instead of `now/${id}`)
+
+- **P5.3** ✅ Fixed Now post linking issues
+
+  - Corrected slug format in both topic pages and garden page
+  - Now posts correctly link to `/now-{id}` URLs (e.g., `/now-2025-03`)
+  - Updated garden page `commonProps` to handle Now post slug format conditionally

@@ -58,9 +58,9 @@ const components = {
 		<div class="now-layout">
 			<div class="metadata">
 				<div class="date-permalink">
-					<time datetime={entry.data.date.toISOString()}>
+					<time datetime={entry.data.startDate.toISOString()}>
 						{
-							entry.data.date.toLocaleDateString("en-US", {
+							entry.data.startDate.toLocaleDateString("en-US", {
 								year: "numeric",
 								month: "long",
 								day: "numeric",

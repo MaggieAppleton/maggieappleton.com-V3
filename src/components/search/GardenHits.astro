@@ -39,21 +39,8 @@ interface Post {
 
 const { allPostData } = Astro.props;
 
-// Pre-process Now posts to extract preview text
-const processedPosts = await Promise.all(
-	allPostData.map(async (post: Post) => {
-		if (post.data.type === "now" && post.render) {
-			try {
-				const { body } = await post.render();
-				return { ...post, preview: extractPreview(body) };
-			} catch (error) {
-				console.warn(`Failed to extract preview for ${post.id}:`, error);
-				return { ...post, preview: "" };
-			}
-		}
-		return { ...post, preview: "" };
-	}),
-);
+// No need to process again - Now posts already have preview extracted in garden.astro
+const processedPosts = allPostData;
 
 const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	const dateA = new Date(a.data.updated || a.data.startDate).getTime();
@@ -73,7 +60,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 				const commonProps = {
 					key: i,
 					id: post.id,
-					slug: post.id,
+					slug: post.data.type === "now" ? `now-${post.id}` : post.id,
 					date: post.data.startDate,
 				};
 

@@ -1,8 +1,7 @@
 /**
  * Extract meaningful preview text from MDX content
- * Skips import statements and extracts first meaningful sentence
  */
-export function extractPreview(content: string, maxLength: number = 100): string {
+export function extractPreview(content: string, maxLength: number = 90): string {
   if (!content) return "";
 
   // Split content into lines
@@ -65,22 +64,17 @@ export function extractPreview(content: string, maxLength: number = 100): string
 
   if (!cleanText) return "";
 
-  // Find the first complete sentence or truncate at word boundary
-  const sentences = cleanText.split(/[.!?]+/);
-  const firstSentence = sentences[0]?.trim();
-
-  if (firstSentence && firstSentence.length <= maxLength) {
-    return firstSentence;
-  }
-
-  // If first sentence is too long, truncate at word boundary
+  // Always aim for consistent length, truncating at word boundaries
   if (cleanText.length <= maxLength) {
     return cleanText;
   }
 
+  // Truncate at word boundary, ensuring we get close to maxLength
   const truncated = cleanText.substring(0, maxLength);
   const lastSpaceIndex = truncated.lastIndexOf(" ");
 
+  // If the last space is too far back (less than 80% of maxLength),
+  // just use the full truncated string to ensure consistent length
   if (lastSpaceIndex > maxLength * 0.8) {
     return truncated.substring(0, lastSpaceIndex);
   }
