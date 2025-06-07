@@ -57,11 +57,15 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 
 				if (!post) return null;
 
+				// Use the correct date field for each content type
+				const dateField =
+					isPodcast || post.collection === "podcasts" ? post.data.updated : post.data.startDate;
+
 				const commonProps = {
 					key: i,
 					id: post.id,
 					slug: post.data.type === "now" ? `now-${post.id}` : post.id,
-					date: post.data.startDate,
+					date: dateField,
 				};
 
 				return (

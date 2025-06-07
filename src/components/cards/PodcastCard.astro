@@ -11,10 +11,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 			podcastCover && (
 				<div class="image-wrapper">
 					<div class="external-link-container">
-						<Icon
-							name="heroicons:arrow-top-right-on-square-20-solid"
-							size={36}
-						/>
+						<Icon name="heroicons:arrow-top-right-on-square-20-solid" size={36} />
 						<span>View episode</span>
 					</div>
 					<Image
@@ -24,7 +21,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 						height={120}
 						loading="eager"
 						decoding="async"
-				/>
+					/>
 				</div>
 			)
 		}
@@ -36,7 +33,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 				<svg width="4px" height="4px">
 					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
 				</svg>
-				{date && <RelativeDate postDate={date} />}
+				<RelativeDate postDate={date} />
 			</div>
 		</div>
 	</div>

@@ -13,8 +13,7 @@ const podcasts = await getCollection("podcasts");
 
 // Sort podcasts by date
 const sortedPodcasts = podcasts.sort(
-	(a, b) =>
-		new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
+	(a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
 );
 ---
 
@@ -31,8 +30,8 @@ const sortedPodcasts = podcasts.sort(
 				Podcasts
 			</TitleWithCount>
 			<Title2
-				>Interviews and casual chats on various podcasts. Inevitably about
-				digital gardening, artificial intelligence, or metaphors.</Title2
+				>Interviews and casual chats on various podcasts. Inevitably about digital gardening,
+				artificial intelligence, or metaphors.</Title2
 			>
 		</header>
 		<MasonryGrid>
