@@ -1,0 +1,113 @@
+---
+import UnderlineHoverLink from "../mdx/UnderlineHoverLink.astro";
+const { items } = Astro.props;
+---
+
+<div class="timeline">
+	{
+		items &&
+			items.map((item: any) => (
+				<div class="timeline-item">
+					<div class="timeline-marker" />
+					<div class="timeline-content">
+						<div class="timeline-role-company">
+							{item.role} at{" "}
+							<UnderlineHoverLink href={item.companyUrl}>{item.company}</UnderlineHoverLink>
+						</div>
+						<div class="timeline-year">{item.year}</div>
+						<div class="timeline-description">{item.description}</div>
+					</div>
+				</div>
+			))
+	}
+</div>
+
+<style>
+	/* Timeline Styles - Source of truth from about.astro */
+	.timeline {
+		position: relative;
+		max-width: 64ch;
+		margin: var(--space-m) 0 var(--space-xl) 0;
+		font-family: var(--font-sans);
+	}
+
+	/* Timeline line */
+	.timeline::before {
+		content: "";
+		position: absolute;
+		left: 8px;
+		top: 18px;
+		bottom: -90px;
+		width: 2px;
+		background: linear-gradient(to bottom, var(--color-gray-300) 75%, var(--color-cream) 90%);
+	}
+
+	.timeline-item {
+		position: relative;
+		margin-bottom: var(--space-l);
+		padding-left: 2.5rem;
+	}
+
+	.timeline-item:last-child {
+		margin-bottom: 0;
+	}
+
+	.timeline-marker {
+		position: absolute;
+		left: 0;
+		top: 12px;
+		width: 16px;
+		height: 16px;
+		background: var(--color-cream);
+		border: 2px solid var(--color-gray-400);
+		border-radius: 50%;
+		z-index: 1;
+	}
+
+	.timeline-year {
+		font-family: var(--font-sans);
+		font-weight: 500;
+		color: var(--color-gray-600);
+		font-size: var(--font-size-sm);
+		margin-bottom: 0.5rem;
+		text-transform: uppercase;
+		letter-spacing: 0.025em;
+	}
+
+	.timeline-role-company {
+		font-family: var(--font-body);
+		font-size: var(--font-size-base);
+		font-weight: 500;
+		color: var(--color-gray-900);
+		margin-bottom: var(--space-2xs);
+		line-height: var(--leading-snug);
+	}
+
+	.timeline-description {
+		font-family: var(--font-sans);
+		color: var(--color-gray-700);
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-base);
+	}
+
+	@media (max-width: 768px) {
+		.timeline {
+			margin-left: var(--space-2xs);
+		}
+
+		.timeline::before {
+			top: 15px;
+			bottom: calc(var(--space-l) + 15px);
+		}
+
+		.timeline-item {
+			padding-left: var(--space-l);
+		}
+
+		.timeline-marker {
+			width: 20px;
+			height: 20px;
+			top: 10px;
+		}
+	}
+</style>

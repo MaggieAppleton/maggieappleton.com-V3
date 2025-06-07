@@ -66,6 +66,15 @@
 		margin: var(--space-s) 0 var(--space-xs);
 	}
 
+	/* Remove top margin when headings are directly adjacent to each other within prose */
+	.prose-wrapper :global(h1 + h2),
+	.prose-wrapper :global(h2 + h3),
+	.prose-wrapper :global(h3 + h4),
+	.prose-wrapper :global(h4 + h5),
+	.prose-wrapper :global(h5 + h6) {
+		margin-top: 0;
+	}
+
 	.prose-wrapper :global(ul),
 	.prose-wrapper :global(ol) {
 		padding: 0;

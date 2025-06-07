@@ -12,32 +12,22 @@ import UnderlineHoverLink from "../components/mdx/UnderlineHoverLink.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 
-const essays = await getCollection(
-	"essays",
-	({ data }) => data.featured === true && !data.draft,
-);
+const essays = await getCollection("essays", ({ data }) => data.featured === true && !data.draft);
 const notes = await getCollection("notes", ({ data }) => !data.draft);
 const patterns = await getCollection("patterns", ({ data }) => !data.draft);
 const books = await getCollection("books");
 
 const sortedEssays = essays
 	.slice(0, 4)
-	.sort(
-		(a, b) =>
-			new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
-	);
+	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime());
 
 const sortedNotes = notes.sort(
-	(a, b) =>
-		new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
+	(a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
 );
 
 const sortedPatterns = patterns
 	.slice(0, 8)
-	.sort(
-		(a, b) =>
-			new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
-	);
+	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime());
 ---
 
 <Layout title="Maggie Appleton">
@@ -50,12 +40,9 @@ const sortedPatterns = patterns
 			<SmallTitle2>
 				Designer, anthropologist, and mediocre developer
 				<br />
-				Currently design engineering at{" "}
-				<b class="company-name">
-					<UnderlineHoverLink href="https://normally.com">
-						Normally
-					</UnderlineHoverLink>
-				</b>
+				Currently on maternity leave – <UnderlineHoverLink href="/hire-me"
+					>open to new roles</UnderlineHoverLink
+				> for September 2025
 			</SmallTitle2>
 		</header>
 
@@ -66,8 +53,8 @@ const sortedPatterns = patterns
 				<h2 class="garden-title">The Garden</h2>
 			</a>
 			<div class="subheader">
-				A digital garden is a collection of imperfect notes, essays, and ideas
-				growing slowly over time.{" "}
+				A digital garden is a collection of imperfect notes, essays, and ideas growing slowly over
+				time.{" "}
 				<a href="/garden-history" class="readmore-link">
 					Learn more
 					<Icon name="heroicons:arrow-right" size={18} />
@@ -83,9 +70,7 @@ const sortedPatterns = patterns
 						<Icon name="heroicons:arrow-right" size={18} />
 					</h3>
 				</a>
-				<div class="subheader">
-					Opinionated, longform narrative writing with an agenda
-				</div>
+				<div class="subheader">Opinionated, longform narrative writing with an agenda</div>
 				<div class="essays-grid">
 					{
 						sortedEssays.map((essay) => (
@@ -120,12 +105,7 @@ const sortedPatterns = patterns
 								{note.data.growthStage && (
 									<div class="icon">
 										<GrowthIcon
-											growthStage={
-												note.data.growthStage as
-													| "seedling"
-													| "budding"
-													| "evergreen"
-											}
+											growthStage={note.data.growthStage as "seedling" | "budding" | "evergreen"}
 										/>
 									</div>
 								)}
@@ -143,9 +123,7 @@ const sortedPatterns = patterns
 						<Icon name="heroicons:arrow-right" size={18} />
 					</h3>
 				</a>
-				<div class="subheader">
-					Design patterns gathered from my own observations and research.
-				</div>
+				<div class="subheader">Design patterns gathered from my own observations and research.</div>
 				<div class="patterns-grid">
 					{
 						sortedPatterns.map((pattern) => (
@@ -168,9 +146,7 @@ const sortedPatterns = patterns
 						<Icon name="heroicons:arrow-right" size={18} />
 					</h3>
 				</a>
-				<div class="subheader">
-					Books I've read and books I like the idea of having read.
-				</div>
+				<div class="subheader">Books I've read and books I like the idea of having read.</div>
 				<div class="books-grid">
 					{
 						books
