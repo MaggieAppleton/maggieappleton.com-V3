@@ -30,53 +30,106 @@
 		fill="#680040"></path>
 </svg>
 
+<style>
+	#logo {
+		cursor: pointer;
+		transition: transform 0.2s ease;
+	}
+
+	#logo:hover {
+		transform: scale(1.05);
+	}
+
+	/* SVG-specific transform origin settings */
+	#logo .leaf,
+	#logo .leaf-2,
+	#logo .letter {
+		transform-origin: center;
+		transform-box: fill-box;
+	}
+
+	/* Animation classes */
+	.css-animate .leaf {
+		animation: leafWiggle 0.6s ease-in-out;
+	}
+
+	.css-animate .leaf-2 {
+		animation: leafWiggle2 0.6s ease-in-out;
+	}
+
+	.css-animate .letter {
+		animation: letterPulse 0.75s ease-in-out;
+	}
+
+	@keyframes leafWiggle {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(10deg);
+		}
+		50% {
+			transform: rotate(-10deg);
+		}
+		75% {
+			transform: rotate(10deg);
+		}
+	}
+
+	@keyframes leafWiggle2 {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(-5deg);
+		}
+		50% {
+			transform: rotate(5deg);
+		}
+		75% {
+			transform: rotate(-5deg);
+		}
+	}
+
+	@keyframes letterPulse {
+		0%,
+		100% {
+			transform: scale(1);
+			fill: #680040;
+		}
+		50% {
+			transform: scale(0.9);
+			fill: #820050;
+		}
+	}
+</style>
+
 <script>
-	import { animate, stagger } from "motion";
-
 	function handleLogoAnimation() {
-		animate(
-			".leaf",
-			{
-				rotate: [0, 10, -10, 10, 0],
-				transformOrigin: "center",
-			},
-			{
-				duration: 0.6,
-				ease: "circInOut",
-				delay: stagger(0.1),
-			},
-		);
-
-		animate(
-			".leaf-2",
-			{
-				rotate: [0, -5, 5, -5, 0],
-				transformOrigin: "center",
-			},
-			{
-				duration: 0.6,
-				ease: "circInOut",
-				delay: stagger(0.1),
-			},
-		);
-
-		animate(
-			".letter",
-			{
-				scale: [1, 0.9, 1],
-				fill: ["#680040", "#820050", "#680040"],
-				transformOrigin: "center",
-			},
-			{
-				duration: 0.75,
-				ease: "circInOut",
-			},
-		);
+		const logo = document.getElementById("logo");
+		if (logo) {
+			logo.classList.add("css-animate");
+			setTimeout(() => {
+				logo.classList.remove("css-animate");
+			}, 750);
+		}
 	}
 
-	// Initialize only once when the component is first mounted
-	const logo = document.getElementById("logo");
-	if (logo) {
-		logo.addEventListener("mouseenter", handleLogoAnimation);
+	function initializeLogoAnimation() {
+		const logo = document.getElementById("logo");
+		if (logo) {
+			// Remove any existing event listeners
+			logo.removeEventListener("mouseenter", handleLogoAnimation);
+			// Add the event listener
+			logo.addEventListener("mouseenter", handleLogoAnimation);
+		}
 	}
+
+	// Initialize when DOM is ready
+	document.addEventListener("DOMContentLoaded", initializeLogoAnimation);
+
+	// Re-initialize after Astro view transitions
+	document.addEventListener("astro:after-swap", initializeLogoAnimation);
 </script>
