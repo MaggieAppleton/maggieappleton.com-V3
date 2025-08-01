@@ -8,9 +8,18 @@ export async function getAllTopics() {
   const talks = await getCollection("talks", ({ data }) => !data.draft);
   const podcasts = await getCollection("podcasts");
   const now = await getCollection("now");
+  const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
 
   // Combine all content
-  const allContent = [...essays, ...notes, ...patterns, ...talks, ...podcasts, ...now];
+  const allContent = [
+    ...essays,
+    ...notes,
+    ...patterns,
+    ...talks,
+    ...podcasts,
+    ...now,
+    ...smidgeons,
+  ];
 
   // Get all unique topics
   const topics = new Set<string>();
@@ -34,8 +43,17 @@ export async function getPostsForTopic(topicSlug: string) {
   const talks = await getCollection("talks", ({ data }) => !data.draft);
   const podcasts = await getCollection("podcasts");
   const now = await getCollection("now");
+  const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
 
-  const allContent = [...essays, ...notes, ...patterns, ...talks, ...podcasts, ...now];
+  const allContent = [
+    ...essays,
+    ...notes,
+    ...patterns,
+    ...talks,
+    ...podcasts,
+    ...now,
+    ...smidgeons,
+  ];
   const topic = deslugifyTopic(topicSlug);
 
   return allContent.filter((post) => {

@@ -10,6 +10,7 @@ import PatternCard from "../../components/cards/PatternCard.astro";
 import TalkCard from "../../components/cards/TalkCard.astro";
 import PodcastCard from "../../components/cards/PodcastCard.astro";
 import NowCard from "../../components/cards/NowCard.astro";
+import SmidgeonCard from "../../components/cards/SmidgeonCard.astro";
 import { getAllTopics, getPostsForTopic } from "../../utils/getTopics";
 import { extractPreview } from "../../utils/extractPreview";
 import type { CollectionEntry } from "astro:content";
@@ -21,7 +22,8 @@ type Post =
 	| CollectionEntry<"patterns">
 	| CollectionEntry<"talks">
 	| CollectionEntry<"podcasts">
-	| CollectionEntry<"now">;
+	| CollectionEntry<"now">
+	| CollectionEntry<"smidgeons">;
 
 export async function getStaticPaths() {
 	const topics = await getAllTopics();
@@ -35,10 +37,12 @@ export async function getStaticPaths() {
 const { topic } = Astro.params;
 const { topicName } = Astro.props;
 const posts = await getPostsForTopic(topic);
-// Sort posts by date (using updated field for most collections, startDate for now posts)
+// Sort posts by date (using updated field for most collections, startDate for now posts and smidgeons)
 const sortedPosts = posts.sort((a, b) => {
-	const dateA = a.collection === "now" ? a.data.startDate : a.data.updated;
-	const dateB = b.collection === "now" ? b.data.startDate : b.data.updated;
+	const dateA =
+		a.collection === "now" || a.collection === "smidgeons" ? a.data.startDate : a.data.updated;
+	const dateB =
+		b.collection === "now" || b.collection === "smidgeons" ? b.data.startDate : b.data.updated;
 	return new Date(dateB).getTime() - new Date(dateA).getTime();
 });
 ---
@@ -55,7 +59,7 @@ const sortedPosts = posts.sort((a, b) => {
 				</div>
 				{topicName}
 			</TitleWithCount>
-			<Title2>Essays, notes, and patterns related to {topicName}</Title2>
+			<Title2>Essays, notes, patterns, and smidgeons related to {topicName}</Title2>
 		</header>
 
 		<MasonryGrid>
@@ -142,6 +146,23 @@ const sortedPosts = posts.sort((a, b) => {
 									title={post.data.title}
 									date={post.data.startDate}
 									preview={extractPreview(post.body || "")}
+								/>
+							</div>
+						);
+					}
+					if (post.collection === "smidgeons") {
+						// Generate preview for smidgeons - extract from body content
+						const preview = extractPreview(post.body || "");
+
+						return (
+							<div class="grid-item">
+								<SmidgeonCard
+									slug={post.id}
+									title={post.data.title}
+									date={post.data.startDate.toISOString()}
+									preview={preview}
+									external={post.data.external}
+									citation={post.data.citation}
 								/>
 							</div>
 						);

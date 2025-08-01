@@ -28,7 +28,7 @@ export function extractPreview(content: string, maxLength: number = 90): string 
   // Get content after frontmatter
   const contentLines = lines.slice(startIndex);
 
-  // Filter out import statements and empty lines
+  // Filter out import statements, empty lines, and component tags
   const meaningfulLines = contentLines.filter((line) => {
     const trimmed = line.trim();
     return (
@@ -36,14 +36,39 @@ export function extractPreview(content: string, maxLength: number = 90): string 
       !trimmed.startsWith("import ") &&
       !trimmed.startsWith("import{") &&
       !trimmed.startsWith("export ") &&
-      !trimmed.match(/^import\s*{/)
+      !trimmed.match(/^import\s*{/) &&
+      !trimmed.startsWith("<") && // Skip component lines like <BasicImage />
+      !trimmed.startsWith("#") // Skip headers for preview
     );
   });
 
   if (meaningfulLines.length === 0) return "";
 
-  // Join lines and clean up markdown
-  const rawText = meaningfulLines.join(" ");
+  // Find the first meaningful paragraph instead of joining all content
+  let firstParagraph = "";
+  let currentParagraph = "";
+
+  for (const line of meaningfulLines) {
+    const trimmed = line.trim();
+
+    // If we hit an empty line and have content, we've found our first paragraph
+    if (!trimmed && currentParagraph) {
+      firstParagraph = currentParagraph;
+      break;
+    }
+
+    // Add to current paragraph
+    if (trimmed) {
+      currentParagraph += (currentParagraph ? " " : "") + trimmed;
+    }
+  }
+
+  // If we never hit an empty line, use whatever we collected
+  if (!firstParagraph && currentParagraph) {
+    firstParagraph = currentParagraph;
+  }
+
+  const rawText = firstParagraph;
 
   // Remove common markdown patterns
   const cleanText = rawText

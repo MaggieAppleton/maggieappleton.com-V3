@@ -30,16 +30,14 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 						<p>
 							<Icon name="heroicons:map-pin-20-solid" size={18} />
 							{conferences[0].name}, {conferences[0].location}
-							{conferences.length > 1 && (
-								<span class="conf-count">+{conferences.length - 1}</span>
-							)}
+							{conferences.length > 1 && <span class="conf-count">+{conferences.length - 1}</span>}
 						</p>
 					</div>
 				)
 			}
 			<div class="metadata-container">
 				<span>Talk</span>
-				<svg width="4px" height="8px">
+				<svg width="4px" height="10px">
 					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
 				</svg>
 				<RelativeDate postDate={date} />

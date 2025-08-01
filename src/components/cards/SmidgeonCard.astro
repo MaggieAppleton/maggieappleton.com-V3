@@ -1,74 +1,98 @@
 ---
-interface Props {
-	slug: string;
-	title: string;
-	date?: string;
-}
+import { Icon } from "astro-icon/components";
+import RelativeDate from "../layouts/RelativeDate.astro";
 
-const { slug, title, date } = Astro.props;
+const { slug, title, date, preview } = Astro.props;
 ---
 
-<a href={`/${slug}`} class="card">
-	<div class="card-content">
-		<div class="title-row">
+<a href={`/${slug}`}>
+	<div class="smidgeon-card">
+		<Icon name="heroicons:paper-clip" size={24} class="content-icon" />
+		<div>
 			<h3>{title}</h3>
+			{preview && <p class="preview">{preview}...</p>}
+			<div class="metadata-container">
+				<span>Smidgeon</span>
+				<svg width="4px" height="4px">
+					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
+				</svg>
+				<RelativeDate postDate={date} />
+			</div>
 		</div>
-		{
-			date && (
-				<time datetime={date}>
-					{new Date(date).toLocaleDateString("en-US", {
-						year: "numeric",
-						month: "long",
-						day: "numeric",
-					})}
-				</time>
-			)
-		}
 	</div>
 </a>
 
 <style>
-	.card {
-		display: block;
-		padding: var(--space-s);
+	.metadata-container {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
+		margin-left: var(--space-xs);
+		margin-top: 4px;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-500);
+		text-transform: capitalize;
+		font-weight: 400;
+	}
+
+	.metadata-container svg {
+		margin: 0.2rem 0.4rem 0;
+	}
+
+	.preview {
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-500);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		margin-left: var(--space-xs);
+		margin-top: var(--space-2xs);
+		padding-right: var(--space-s);
+	}
+
+	.smidgeon-card {
+		display: flex;
+		flex-direction: row;
+		padding: var(--space-xs);
+		margin: 0 var(--space-xs) var(--space-xs) 0;
 		border-radius: var(--border-radius-base);
-		background: white;
+		border: 1px solid var(--color-cream);
 		transition: all 0.3s ease-in-out;
-		border: 1px solid var(--color-gray-100);
-		margin-bottom: var(--space-s);
-		text-decoration: none;
+		will-change: transform, background-color, box-shadow;
+		cursor: pointer;
 	}
 
-	.card:hover {
-		border: 1px solid var(--color-sea-blue);
-		background: var(--color-cream);
-	}
-
-	.card-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3xs);
-	}
-
-	.title-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-s);
-	}
-
-	h3 {
+	.smidgeon-card h3 {
+		color: var(--color-gray-800);
+		transition: color 0.3s ease-in-out;
+		will-change: transform;
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		font-weight: 400;
 		line-height: var(--leading-snug);
-		margin: 0;
-		color: var(--color-gray-800);
+		margin-left: var(--space-xs);
 	}
 
-	time {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
+	.smidgeon-card .content-icon {
+		position: relative;
+		top: 4px;
+		flex-shrink: 0;
+		color: var(--color-sea-blue);
+	}
+
+	.smidgeon-card:hover {
+		transform: scale3d(1.02, 1.02, 1.02);
+		background: var(--color-light-cream);
+		box-shadow: var(--box-shadow-sm);
+		border: 1px solid var(--color-tinted-cream);
+	}
+
+	.smidgeon-card:hover h3 {
+		color: var(--color-crimson);
+	}
+
+	.relative-time {
+		color: var(--color-gray-500);
 	}
 </style>

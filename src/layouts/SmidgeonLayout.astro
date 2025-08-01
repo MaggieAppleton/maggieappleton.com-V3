@@ -4,6 +4,7 @@ import Layout from "./Layout.astro";
 import { Icon } from "astro-icon/components";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import Topics from "../components/layouts/Topics.astro";
+import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
@@ -19,80 +20,82 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 			<div class="back-link">
 				<a href="/smidgeons">
 					<Icon name="heroicons:arrow-left" size={16} />
-					<span>Back to Smidgeons</span>
+					<span>Smidgeons</span>
 				</a>
 			</div>
-		</div>
-
-		<div class="smidgeon-layout">
-			<div class="metadata">
-				<div class="date-permalink">
-					<time datetime={frontmatter.startDate.toISOString()}>
-						{
-							frontmatter.startDate.toLocaleDateString("en-US", {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})
-						}
-					</time>
-				</div>
-				{frontmatter.topics && <Topics topics={frontmatter.topics} />}
-			</div>
-
-			<div class="content">
-				{/* External Link Format */}
-				{
-					frontmatter.external && (
-						<a href={frontmatter.external.url} target="_blank" rel="noopener noreferrer">
-							<div class="reference-card">
-								<h1 class="content-header">
-									{frontmatter.external.title}
-									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-								</h1>
-								{frontmatter.external.author && (
-									<p class="byline">
-										<Icon name="heroicons:user" size={14} />
-										{frontmatter.external.author}
-									</p>
-								)}
-							</div>
-						</a>
-					)
-				}
-
-				{/* Academic Paper Format */}
-				{
-					frontmatter.citation && (
-						<a href={frontmatter.citation.url} target="_blank" rel="noopener noreferrer">
-							<div class="reference-card">
-								<div class="citation-header">
-									<h1 class="content-header">
-										{frontmatter.citation.title}
-										<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-									</h1>
-									<div class="citation-metadata">
-										<p class="byline">
-											<Icon name="heroicons:users" size={14} />
-											{frontmatter.citation.authors.join(", ")}
-										</p>
-										<p class="journal-info byline">
-											<Icon name="heroicons:academic-cap" size={14} />
-											{frontmatter.citation.journal} ({frontmatter.citation.year})
-										</p>
-									</div>
-								</div>
-							</div>
-						</a>
-					)
-				}
-
-				<div class="prose">
-					<slot />
-				</div>
-			</div>
+			<GrowthIcon size="16" growthStage="evergreen" />
+			<p class="description">Interesting links, papers, and tiny thoughts</p>
 		</div>
 	</header>
+
+	<div class="smidgeon-layout">
+		<div class="metadata">
+			<div class="date-permalink">
+				<time datetime={frontmatter.startDate.toISOString()}>
+					{
+						frontmatter.startDate.toLocaleDateString("en-US", {
+							year: "numeric",
+							month: "long",
+							day: "numeric",
+						})
+					}
+				</time>
+			</div>
+			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
+		</div>
+
+		<div class="content">
+			{/* External Link Format */}
+			{
+				frontmatter.external && (
+					<a href={frontmatter.external.url} target="_blank" rel="noopener noreferrer">
+						<div class="reference-card">
+							<h1 class="content-header">
+								{frontmatter.external.title}
+								<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+							</h1>
+							{frontmatter.external.author && (
+								<p class="byline">
+									<Icon name="heroicons:user" size={14} />
+									{frontmatter.external.author}
+								</p>
+							)}
+						</div>
+					</a>
+				)
+			}
+
+			{/* Academic Paper Format */}
+			{
+				frontmatter.citation && (
+					<a href={frontmatter.citation.url} target="_blank" rel="noopener noreferrer">
+						<div class="reference-card">
+							<div class="citation-header">
+								<h1 class="content-header">
+									{frontmatter.citation.title}
+									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+								</h1>
+								<div class="citation-metadata">
+									<p class="byline">
+										<Icon name="heroicons:users" size={14} />
+										{frontmatter.citation.authors.join(", ")}
+									</p>
+									<p class="journal-info byline">
+										<Icon name="heroicons:academic-cap" size={14} />
+										{frontmatter.citation.journal} ({frontmatter.citation.year})
+									</p>
+								</div>
+							</div>
+						</div>
+					</a>
+				)
+			}
+
+			<div class="prose">
+				<slot />
+			</div>
+		</div>
+	</div>
 
 	<WebMentions postSlug={currentSlug} hasBacklinks={false} />
 </Layout>
@@ -100,10 +103,12 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 <style>
 	.header-section {
 		max-width: 1000px;
-		margin: var(--space-l) auto 0;
+		margin: var(--space-xl) auto;
 	}
 
 	.smidgeon-layout {
+		max-width: 1000px;
+		margin: var(--space-l) auto 0;
 		display: grid;
 		grid-template-columns: 200px minmax(0, 800px);
 		gap: var(--space-l);
@@ -134,6 +139,30 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		align-items: center;
 		gap: var(--space-xs);
 		margin-bottom: var(--space-m);
+		min-height: 24px;
+	}
+
+	.above-title a,
+	.above-title p {
+		display: inline-flex;
+		align-items: center;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: bold;
+		margin: 0;
+	}
+
+	.above-title svg {
+		display: block;
+		position: relative;
+		margin: auto 0;
+	}
+
+	.description {
+		color: var(--color-gray-600);
+		font-weight: 300;
 	}
 
 	.metadata {
@@ -237,11 +266,7 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 	.back-link span {
 		display: inline-block;
 		transition: transform 0.3s cubic-bezier(0.2, 1, 0.8, 1);
-		color: var(--color-gray-600);
-	}
-
-	.back-link span:hover {
-		color: var(--color-medium-sea-blue);
+		color: var(--color-bright-crimson);
 	}
 
 	.back-link a:hover svg {
