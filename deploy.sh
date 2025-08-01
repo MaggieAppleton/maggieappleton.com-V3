@@ -6,7 +6,8 @@ set -e
 # Check if there are uncommitted changes
 if ! git diff-index --quiet HEAD --; then
     echo "Found uncommitted changes. Stashing them temporarily..."
-    git stash push -m "Temporary stash for deployment $(date)"
+    # Stash everything except generated files that will be rebuilt
+    git stash push -m "Temporary stash for deployment $(date)" -- ":(exclude)src/content/data/webmentions.json"
     STASHED=true
 else
     echo "No uncommitted changes found."
