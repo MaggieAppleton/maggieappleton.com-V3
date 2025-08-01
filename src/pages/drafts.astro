@@ -6,109 +6,225 @@ import { Image } from "astro:assets";
 
 // Redirect if we're not in development mode
 if (import.meta.env.PROD) {
-  return Astro.redirect('/404');
+	return Astro.redirect("/404");
 }
 
 const essays = await getCollection("essays", ({ data }) => data.draft === true);
 const notes = await getCollection("notes", ({ data }) => data.draft === true);
 const patterns = await getCollection("patterns", ({ data }) => data.draft === true);
 const talks = await getCollection("talks", ({ data }) => data.draft === true);
+const smidgeons = await getCollection("smidgeons", ({ data }) => data.draft === true);
+const now = await getCollection("now", ({ data }) => data.draft === true);
 
-const totalDrafts = essays.length + notes.length + patterns.length + talks.length;
+const totalDrafts =
+	essays.length + notes.length + patterns.length + talks.length + smidgeons.length + now.length;
 ---
 
 <Layout>
-  <PageWrapper>
-    <h1>Draft Posts ({totalDrafts})</h1>
-    <p class="draft-notice">These posts are only visible in development mode</p>
+	<PageWrapper>
+		<h1>Draft Posts ({totalDrafts})</h1>
+		<p class="draft-notice">These posts are only visible in development mode</p>
 
-    {essays.length > 0 && (
-      <section>
-        <h2>Essays ({essays.length})</h2>
-        <ul>
-          {essays.map((essay) => (
-            <li>
-              <Image src={essay.data.cover} width={420} alt={essay.data.title} />
-              <a href={`/${essay.id}`}>{essay.data.title}</a>
-              <p>{essay.data.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
+		{
+			essays.length > 0 && (
+				<section>
+					<h2>Essays ({essays.length})</h2>
+					<ul>
+						{essays.map((essay) => (
+							<li>
+								<Image src={essay.data.cover} width={420} alt={essay.data.title} />
+								<a href={`/${essay.id}`}>{essay.data.title}</a>
+								<p>{essay.data.description}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
 
-    {notes.length > 0 && (
-      <section>
-        <h2>Notes ({notes.length})</h2>
-        <ul>
-          {notes.map((note) => (
-            <li>
-              <a href={`/${note.id}`}>{note.data.title}</a>
-              <p>{note.data.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
+		{
+			notes.length > 0 && (
+				<section>
+					<h2>Notes ({notes.length})</h2>
+					<ul>
+						{notes.map((note) => (
+							<li>
+								<a href={`/${note.id}`}>{note.data.title}</a>
+								<p>{note.data.description}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
 
-    {patterns.length > 0 && (
-      <section>
-        <h2>Patterns ({patterns.length})</h2>
-        <ul>
-          {patterns.map((pattern) => (
-            <li>
-              <a href={`/${pattern.id}`}>{pattern.data.title}</a>
-              <p>{pattern.data.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
+		{
+			patterns.length > 0 && (
+				<section>
+					<h2>Patterns ({patterns.length})</h2>
+					<ul>
+						{patterns.map((pattern) => (
+							<li>
+								<a href={`/${pattern.id}`}>{pattern.data.title}</a>
+								<p>{pattern.data.description}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
 
-    {talks.length > 0 && (
-      <section>
-        <h2>Talks ({talks.length})</h2>
-        <ul>
-          {talks.map((talk) => (
-            <li>
-              <Image src={talk.data.cover} width={420} alt={talk.data.title} />
-              <a href={`/${talk.id}`}>{talk.data.title}</a>
-              <p>{talk.data.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
-  </PageWrapper>
+		{
+			talks.length > 0 && (
+				<section>
+					<h2>Talks ({talks.length})</h2>
+					<ul>
+						{talks.map((talk) => (
+							<li>
+								<Image src={talk.data.cover} width={420} alt={talk.data.title} />
+								<a href={`/${talk.id}`}>{talk.data.title}</a>
+								<p>{talk.data.description}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		{
+			smidgeons.length > 0 && (
+				<section>
+					<h2>Smidgeons ({smidgeons.length})</h2>
+					<ul>
+						{smidgeons.map((smidgeon) => (
+							<li>
+								<a href={`/${smidgeon.id}`}>{smidgeon.data.title}</a>
+								<p>Started: {smidgeon.data.startDate.toLocaleDateString()}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		{
+			now.length > 0 && (
+				<section>
+					<h2>Now Pages ({now.length})</h2>
+					<ul>
+						{now.map((nowPost) => (
+							<li>
+								<a href={`/now-${nowPost.id}`}>{nowPost.data.title}</a>
+								<p>Started: {nowPost.data.startDate.toLocaleDateString()}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+	</PageWrapper>
 </Layout>
 
 <style>
-  .draft-notice {
-    padding: 0.5rem 1rem;
-    background-color: var(--color-gray-200);
-    border-radius: 4px;
-    margin-bottom: 2rem;
-    display: inline-block;
-  }
+	.draft-notice {
+		padding: var(--space-s) var(--space-m);
+		background-color: var(--color-gray-200);
+		border-radius: var(--border-radius-base);
+		margin-bottom: var(--space-xl);
+		display: inline-block;
+		font-size: var(--font-size-sm);
+		border: 1px solid var(--color-gray-300);
+	}
 
-  section {
-    margin: 2rem 0;
-  }
+	section {
+		margin-bottom: var(--space-3xl);
+		padding: var(--space-l);
+		background-color: var(--color-cream);
+		border-radius: var(--border-radius-lg);
+		border: 1px solid var(--color-tinted-cream);
+		box-shadow: var(--box-shadow-sm);
+	}
 
-  h2 {
-    margin-bottom: 1rem;
-  }
+	h2 {
+		margin-bottom: var(--space-l);
+		color: var(--color-gray-900);
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		border-bottom: 2px solid var(--color-gray-300);
+		padding-bottom: var(--space-xs);
+	}
 
-  ul {
-    list-style: none;
-    padding: 0;
-  }
+	ul {
+		list-style: none;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: var(--space-l);
+	}
 
-  li {
-    margin-bottom: 2rem;
-  }
+	li {
+		padding: var(--space-m);
+		background-color: white;
+		border-radius: var(--border-radius-base);
+		border: 1px solid var(--color-gray-200);
+		box-shadow: var(--box-shadow-xs);
+		transition: all 0.2s ease;
+	}
 
-  img {
-    margin-bottom: 0.5rem;
-  }
-</style> 
+	li:hover {
+		box-shadow: var(--box-shadow-sm);
+		transform: translateY(-2px);
+		border-color: var(--color-gray-300);
+	}
+
+	li a {
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		color: var(--color-gray-900);
+		text-decoration: none;
+		display: block;
+		margin-bottom: var(--space-xs);
+	}
+
+	li a:hover {
+		color: var(--color-sea-blue);
+		text-decoration: underline;
+	}
+
+	li p {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-700);
+		line-height: var(--leading-snug);
+	}
+
+	li img {
+		width: 100%;
+		height: auto;
+		border-radius: var(--border-radius-base);
+		margin-bottom: var(--space-s);
+		object-fit: cover;
+		max-height: 200px;
+	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		section {
+			padding: var(--space-m);
+			margin-bottom: var(--space-2xl);
+		}
+
+		ul {
+			grid-template-columns: 1fr;
+			gap: var(--space-m);
+		}
+
+		li {
+			padding: var(--space-s);
+		}
+
+		h2 {
+			font-size: var(--font-size-md);
+		}
+	}
+</style>

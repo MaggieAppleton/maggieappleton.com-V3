@@ -1,0 +1,56 @@
+---
+title: "Cognitive Debt and ChatGPT"
+startDate: 2025-06-16T11:32:42.605Z
+type: "smidgeon"
+topics: ["Artificial Intelligence", "Language Models", "Knowledge Work", "Critical Thinking", "Writing"]
+citation:
+  title: "Your Brain on ChatGPT: Accumulation of Cognitive Debt when Using an AI Assistant for Essay Writing Task"
+  authors: ["Nataliya Kosmyna", "Eugene Hauptmann", "Ye Tong Yuan", "Jessica Situ", "Xian-Hao Liao", "Ashly Vivian Beresnitzky", "Iris Braunstein", "Pattie Maes"]
+  journal: "ArXiv"
+  year: 2025
+  url: "https://arxiv.org/abs/2506.08872"
+draft: true
+---
+
+[Turn this into a full note]
+
+A bunch of MIT researchers (including the infamous [Pattie Maes]()) recently released a fat research paper trying to figure out if using LLMs to write essays makes people worse at writing essays. The headline: it does. But as with everything, the devil is in the details.
+
+The essay-writing-task is, of course, a stand-in for more holistic skills: critical thinking, research, analysis, organising your ideas, and clearly communicating them. Holistic skills I'll generously assume we all care about maintaining in the general population.
+
+This paper is the latest addition to a [growing]() [pile]() of [research]() trying to suss out if “using ChatGPT” is making us dumber. I have an important caveat about what “using ChatGPT” means, what being “dumber” means, and the limitations of this study, but I'll save it for the end. Back to the paper.
+
+They recruited 54 Boston college students and split them into three groups to write SAT essays<Footnote idName={1}>Standardised Aptitude Test: the de facto exam U.S. students take for university applications. Check Section 4 of the [original PDF](https://arxiv.org/pdf/2506.08872) to see the specific questions they used.</Footnote>; one using only their brain, one with access to Google, and one using only GPT-4o (and, critically, no other sources). Each person wrote 3 essays over 3 separate, 20-minute sessions.
+
+They took EEGs to look at brain activity while they wrote (fancy), in addition to qualitative measures like interviewing all the participants afterwards, and getting both a human and an AI to judge the final essays.
+
+Here are some of the headline outcomes:
+
+- The brain-only and Google group felt stronger ownership over their work than the LLM group.
+- Over 80% of the LLM group was unable to quote anything from the essay they had just “written.” Compared to 11% in the Google and brain-only group.
+- The brain-only group was the least “satisfied” with their final essays.
+- On the EEGs the brain-only group showed neural activity associated with higher cognitive load, more working memory, and more creative processing compared to the LLM group. In short, their brains worked harder. 
+- “The LLM group's participants performed worse than their counterparts in the Brain-only group at all levels: neural, linguistic, scoring.”
+
+The way the LLM group used their tools seemed to vary widely, with some using it to check grammar, other discussed the topic with the LLM develop their ideas, have it generate an initial structure they adapted, or revise content they wrote themselves.
+
+[None of this is very surprising. Of course “writing” an essay – a medium where you develop, organise, and communicate your original thoughts and experiences – with a statistical language model is less cognitively engaging than doing it au natural.] - do I really think this?
+But it's nice to have a rigorous study proving it.
+
+Limitations:
+
+- The GPT-4o group were not allowed to use any other sources. They couldn't search the web to validate or double-check anything. This is the biggest pitfall for me. Writing an essay without access to a wide range of sources and exercising your fact-checking skills is a fundamentally flawed endeavour.
+- They only had 20 minutes to write the essay. Participants from all groups felt this limited the quality of their work. LLM participants said they didn't have time to internalise or improve generated content, and relied on the LLM more because of the time pressure. Brain-only participants also felt they didn't have enough time to think through the question.
+- This is a small study within a very specific population of elite university students. All the participants attend either MIT, Wellesley, Harvard, Tufts, or Northeastern.
+
+Open question/caveat: _How_ you use the model is critical here. Sure, having a model literally write for you will make you worse at writing.
+
+A few of the LLM participants said it was hard to figure out how to prompt ChatGPT in useful ways.
+
+But building bespoke architectures and interfaces around models can make them partners in socratic debate, act as critics, and fact-check your work in ways that shouldn't lead to this decrease in cognitive skills. **To be clear, I don't think standard models, default prompts, and their interfaces do this well.**
+
+My claim is that this is only possible if we build tight constraints, clear workflows, strategic prompts, and helpful interfaces around models to enable this kind of cognitive-enhancement. Your bog standard ChatGPT interface is not going to do it.
+
+In short, I don't think this study meaningfully tested whether LLMs improve or degrade critical thinking. I think it tested how well a small sample of U.S. university students, without much training in prompt engineering, using the default ChatGPT interface, without access to web search or other information sources, can write SAT essay answers within 20 minutes.
+
+None of that models how people can and should use LLMs to write essays in the real world, or how well models can be used to engage research and critical thinking skills.
