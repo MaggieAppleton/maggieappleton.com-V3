@@ -10,17 +10,11 @@ const { growthStage, size = "22" } = Astro.props;
 ---
 
 {
-	growthStage === "seedling" && (
+	growthStage === "seedling" ? (
 		<Icon name="seedling" width={size} height={size} style="flex-shrink: 0;" />
-	)
-}
-{
-	growthStage === "budding" && (
+	) : growthStage === "budding" ? (
 		<Icon name="budding" width={size} height={size} style="flex-shrink: 0;" />
-	)
-}
-{
-	growthStage === "evergreen" && (
+	) : growthStage === "evergreen" ? (
 		<Icon name="evergreen" width={size} height={size} style="flex-shrink: 0;" />
-	)
+	) : null
 }
