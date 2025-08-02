@@ -5,23 +5,48 @@
 <div class="box" id="reverse-spinning-box"></div>
 
 <script>
-	const box = document.getElementById("reverse-spinning-box");
+	let currentObserver: IntersectionObserver | null = null;
 
-	const observer = new IntersectionObserver(
-		([entry]) => {
-			if (entry.isIntersecting) {
-				box?.classList.add("animate");
-			}
-		},
-		{
-			threshold: 0.2,
-			rootMargin: "-30% 0px",
-		},
-	);
+	function initializeObserver() {
+		// Clean up existing observer
+		if (currentObserver) {
+			currentObserver.disconnect();
+			currentObserver = null;
+		}
 
-	if (box) {
-		observer.observe(box);
+		const box = document.getElementById("reverse-spinning-box");
+		if (!box) return;
+
+		currentObserver = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) {
+					box.classList.add("animate");
+				}
+			},
+			{
+				threshold: 0.2,
+				rootMargin: "-30% 0px",
+			},
+		);
+
+		currentObserver.observe(box);
 	}
+
+	function cleanup() {
+		if (currentObserver) {
+			currentObserver.disconnect();
+			currentObserver = null;
+		}
+	}
+
+	// Initialize on first load
+	initializeObserver();
+
+	// Reinitialize after view transitions
+	document.addEventListener("astro:page-load", initializeObserver);
+
+	// Cleanup on page leave
+	document.addEventListener("astro:before-swap", cleanup);
 </script>
 
 <style>

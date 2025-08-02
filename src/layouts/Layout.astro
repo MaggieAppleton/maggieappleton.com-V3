@@ -2,6 +2,7 @@
 import Footer from "../components/layouts/Footer.astro";
 import Navbar from "../components/layouts/navbar/Navbar.astro";
 import { SEO } from "astro-seo";
+import { ClientRouter } from "astro:transitions";
 import "../global.css";
 
 export interface Props {
@@ -87,6 +88,7 @@ declare global {
 		/>
 		<link rel="me" href="https://bsky.app/profile/maggieappleton.com" />
 		<link rel="canonical" href={canonicalURL} />
+		<ClientRouter />
 		<script
 			type="text/partytown"
 			async

@@ -280,14 +280,22 @@ const firstTimeData = parseCSV(firstTimeProbsCSV);
 </style>
 
 <script>
-	document.addEventListener("DOMContentLoaded", function () {
+	function initializeBirthProbability() {
 		const dueDateInput = document.getElementById("due-date") as HTMLInputElement;
 		const dateDisplay = document.getElementById("date-display") as HTMLElement;
 		const firstBabySelect = document.getElementById("first-baby-select") as HTMLSelectElement;
-		const wrapper = document.querySelector(".date-input-wrapper");
-		const calendarIcon = document.querySelector(".calendar-icon");
+		const wrapper = document.querySelector(".date-input-wrapper") as HTMLElement;
+		const calendarIcon = document.querySelector(".calendar-icon") as HTMLElement;
 
 		if (!dueDateInput || !dateDisplay || !firstBabySelect || !wrapper || !calendarIcon) return;
+
+		// Clean up existing listeners
+		const existingHandlers = (wrapper as any)._birthProbHandlers;
+		if (existingHandlers) {
+			wrapper.removeEventListener("click", existingHandlers.wrapperClick);
+			dueDateInput.removeEventListener("change", existingHandlers.dateChange);
+			firstBabySelect.removeEventListener("change", existingHandlers.selectChange);
+		}
 
 		// Calculate min and max dates (3 weeks before and 3 weeks after today)
 		const today = new Date();
@@ -328,34 +336,59 @@ const firstTimeData = parseCSV(firstTimeProbsCSV);
 			}
 		}
 
-		// Set default due date
-		const defaultDueDate = new Date(today);
-		defaultDueDate.setDate(today.getDate() + 14);
-		dueDateInput.valueAsDate = defaultDueDate;
-		dateDisplay.textContent = formatDate(defaultDueDate);
+		// Set default due date only if not already set
+		if (!dueDateInput.value) {
+			const defaultDueDate = new Date(today);
+			defaultDueDate.setDate(today.getDate() + 14);
+			dueDateInput.valueAsDate = defaultDueDate;
+			dateDisplay.textContent = formatDate(defaultDueDate);
+		} else {
+			// Update display for existing value
+			const existingDate = dueDateInput.valueAsDate;
+			if (existingDate) {
+				dateDisplay.textContent = formatDate(existingDate);
+			}
+		}
 
-		wrapper.addEventListener("click", function () {
+		// Create handlers
+		const wrapperClickHandler = function () {
 			dueDateInput.focus();
 			dueDateInput.showPicker();
-		});
+		};
 
-		// Update display and calculation when date changes
-		dueDateInput.addEventListener("change", function () {
+		const dateChangeHandler = function () {
 			const selectedDate = dueDateInput.valueAsDate;
 			if (selectedDate) {
 				dateDisplay.textContent = formatDate(selectedDate);
 			}
 			(window as any).calculateAndDispatchEvent();
-		});
+		};
 
-		// Update calculation when first baby selection changes
-		firstBabySelect.addEventListener("change", function () {
+		const selectChangeHandler = function () {
 			(window as any).calculateAndDispatchEvent();
-		});
+		};
+
+		// Store handlers for cleanup
+		(wrapper as any)._birthProbHandlers = {
+			wrapperClick: wrapperClickHandler,
+			dateChange: dateChangeHandler,
+			selectChange: selectChangeHandler
+		};
+
+		// Add event listeners
+		wrapper.addEventListener("click", wrapperClickHandler);
+		dueDateInput.addEventListener("change", dateChangeHandler);
+		firstBabySelect.addEventListener("change", selectChangeHandler);
 
 		// Initial calculation
 		(window as any).calculateAndDispatchEvent();
-	});
+	}
+
+	// Initialize on page load
+	initializeBirthProbability();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeBirthProbability);
 </script>
 
 <script is:inline define:vars={{ multiBirthData, firstTimeData }}>

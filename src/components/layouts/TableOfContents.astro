@@ -210,72 +210,116 @@ const { headings } = Astro.props;
 </style>
 
 <script>
-	let isCollapsed = false;
-	let isAutoCollapsed = false;
-	let isScrollingToSection = false;
-	const desktopContainer = document.querySelector(".desktop-container");
-	const tocHeader = document.getElementById("desktop-toc-header");
-	const arrowIcon = tocHeader?.querySelector(".arrow-icon");
+	function initializeTOC() {
+		let isCollapsed = false;
+		let isAutoCollapsed = false;
+		let isScrollingToSection = false;
+		
+		const desktopContainer = document.querySelector(".desktop-container");
+		const tocHeader = document.getElementById("desktop-toc-header");
+		const arrowIcon = tocHeader?.querySelector(".arrow-icon");
 
-	// Handle manual toggle
-	tocHeader?.addEventListener("click", () => {
-		isCollapsed = !isCollapsed;
-		isAutoCollapsed = false;
-		desktopContainer?.classList.toggle("collapsed", isCollapsed);
-		arrowIcon?.classList.toggle("collapsed", isCollapsed);
-	});
+		// Handle mobile TOC
+		const header = document.querySelector(".collapse-header");
+		const content = document.querySelector(".collapse-content");
+		const mobileArrow = header?.querySelector(".arrow-icon");
 
-	// Handle scroll-based collapse
-	window.addEventListener("scroll", () => {
-		if (!desktopContainer || isScrollingToSection) return;
-
-		const containerRect = desktopContainer.getBoundingClientRect();
-		const isAtTop = containerRect.top <= 32;
-
-		if (!isAtTop) {
-			isCollapsed = false;
-			isAutoCollapsed = false;
-			desktopContainer.classList.remove("collapsed");
-			arrowIcon?.classList.remove("collapsed");
-		} else if (!isAutoCollapsed && !isCollapsed) {
-			isAutoCollapsed = true;
-			isCollapsed = true;
-			desktopContainer.classList.add("collapsed");
-			arrowIcon?.classList.add("collapsed");
-		}
-	});
-
-	// Handle mobile TOC
-	const header = document.querySelector(".collapse-header");
-	const content = document.querySelector(".collapse-content");
-	const mobileArrow = header?.querySelector(".arrow-icon");
-
-	header?.addEventListener("click", () => {
-		content?.classList.toggle("expanded");
-		mobileArrow?.classList.toggle("expanded");
-	});
-
-	// Smooth scrolling for TOC links
-	document.querySelectorAll(".toc-link").forEach((link) => {
-		link.addEventListener("click", (e) => {
-			e.preventDefault();
-			const targetId = link.getAttribute("href")?.slice(1);
-			if (!targetId) return;
-
-			const targetElement = document.getElementById(targetId);
-			if (!targetElement) return;
-
-			isScrollingToSection = true;
-			targetElement.scrollIntoView({
-				behavior: "smooth",
-				block: "start",
+		// Clean up existing listeners if they exist
+		const existingHandlers = (tocHeader as any)?._tocHandlers;
+		if (existingHandlers) {
+			tocHeader?.removeEventListener("click", existingHandlers.desktopClick);
+			header?.removeEventListener("click", existingHandlers.mobileClick);
+			window.removeEventListener("scroll", existingHandlers.scroll);
+			
+			// Remove TOC link listeners
+			document.querySelectorAll(".toc-link").forEach((link, index) => {
+				const handler = (link as any)._tocLinkHandler;
+				if (handler) {
+					link.removeEventListener("click", handler);
+				}
 			});
+		}
 
-			setTimeout(() => {
-				isScrollingToSection = false;
-			}, 1000);
+		// Desktop toggle handler
+		const desktopClickHandler = () => {
+			isCollapsed = !isCollapsed;
+			isAutoCollapsed = false;
+			desktopContainer?.classList.toggle("collapsed", isCollapsed);
+			arrowIcon?.classList.toggle("collapsed", isCollapsed);
+		};
 
-			history.pushState(null, "", `#${targetId}`);
+		// Mobile toggle handler
+		const mobileClickHandler = () => {
+			content?.classList.toggle("expanded");
+			mobileArrow?.classList.toggle("expanded");
+		};
+
+		// Scroll handler for desktop auto-collapse
+		const scrollHandler = () => {
+			if (!desktopContainer || isScrollingToSection) return;
+
+			const containerRect = desktopContainer.getBoundingClientRect();
+			const isAtTop = containerRect.top <= 32;
+
+			if (!isAtTop) {
+				isCollapsed = false;
+				isAutoCollapsed = false;
+				desktopContainer.classList.remove("collapsed");
+				arrowIcon?.classList.remove("collapsed");
+			} else if (!isAutoCollapsed && !isCollapsed) {
+				isAutoCollapsed = true;
+				isCollapsed = true;
+				desktopContainer.classList.add("collapsed");
+				arrowIcon?.classList.add("collapsed");
+			}
+		};
+
+		// Store handlers for cleanup
+		if (tocHeader) {
+			(tocHeader as any)._tocHandlers = {
+				desktopClick: desktopClickHandler,
+				mobileClick: mobileClickHandler,
+				scroll: scrollHandler
+			};
+		}
+
+		// Add event listeners
+		tocHeader?.addEventListener("click", desktopClickHandler);
+		header?.addEventListener("click", mobileClickHandler);
+		window.addEventListener("scroll", scrollHandler);
+
+		// Smooth scrolling for TOC links
+		document.querySelectorAll(".toc-link").forEach((link) => {
+			const linkClickHandler = (e: Event) => {
+				e.preventDefault();
+				const targetId = (link as HTMLAnchorElement).getAttribute("href")?.slice(1);
+				if (!targetId) return;
+
+				const targetElement = document.getElementById(targetId);
+				if (!targetElement) return;
+
+				isScrollingToSection = true;
+				targetElement.scrollIntoView({
+					behavior: "smooth",
+					block: "start",
+				});
+
+				setTimeout(() => {
+					isScrollingToSection = false;
+				}, 1000);
+
+				history.pushState(null, "", `#${targetId}`);
+			};
+
+			// Store handler for cleanup
+			(link as any)._tocLinkHandler = linkClickHandler;
+			link.addEventListener("click", linkClickHandler);
 		});
-	});
+	}
+
+	// Initialize on page load
+	initializeTOC();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeTOC);
 </script>

@@ -197,13 +197,16 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		console.timeEnd("filter-operation");
 	}
 
-	// Listen for filter changes with debounce
-	let filterTimeout: number;
-	document.addEventListener("filter-change", ((event: CustomEvent) => {
-		clearTimeout(filterTimeout);
-		filterTimeout = setTimeout(() => {
-			const { topic, growthStage, type } = event.detail;
-			filterGridItems(topic, growthStage, type);
-		}, 50) as unknown as number;
-	}) as EventListener);
+	// Set up event listeners for view transitions compatibility
+	document.addEventListener("astro:page-load", () => {
+		// Listen for filter changes with debounce
+		let filterTimeout: number;
+		document.addEventListener("filter-change", ((event: CustomEvent) => {
+			clearTimeout(filterTimeout);
+			filterTimeout = setTimeout(() => {
+				const { topic, growthStage, type } = event.detail;
+				filterGridItems(topic, growthStage, type);
+			}, 50) as unknown as number;
+		}) as EventListener);
+	});
 </script>

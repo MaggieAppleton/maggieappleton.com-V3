@@ -155,65 +155,88 @@ const { header } = Astro.props;
 <script>
 	import { animate } from "motion";
 
-	document.querySelectorAll(".accordion-button").forEach((button) => {
-		button.addEventListener("click", () => {
-			const panel = button.nextElementSibling;
-			const moreText = button.querySelector(".more-text");
-			const chevronIcon = button.querySelector(".more svg");
+	function initializeAccordions() {
+		const buttons = document.querySelectorAll(".accordion-button");
 
-			button.classList.toggle("open");
-
-			if (button.classList.contains("open")) {
-				// Opening animation
-				if (panel instanceof HTMLElement) {
-					panel.style.display = "block"; // Ensure panel is visible for animation
-					animate(
-						panel,
-						{
-							height: ["0px", `${panel.scrollHeight}px`],
-							opacity: [0, 1],
-						},
-						{
-							duration: 0.3,
-							easing: "ease-in-out",
-						},
-					).then(() => {
-						panel.style.height = "auto";
-					});
-				}
-
-				if (moreText instanceof HTMLElement) {
-					moreText.textContent = "Show less";
-				}
-				if (chevronIcon instanceof SVGElement) {
-					chevronIcon.setAttribute("name", "heroicons:chevron-up");
-				}
-			} else {
-				// Closing animation
-				if (panel instanceof HTMLElement) {
-					panel.style.height = `${panel.scrollHeight}px`; // Set current height before animating
-					animate(
-						panel,
-						{
-							height: [`${panel.scrollHeight}px`, "0px"],
-							opacity: [1, 0],
-						},
-						{
-							duration: 0.3,
-							easing: "ease-in-out",
-						},
-					).then(() => {
-						panel.style.display = "none";
-					});
-
-					if (moreText instanceof HTMLElement) {
-						moreText.textContent = "Read more";
-					}
-					if (chevronIcon instanceof SVGElement) {
-						chevronIcon.setAttribute("name", "heroicons:chevron-down");
-					}
-				}
+		// Clean up existing listeners
+		buttons.forEach((button) => {
+			const existingHandler = (button as any)._accordionHandler;
+			if (existingHandler) {
+				button.removeEventListener("click", existingHandler);
 			}
 		});
-	});
+
+		// Add new listeners
+		buttons.forEach((button) => {
+			const clickHandler = () => {
+				const panel = button.nextElementSibling;
+				const moreText = button.querySelector(".more-text");
+				const chevronIcon = button.querySelector(".more svg");
+
+				button.classList.toggle("open");
+
+				if (button.classList.contains("open")) {
+					// Opening animation
+					if (panel instanceof HTMLElement) {
+						panel.style.display = "block"; // Ensure panel is visible for animation
+						animate(
+							panel,
+							{
+								height: ["0px", `${panel.scrollHeight}px`],
+								opacity: [0, 1],
+							},
+							{
+								duration: 0.3,
+								easing: "ease-in-out",
+							},
+						).then(() => {
+							panel.style.height = "auto";
+						});
+					}
+
+					if (moreText instanceof HTMLElement) {
+						moreText.textContent = "Show less";
+					}
+					if (chevronIcon instanceof SVGElement) {
+						chevronIcon.setAttribute("name", "heroicons:chevron-up");
+					}
+				} else {
+					// Closing animation
+					if (panel instanceof HTMLElement) {
+						panel.style.height = `${panel.scrollHeight}px`; // Set current height before animating
+						animate(
+							panel,
+							{
+								height: [`${panel.scrollHeight}px`, "0px"],
+								opacity: [1, 0],
+							},
+							{
+								duration: 0.3,
+								easing: "ease-in-out",
+							},
+						).then(() => {
+							panel.style.display = "none";
+						});
+
+						if (moreText instanceof HTMLElement) {
+							moreText.textContent = "Read more";
+						}
+						if (chevronIcon instanceof SVGElement) {
+							chevronIcon.setAttribute("name", "heroicons:chevron-down");
+						}
+					}
+				}
+			};
+
+			// Store handler for cleanup
+			(button as any)._accordionHandler = clickHandler;
+			button.addEventListener("click", clickHandler);
+		});
+	}
+
+	// Initialize on page load
+	initializeAccordions();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeAccordions);
 </script>

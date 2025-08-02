@@ -109,6 +109,8 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 </div>
 
 <script>
+	import { animate } from "motion";
+
 	function initializeDropdown() {
 		const button = document.querySelector(".popover-button");
 		const megamenu = document.getElementById("garden-dropdown");
@@ -117,16 +119,33 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 			// Force close on initialization
 			closeMegamenu();
 
-			// Add Escape key handler
-			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape" && megamenu.style.display !== "none") {
+			// Remove existing listeners to prevent duplicates
+			const existingHandlers = (button as any)._megamenuHandlers;
+			if (existingHandlers) {
+				button.removeEventListener("click", existingHandlers.click);
+				document.removeEventListener("keydown", existingHandlers.keydown);
+				document.removeEventListener("focusout", existingHandlers.focusout);
+				document.removeEventListener("astro:before-preparation", existingHandlers.beforePrep);
+			}
+
+			// Create handler functions
+			const clickHandler = (e: Event) => {
+				e.stopPropagation();
+				if (megamenu.classList.contains("hidden")) {
+					openMegamenu();
+				} else {
+					closeMegamenu();
+				}
+			};
+
+			const keydownHandler = (e: KeyboardEvent) => {
+				if (e.key === "Escape" && !megamenu.classList.contains("hidden")) {
 					closeMegamenu();
 					(button as HTMLElement)?.focus();
 				}
-			});
+			};
 
-			// Close megamenu when focus moves outside navigation
-			document.addEventListener("focusout", (e) => {
+			const focusoutHandler = (e: FocusEvent) => {
 				const target = e.relatedTarget as Node;
 				// Don't close if clicking a link inside the megamenu
 				if (target && megamenu.contains(target)) {
@@ -135,38 +154,62 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 				if (!megamenu.contains(target) && !button.contains(target)) {
 					closeMegamenu();
 				}
-			});
+			};
 
-			// Handle button clicks
-			button.addEventListener("click", (e) => {
-				e.stopPropagation();
-				if (megamenu.style.display === "none") {
-					openMegamenu();
-				} else {
-					closeMegamenu();
-				}
-			});
+			// Store handlers for cleanup
+			(button as any)._megamenuHandlers = {
+				click: clickHandler,
+				keydown: keydownHandler,
+				focusout: focusoutHandler,
+				beforePrep: closeMegamenu
+			};
 
-			// Close before navigation starts
+			// Add event listeners
+			button.addEventListener("click", clickHandler);
+			document.addEventListener("keydown", keydownHandler);
+			document.addEventListener("focusout", focusoutHandler);
 			document.addEventListener("astro:before-preparation", closeMegamenu);
 		}
 
 		function openMegamenu() {
 			if (!megamenu || !button) return;
-			megamenu.style.display = "flex";
+			
+			megamenu.classList.remove("hidden");
 			button.setAttribute("aria-expanded", "true");
-			requestAnimationFrame(() => {
-				megamenu.style.opacity = "1";
-				megamenu.style.transform = "rotateX(0deg)";
-			});
+
+			animate(
+				megamenu,
+				{
+					opacity: [0, 1],
+					transform: ["rotateX(90deg)", "rotateX(0deg)"],
+					scale: [0.95, 1]
+				},
+				{
+					duration: 0.3,
+					easing: "ease-out"
+				}
+			);
 		}
 
 		function closeMegamenu() {
 			if (!button || !megamenu) return;
-			megamenu.style.display = "none";
-			megamenu.style.opacity = "0";
-			megamenu.style.transform = "rotateX(90deg)";
+			
 			button.setAttribute("aria-expanded", "false");
+
+			animate(
+				megamenu,
+				{
+					opacity: [1, 0],
+					transform: ["rotateX(0deg)", "rotateX(90deg)"],
+					scale: [1, 0.95]
+				},
+				{
+					duration: 0.2,
+					easing: "ease-in"
+				}
+			).then(() => {
+				megamenu.classList.add("hidden");
+			});
 		}
 	}
 
@@ -299,13 +342,17 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		z-index: 1;
 		position: absolute;
 		transform-origin: top;
-		transition:
-			opacity 0.6s ease-in-out,
-			transform 0.6s ease-in-out;
 		padding: var(--space-2xs);
 		min-width: 600px;
 		right: -100%;
 		top: 100%;
+		opacity: 0;
+		transform: rotateX(90deg);
+		scale: 0.95;
+	}
+
+	.megamenu.hidden {
+		display: none;
 	}
 
 	.megamenu-grid {

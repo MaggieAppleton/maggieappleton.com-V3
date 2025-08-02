@@ -10,11 +10,31 @@ import { Icon } from "astro-icon/components";
 </div>
 
 <script>
-	document
-		.getElementById("back-to-top-button")
-		?.addEventListener("click", () => {
+	function initializeBackToTop() {
+		const button = document.getElementById("back-to-top-button");
+		if (!button) return;
+
+		// Clean up existing listener
+		const existingHandler = (button as any)._backToTopHandler;
+		if (existingHandler) {
+			button.removeEventListener("click", existingHandler);
+		}
+
+		// Create new handler
+		const clickHandler = () => {
 			window.scrollTo(0, 0);
-		});
+		};
+
+		// Store handler for cleanup
+		(button as any)._backToTopHandler = clickHandler;
+		button.addEventListener("click", clickHandler);
+	}
+
+	// Initialize on page load
+	initializeBackToTop();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeBackToTop);
 </script>
 
 <style>

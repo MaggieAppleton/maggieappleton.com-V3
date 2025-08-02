@@ -342,8 +342,8 @@ const initialTopicsCount = 6;
 		);
 	}
 
-	// Set up event listeners once the DOM is loaded
-	document.addEventListener("DOMContentLoaded", () => {
+	// Set up event listeners for view transitions compatibility
+	document.addEventListener("astro:page-load", () => {
 		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");

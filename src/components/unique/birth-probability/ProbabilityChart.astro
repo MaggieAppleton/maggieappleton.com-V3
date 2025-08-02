@@ -152,11 +152,6 @@ const { multiBirthCsv, firstTimeCsv } = Astro.props;
 	// Create tooltip variable in the global scope
 	let tooltipDiv;
 
-	// Initialize tooltip after DOM is loaded
-	document.addEventListener("DOMContentLoaded", function () {
-		tooltipDiv = d3.select("#tooltip");
-	});
-
 	// Global tooltip functions that can be used across the chart
 	function showTooltip(event, d, pregnancyData = false) {
 		if (!tooltipDiv) {
@@ -639,35 +634,67 @@ const { multiBirthCsv, firstTimeCsv } = Astro.props;
 
 	// Handle pregnancy data updates
 	let lastPregnancyData = null;
+	let pregnancyDataHandler = null;
+	let resizeHandler = null;
 
-	document.addEventListener("pregnancy-data-update", function (e) {
-		const pregnancyData = e.detail;
-		lastPregnancyData = pregnancyData;
+	function initializeProbabilityChart() {
+		// Initialize tooltip
+		tooltipDiv = d3.select("#tooltip");
 
-		// Use the appropriate dataset based on first-time mother status
-		const csvDataToUse = pregnancyData.isFirstTimeMother ? firstTimeCsvData : multiBirthCsvData;
+		// Clean up existing event listeners
+		if (pregnancyDataHandler) {
+			document.removeEventListener("pregnancy-data-update", pregnancyDataHandler);
+		}
+		if (resizeHandler) {
+			window.removeEventListener("resize", resizeHandler);
+		}
 
-		// Process and render the data
-		const processedData = processData(csvDataToUse, pregnancyData);
-		renderChart(processedData, pregnancyData);
-	});
+		// Create pregnancy data update handler
+		pregnancyDataHandler = function (e) {
+			const pregnancyData = e.detail;
+			lastPregnancyData = pregnancyData;
 
-	// Handle window resize
-	let resizeTimer;
-	window.addEventListener("resize", function () {
-		clearTimeout(resizeTimer);
-		resizeTimer = setTimeout(function () {
-			if (lastPregnancyData) {
-				const csvDataToUse = lastPregnancyData.isFirstTimeMother
-					? firstTimeCsvData
-					: multiBirthCsvData;
-				const processedData = processData(csvDataToUse, lastPregnancyData);
-				renderChart(processedData, lastPregnancyData);
-			} else {
-				// If no pregnancy data has been set yet, still redraw with default data
-				const initialData = processData(multiBirthCsvData, null);
-				renderChart(initialData, null);
-			}
-		}, 250);
-	});
+			// Use the appropriate dataset based on first-time mother status
+			const csvDataToUse = pregnancyData.isFirstTimeMother ? firstTimeCsvData : multiBirthCsvData;
+
+			// Process and render the data
+			const processedData = processData(csvDataToUse, pregnancyData);
+			renderChart(processedData, pregnancyData);
+		};
+
+		// Create resize handler
+		let resizeTimer;
+		resizeHandler = function () {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(function () {
+				if (lastPregnancyData) {
+					const csvDataToUse = lastPregnancyData.isFirstTimeMother
+						? firstTimeCsvData
+						: multiBirthCsvData;
+					const processedData = processData(csvDataToUse, lastPregnancyData);
+					renderChart(processedData, lastPregnancyData);
+				} else {
+					// If no pregnancy data has been set yet, still redraw with default data
+					const initialData = processData(multiBirthCsvData, null);
+					renderChart(initialData, null);
+				}
+			}, 250);
+		};
+
+		// Add event listeners
+		document.addEventListener("pregnancy-data-update", pregnancyDataHandler);
+		window.addEventListener("resize", resizeHandler);
+
+		// Initial render with default data if needed
+		if (!lastPregnancyData) {
+			const initialData = processData(multiBirthCsvData, null);
+			renderChart(initialData, null);
+		}
+	}
+
+	// Initialize on page load
+	initializeProbabilityChart();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeProbabilityChart);
 </script>

@@ -7,10 +7,19 @@
 </div>
 
 <script>
-	function initializeObserver() {
-		const boxes = document.querySelectorAll(".animated-box");
+	let currentObserver: IntersectionObserver | null = null;
 
-		const observer = new IntersectionObserver(
+	function initializeObserver() {
+		// Clean up existing observer
+		if (currentObserver) {
+			currentObserver.disconnect();
+			currentObserver = null;
+		}
+
+		const boxes = document.querySelectorAll(".animated-box");
+		if (boxes.length === 0) return;
+
+		currentObserver = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
 					if (entry.isIntersecting) {
@@ -26,7 +35,14 @@
 			},
 		);
 
-		boxes.forEach((box) => observer.observe(box));
+		boxes.forEach((box) => currentObserver?.observe(box));
+	}
+
+	function cleanup() {
+		if (currentObserver) {
+			currentObserver.disconnect();
+			currentObserver = null;
+		}
 	}
 
 	// Initialize on first load
@@ -34,6 +50,9 @@
 
 	// Reinitialize after view transitions
 	document.addEventListener("astro:page-load", initializeObserver);
+
+	// Cleanup on page leave
+	document.addEventListener("astro:before-swap", cleanup);
 </script>
 
 <style>

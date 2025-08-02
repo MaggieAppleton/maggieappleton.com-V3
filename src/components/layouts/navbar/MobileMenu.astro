@@ -61,16 +61,36 @@ import { Icon } from "astro-icon/components";
 </style>
 
 <script>
-	// Handle navigation and auto-close
-	document.addEventListener("astro:page-load", () => {
+	function initializeMobileMenu() {
 		const mobileMenu = document.getElementById("mobile-menu") as HTMLElement;
 		const links = mobileMenu?.querySelectorAll("a");
 
-		links?.forEach((link) => {
-			link.addEventListener("click", () => {
-				mobileMenu?.classList.remove("open");
-				document.body.style.overflow = "auto";
-			});
+		if (!mobileMenu || !links) return;
+
+		// Clean up existing listeners
+		links.forEach((link) => {
+			const existingHandler = (link as any)._mobileMenuHandler;
+			if (existingHandler) {
+				link.removeEventListener("click", existingHandler);
+			}
 		});
-	});
+
+		// Create and attach new handlers
+		links.forEach((link) => {
+			const clickHandler = () => {
+				mobileMenu.classList.remove("open");
+				document.body.style.overflow = "auto";
+			};
+
+			// Store handler for cleanup
+			(link as any)._mobileMenuHandler = clickHandler;
+			link.addEventListener("click", clickHandler);
+		});
+	}
+
+	// Initialize on page load
+	initializeMobileMenu();
+
+	// Re-initialize after view transitions
+	document.addEventListener("astro:page-load", initializeMobileMenu);
 </script>
