@@ -1,7 +1,7 @@
 ---
 interface Props {
 	src: string;
-	title: string;
+	title?: string;
 	width?: string;
 	height?: string;
 	margin?: string;
@@ -9,17 +9,45 @@ interface Props {
 }
 
 const { src, title, width = "1000", height = "570", margin } = Astro.props;
+
+// Handle local video files similar to BasicImage
+const videos = import.meta.glob<{ default: string }>("/src/images/**/*.{mp4,webm,mov}");
+
+// If src is a local video path, convert it to the correct import
+const videoSrc = typeof src === "string" && src.startsWith("/images") && src.match(/\.(mp4|webm|mov)$/i)
+	? (await videos["/src" + src]()).default
+	: src;
+
+// Determine if this is a local video file (not a URL)
+const isLocalVideo = typeof videoSrc === "string" && !videoSrc.startsWith("http") && videoSrc.match(/\.(mp4|webm|mov)$/i);
 ---
 
 <div class="video" style={margin ? `margin: ${margin}` : ""}>
-	<iframe
-		width={width}
-		height={height}
-		src={src}
-		frame-border="0"
-		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-		allowfullscreen
-		title={title}></iframe>
+	{
+		isLocalVideo ? (
+			<video
+				width={width}
+				height={height}
+				controls
+				muted
+				loop
+				title={title}
+			>
+				<source src={videoSrc} type="video/mp4" />
+				Your browser does not support the video tag.
+			</video>
+		) : (
+			<iframe
+				width={width}
+				height={height}
+				src={videoSrc}
+				frameborder="0"
+				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+				allowfullscreen
+				title={title}
+			></iframe>
+		)
+	}
 </div>
 
 <style>
@@ -44,7 +72,8 @@ const { src, title, width = "1000", height = "570", margin } = Astro.props;
 		}
 	}
 
-	iframe {
+	iframe,
+	video {
 		left: 0;
 		top: 0;
 		height: 100%;
@@ -53,7 +82,8 @@ const { src, title, width = "1000", height = "570", margin } = Astro.props;
 	}
 
 	@media (max-width: 724px) {
-		iframe {
+		iframe,
+		video {
 			max-width: 100%;
 		}
 	}
