@@ -1,6 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
 import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
+import PatternIcon from "../../icons/PatternIcon.astro";
 ---
 
 <div class="main" role="navigation" aria-label="Main">
@@ -17,31 +18,87 @@ import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
 			<Icon name="heroicons:chevron-down" size={20} class="chevron-icon" />
 		</button>
 
-		<div class="dropdown" id="garden-dropdown" role="list">
-			<a href="/essays" role="listitem">
-				<span class="dropdown-link">Essays</span>
-			</a>
-			<a href="/notes">
-				<span class="dropdown-link">Notes</span>
-			</a>
-			<a href="/patterns">
-				<span class="dropdown-link">Patterns</span>
-			</a>
-			<a href="/smidgeons">
-				<span class="dropdown-link">Smidgeons</span>
-			</a>
-			<a href="/talks">
-				<span class="dropdown-link">Talks</span>
-			</a>
-			<a href="/podcasts">
-				<span class="dropdown-link">Podcasts</span>
-			</a>
-			<a href="/library">
-				<span class="dropdown-link">Library</span>
-			</a>
-			<a href="/antilibrary">
-				<span class="dropdown-link">Antilibrary</span>
-			</a>
+		<div class="megamenu" id="garden-dropdown" role="list">
+			<div class="megamenu-grid">
+				<a href="/essays" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="evergreen" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Essays</h3>
+							<p class="megamenu-description">
+								Opinionated, long-form narrative writing with an agenda
+							</p>
+						</div>
+					</div>
+				</a>
+				<a href="/notes" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="seedling" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Notes</h3>
+							<p class="megamenu-description">
+								Loose notes on things I don't entirely understand yet
+							</p>
+						</div>
+					</div>
+				</a>
+				<a href="/patterns" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<PatternIcon size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Patterns</h3>
+							<p class="megamenu-description">
+								A catalogue of design patterns gathered from observation and research
+							</p>
+						</div>
+					</div>
+				</a>
+				<a href="/smidgeons" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="heroicons:paper-clip" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Smidgeons</h3>
+							<p class="megamenu-description">Interesting links, papers, and tiny thoughts</p>
+						</div>
+					</div>
+				</a>
+				<a href="/talks" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="heroicons:presentation-chart-line" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Talks</h3>
+							<p class="megamenu-description">Conference talk slides, transcripts, and videos</p>
+						</div>
+					</div>
+				</a>
+				<a href="/podcasts" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="heroicons:microphone" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Podcasts</h3>
+							<p class="megamenu-description">Podcast episodes I've been a guest on</p>
+						</div>
+					</div>
+				</a>
+				<a href="/library" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="heroicons:book-open" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Library</h3>
+							<p class="megamenu-description">Books I've read and recommend</p>
+						</div>
+					</div>
+				</a>
+				<a href="/antilibrary" role="listitem" class="megamenu-item">
+					<div class="megamenu-item-content">
+						<Icon name="heroicons:cube-transparent" size={20} class="megamenu-icon" />
+						<div class="megamenu-text">
+							<h3 class="megamenu-title">Antilibrary</h3>
+							<p class="megamenu-description">Books I like the idea of having read</p>
+						</div>
+					</div>
+				</a>
+			</div>
 		</div>
 	</div>
 
@@ -54,61 +111,61 @@ import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
 <script>
 	function initializeDropdown() {
 		const button = document.querySelector(".popover-button");
-		const dropdown = document.getElementById("garden-dropdown");
+		const megamenu = document.getElementById("garden-dropdown");
 
-		if (button && dropdown) {
+		if (button && megamenu) {
 			// Force close on initialization
-			closeDropdown();
+			closeMegamenu();
 
 			// Add Escape key handler
 			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape" && dropdown.style.display !== "none") {
-					closeDropdown();
+				if (e.key === "Escape" && megamenu.style.display !== "none") {
+					closeMegamenu();
 					(button as HTMLElement)?.focus();
 				}
 			});
 
-			// Close dropdown when focus moves outside navigation
+			// Close megamenu when focus moves outside navigation
 			document.addEventListener("focusout", (e) => {
 				const target = e.relatedTarget as Node;
-				// Don't close if clicking a link inside the dropdown
-				if (target && dropdown.contains(target)) {
+				// Don't close if clicking a link inside the megamenu
+				if (target && megamenu.contains(target)) {
 					return;
 				}
-				if (!dropdown.contains(target) && !button.contains(target)) {
-					closeDropdown();
+				if (!megamenu.contains(target) && !button.contains(target)) {
+					closeMegamenu();
 				}
 			});
 
 			// Handle button clicks
 			button.addEventListener("click", (e) => {
 				e.stopPropagation();
-				if (dropdown.style.display === "none") {
-					openDropdown();
+				if (megamenu.style.display === "none") {
+					openMegamenu();
 				} else {
-					closeDropdown();
+					closeMegamenu();
 				}
 			});
 
 			// Close before navigation starts
-			document.addEventListener("astro:before-preparation", closeDropdown);
+			document.addEventListener("astro:before-preparation", closeMegamenu);
 		}
 
-		function openDropdown() {
-			if (!dropdown || !button) return;
-			dropdown.style.display = "flex";
+		function openMegamenu() {
+			if (!megamenu || !button) return;
+			megamenu.style.display = "flex";
 			button.setAttribute("aria-expanded", "true");
 			requestAnimationFrame(() => {
-				dropdown.style.opacity = "1";
-				dropdown.style.transform = "rotateX(0deg)";
+				megamenu.style.opacity = "1";
+				megamenu.style.transform = "rotateX(0deg)";
 			});
 		}
 
-		function closeDropdown() {
-			if (!button || !dropdown) return;
-			dropdown.style.display = "none";
-			dropdown.style.opacity = "0";
-			dropdown.style.transform = "rotateX(90deg)";
+		function closeMegamenu() {
+			if (!button || !megamenu) return;
+			megamenu.style.display = "none";
+			megamenu.style.opacity = "0";
+			megamenu.style.transform = "rotateX(90deg)";
 			button.setAttribute("aria-expanded", "false");
 		}
 	}
@@ -200,7 +257,11 @@ import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
 	}
 
 	.popover-button {
-		padding: 0;
+		padding: 0 0.25rem;
+		border-radius: 4px;
+		margin-left: var(--space-3xs);
+		position: relative;
+		top: 0;
 	}
 
 	.chevron-icon {
@@ -210,53 +271,137 @@ import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
 			background-color 0.3s ease-in-out,
 			transform 0.8s ease-in-out;
 		color: var(--color-gray-600);
-		margin-left: var(--space-3xs);
-		position: relative;
-		top: 0;
+	}
+
+	.popover-button:hover {
+		cursor: pointer;
+		background-color: var(--color-gray-100);
 	}
 
 	.popover-button:hover .chevron-icon {
 		color: var(--color-bright-crimson);
 		transform: rotateY(180deg);
-		cursor: pointer;
-		background-color: var(--color-gray-100);
-		border-radius: 4px;
 	}
 
-	.dropdown {
+	.megamenu {
 		display: flex;
-		flex-direction: column;
 		margin-top: 0.6rem;
 		background: var(--color-cream);
-		margin-left: 0.4rem;
 		border: 1px solid var(--color-tinted-cream);
 		border-radius: var(--border-radius-base);
-		box-shadow: var(--box-shadow-lg);
+		box-shadow:
+			0.2px 0.4px 0.8px -10px rgba(0, 0, 0, 0.1),
+			0.4px 0.9px 2px -10px rgba(0, 0, 0, 0.11),
+			0.8px 1.8px 3.8px -10px rgba(0, 0, 0, 0.12),
+			1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.13),
+			2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.15),
+			6px 14px 30px -10px rgba(0, 0, 0, 0.18);
 		z-index: 1;
 		position: absolute;
 		transform-origin: top;
 		transition:
 			opacity 0.6s ease-in-out,
 			transform 0.6s ease-in-out;
+		padding: var(--space-2xs);
+		min-width: 600px;
+		right: -100%;
+		top: 100%;
 	}
 
-	.dropdown-link {
-		margin: 0;
-		color: var(--color-gray-800);
+	.megamenu-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0;
+		width: 100%;
+	}
+
+	.megamenu-item {
 		text-decoration: none;
-		font-size: var(--font-size-xs);
-		font-family: var(--font-sans);
-		border-bottom: 1px solid var(--color-tinted-cream);
-		border-left: 2px solid var(--color-cream);
-		padding: var(--space-2xs) var(--space-l) var(--space-2xs) var(--space-xs);
+		padding: var(--space-xs);
+		border-radius: var(--border-radius-base);
 		transition: all 0.3s ease-in-out;
-		cursor: pointer;
+		border: 1px solid transparent;
 		display: block;
 	}
 
-	.dropdown-link:hover {
+	.megamenu-item-content {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-start;
+		gap: var(--space-xs);
+	}
+
+	.megamenu-icon {
+		flex-shrink: 0;
+		color: var(--color-sea-blue);
+		margin-top: 2px;
+		transition: all 0.3s ease-in-out;
+	}
+
+	.megamenu-text {
+		flex: 1;
+	}
+
+	.evergreen__cls-1 {
+		fill: var(--color-sea-blue);
+	}
+
+	.megamenu-item:hover {
 		background: var(--color-light-cream);
+		border-color: var(--color-tinted-cream);
+		transform: translateY(-1px);
+	}
+
+	.megamenu-title {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--color-gray-800);
+		margin: 0 0 var(--space-3xs) 0;
+		transition: color 0.3s ease-in-out;
+	}
+
+	.megamenu-description {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		margin: 0;
+		line-height: var(--leading-snug);
+		transition: color 0.3s ease-in-out;
+	}
+
+	.megamenu-item:hover .megamenu-title {
 		color: var(--color-crimson);
+	}
+
+	.megamenu-item:hover .megamenu-description {
+		color: var(--color-gray-800);
+	}
+
+	.megamenu-item:hover .megamenu-icon {
+		color: var(--color-crimson);
+		transform: scale(1.1);
+	}
+
+	/* Pattern card leaf animations for the patterns menu item */
+	.megamenu-item:hover :global(.left-leaf) {
+		transform: translateX(3px);
+		transition: transform 0.3s ease-in-out;
+	}
+
+	.megamenu-item:hover :global(.right-leaf) {
+		transform: translateX(-3px);
+		transition: transform 0.3s ease-in-out;
+	}
+
+	:global(.left-leaf) {
+		transition: transform 0.3s ease-in-out;
+		will-change: transform;
+	}
+
+	:global(.right-leaf) {
+		transition: transform 0.3s ease-in-out;
+		will-change: transform;
 	}
 
 	.outside-dropdown :global(.link-container) {
@@ -269,6 +414,23 @@ import UnderlineHoverLink from "../../mdx/UnderlineHoverLink.astro";
 		font-size: var(--font-size-xs);
 		font-family: var(--font-sans);
 		color: var(--color-gray-800);
+	}
+
+	@media screen and (max-width: 1024px) {
+		.megamenu {
+			min-width: 500px;
+		}
+	}
+
+	@media screen and (max-width: 768px) {
+		.megamenu {
+			min-width: 400px;
+			right: -100px;
+		}
+
+		.megamenu-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	@media screen and (max-width: 550px) {
