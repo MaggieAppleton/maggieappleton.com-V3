@@ -259,32 +259,63 @@ const initialTopicsCount = 6;
 		type: string;
 	}
 
-	const filterState: FilterState = {
-		topic: "",
-		growthStage: "",
-		type: "",
-	};
+	// Store filter state globally to persist across view transitions
+	declare global {
+		interface Window {
+			gardenFilterState?: FilterState;
+		}
+	}
 
-	// Function to restore filter state from UI elements
+	function getFilterState(): FilterState {
+		if (!window.gardenFilterState) {
+			window.gardenFilterState = {
+				topic: "",
+				growthStage: "",
+				type: "",
+			};
+		}
+		return window.gardenFilterState;
+	}
+
+	function setFilterState(newState: Partial<FilterState>) {
+		const state = getFilterState();
+		Object.assign(state, newState);
+	}
+
+	// Function to restore filter state from UI elements and global state
 	function restoreFilterState() {
+		const state = getFilterState();
 		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
 		const growthStagesSelect = document.getElementById("growth-stages-select") as HTMLSelectElement;
 		const typesSelect = document.getElementById("types-select") as HTMLSelectElement;
 
+		// Restore from global state first, then UI elements
 		if (topicsSelect) {
-			filterState.topic = topicsSelect.value;
+			if (state.topic) {
+				topicsSelect.value = state.topic;
+			} else {
+				state.topic = topicsSelect.value;
+			}
 		}
 		if (growthStagesSelect) {
-			filterState.growthStage = growthStagesSelect.value;
+			if (state.growthStage) {
+				growthStagesSelect.value = state.growthStage;
+			} else {
+				state.growthStage = growthStagesSelect.value;
+			}
 		}
 		if (typesSelect) {
-			filterState.type = typesSelect.value;
+			if (state.type) {
+				typesSelect.value = state.type;
+			} else {
+				state.type = typesSelect.value;
+			}
 		}
 
 		// Update topic buttons to match the state
 		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 		topicButtons.forEach((btn) => {
-			btn.classList.toggle("selected", btn.getAttribute("data-topic") === filterState.topic);
+			btn.classList.toggle("selected", btn.getAttribute("data-topic") === state.topic);
 		});
 	}
 
@@ -307,6 +338,7 @@ const initialTopicsCount = 6;
 		const button = (e.target as HTMLElement).closest(".topic-button");
 		if (!button) return;
 
+		const state = getFilterState();
 		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
 		const wasSelected = button.classList.contains("selected");
@@ -317,20 +349,20 @@ const initialTopicsCount = 6;
 		// If the button wasn't previously selected, select it
 		if (!wasSelected) {
 			button.classList.add("selected");
-			filterState.topic = button.getAttribute("data-topic") || "";
+			state.topic = button.getAttribute("data-topic") || "";
 		} else {
-			filterState.topic = "";
+			state.topic = "";
 		}
 
 		// Update mobile select to match
 		if (topicsSelect) {
-			topicsSelect.value = filterState.topic;
+			topicsSelect.value = state.topic;
 		}
 
 		// Dispatch filter change event
 		document.dispatchEvent(
 			new CustomEvent("filter-change", {
-				detail: { ...filterState },
+				detail: { ...state },
 			}),
 		);
 	}
@@ -339,10 +371,12 @@ const initialTopicsCount = 6;
 		const select = e.target as HTMLSelectElement;
 		if (!select || !select.id) return;
 
+		const state = getFilterState();
+
 		// Update filter state based on which select changed
 		switch (select.id) {
 			case "topics-select":
-				filterState.topic = select.value;
+				state.topic = select.value;
 				// Update topic buttons to match
 				const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 				topicButtons.forEach((btn) => {
@@ -350,17 +384,17 @@ const initialTopicsCount = 6;
 				});
 				break;
 			case "growth-stages-select":
-				filterState.growthStage = select.value;
+				state.growthStage = select.value;
 				break;
 			case "types-select":
-				filterState.type = select.value;
+				state.type = select.value;
 				break;
 		}
 
 		// Dispatch filter change event
 		document.dispatchEvent(
 			new CustomEvent("filter-change", {
-				detail: { ...filterState },
+				detail: { ...state },
 			}),
 		);
 	}
@@ -396,17 +430,32 @@ const initialTopicsCount = 6;
 			}
 
 			// Apply the current filter state to ensure consistency
-			if (filterState.topic || filterState.growthStage || filterState.type) {
+			const state = getFilterState();
+			if (state.topic || state.growthStage || state.type) {
 				document.dispatchEvent(
 					new CustomEvent("filter-change", {
-						detail: { ...filterState },
+						detail: { ...state },
 					}),
 				);
 			}
 		}, 100);
 	}
 
+	// Store current state before page swaps to preserve it across transitions
+	function preserveStateBeforeSwap() {
+		const state = getFilterState();
+		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
+		const growthStagesSelect = document.getElementById("growth-stages-select") as HTMLSelectElement;
+		const typesSelect = document.getElementById("types-select") as HTMLSelectElement;
+
+		// Update global state from current UI
+		if (topicsSelect) state.topic = topicsSelect.value;
+		if (growthStagesSelect) state.growthStage = growthStagesSelect.value;
+		if (typesSelect) state.type = typesSelect.value;
+	}
+
 	// Run on multiple events to ensure we catch all scenarios
+	document.addEventListener("astro:before-swap", preserveStateBeforeSwap);
 	document.addEventListener("astro:page-load", setupEventListeners);
 	document.addEventListener("astro:after-swap", setupEventListeners);
 	document.addEventListener("DOMContentLoaded", setupEventListeners);
