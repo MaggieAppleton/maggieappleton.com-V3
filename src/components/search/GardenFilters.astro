@@ -343,19 +343,26 @@ const initialTopicsCount = 6;
 	}
 
 	// Set up event listeners for view transitions compatibility
-	document.addEventListener("astro:page-load", () => {
+	function setupEventListeners() {
 		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");
 
 		if (toggleButton) {
+			toggleButton.removeEventListener("click", handleToggleClick);
 			toggleButton.addEventListener("click", handleToggleClick);
 		}
 		if (topicsList) {
+			topicsList.removeEventListener("click", handleTopicClick);
 			topicsList.addEventListener("click", handleTopicClick);
 		}
 		if (rightMenus) {
+			rightMenus.removeEventListener("change", handleSelectChange);
 			rightMenus.addEventListener("change", handleSelectChange);
 		}
-	});
+	}
+
+	// Run on initial load and after view transitions
+	document.addEventListener("astro:page-load", setupEventListeners);
+	document.addEventListener("DOMContentLoaded", setupEventListeners);
 </script>
