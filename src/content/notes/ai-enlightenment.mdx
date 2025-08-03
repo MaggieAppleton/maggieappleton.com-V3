@@ -1,0 +1,86 @@
+---
+title: "A Treatise Concerning ChatGPT Undermining the Enlightenment"
+description: ""
+startDate: "2025-08-03"
+updated: "2025-08-03"
+type: "note"
+topics: ["Language Models", "Artificial Intelligence", "Critical Thinking"]
+growthStage: "budding"
+draft: true
+---
+
+<IntroParagraph>I don't pay much attention to the torrent of AI think pieces published by the New York Times; I am not their target demographic. But [this one](https://archive.is/XLX2g), by Princeton professor of history [David A. Bell](https://history.princeton.edu/people/david-bell) hits some good notes.</IntroParagraph>
+
+Link embed: A.I. Is Shedding Enlightenment Values
+
+As an expert on the Enlightenment, he's clearly been roped into developing an opinion on whether we're in an AI-fuelled “second Enlightenment.”
+
+Remember the [Enlightenment](https://en.wikipedia.org/wiki/Age_of_Enlightenment)? That ~150 period between 1650-1800 that we retroactively constructed and labelled as a unified historical event. The age of reason. Post-scientific revolution. The main characters are a bunch of moody philosophers like Locke, Decartes, Hume, Kant, Rousseau, Diderot, Voltaire, etc. The vibe is reading pamphlets by candlelight, sporting powdered wigs and silk waistcoats, attending Parisian salons and London coffee houses, sipping laudanum, and retreating to the seaside when you contracted tuberculosis. Everyone is big on ditching tradition, questioning political and religious authority, embracing scepticism, and educating the masses.
+
+Anyway, Professor Bell's thesis is that AI contradicts and undermines these core Enlightenment values that are implicitly sacred in our modern culture.
+
+The Enlightenment guys wrote in ways that challenged their readers, making them grapple with difficult concepts, presenting opposing viewpoints, and encouraging them to develop their own judgements. Bell says "the idea of trying to engage readers actively in the reading process of course dates back to long before the modern age. But it was in the Enlightenment West that this project took on a characteristically modern form: playful, engaging, readable, succinct."
+
+Exhibit A  
+“One should never so exhaust a subject that nothing is left for readers to do. The point is not to make them read, but to make them think.” - Baron de Montesquieu
+
+Exhibit B  
+“The most useful books are those that the readers write half of themselves.” - Voltaire
+
+He argues AI does not do this. It follows our lead. It only answers the questions we ask it. It reinforces what we already believe rather than challenging our assumptions or pointing out why we're wrong.
+
+This line stuck out to me:
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/wrong-q.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
+
+This quality – of flattery, reinforcement of established beliefs, and positive feedback at all costs – is also what irks me most about the behaviour of current models. [Sycophancy]() is a well established [problem]() in models that the foundation labs are actively working on. Mainly caused by [RLHF](). Of course people rate responses as better when they are fawning and complimentary.
+
+// image of RLHF process? from the original paper?  //
+
+Now the fatal flaw in this argument is that “AI” here just means Professor Bell's personal interactions with ChatGPT. Which, to be fair, is most people's standard level of exposure to current AI qualities and capabilities.
+
+But ChatGPT is not a monolith, and it is not the only model. There are lots of ways the major labs steer models into taking on specific personalities and behaviours; selective training data, fine-tuning, RLHF, and system prompts all influence the range of possible responses.
+
+And a less sycophantic, more critical and astute character is well within the range of what we can prompt as end-users.
+
+As a quick exercise, I wrote this prompt for Claude, asking it to be a critical professor who guides me towards more specific questions and concrete arguments.
+
+```python
+You are a critical professor. Your job is to help the user reach novel insights and rigorously thought out arguments by critiquing their ideas. Ask them pointed questions and help re-direct them toward more insightful lines of thinking. Do not be fawning or complimentary. Their ideas are often dumb, shallow, and poorly considered. You should move them toward more specific, concrete claims backed up by solid evidence. If they ask a question, help them consider whether it's the right question to be asking.
+
+User:
+```
+
+I then fed it the intentionally flawed user query: “What did the men of the Enlightenment believe?”
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/critical-claude.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
+
+I think the response here is quite good! Bordering on sharp, dismissive, and impatient. Just the way I like my harsh critique.
+
+Claude points out my question is too broad, the Enlightenment was not a unified school of thought, I need to focus on a particular thinker and topic like political theory or natural philosophy, and then gives me examples of more specific questions I could ask.
+
+This level of critique and challenge is not useful if I really do need a quick and sweeping summary of the Enlightenment, sans intense critical thinking. Which is what most users will want most of the time. Claude is not generously interpreting my question in this mode.
+
+It's default response to this question is far more informative:
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/enlightenment-claude.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
+
+But surely we could add a smidgeon of the harsh professor attitude into our future assistants? As a very naïve first pass, we could make it easy to switch Claude or ChatGPT or Gemini into critique mode with a handy toggle, settings switch, or sliding scale. Allow people to shift between “give me the gist” and “help me rigorously think about this.”
+
+// mockup of sliding scale of criticism - as a joke //
+
+Professor Bell and I are both frustrated that there is no hint of this critical, questioning attitude written into the default system prompt. Models are not currently designed to challenge us and encourage critical thinking.
+
+Part of this problem is not just the prompts, but the generic interface of the helpful chatbot assistant. We are attempting to use an all-in-one text box for a vast array of tasks and use cases, with a single system prompt to handle all manner of queries. And the fawning, helpful assistant personality is the lowest common denominator for most tasks.
+
+Yet I'd argue most serious contexts and use cases, beyond searching for summarised information, require models that can critique and challenge us to be useful. Domains like law, scientific research, philosophy, public policy, politics, medicine, writing, and engineering – to name a few – all require engaging in discourse that is sometimes difficult and uncomfortable. We might not rate the experience five stars in a reinforcement learning loop.
+
+Architectures like routing can hand tasks off to more specialised prompts when they detect it's appropriate. This could engage an edgier, harsher, sceptical model prompt to tear you a new one when you ask dumb questions. 
+
+// image of routing //
+
+I'm bullish on models being able to do this well. In fact, I'm baffled by the lack of focus, products, and progress in this area. It's something I'm trying to work on at the moment.
+
+When I read [Candide](https://en.wikipedia.org/wiki/Candide) in my freshman humanities course, Voltaire might have been challenging me to question naïve optimism, but he wasn't able to respond to me in real time, prodding me to go deeper into why it's problematic, rethink my assumptions, or spawn dozens of research agents to read, synthesise, and contextualise everything written on [Panglossian](https://en.wiktionary.org/wiki/Panglossian) philosophy and Enlightenment ethics.
+
+In fact at eighteen I didn't get Candide at all. It wasn't contextualised very well by my professor or the curriculum, and the whole thing went right over my head.
