@@ -794,16 +794,6 @@
   },
   {
     "ids": [
-      "A Treatise Concerning ChatGPT Undermining the Enlightenment"
-    ],
-    "slug": "ai-enlightenment",
-    "growthStage": "budding",
-    "description": "",
-    "outboundLinks": [],
-    "inboundLinks": []
-  },
-  {
-    "ids": [
       "What App is That?"
     ],
     "slug": "apps",

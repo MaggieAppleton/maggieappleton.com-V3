@@ -199,22 +199,29 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 
 	// Set up event listeners for view transitions compatibility
 	function setupFilterListener() {
-		// Listen for filter changes with debounce
-		let filterTimeout: number;
-		
-		function handleFilterChange(event: Event) {
-			const customEvent = event as CustomEvent;
-			clearTimeout(filterTimeout);
-			filterTimeout = setTimeout(() => {
-				const { topic, growthStage, type } = customEvent.detail;
-				filterGridItems(topic, growthStage, type);
-			}, 50) as unknown as number;
-		}
+		// Wait a bit for DOM to be ready
+		setTimeout(() => {
+			console.log("Setting up garden hits filter listener");
+			
+			// Listen for filter changes with debounce
+			let filterTimeout: number;
+			
+			function handleFilterChange(event: Event) {
+				const customEvent = event as CustomEvent;
+				clearTimeout(filterTimeout);
+				filterTimeout = setTimeout(() => {
+					const { topic, growthStage, type } = customEvent.detail;
+					console.log("Filtering with:", { topic, growthStage, type });
+					filterGridItems(topic, growthStage, type);
+				}, 50) as unknown as number;
+			}
 
-		document.removeEventListener("filter-change", handleFilterChange);
-		document.addEventListener("filter-change", handleFilterChange);
+			document.removeEventListener("filter-change", handleFilterChange);
+			document.addEventListener("filter-change", handleFilterChange);
+		}, 100);
 	}
 
 	document.addEventListener("astro:page-load", setupFilterListener);
+	document.addEventListener("astro:after-swap", setupFilterListener);
 	document.addEventListener("DOMContentLoaded", setupFilterListener);
 </script>
