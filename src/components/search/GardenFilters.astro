@@ -265,6 +265,29 @@ const initialTopicsCount = 6;
 		type: "",
 	};
 
+	// Function to restore filter state from UI elements
+	function restoreFilterState() {
+		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
+		const growthStagesSelect = document.getElementById("growth-stages-select") as HTMLSelectElement;
+		const typesSelect = document.getElementById("types-select") as HTMLSelectElement;
+
+		if (topicsSelect) {
+			filterState.topic = topicsSelect.value;
+		}
+		if (growthStagesSelect) {
+			filterState.growthStage = growthStagesSelect.value;
+		}
+		if (typesSelect) {
+			filterState.type = typesSelect.value;
+		}
+
+		// Update topic buttons to match the state
+		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
+		topicButtons.forEach((btn) => {
+			btn.classList.toggle("selected", btn.getAttribute("data-topic") === filterState.topic);
+		});
+	}
+
 	function handleToggleClick(e: Event) {
 		const toggleButton = e.currentTarget as HTMLButtonElement;
 		const isShowingMore = toggleButton.getAttribute("data-show-more") === "true";
@@ -348,6 +371,9 @@ const initialTopicsCount = 6;
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");
 
+		// Restore filter state from UI elements first
+		restoreFilterState();
+
 		if (toggleButton) {
 			toggleButton.removeEventListener("click", handleToggleClick);
 			toggleButton.addEventListener("click", handleToggleClick);
@@ -359,6 +385,15 @@ const initialTopicsCount = 6;
 		if (rightMenus) {
 			rightMenus.removeEventListener("change", handleSelectChange);
 			rightMenus.addEventListener("change", handleSelectChange);
+		}
+
+		// Apply the current filter state to ensure consistency
+		if (filterState.topic || filterState.growthStage || filterState.type) {
+			document.dispatchEvent(
+				new CustomEvent("filter-change", {
+					detail: { ...filterState },
+				}),
+			);
 		}
 	}
 
