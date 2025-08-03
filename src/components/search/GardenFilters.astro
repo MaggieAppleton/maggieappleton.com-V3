@@ -259,65 +259,11 @@ const initialTopicsCount = 6;
 		type: string;
 	}
 
-	// Store filter state globally to persist across view transitions
-	declare global {
-		interface Window {
-			gardenFilterState?: FilterState;
-		}
-	}
-
-	function getFilterState(): FilterState {
-		if (!window.gardenFilterState) {
-			window.gardenFilterState = {
-				topic: "",
-				growthStage: "",
-				type: "",
-			};
-		}
-		return window.gardenFilterState;
-	}
-
-	function setFilterState(newState: Partial<FilterState>) {
-		const state = getFilterState();
-		Object.assign(state, newState);
-	}
-
-	// Function to restore filter state from UI elements and global state
-	function restoreFilterState() {
-		const state = getFilterState();
-		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
-		const growthStagesSelect = document.getElementById("growth-stages-select") as HTMLSelectElement;
-		const typesSelect = document.getElementById("types-select") as HTMLSelectElement;
-
-		// Restore from global state first, then UI elements
-		if (topicsSelect) {
-			if (state.topic) {
-				topicsSelect.value = state.topic;
-			} else {
-				state.topic = topicsSelect.value;
-			}
-		}
-		if (growthStagesSelect) {
-			if (state.growthStage) {
-				growthStagesSelect.value = state.growthStage;
-			} else {
-				state.growthStage = growthStagesSelect.value;
-			}
-		}
-		if (typesSelect) {
-			if (state.type) {
-				typesSelect.value = state.type;
-			} else {
-				state.type = typesSelect.value;
-			}
-		}
-
-		// Update topic buttons to match the state
-		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
-		topicButtons.forEach((btn) => {
-			btn.classList.toggle("selected", btn.getAttribute("data-topic") === state.topic);
-		});
-	}
+	const filterState: FilterState = {
+		topic: "",
+		growthStage: "",
+		type: "",
+	};
 
 	function handleToggleClick(e: Event) {
 		const toggleButton = e.currentTarget as HTMLButtonElement;
@@ -325,7 +271,7 @@ const initialTopicsCount = 6;
 		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 
 		topicButtons.forEach((button, index) => {
-			if (index >= 7) {
+			if (index >= 6) {
 				button.classList.toggle("hidden", !isShowingMore);
 			}
 		});
@@ -338,7 +284,6 @@ const initialTopicsCount = 6;
 		const button = (e.target as HTMLElement).closest(".topic-button");
 		if (!button) return;
 
-		const state = getFilterState();
 		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
 		const wasSelected = button.classList.contains("selected");
@@ -349,20 +294,20 @@ const initialTopicsCount = 6;
 		// If the button wasn't previously selected, select it
 		if (!wasSelected) {
 			button.classList.add("selected");
-			state.topic = button.getAttribute("data-topic") || "";
+			filterState.topic = button.getAttribute("data-topic") || "";
 		} else {
-			state.topic = "";
+			filterState.topic = "";
 		}
 
 		// Update mobile select to match
 		if (topicsSelect) {
-			topicsSelect.value = state.topic;
+			topicsSelect.value = filterState.topic;
 		}
 
 		// Dispatch filter change event
 		document.dispatchEvent(
 			new CustomEvent("filter-change", {
-				detail: { ...state },
+				detail: { ...filterState },
 			}),
 		);
 	}
@@ -371,12 +316,10 @@ const initialTopicsCount = 6;
 		const select = e.target as HTMLSelectElement;
 		if (!select || !select.id) return;
 
-		const state = getFilterState();
-
 		// Update filter state based on which select changed
 		switch (select.id) {
 			case "topics-select":
-				state.topic = select.value;
+				filterState.topic = select.value;
 				// Update topic buttons to match
 				const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
 				topicButtons.forEach((btn) => {
@@ -384,79 +327,40 @@ const initialTopicsCount = 6;
 				});
 				break;
 			case "growth-stages-select":
-				state.growthStage = select.value;
+				filterState.growthStage = select.value;
 				break;
 			case "types-select":
-				state.type = select.value;
+				filterState.type = select.value;
 				break;
 		}
 
 		// Dispatch filter change event
 		document.dispatchEvent(
 			new CustomEvent("filter-change", {
-				detail: { ...state },
+				detail: { ...filterState },
 			}),
 		);
 	}
 
-	// Set up event listeners for view transitions compatibility
-	function setupEventListeners() {
-		// Wait a bit for DOM to be ready
-		setTimeout(() => {
-			const toggleButton = document.querySelector(".toggle-topics");
-			const topicsList = document.querySelector(".topics-list");
-			const rightMenus = document.querySelector(".right-menus");
+	function init() {
+		const toggleButton = document.querySelector(".toggle-topics");
+		const topicsList = document.querySelector(".topics-list");
+		const rightMenus = document.querySelector(".right-menus");
 
-			console.log("Setting up garden filters event listeners", {
-				toggleButton: !!toggleButton,
-				topicsList: !!topicsList,
-				rightMenus: !!rightMenus
-			});
-
-			// Restore filter state from UI elements first
-			restoreFilterState();
-
-			if (toggleButton) {
-				toggleButton.removeEventListener("click", handleToggleClick);
-				toggleButton.addEventListener("click", handleToggleClick);
-			}
-			if (topicsList) {
-				topicsList.removeEventListener("click", handleTopicClick);
-				topicsList.addEventListener("click", handleTopicClick);
-			}
-			if (rightMenus) {
-				rightMenus.removeEventListener("change", handleSelectChange);
-				rightMenus.addEventListener("change", handleSelectChange);
-			}
-
-			// Apply the current filter state to ensure consistency
-			const state = getFilterState();
-			if (state.topic || state.growthStage || state.type) {
-				document.dispatchEvent(
-					new CustomEvent("filter-change", {
-						detail: { ...state },
-					}),
-				);
-			}
-		}, 100);
+		if (toggleButton) {
+			toggleButton.addEventListener("click", handleToggleClick);
+		}
+		if (topicsList) {
+			topicsList.addEventListener("click", handleTopicClick);
+		}
+		if (rightMenus) {
+			rightMenus.addEventListener("change", handleSelectChange);
+		}
 	}
 
-	// Store current state before page swaps to preserve it across transitions
-	function preserveStateBeforeSwap() {
-		const state = getFilterState();
-		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
-		const growthStagesSelect = document.getElementById("growth-stages-select") as HTMLSelectElement;
-		const typesSelect = document.getElementById("types-select") as HTMLSelectElement;
+	// Initialize on first load
+	init();
 
-		// Update global state from current UI
-		if (topicsSelect) state.topic = topicsSelect.value;
-		if (growthStagesSelect) state.growthStage = growthStagesSelect.value;
-		if (typesSelect) state.type = typesSelect.value;
-	}
-
-	// Run on multiple events to ensure we catch all scenarios
-	document.addEventListener("astro:before-swap", preserveStateBeforeSwap);
-	document.addEventListener("astro:page-load", setupEventListeners);
-	document.addEventListener("astro:after-swap", setupEventListeners);
-	document.addEventListener("DOMContentLoaded", setupEventListeners);
+	// Re-initialize after page navigation
+	document.addEventListener("astro:page-load", init);
 </script>

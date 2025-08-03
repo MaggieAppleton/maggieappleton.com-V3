@@ -197,31 +197,25 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		console.timeEnd("filter-operation");
 	}
 
-	// Set up event listeners for view transitions compatibility
-	function setupFilterListener() {
-		// Wait a bit for DOM to be ready
-		setTimeout(() => {
-			console.log("Setting up garden hits filter listener");
-			
-			// Listen for filter changes with debounce
-			let filterTimeout: number;
-			
-			function handleFilterChange(event: Event) {
-				const customEvent = event as CustomEvent;
-				clearTimeout(filterTimeout);
-				filterTimeout = setTimeout(() => {
-					const { topic, growthStage, type } = customEvent.detail;
-					console.log("Filtering with:", { topic, growthStage, type });
-					filterGridItems(topic, growthStage, type);
-				}, 50) as unknown as number;
-			}
-
-			document.removeEventListener("filter-change", handleFilterChange);
-			document.addEventListener("filter-change", handleFilterChange);
-		}, 100);
+	// Listen for filter changes with debounce
+	let filterTimeout: number;
+	
+	function handleFilterChange(event: Event) {
+		const customEvent = event as CustomEvent;
+		clearTimeout(filterTimeout);
+		filterTimeout = setTimeout(() => {
+			const { topic, growthStage, type } = customEvent.detail;
+			filterGridItems(topic, growthStage, type);
+		}, 50) as unknown as number;
 	}
 
-	document.addEventListener("astro:page-load", setupFilterListener);
-	document.addEventListener("astro:after-swap", setupFilterListener);
-	document.addEventListener("DOMContentLoaded", setupFilterListener);
+	function init() {
+		document.addEventListener("filter-change", handleFilterChange);
+	}
+
+	// Initialize on first load
+	init();
+
+	// Re-initialize after page navigation
+	document.addEventListener("astro:page-load", init);
 </script>
