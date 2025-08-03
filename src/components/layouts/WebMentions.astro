@@ -468,7 +468,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 	initializeShowMoreButtons();
 
 	// Re-initialize after view transitions
-	document.addEventListener("astro:after-swap", initializeShowMoreButtons);
+	document.addEventListener("astro:page-load", initializeShowMoreButtons);
 </script>
 
 <style>

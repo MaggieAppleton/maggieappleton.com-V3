@@ -89,5 +89,5 @@ const { maxWidth = 400 } = Astro.props;
 	initializeTooltips();
 
 	// Re-initialize after view transitions
-	document.addEventListener("astro:after-swap", initializeTooltips);
+	document.addEventListener("astro:page-load", initializeTooltips);
 </script>

@@ -40,7 +40,7 @@ const { tweetId } = Astro.props;
 	loadTwitterWidget();
 
 	// Re-initialize after view transitions
-	document.addEventListener("astro:after-swap", loadTwitterWidget);
+	document.addEventListener("astro:page-load", loadTwitterWidget);
 </script>
 
 <style>

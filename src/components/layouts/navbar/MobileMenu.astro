@@ -75,17 +75,21 @@ import { Icon } from "astro-icon/components";
 			}
 		});
 
+		// Function to close mobile menu
+		const closeMobileMenu = () => {
+			mobileMenu.classList.remove("open");
+			document.body.style.overflow = "auto";
+		};
+
 		// Create and attach new handlers
 		links.forEach((link) => {
-			const clickHandler = () => {
-				mobileMenu.classList.remove("open");
-				document.body.style.overflow = "auto";
-			};
-
 			// Store handler for cleanup
-			(link as any)._mobileMenuHandler = clickHandler;
-			link.addEventListener("click", clickHandler);
+			(link as any)._mobileMenuHandler = closeMobileMenu;
+			link.addEventListener("click", closeMobileMenu);
 		});
+
+		// Close menu on view transition start
+		document.addEventListener("astro:before-preparation", closeMobileMenu);
 	}
 
 	// Initialize on page load

@@ -131,5 +131,5 @@
 	document.addEventListener("DOMContentLoaded", initializeLogoAnimation);
 
 	// Re-initialize after Astro view transitions
-	document.addEventListener("astro:after-swap", initializeLogoAnimation);
+	document.addEventListener("astro:page-load", initializeLogoAnimation);
 </script>

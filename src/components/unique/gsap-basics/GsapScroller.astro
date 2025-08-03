@@ -75,9 +75,8 @@
 	const handleResize = () => scroller?.resize();
 	window.addEventListener("resize", handleResize);
 
-	// Cleanup and reinit on view transitions
-	document.addEventListener("astro:after-swap", initScrollama);
-	document.addEventListener("astro:after-render", initScrollama);
+	// Reinit on view transitions
+	document.addEventListener("astro:page-load", initScrollama);
 
 	// Cleanup
 	const cleanup = () => {

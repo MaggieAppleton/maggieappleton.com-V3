@@ -210,6 +210,8 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	}
 
 	function init() {
+		// Remove existing listener to prevent duplicates
+		document.removeEventListener("filter-change", handleFilterChange);
 		document.addEventListener("filter-change", handleFilterChange);
 	}
 
