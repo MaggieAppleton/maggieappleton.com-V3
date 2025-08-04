@@ -1,76 +1,132 @@
 ---
+import type { ImageMetadata } from "astro";
+
 interface Props {
-  url: string;
-  title: string;
-  author?: string;
-  image?: string;
+	url: string;
+	title: string;
+	author?: string;
+	image?: string;
+	width?: string;
+	fullCardLink?: boolean;
 }
 
-const { url, title, author, image } = Astro.props;
+const { url, title, author, image, width = "800px", fullCardLink = false } = Astro.props;
+
+// Use glob import to get all images
+const images = import.meta.glob<{ default: ImageMetadata }>("/src/images/**/*");
+
+// If image is a string and starts with "/images", try to find it in the glob
+const imageSrc =
+	image && typeof image === "string" && image.startsWith("/images")
+		? (await images["/src" + image]()).default.src
+		: image;
 ---
 
-<div class="link-card">
-  {image && <img src={image} alt={title} />}
-  <a href={url}>
-    <h3>{title}</h3>
-  </a>
-  {author && <span>{author}</span>}
-  <div class="content">
-    <slot />
-  </div>
-</div>
+{
+	fullCardLink ? (
+		<a href={url} class="full-card-link">
+			<div class="link-card" style={`max-width: ${width}`}>
+				{imageSrc && <img src={imageSrc} alt={title} />}
+				<div class="metadata">
+					<h3>{title}</h3>
+					{author && <span>{author}</span>}
+					<div class="content">
+						<slot />
+					</div>
+				</div>
+			</div>
+		</a>
+	) : (
+		<div class="link-card" style={`max-width: ${width}`}>
+			{imageSrc && <img src={imageSrc} alt={title} />}
+			<div class="metadata">
+				<a href={url}>
+					<h3>{title}</h3>
+				</a>
+				{author && <span>{author}</span>}
+				<div class="content">
+					<slot />
+				</div>
+			</div>
+		</div>
+	)
+}
 
 <style>
-  .content p {
-    font-family: var(--font-sans);
-    font-size: var(--font-size-sm);
-    line-height: var(--leading-base);
-    margin: var(--space-3xs) 0;
-    color: var(--color-gray-600);
-  }
+	.content :global(p) {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-base);
+		margin: var(--space-3xs) 0;
+		color: var(--color-gray-600);
+	}
 
-  .link-card {
-    margin: var(--space-3xs) auto var(--space-m);
-    box-shadow: var(--box-shadow-sm);
-    border-radius: var(--border-radius-lg);
-    border: 1px solid var(--color-tinted-cream);
-    justify-content: center;
-    padding: var(--space-s) var(--space-m);
-    grid-column: 1/4 !important;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 1;
-    width: 100%;
-    color: var(--color-gray-800);
-    transition: all 0.3s ease-in-out;
-  }
+	.metadata {
+		padding: var(--space-s) var(--space-m);
+	}
 
-  .link-card img {
-    width: 100%;
-    margin-bottom: 1rem;
-  }
+	.link-card {
+		margin: var(--space-3xs) auto var(--space-m);
+		box-shadow: var(--box-shadow-sm);
+		border-radius: var(--border-radius-lg);
+		border: 1px solid var(--color-tinted-cream);
+		justify-content: center;
+		grid-column: 1/4 !important;
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 1;
+		width: 100%;
+		color: var(--color-gray-800);
+		transition: all 0.3s ease-in-out;
+	}
 
-  .link-card span {
-    font-family: var(--font-sans);
-    font-size: calc(var(--font-size-base) * 0.9);
-    margin: var(--space-3xs) 0;
-    color: var(--color-gray-600);
-  }
+	.link-card img {
+		width: 100%;
+		border-bottom: 1px solid var(--color-tinted-cream);
+		border-radius: var(--border-radius-base) var(--border-radius-base) 0 0;
+		margin: 0;
+	}
 
-  .link-card h3 {
-    transition: all 0.3s ease-in-out;
-    color: var(--color-gray-800);
-    font-family: var(--font-body);
-    margin: var(--space-3xs) 0;
-    line-height: var(--leading-snug);
-    font-size: calc(var(--font-size-md) * 0.85);
-  }
+	.link-card span {
+		font-family: var(--font-sans);
+		font-size: calc(var(--font-size-base) * 0.9);
+		margin: var(--space-3xs) 0;
+		color: var(--color-gray-600);
+	}
 
-  .link-card:hover {
-    box-shadow: var(--box-shadow-lg);
-  }
+	.link-card h3 {
+		transition: all 0.3s ease-in-out;
+		color: var(--color-gray-800);
+		font-family: var(--font-body);
+		margin: var(--space-3xs) 0 var(--space-2xs);
+		line-height: var(--leading-snug);
+		font-size: calc(var(--font-size-md) * 0.85);
+	}
 
-  .link-card:hover h3 {
-    color: var(--color-bright-crimson);
-  }
+	.link-card:hover {
+		box-shadow: var(--box-shadow-lg);
+	}
+
+	.link-card:hover h3 {
+		color: var(--color-bright-crimson);
+	}
+
+	.full-card-link {
+		text-decoration: none;
+		color: inherit;
+		display: block;
+	}
+
+	.full-card-link .link-card {
+		cursor: pointer;
+	}
+
+	.full-card-link:hover .link-card {
+		box-shadow: var(--box-shadow-lg);
+		transform: translateY(-2px);
+	}
+
+	.full-card-link:hover h3 {
+		color: var(--color-bright-crimson);
+	}
 </style>
