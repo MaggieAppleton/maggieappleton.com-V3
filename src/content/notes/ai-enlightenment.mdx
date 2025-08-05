@@ -131,7 +131,7 @@ ChatGPT and Gemini have a less flexible, less discoverable version of this hidde
 
 <Spacer size="xs" />
 
-Another potential idea is adding infrastructure behind the scenes. Architectures like [routing](https://arc.net/l/quote/vuuatqsb)<Footnote idName={1}>See Anthropic's [Cookbook example](https://github.com/anthropics/anthropic-cookbook/blob/main/patterns/agents/basic_workflows.ipynb) to read the prompt and how you'd implement it in Python</Footnote> can hand tasks off to more specialised prompts when they detect it's appropriate. A central “routing” agent selects which sub-prompt to send each user request to based on the content. This could engage an edgier, harsher, sceptical prompt to tear you a new one when you ask dumb questions. But, like, in a nice way.
+Another potential idea is adding infrastructure behind the scenes. Architectures like [routing](https://arc.net/l/quote/vuuatqsb)<Footnote idName={3}>See Anthropic's [Cookbook example](https://github.com/anthropics/anthropic-cookbook/blob/main/patterns/agents/basic_workflows.ipynb) to read the prompt and how you'd implement it in Python</Footnote> can hand tasks off to more specialised prompts when they detect it's appropriate. A central “routing” agent selects which sub-prompt to send each user request to based on the content. This could engage an edgier, harsher, sceptical prompt to tear you a new one when you ask dumb questions. But, like, in a nice way.
 
 <BasicImage margin="0 auto 2rem" width="950px" framed src="/images/posts/ai-enlightenment/routing.webp" alt="Diagram of the routing workflow" sourceUrl="https://www.anthropic.com/engineering/building-effective-agents" sourceTitle="Building Effective AI Agents by Anthropic" showalt />
 
