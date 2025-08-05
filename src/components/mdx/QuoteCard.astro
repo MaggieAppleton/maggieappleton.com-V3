@@ -1,5 +1,5 @@
 ---
-const { sourceTitle, author = "", year = "", sourceLink, margin } = Astro.props;
+const { sourceTitle = "", author = "", year = "", sourceLink, margin } = Astro.props;
 ---
 
 <div class="card-container" style={margin ? `margin: ${margin}` : ''}>
@@ -7,16 +7,19 @@ const { sourceTitle, author = "", year = "", sourceLink, margin } = Astro.props;
     <slot />
   </div>
   <cite class="cite">
-    {sourceLink ? (
-      <a href={sourceLink}>
+    {sourceTitle && (
+      sourceLink ? (
+        <a href={sourceLink}>
+          <span>{sourceTitle}</span>
+        </a>
+        <div class="dot"></div>
+      ) : (
         <span>{sourceTitle}</span>
-      </a>
-    ) : (
-      <span>{sourceTitle}</span>
+        <div class="dot"></div>
+      )
     )}
     {author && (
       <>
-        <div class="dot"></div>
         <span>{author}</span>
       </>
     )}

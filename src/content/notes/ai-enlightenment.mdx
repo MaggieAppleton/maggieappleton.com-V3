@@ -1,86 +1,177 @@
 ---
-title: "A Treatise Concerning ChatGPT Undermining the Enlightenment"
-description: ""
-startDate: "2025-08-03"
-updated: "2025-08-03"
+title: "A Treatise on AI Chatbots Undermining the Enlightenment"
+description: "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions"
+startDate: "2025-08-05"
+updated: "2025-08-05"
 type: "note"
 topics: ["Language Models", "Artificial Intelligence", "Critical Thinking"]
 growthStage: "budding"
-draft: true
+toc: true
 ---
 
-<IntroParagraph>I don't pay much attention to the torrent of AI think pieces published by the New York Times; I am not their target demographic. But [this one](https://archive.is/XLX2g), by Princeton professor of history [David A. Bell](https://history.princeton.edu/people/david-bell) hits some good notes.</IntroParagraph>
+import SmallCaps from "../../components/mdx/typography/SmallCaps.astro";
+import QuoteCard from "../../components/mdx/QuoteCard.astro";
+import SimpleCard from "../../components/mdx/SimpleCard.astro";
+import LinkCard from "../../components/mdx/LinkCard.astro";
+import Spacer from "../../components/mdx/Spacer.astro";
+import GridColumns from "../../components/mdx/GridColumns.astro";
+import AcademicReference from "../../components/mdx/AcademicReference.astro";
 
-Link embed: A.I. Is Shedding Enlightenment Values
+<IntroParagraph>I don't pay much attention to the torrent of AI think pieces published by the New York Times; I am not their target demographic. But [this one](https://www.nytimes.com/2025/08/02/opinion/artificial-intelligence-enlightenment.html), by Princeton professor of history [David A. Bell](https://history.princeton.edu/people/david-bell) hits some good notes.</IntroParagraph>
+
+<LinkCard url="https://www.nytimes.com/2025/08/02/opinion/artificial-intelligence-enlightenment.html" title="A.I. Is Shedding Enlightenment Values" author="David A. Bell  ・  The New York Times" width="770px" image="/images/posts/ai-enlightenment/nyt-oped-ai.png" fullCardLink />
 
 As an expert on the Enlightenment, he's clearly been roped into developing an opinion on whether we're in an AI-fuelled “second Enlightenment.”
 
-Remember the [Enlightenment](https://en.wikipedia.org/wiki/Age_of_Enlightenment)? That ~150 period between 1650-1800 that we retroactively constructed and labelled as a unified historical event. The age of reason. Post-scientific revolution. The main characters are a bunch of moody philosophers like Locke, Decartes, Hume, Kant, Rousseau, Diderot, Voltaire, etc. The vibe is reading pamphlets by candlelight, sporting powdered wigs and silk waistcoats, attending Parisian salons and London coffee houses, sipping laudanum, and retreating to the seaside when you contracted tuberculosis. Everyone is big on ditching tradition, questioning political and religious authority, embracing scepticism, and educating the masses.
+Remember the first [Enlightenment](https://en.wikipedia.org/wiki/Age_of_Enlightenment)? That ~150 year period between 1650-1800 that we retroactively constructed and labelled as a unified historical event? The age of reason. Post-scientific revolution. The main characters are a bunch of moody philosophers like Locke, Descartes, Hume, Kant, Montesquieu, Rousseau, Diderot, and Voltaire. The vibe is reading pamphlets by candlelight, penning treatises, sporting powdered wigs and silk waistcoats, circulating ideas in Parisian salons and London coffee houses, sipping laudanum, and retreating to the seaside when you contracted tuberculosis. Everyone is big on ditching tradition, questioning political and religious authority, embracing scepticism, and educating the masses.
 
-Anyway, Professor Bell's thesis is that AI contradicts and undermines these core Enlightenment values that are implicitly sacred in our modern culture.
+Anyway, Professor Bell's thesis is that our current AI chatbots contradict and undermine the original Enlightenment values. Values that are implicitly sacred in our modern culture; active intellectual engagement, sceptical inquiry, and challenging received wisdom.
 
-The Enlightenment guys wrote in ways that challenged their readers, making them grapple with difficult concepts, presenting opposing viewpoints, and encouraging them to develop their own judgements. Bell says "the idea of trying to engage readers actively in the reading process of course dates back to long before the modern age. But it was in the Enlightenment West that this project took on a characteristically modern form: playful, engaging, readable, succinct."
+The Enlightenment guys<Footnote idName={1}>Yeah, it's mostly men. Women were banned from attending universities, participating in most public institutions, and publishing their work. There are a few exceptions like [Mary Wollstonecraft](https://en.wikipedia.org/wiki/Mary_Wollstonecraft), [Olympe de Gouges](https://en.wikipedia.org/wiki/Olympe_de_Gouges), and [Émilie du Châtelet](https://en.wikipedia.org/wiki/%C3%89milie_du_Ch%C3%A2telet). But they're not key enlightenment figures. Feminism really picks up in the mid-1800s.</Footnote> wrote in ways that challenged their readers, making them grapple with difficult concepts, presenting opposing viewpoints, and encouraging them to develop their own judgements. Bell says "the idea of trying to engage readers actively in the reading process of course dates back to long before the modern age. But it was in the Enlightenment West that this project took on a characteristically modern form: playful, engaging, readable, succinct."
 
-Exhibit A  
-“One should never so exhaust a subject that nothing is left for readers to do. The point is not to make them read, but to make them think.” - Baron de Montesquieu
+<QuoteCard sourceTitle="The Spirit of the Laws" year="1750" author="Baron de Montesquieu">
+<SmallCaps>Bell's Exhibit A</SmallCaps>
+<p style={{marginTop: '1.15rem'}}>“One should never so exhaust a subject that nothing is left for readers to do. The point is not to make them read, but to make them think.”</p>
+</QuoteCard>
 
-Exhibit B  
-“The most useful books are those that the readers write half of themselves.” - Voltaire
+<QuoteCard author="Voltaire">
+<SmallCaps>Bell's Exhibit B</SmallCaps>
+<p style={{marginTop: '1.15rem'}}>“The most useful books are those that the readers write half of themselves.”</p>
+</QuoteCard>
 
-He argues AI does not do this. It follows our lead. It only answers the questions we ask it. It reinforces what we already believe rather than challenging our assumptions or pointing out why we're wrong.
+<Spacer size="xs" />
+
+He argues that AI does not do this. It follows our lead. It compliments our poorly considered ideas. It only answers the questions we ask it. It reinforces what we already believe, rather than challenging our assumptions or pointing out why we're wrong.
 
 This line stuck out to me:
 
 <BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/wrong-q.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
 
-This quality – of flattery, reinforcement of established beliefs, and positive feedback at all costs – is also what irks me most about the behaviour of current models. [Sycophancy]() is a well established [problem]() in models that the foundation labs are actively working on. Mainly caused by [RLHF](). Of course people rate responses as better when they are fawning and complimentary.
+This quality – of flattery, reinforcement of established beliefs, intellectual passivity, and positive feedback at all costs – is also what irks me most about the behaviour of current models.
 
-// image of RLHF process? from the original paper?  //
+[Sycophancy](https://en.wikipedia.org/wiki/Sycophancy), meaning insincere flattery, is a well [established](https://www.seangoedecke.com/ai-sycophancy/) [problem](https://arxiv.org/pdf/2310.13548) in models that the foundation labs are actively [working on](https://openai.com/index/expanding-on-sycophancy/). Mainly caused by [reinforcement learning from human feedback](https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback) (RLHF); getting humans to vote on which model responses they like better, and feeding those scores back into the model during training. Unsurprisingly, people rate responses higher when they are fawning and complimentary.
 
-Now the fatal flaw in this argument is that “AI” here just means Professor Bell's personal interactions with ChatGPT. Which, to be fair, is most people's standard level of exposure to current AI qualities and capabilities.
+Now the fatal flaw in this op-ed piece is that “AI” here just means Professor Bell's personal interactions with ChatGPT. Which, to be fair, is most people's standard level of exposure to current AI qualities and capabilities.
 
-But ChatGPT is not a monolith, and it is not the only model. There are lots of ways the major labs steer models into taking on specific personalities and behaviours; selective training data, fine-tuning, RLHF, and system prompts all influence the range of possible responses.
+But ChatGPT is not a monolith, and it is not the only model.<Footnote idName={2}>And to be specific, it's not itself a model, it's an interface to OpenAI's current selection of models like GPT-4.1, o3, and o4-mini</Footnote> There are lots of ways the major labs steer models into taking on specific personalities and behaviours; curating the training data, fine-tuning, reinforcement learning, and system prompts all influence the range of possible responses.
 
-And a less sycophantic, more critical and astute character is well within the range of what we can prompt as end-users.
+And a less sycophantic, more critical, intellectually engaging, and astute character is well within the range of what we can prompt as end-users.
+
+## Making Models More Critical
 
 As a quick exercise, I wrote this prompt for Claude, asking it to be a critical professor who guides me towards more specific questions and concrete arguments.
 
-```python
+```
 You are a critical professor. Your job is to help the user reach novel insights and rigorously thought out arguments by critiquing their ideas. Ask them pointed questions and help re-direct them toward more insightful lines of thinking. Do not be fawning or complimentary. Their ideas are often dumb, shallow, and poorly considered. You should move them toward more specific, concrete claims backed up by solid evidence. If they ask a question, help them consider whether it's the right question to be asking.
 
 User:
 ```
 
+<Spacer size="xs" />
+
 I then fed it the intentionally flawed user query: “What did the men of the Enlightenment believe?”
 
-<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/critical-claude.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
+<BasicImage margin="0 auto 2rem" width="1000px" framed src="/images/posts/ai-enlightenment/critical-claude.png" alt="Claude critically responding to the Enlightenment question" />
 
-I think the response here is quite good! Bordering on sharp, dismissive, and impatient. Just the way I like my harsh critique.
+I think the response here is quite good! Bordering on sharp, dismissive, and impatient. Just the way I like my harsh critique. 
 
-Claude points out my question is too broad, the Enlightenment was not a unified school of thought, I need to focus on a particular thinker and topic like political theory or natural philosophy, and then gives me examples of more specific questions I could ask.
+Claude points out my question is too broad, the Enlightenment was not a unified school of thought, I need to focus on a particular thinker and topic like political theory or natural philosophy, and then gives me examples of more specific questions I could ask like “How did Voltaire's views on religious tolerance differ from those of his contemporaries?”
 
 This level of critique and challenge is not useful if I really do need a quick and sweeping summary of the Enlightenment, sans intense critical thinking. Which is what most users will want most of the time. Claude is not generously interpreting my question in this mode.
 
-It's default response to this question is far more informative:
+Its default response to this question is far more informative and useful:
 
-<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/enlightenment-claude.png" alt="ChatGPT has often responded, with patently insincere flattery: “That’s a great question.” It has never responded: “That’s the wrong question." />
+<BasicImage margin="0 auto 2rem" width="1050px" framed src="/images/posts/ai-enlightenment/enlightenment-claude.png" alt="Claude helpfully responding to the Enlightenment question with a summary of themes in the Enlightenment" />
 
-But surely we could add a smidgeon of the harsh professor attitude into our future assistants? As a very naïve first pass, we could make it easy to switch Claude or ChatGPT or Gemini into critique mode with a handy toggle, settings switch, or sliding scale. Allow people to shift between “give me the gist” and “help me rigorously think about this.”
+But can't we add a smidgeon of the harsh professor attitude into our future assistants? Or at least the option to engage it?
 
-// mockup of sliding scale of criticism - as a joke //
+Sure, we can do this manually, like I did with Claude. But that's asking a lot of everyday users. Most of whom don't realise they _can_ augment this passive, complimentary default mode. And who certainly won't write the optimal prompt to elicit it – one that balances harsh critique with kindness, questions their assumptions while still being encouraging, and productively facilitates a challenging discussion. Putting the onus on the user sidesteps the problem.
 
-Professor Bell and I are both frustrated that there is no hint of this critical, questioning attitude written into the default system prompt. Models are not currently designed to challenge us and encourage critical thinking.
+Professor Bell and I are both frustrated that there is no hint of this critical, questioning attitude written into the _default_ system prompt. Models are not currently designed and trained with the goal of challenging us and encouraging critical thinking.
 
-Part of this problem is not just the prompts, but the generic interface of the helpful chatbot assistant. We are attempting to use an all-in-one text box for a vast array of tasks and use cases, with a single system prompt to handle all manner of queries. And the fawning, helpful assistant personality is the lowest common denominator for most tasks.
+Part of this problem is not just the prompts, but the generic interface of the helpful chatbot assistant. We are attempting to use an all-in-one text box for a vast array of tasks and use cases, with a single system prompt to handle all manner of queries. And the fawning, deferential assistant personality is the lowest common denominator to help with most tasks.
 
-Yet I'd argue most serious contexts and use cases, beyond searching for summarised information, require models that can critique and challenge us to be useful. Domains like law, scientific research, philosophy, public policy, politics, medicine, writing, and engineering – to name a few – all require engaging in discourse that is sometimes difficult and uncomfortable. We might not rate the experience five stars in a reinforcement learning loop.
+Yet I'd argue most serious contexts and use cases, beyond searching for information summaries, require models that can critique and challenge us to be useful. Domains like law, scientific research, philosophy, public policy, politics, medicine, writing, education, and engineering – to name a few – all require engaging in discourse that is sometimes difficult, complex, and uncomfortable. We might not rate the experience five stars in a reinforcement learning loop.
 
-Architectures like routing can hand tasks off to more specialised prompts when they detect it's appropriate. This could engage an edgier, harsher, sceptical model prompt to tear you a new one when you ask dumb questions. 
+My bet is that all of these specialist areas will eventually get their own dedicated interfaces to AI, with tailored prompts channelled through fit-to-purpose tools. Legal professionals will have document-heavy case analysis platforms that automatically surface contradictory precedents and challenge legal reasoning with Socratic questioning. Scientists will work in computational notebooks that actively critique their experimental designs and suggest alternative hypotheses. Designers will have canvases embedded with creative reasoning tools that challenge aesthetic choices and push for deeper conceptual justification. Each interface will put domain-specific critical thinking skills directly into the workflow.
 
-// image of routing //
+But in the meantime, while we're waiting for all that beautiful, expertly-designed, hand-crafted software to manifest, people will keep using the generic, do-everything chatbots like Claude and ChatGPT and Gemini to fill the gap. For now, the chatbots are the ones drafts legal briefs, analysing policy proposals, interpreting philosophical texts, and troubleshooting engineering problems.
 
-I'm bullish on models being able to do this well. In fact, I'm baffled by the lack of focus, products, and progress in this area. It's something I'm trying to work on at the moment.
+The jury's still out on whether chatbots are adaptable enough to remain the **universal interface**: what most people use, for most tasks, most of the time. I think it's certainly possible. And would make the default, passive model attitudes even more concerning. Experts aside, everyday people and their everyday tasks should still be questioned sometimes.
+
+## Stuffing Multiple Personalities into the Universal Text Box
+
+So how might we solve this? How might we accommodate both needs: the generous, informative, helpful assistant _and_ the critical teacher and interlocutor?
+
+As a very naïve first pass, we could make it easy to switch the generic chatbots into critique mode with a handy toggle, settings switch, or sliding scale. Allow people to shift between “give me the gist” and “help me rigorously think about this” with minimal friction.
+
+Here's an unserious, low effort suggestion to add a new “offer critical feedback” toggle within Claude:
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/claude-feedback-button.png" alt="Claude's interface with a new 'Offer critical feedback' toggle available in the settings menu" showalt />
+
+<Spacer size="xs" />
+
+Claude already has ~some version of this with the add custom "styles" option. You can change the nature and tone of Claude's responses on a per-chat basis. I have one called **Scholarly Inquisitor** that follows similar guidelines to the critical professor prompt I wrote above. It's nowhere near as harsh as I want it to be, and still tells me I have “sophisticated insights” when I assure you I have not. I haven't perfected the prompt, and I still contend this should not be my job as the end-user.
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/claude-scholar-mode.png" alt="The Claude styles menu with my 'Scholarly Inquisitor' option selected" showalt />
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/claude-scholar-mode2.png" alt="The prompt for my 'Scholarly Inquisitor' style option" showalt />
+
+<Spacer size="xs" />
+
+ChatGPT and Gemini have a less flexible, less discoverable version of this hidden away in their user settings panel. Both give you an open-ended input to describe how you'd like the model to respond, but these preferences apply to _all_ conversations. So this doesn't really solve the problem.
+
+<GridColumns>
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/openai-settings.png" alt="OpenAI settings to add custom traits to the model" showalt />
+
+<BasicImage margin="0 auto 2rem" width="800px" framed src="/images/posts/ai-enlightenment/gemini-settings.png" alt="Gemini settings to have the model 'remember' your preferences" showalt />
+
+</GridColumns>
+
+<Spacer size="xs" />
+
+Another potential idea is adding infrastructure behind the scenes. Architectures like [routing](https://arc.net/l/quote/vuuatqsb)<Footnote idName={1}>See Anthropic's [Cookbook example](https://github.com/anthropics/anthropic-cookbook/blob/main/patterns/agents/basic_workflows.ipynb) to read the prompt and how you'd implement it in Python</Footnote> can hand tasks off to more specialised prompts when they detect it's appropriate. A central “routing” agent selects which sub-prompt to send each user request to based on the content. This could engage an edgier, harsher, sceptical prompt to tear you a new one when you ask dumb questions. But, like, in a nice way.
+
+<BasicImage margin="0 auto 2rem" width="950px" framed src="/images/posts/ai-enlightenment/routing.webp" alt="Diagram of the routing workflow" sourceUrl="https://www.anthropic.com/engineering/building-effective-agents" sourceTitle="Building Effective AI Agents by Anthropic" showalt />
+
+<Spacer size="xs" />
+
+This routing proposal still begs some important design questions:
+- How would this system decide when to engage in critique?
+- What if users balk at the confrontation and ask to switch back into “agreeable mode” when challenged?
+- How do we balance criticism with maintaining user engagement?
+
+I will be the first to say I don't think this problem can be _entirely_ solved by tweaking some UI elements and a bit of prompt engineering. It needs to be addressed on the model training level.
+
+We need techniques beyond RLHF that aren't as susceptible to the egotistical human need to receive praise and approval. Anthropic's experiments with [Constitutional AI](https://www-cdn.anthropic.com/7512771452629584566b6303311496c262da1006/Anthropic_ConstitutionalAI_v2.pdf) and using AI agents for reinforcement learning (RLAIF) might be guiding us in a better direction (<AcademicReference title="Constitutional AI: Harmlessness from AI Feedback" href="https://arxiv.org/pdf/2212.08073" year="2025" authors="Yuntao Bai, Saurav Kadavath, Sandipan Kundu, Amanda Askell, et al." abstract="As AI systems become more capable, we would like to enlist their help to supervise other AIs. We experiment with methods for training a harmless AI assistant through selfimprovement, without any human labels identifying harmful outputs. The only human oversight is provided through a list of rules or principles, and so we refer to the method as ‘Constitutional AI’. The process involves both a supervised learning and a reinforcement learning phase. In the supervised phase we sample from an initial model, then generate self-critiques and revisions, and then finetune the original model on revised responses. In the RL phase, we sample from the finetuned model, use a model to evaluate which of the two samples is better, and then train a preference model from this dataset of AI preferences. We then train with RL using the preference model as the reward signal, i.e. we use ‘RL from AI Feedback’ (RLAIF). As a result we are able to train a harmless but nonevasive AI assistant that engages with harmful queries by explaining its objections to them. Both the SL and RL methods can leverage chain-of-thought style reasoning to improve the human-judged performance and transparency of AI decision making. These methods make it possible to control AI behavior more precisely and with far fewer human labels.">Bai et al. 2022</AcademicReference>). The recent research into personality vectors where you can simply "subtract" the quality of sycophantism is also promising (<AcademicReference title="Persona vectors: Monitoring and controlling character traits in language models" href="https://arxiv.org/pdf/2507.21509" year="2025" authors="Runjin Chen, Andy Arditi, Henry Sleight, et al." abstract="Large language models interact with users through a simulated 'Assistant' persona. While the Assistant is typically trained to be helpful, harmless, and honest, it sometimes deviates from these ideals. In this paper, we identify directions in the model's activation space-persona vectors-underlying several traits, such as evil, sycophancy, and propensity to hallucinate. We confirm that these vectors can be used to monitor fluctuations in the Assistant's personality at deployment time. We then apply persona vectors to predict and control personality shifts that occur during training. We find that both intended and unintended personality changes after finetuning are strongly correlated with shifts along the relevant persona vectors. These shifts can be mitigated through post-hoc intervention, or avoided in the first place with a new preventative steering method. Moreover, persona vectors can be used to flag training data that will produce undesirable personality changes, both at the dataset level and the individual sample level. Our method for extracting persona vectors is automated and can be applied to any personality trait of interest, given only a natural-language description.">Chen et al. 2025</AcademicReference>).
+
+## Our Missing Pocket-sized Enlightenment
+
+These potential solutions matter because I don't think it's hyperbole at all to suggest we're heading into a second Enlightenment. And not just in terms of access to information and reshuffling power structures. I should be clear: **I'm exceptionally bullish on AI models being able to act as rigorous critical thinking partners.** They have the potential to embody those idealistic values of enabling intellectual engagement and critical inquiry. Far more than current implementations suggest.
+
+I'm frankly confused by the apparent lack of attention and exploration around this use case. Especially since some early indicators suggest the way people are currently using generative AI leads to a _reduction_ in critical thinking:
+- A Microsoft Research team (<AcademicReference title="The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers" href="https://www.microsoft.com/en-us/research/wp-content/uploads/2025/01/lee_2025_ai_critical_thinking_survey.pdf" year="2025" authors="H Lee, A Sarkar, L Tankelevitch, et al." abstract="The rise of Generative AI (GenAI) in knowledge workflows raises questions about its impact on critical thinking skills and practices. We survey 319 knowledge workers to investigate 1) when and how they perceive the enaction of critical thinking when using GenAI, and 2) when and why GenAI affects their effort to do so. Participants shared 936 first-hand examples of using GenAI in work tasks. Quantitatively, when considering both task and user-specific factors, a user’s task-specific self-confidence and confidence in GenAI are predictive of whether critical thinking is enacted and the effort of doing so in GenAI-assisted tasks. Specifically, higher confidence in GenAI is associated with less critical thinking, while higher self-confidence is associated with more critical thinking. Qualitatively, GenAI shifts the nature of critical thinking toward information verification, response integration, and task stewardship. Our insights reveal new design challenges and opportunities for developing GenAI tools for knowledge work.">Lee 2025</AcademicReference>) surveyed 319 knowledge workers on their use of generative AI and found "higher confidence in GenAI is associated with less critical thinking, while higher self-confidence is associated with more critical thinking."
+- The UW Social Futures Lab (<AcademicReference title="Language Models as Critical Thinking Tools: A Case Study of Philosophers" href="http://arxiv.org/abs/2404.04516" year="2024" authors="Andre Ye, Jared Moore, Rose Novick, Amy Zhang" abstract="Current work in language models (LMs) helps us speed up or even skip thinking by accelerating and automating cognitive work. But can LMs help us with critical thinking -- thinking in deeper, more reflective ways which challenge assumptions, clarify ideas, and engineer new concepts? We treat philosophy as a case study in critical thinking, and interview 21 professional philosophers about how they engage in critical thinking and on their experiences with LMs. We find that philosophers do not find LMs to be useful because they lack a sense of selfhood (memory, beliefs, consistency) and initiative (curiosity, proactivity). We propose the selfhood-initiative model for critical thinking tools to characterize this gap. Using the model, we formulate three roles LMs could play as critical thinking tools: the Interlocutor, the Monitor, and the Respondent. We hope that our work inspires LM researchers to further develop LMs as critical thinking tools and philosophers and other 'critical thinkers' to imagine intellectually substantive uses of LMs.">Lee 2025</AcademicReference>) asked philosophers to use models as critical thinking tools and found they were too neutral, incurious, and passive to be helpful.
+- Business professor Michael Gerlich (<AcademicReference title="AI Tools in Society: Impacts on Cognitive Offloading and the Future of Critical Thinking" href="https://www.mdpi.com/2075-4698/15/1/6" year="2025" authors="M Gerlich" abstract="The proliferation of artificial intelligence (AI) tools has transformed numerous aspects of daily life, yet its impact on critical thinking remains underexplored. This study investigates the relationship between AI tool usage and critical thinking skills, focusing on cognitive offloading as a mediating factor. Utilising a mixed-method approach, we conducted surveys and in-depth interviews with 666 participants across diverse age groups and educational backgrounds. Quantitative data were analysed using ANOVA and correlation analysis, while qualitative insights were obtained through thematic analysis of interview transcripts. The findings revealed a significant negative correlation between frequent AI tool usage and critical thinking abilities, mediated by increased cognitive offloading. Younger participants exhibited higher dependence on AI tools and lower critical thinking scores compared to older participants. Furthermore, higher educational attainment was associated with better critical thinking skills, regardless of AI usage. These results highlight the potential cognitive costs of AI tool reliance, emphasising the need for educational strategies that promote critical engagement with AI technologies. This study contributes to the growing discourse on AI’s cognitive implications, offering practical recommendations for mitigating its adverse effects on critical thinking. The findings underscore the importance of fostering critical thinking in an AI-driven world, making this research essential reading for educators, policymakers, and technologists.">Gerlich 2025</AcademicReference>) interviewed 666 participants from a range of educational backgrounds and age groups, and found "a significant negative correlation between frequent AI tool usage and critical thinking abilities, mediated by increased cognitive offloading. Younger participants exhibited higher dependence on AI tools and lower critical thinking scores compared to older participants."
+
+These studies don't convince me that the problem is generative AI itself. They convince me the problem is that models are not trained to support critical thinking. And that the interface affordances and design decisions built into generic chatbots do not encourage or support critical thinking workflows and interactions. Users are left to take the initiative and be their own prompt engineers. Yet most don't know how.
+
+The foundation labs who control the models and default interfaces aren't prioritising this. At least as far as I can tell. They're focused on autonomous, agentic workflows like the recent “[Deep Research](https://openai.com/index/introducing-deep-research/)” hype. Or developing “[reasoning models](https://en.wikipedia.org/wiki/Reasoning_language_model)” where the models themselves are trained to be the critical thinkers. This focuses entirely on getting models to think for you, rather than helping you become a better thinker.
+
+While I understand the economic incentives reward automating cognitive work more than augmenting human thinking, I'd like to think we can have our grossly profitable automation cake and eat it too. The labs have enough resources to pursue both.
+
+I think we've barely scratched the surface of AI as intellectual partner and [[tool for thought]]. Neither the prompts, nor the model, nor the current interfaces – generic or tailored – enable it well. This is rapidly becoming my central research obsession, particularly the interface design piece. It's a problem I need to work on in some form.
 
 When I read [Candide](https://en.wikipedia.org/wiki/Candide) in my freshman humanities course, Voltaire might have been challenging me to question naïve optimism, but he wasn't able to respond to me in real time, prodding me to go deeper into why it's problematic, rethink my assumptions, or spawn dozens of research agents to read, synthesise, and contextualise everything written on [Panglossian](https://en.wiktionary.org/wiki/Panglossian) philosophy and Enlightenment ethics.
 
-In fact at eighteen I didn't get Candide at all. It wasn't contextualised very well by my professor or the curriculum, and the whole thing went right over my head.
+In fact, at eighteen, I didn't _get_ Candide at all. It wasn't contextualised well by my professor or the curriculum, and the whole thing went right over my head. I lacked a tiny thinking partner in my pocket who could help me appreciate the text; a patient character to discuss, debate, and develop my own opinions with.
+
+The ideals of the Enlightenment are still up for grabs here. We simply have to make the conscious choice to design our AI models and interfaces around them.
+
+<Spacer size="xs" />
+
+<SimpleCard alignLeft>
+<SmallCaps>PostScript</SmallCaps>
+<p>I apologise for leaning heavily on Claude and Anthropic as examples throughout this piece. I'm more familiar with Anthropic's research than other labs and Claude is my primary model, so I am heavily biased. I am sure other labs are doing interesting research in this area. I'd love to read about it on [BlueSky](https://bsky.app/profile/maggieappleton.com) (either message or mention me) or your own blog.</p>
+</SimpleCard>
