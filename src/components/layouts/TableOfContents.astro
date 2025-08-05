@@ -76,6 +76,7 @@ const { headings } = Astro.props;
 		margin-left: 6%;
 		position: sticky;
 		top: 16px;
+		z-index: 10;
 	}
 
 	.desktop-container .title {
@@ -215,9 +216,17 @@ const { headings } = Astro.props;
 		let isAutoCollapsed = false;
 		let isScrollingToSection = false;
 		
-		const desktopContainer = document.querySelector(".desktop-container");
+		const desktopContainer = document.querySelector(".desktop-container") as HTMLElement;
 		const tocHeader = document.getElementById("desktop-toc-header");
 		const arrowIcon = tocHeader?.querySelector(".arrow-icon");
+
+		// Ensure desktop container has correct positioning after view transitions
+		if (desktopContainer) {
+			desktopContainer.style.gridColumn = "1";
+			desktopContainer.style.position = "sticky";
+			desktopContainer.style.top = "16px";
+			desktopContainer.style.zIndex = "10";
+		}
 
 		// Handle mobile TOC
 		const header = document.querySelector(".collapse-header");
@@ -320,6 +329,11 @@ const { headings } = Astro.props;
 	// Initialize on page load
 	initializeTOC();
 
-	// Re-initialize after view transitions
-	document.addEventListener("astro:page-load", initializeTOC);
+	// Re-initialize after view transitions with a small delay to ensure DOM is ready
+	document.addEventListener("astro:page-load", () => {
+		// Use requestAnimationFrame to ensure layout has been painted
+		requestAnimationFrame(() => {
+			initializeTOC();
+		});
+	});
 </script>
