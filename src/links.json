@@ -567,12 +567,6 @@
         "description": "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions"
       },
       {
-        "title": "A Treatise on AI Chatbots Undermining the Enlightenment",
-        "slug": "ai-enlightenment",
-        "growthStage": "budding",
-        "description": "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions"
-      },
-      {
         "title": "The Finest Narrative Non-Fiction Essays",
         "slug": "narrative-essays",
         "growthStage": "budding",
@@ -3579,12 +3573,6 @@
     "description": "On seeing tools for thought through a historical and anthropological lens",
     "outboundLinks": [],
     "inboundLinks": [
-      {
-        "title": "A Treatise on AI Chatbots Undermining the Enlightenment",
-        "slug": "ai-enlightenment",
-        "growthStage": "budding",
-        "description": "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions"
-      },
       {
         "title": "A Treatise on AI Chatbots Undermining the Enlightenment",
         "slug": "ai-enlightenment",
