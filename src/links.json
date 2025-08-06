@@ -825,24 +825,6 @@
   },
   {
     "ids": [
-      "A Treatise on AI Chatbots Undermining the Enlightenment"
-    ],
-    "slug": "ai-enlightenment",
-    "growthStage": "budding",
-    "description": "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions",
-    "outboundLinks": [
-      {
-        "matchedId": "tool for thought",
-        "title": "Tools for Thought as Cultural Practices, not Computational Objects",
-        "slug": "tools-for-thought",
-        "growthStage": "budding",
-        "description": "On seeing tools for thought through a historical and anthropological lens"
-      }
-    ],
-    "inboundLinks": []
-  },
-  {
-    "ids": [
       "What App is That?"
     ],
     "slug": "apps",
