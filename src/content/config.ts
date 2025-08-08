@@ -16,9 +16,6 @@ const notesCollection = defineCollection({
       growthStage: z.string(),
       draft: z.boolean().optional(),
       toc: z.boolean().optional(),
-      version: z.number().optional(),
-      isArchived: z.boolean().optional(),
-      canonicalUrl: z.string().optional(),
       versionSummary: z.string().optional(),
     }),
 });
@@ -59,9 +56,6 @@ const patternsCollection = defineCollection({
       growthStage: z.string(),
       draft: z.boolean().optional(),
       toc: z.boolean().optional(),
-      version: z.number().optional(),
-      isArchived: z.boolean().optional(),
-      canonicalUrl: z.string().optional(),
       versionSummary: z.string().optional(),
     }),
 });

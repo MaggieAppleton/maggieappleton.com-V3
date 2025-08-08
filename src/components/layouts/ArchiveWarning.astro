@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
-import { getVersionInfo } from "../../utils/versionUtils";
+import { getVersionInfo, getVersionFromEntry, isArchivedVersion } from "../../utils/versionUtils";
 import { getCollection } from "astro:content";
 
 type VersionedContent = CollectionEntry<"essays"> | CollectionEntry<"notes"> | CollectionEntry<"patterns"> | CollectionEntry<"talks">;
@@ -30,10 +30,10 @@ switch (entry.collection) {
 }
 
 const versionInfo = getVersionInfo(entry, allEntries);
-const isArchived = entry.data.isArchived || !versionInfo.isLatest;
+const isArchived = isArchivedVersion(entry, allEntries);
 const currentVersion = versionInfo.version;
 const totalVersions = versionInfo.allVersions.length;
-const canonicalUrl = entry.data.canonicalUrl || `/${versionInfo.baseSlug}`;
+const canonicalUrl = `/${versionInfo.baseSlug}`;
 
 // Only show warning if this is an archived version
 const showWarning = isArchived && totalVersions > 1;

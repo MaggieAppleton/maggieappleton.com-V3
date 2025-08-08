@@ -13,9 +13,25 @@ export function isVersionedFile(filename: string): boolean {
   return /-v\d+\.mdx$/.test(filename);
 }
 
-export function extractVersionFromFilename(filename: string): number | null {
+export function extractVersionFromFilename(filename: string): number {
   const match = filename.match(/-v(\d+)\.mdx$/);
-  return match ? parseInt(match[1], 10) : null;
+  return match ? parseInt(match[1], 10) : 1; // Default to version 1 if no version suffix
+}
+
+export function getVersionFromEntry(entry: VersionedContent): number {
+  return extractVersionFromFilename(entry.id);
+}
+
+export function isArchivedVersion(entry: VersionedContent, allEntries: VersionedContent[]): boolean {
+  const baseSlug = extractBaseSlug(getSlug(entry));
+  const allVersions = getAllVersionsForPost(baseSlug, allEntries);
+  const latestVersion = getLatestVersion(allVersions);
+  return getSlug(entry) !== getSlug(latestVersion);
+}
+
+export function getCanonicalUrlFromEntry(entry: VersionedContent): string {
+  const baseSlug = extractBaseSlug(getSlug(entry));
+  return `/${baseSlug}`;
 }
 
 export function extractBaseSlug(slug: string): string {
@@ -46,8 +62,8 @@ export function groupContentByBaseSlug(entries: VersionedContent[]): Map<string,
 
 export function getLatestVersion(versions: VersionedContent[]): VersionedContent {
   return versions.reduce((latest, current) => {
-    const currentVersion = current.data.version ?? 1;
-    const latestVersion = latest.data.version ?? 1;
+    const currentVersion = getVersionFromEntry(current);
+    const latestVersion = getVersionFromEntry(latest);
     return currentVersion > latestVersion ? current : latest;
   });
 }
@@ -56,8 +72,8 @@ export function getAllVersionsForPost(baseSlug: string, allEntries: VersionedCon
   return allEntries
     .filter(entry => extractBaseSlug(getSlug(entry)) === baseSlug)
     .sort((a, b) => {
-      const versionA = a.data.version ?? 1;
-      const versionB = b.data.version ?? 1;
+      const versionA = getVersionFromEntry(a);
+      const versionB = getVersionFromEntry(b);
       return versionA - versionB;
     });
 }
@@ -69,7 +85,7 @@ export function getVersionInfo(currentEntry: VersionedContent, allEntries: Versi
   
   return {
     baseSlug,
-    version: currentEntry.data.version ?? 1,
+    version: getVersionFromEntry(currentEntry),
     isLatest: getSlug(currentEntry) === getSlug(latestVersion),
     allVersions
   };

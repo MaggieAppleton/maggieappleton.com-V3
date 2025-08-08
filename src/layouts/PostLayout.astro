@@ -11,7 +11,7 @@ import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionNavigation from "../components/layouts/VersionNavigation.astro";
 import ArchiveWarning from "../components/layouts/ArchiveWarning.astro";
-import { getCanonicalUrl } from "../utils/versionUtils";
+import { getCanonicalUrlFromEntry } from "../utils/versionUtils";
 
 // You'll need to find Astro alternatives for these React components:
 // - BackToTop
@@ -33,7 +33,7 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 
 // Calculate canonical URL for versioned content
 const canonicalURL = entry 
-	? getCanonicalUrl(entry, Astro.site!.toString())
+	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
 	: undefined;
 
 // Find the current post in linkMaps

@@ -37,12 +37,16 @@ const getDataForBacklinks = (fileNames, filePath) => {
       const file = fs.readFileSync(path.join(filePath, fileName), "utf8");
       const { content, data } = matter(file);
       const slug = fileName.replace(/\.mdx?$/, "");
-      const { title, aliases, growthStage, description, draft, version, isArchived } = data;
+      const { title, aliases, growthStage, description, draft } = data;
 
       // Skip draft posts
       if (draft === true) {
         return null;
       }
+
+      // Extract version from filename
+      const versionMatch = fileName.match(/-v(\d+)\.mdx$/);
+      const version = versionMatch ? parseInt(versionMatch[1], 10) : 1;
 
       return {
         content,
@@ -51,8 +55,7 @@ const getDataForBacklinks = (fileNames, filePath) => {
         aliases,
         growthStage,
         description,
-        version: version || 1,
-        isArchived: isArchived || false,
+        version,
         id: fileName,
       };
     })
