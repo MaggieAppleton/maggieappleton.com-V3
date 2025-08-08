@@ -29,15 +29,15 @@ const postMentions = webmentions.children.filter((mention: WebMention) => {
 //filter for mentions where wm-property is like-of or repost-of
 const likesAndReposts = postMentions.filter(
 	(mention: WebMention) =>
-		mention["wm-property"] === "like-of" ||
-		mention["wm-property"] === "repost-of",
+		mention["wm-property"] === "like-of" || mention["wm-property"] === "repost-of",
 );
 
-//filter for mention with content
+//filter for mention with content (including replies and mentions)
 const mentionWithContent = postMentions
 	.filter(
 		(mention: WebMention) =>
-			mention["wm-property"] === "mention-of" && mention.content,
+			(mention["wm-property"] === "mention-of" || mention["wm-property"] === "in-reply-to") &&
+			mention.content,
 	)
 	.sort((a: WebMention, b: WebMention) => {
 		const dateA = new Date(a["wm-received"]).getTime();
@@ -265,6 +265,25 @@ function sourceType(mention: WebMention) {
 	return iconMap[property] || null;
 }
 
+function platformType(mention: WebMention) {
+	if (
+		mention.url.includes("bsky.app") ||
+		mention["wm-source"].includes("brid.gy/comment/bluesky")
+	) {
+		return { icon: "bluesky", class: "platform-icon bluesky-icon" };
+	}
+	if (
+		mention.url.includes("twitter.com") ||
+		mention.url.includes("x.com") ||
+		mention["wm-source"].includes("brid.gy/post/twitter") ||
+		mention["wm-source"].includes("brid.gy/comment/twitter")
+	) {
+		return { icon: "twitter", class: "platform-icon twitter-icon" };
+	}
+	// Add other platforms here in the future (Mastodon, etc.)
+	return null;
+}
+
 function formatDate(date: string | number | Date) {
 	const parsedDate = new Date(date);
 	return format(parsedDate, "MMMM dd, yyyy");
@@ -284,9 +303,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 	(like, index, self) =>
 		index ===
 		self.findIndex(
-			(t) =>
-				t.author.photo === like.author.photo &&
-				t.author.name === like.author.name,
+			(t) => t.author.photo === like.author.photo && t.author.name === like.author.name,
 		),
 );
 ---
@@ -302,33 +319,26 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 				{likesAndReposts.length > 0 && (
 					<div class="likes-images-container">
 						<div class="likes-container">
-							{likesWithoutDuplicates
-								.slice(0, 20)
-								.map((like: WebMention, index: number) =>
-									like.author.photo ? (
-										<div class="single-image">
-											<img src={like.author.photo} alt={like.author.name} />
-										</div>
-									) : (
-										<div class="single-image">
-											<svg
-												width="42"
-												height="42"
-												viewBox="0 0 42 42"
-												fill="none"
-												xmlns="http://www.w3.org/2000/svg"
-												class="placeholder-svg"
-											>
-												<circle
-													cx="50%"
-													cy="50%"
-													r="21"
-													fill="var(--color-sea-blue)"
-												/>
-											</svg>
-										</div>
-									),
-								)}
+							{likesWithoutDuplicates.slice(0, 20).map((like: WebMention, index: number) =>
+								like.author.photo ? (
+									<div class="single-image">
+										<img src={like.author.photo} alt={like.author.name} />
+									</div>
+								) : (
+									<div class="single-image">
+										<svg
+											width="42"
+											height="42"
+											viewBox="0 0 42 42"
+											fill="none"
+											xmlns="http://www.w3.org/2000/svg"
+											class="placeholder-svg"
+										>
+											<circle cx="50%" cy="50%" r="21" fill="var(--color-sea-blue)" />
+										</svg>
+									</div>
+								),
+							)}
 							<span>{likesAndReposts.length} Likes and Reposts</span>
 						</div>
 					</div>
@@ -338,71 +348,59 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 					<>
 						<div class="mentions-scroll-container">
 							<div class="mentions-content-container">
-								{filteredMentions.map((mention: WebMention, index: number) => (
-									<div class:list={["reply", { hidden: index >= 4 }]}>
-										{mention.author.photo ? (
-											<img
-												src={mention.author.photo}
-												alt={mention.author.name}
-											/>
-										) : (
-											<svg
-												width="42"
-												height="42"
-												viewBox="0 0 42 42"
-												fill="none"
-												xmlns="http://www.w3.org/2000/svg"
-												class="placeholder-svg"
-											>
-												<circle
-													cx="50%"
-													cy="50%"
-													r="21"
-													fill="var(--color-sea-blue)"
-												/>
-											</svg>
-										)}
-
-										<div class="content">
-											<div class="name-date">
-												<a href={mention.url}>
-													<span class="author">
-														{mention.author.name ||
-															getDomain(mention["wm-source"])}
-													</span>
-													<span class="mention-type">
-														{mentionType(mention)}
-													</span>
-													{sourceType(mention) && (
-														<Icon
-															name={sourceType(mention)}
-															size={16}
-															class={`${sourceType(mention)}-svg`}
-														/>
-													)}
-													{mention.name && (
-														<span class="post-name">in {mention.name}</span>
-													)}
-													<time datetime={mention.published}>
-														{formatDate(mention["wm-received"])}
-													</time>
-												</a>
-											</div>
-											{mention.content && (
-												<span>{formatContent(mention.content.text)}</span>
+								{filteredMentions.map((mention: WebMention, index: number) => {
+									const platform = platformType(mention);
+									return (
+										<div class:list={["reply", { hidden: index >= 4 }]}>
+											{mention.author.photo ? (
+												<img src={mention.author.photo} alt={mention.author.name} />
+											) : (
+												<svg
+													width="42"
+													height="42"
+													viewBox="0 0 42 42"
+													fill="none"
+													xmlns="http://www.w3.org/2000/svg"
+													class="placeholder-svg"
+												>
+													<circle cx="50%" cy="50%" r="21" fill="var(--color-sea-blue)" />
+												</svg>
 											)}
+
+											<div class="content">
+												<div class="name-date">
+													<a href={mention.url}>
+														<span class="author">
+															{mention.author.name || getDomain(mention["wm-source"])}
+														</span>
+														{platform && (
+															<Icon name={platform.icon} size={16} class={platform.class} />
+														)}
+														<span class="mention-type">{mentionType(mention)}</span>
+														{sourceType(mention) && (
+															<Icon
+																name={sourceType(mention)}
+																size={16}
+																class={`${sourceType(mention)}-svg`}
+															/>
+														)}
+														{mention.name && <span class="post-name">in {mention.name}</span>}
+														<time datetime={mention.published}>
+															{formatDate(mention["wm-received"])}
+														</time>
+													</a>
+												</div>
+												{mention.content && <span>{formatContent(mention.content.text)}</span>}
+											</div>
 										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 						</div>
 
 						<div class="button-container">
 							{filteredMentions.length > 4 && (
-								<button
-									class="show-more"
-									data-total-mentions={filteredMentions.length}
-								>
+								<button class="show-more" data-total-mentions={filteredMentions.length}>
 									Show {filteredMentions.length - 4} more
 								</button>
 							)}
@@ -430,9 +428,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 
 			newButton?.addEventListener("click", () => {
 				const container = newButton.closest(".inner-container");
-				const mentionsContainer = container?.querySelector(
-					".mentions-scroll-container",
-				);
+				const mentionsContainer = container?.querySelector(".mentions-scroll-container");
 				const replies = container?.querySelectorAll(".reply");
 
 				if (!container || !mentionsContainer || !replies) return;
@@ -453,9 +449,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 						}
 					});
 					mentionsContainer.classList.remove("expanded");
-					const totalMentions = parseInt(
-						newButton.getAttribute("data-total-mentions") || "0",
-					);
+					const totalMentions = parseInt(newButton.getAttribute("data-total-mentions") || "0");
 					newButton.textContent = `Show ${totalMentions - 4} more`;
 				}
 
@@ -583,7 +577,25 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 		color: var(--color-medium-sea-blue);
 	}
 
-	.reply .twitter-svg {
+	.reply .platform-icon {
+		position: relative;
+		top: 2px;
+		margin-left: 0.25rem;
+	}
+
+	.reply .bluesky-icon {
+		color: var(--color-sea-blue);
+	}
+
+	.reply .twitter-icon {
+		color: var(--color-sea-blue);
+	}
+
+	.reply .heroicons\\:chat-bubble-left-svg,
+	.reply .heroicons\\:heart-svg,
+	.reply .heroicons\\:arrow-path-svg,
+	.reply .heroicons\\:bookmark-svg,
+	.reply .heroicons\\:arrow-uturn-left-svg {
 		fill: var(--color-sea-blue);
 		position: relative;
 		top: 2px;
