@@ -9,6 +9,9 @@ import linkMaps from "../links.json";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
+import VersionNavigation from "../components/layouts/VersionNavigation.astro";
+import ArchiveWarning from "../components/layouts/ArchiveWarning.astro";
+import { getCanonicalUrl } from "../utils/versionUtils";
 
 // You'll need to find Astro alternatives for these React components:
 // - BackToTop
@@ -20,12 +23,18 @@ type Props = {
 		| CollectionEntry<"patterns">["data"]
 		| CollectionEntry<"talks">["data"];
 	headings: MarkdownHeading[];
+	entry?: CollectionEntry<"essays"> | CollectionEntry<"notes"> | CollectionEntry<"patterns"> | CollectionEntry<"talks">;
 };
 
-const { frontmatter } = Astro.props;
+const { frontmatter, entry } = Astro.props;
 
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+
+// Calculate canonical URL for versioned content
+const canonicalURL = entry 
+	? getCanonicalUrl(entry, Astro.site!.toString())
+	: undefined;
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -45,6 +54,7 @@ const coverImage =
 	desc={frontmatter.description}
 	type={frontmatter.type}
 	coverImage={coverImage}
+	canonicalURL={canonicalURL}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -85,6 +95,11 @@ const coverImage =
 			/>
 		</div>
 	</header>
+
+	<div class="version-components-container">
+		{entry && <ArchiveWarning entry={entry} />}
+		{entry && <VersionNavigation entry={entry} />}
+	</div>
 
 	<main class="styled-main">
 		<slot />
@@ -240,5 +255,17 @@ const coverImage =
 
 	.back-link a:hover span {
 		transform: translate3d(3px, 0, 0);
+	}
+
+	.version-components-container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 0 var(--space-xs);
+	}
+
+	@media (max-width: 768px) {
+		.version-components-container {
+			padding: 0 var(--space-xs);
+		}
 	}
 </style>

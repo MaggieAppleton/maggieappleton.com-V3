@@ -16,6 +16,10 @@ const notesCollection = defineCollection({
       growthStage: z.string(),
       draft: z.boolean().optional(),
       toc: z.boolean().optional(),
+      version: z.number().optional(),
+      isArchived: z.boolean().optional(),
+      canonicalUrl: z.string().optional(),
+      versionSummary: z.string().optional(),
     }),
 });
 
@@ -35,6 +39,10 @@ const essaysCollection = defineCollection({
       draft: z.boolean().optional(),
       toc: z.boolean().optional(),
       aliases: z.array(z.string()).optional(),
+      version: z.number().optional(),
+      isArchived: z.boolean().optional(),
+      canonicalUrl: z.string().optional(),
+      versionSummary: z.string().optional(),
     }),
 });
 
@@ -51,6 +59,10 @@ const patternsCollection = defineCollection({
       growthStage: z.string(),
       draft: z.boolean().optional(),
       toc: z.boolean().optional(),
+      version: z.number().optional(),
+      isArchived: z.boolean().optional(),
+      canonicalUrl: z.string().optional(),
+      versionSummary: z.string().optional(),
     }),
 });
 
@@ -74,6 +86,10 @@ const talksCollection = defineCollection({
       ),
       cover: image(),
       draft: z.boolean().optional(),
+      version: z.number().optional(),
+      isArchived: z.boolean().optional(),
+      canonicalUrl: z.string().optional(),
+      versionSummary: z.string().optional(),
     }),
 });
 

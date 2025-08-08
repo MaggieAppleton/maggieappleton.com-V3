@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { fileURLToPath } from "url";
+import { extractBaseSlug, getLatestVersion, groupContentByBaseSlug } from "../utils/versionUtils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,13 +28,13 @@ const getFilesFromDir = (dir) => {
 };
 
 // Get data for backlinks
-const getDataForBacklinks = (fileNames, filePath) =>
-  fileNames
+const getDataForBacklinks = (fileNames, filePath) => {
+  const allPosts = fileNames
     .map((fileName) => {
       const file = fs.readFileSync(path.join(filePath, fileName), "utf8");
       const { content, data } = matter(file);
       const slug = fileName.replace(/\.mdx?$/, "");
-      const { title, aliases, growthStage, description, draft } = data;
+      const { title, aliases, growthStage, description, draft, version, isArchived } = data;
 
       // Skip draft posts
       if (draft === true) {
@@ -47,9 +48,40 @@ const getDataForBacklinks = (fileNames, filePath) =>
         aliases,
         growthStage,
         description,
+        version: version || 1,
+        isArchived: isArchived || false,
+        id: fileName,
       };
     })
     .filter(Boolean); // Remove null entries (drafts)
+
+  // Group by base slug and return only latest versions for link mapping
+  const groups = new Map();
+  
+  allPosts.forEach(post => {
+    const baseSlug = extractBaseSlug(post.slug);
+    if (!groups.has(baseSlug)) {
+      groups.set(baseSlug, []);
+    }
+    groups.get(baseSlug).push(post);
+  });
+
+  // Return only the latest version of each post for link generation
+  const latestVersions = [];
+  for (const [baseSlug, versions] of groups) {
+    const latestVersion = versions.reduce((latest, current) => {
+      return current.version > latest.version ? current : latest;
+    });
+    
+    // Update slug to be the canonical (base) slug
+    latestVersions.push({
+      ...latestVersion,
+      slug: baseSlug,
+    });
+  }
+
+  return latestVersions;
+};
 
 const getAllPostData = () => {
   // Get all content files

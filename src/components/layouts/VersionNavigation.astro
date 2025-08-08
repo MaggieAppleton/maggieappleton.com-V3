@@ -1,0 +1,360 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import { getVersionInfo, hasMultipleVersions } from "../../utils/versionUtils";
+import { getCollection } from "astro:content";
+
+type VersionedContent = CollectionEntry<"essays"> | CollectionEntry<"notes"> | CollectionEntry<"patterns"> | CollectionEntry<"talks">;
+
+interface Props {
+  entry: VersionedContent;
+}
+
+const { entry } = Astro.props;
+
+// Get all entries of the same collection type to find versions
+let allEntries: VersionedContent[] = [];
+switch (entry.collection) {
+  case "essays":
+    allEntries = await getCollection("essays") as VersionedContent[];
+    break;
+  case "notes":
+    allEntries = await getCollection("notes") as VersionedContent[];
+    break;
+  case "patterns":
+    allEntries = await getCollection("patterns") as VersionedContent[];
+    break;
+  case "talks":
+    allEntries = await getCollection("talks") as VersionedContent[];
+    break;
+}
+
+const versionInfo = getVersionInfo(entry, allEntries);
+const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
+
+// Don't render if there's only one version
+if (!multipleVersions) {
+  // Return empty component
+} else {
+  const currentVersion = versionInfo.version;
+  const totalVersions = versionInfo.allVersions.length;
+  
+  // Get previous and next versions
+  const currentIndex = versionInfo.allVersions.findIndex(v => (v.data.version ?? 1) === currentVersion);
+  const prevVersion = currentIndex > 0 ? versionInfo.allVersions[currentIndex - 1] : null;
+  const nextVersion = currentIndex < totalVersions - 1 ? versionInfo.allVersions[currentIndex + 1] : null;
+  
+  // Generate URLs
+  const getVersionUrl = (version: VersionedContent) => {
+    const versionNum = version.data.version ?? 1;
+    return versionNum === versionInfo.allVersions[versionInfo.allVersions.length - 1].data.version 
+      ? `/${versionInfo.baseSlug}` 
+      : `/v${versionNum}/${versionInfo.baseSlug}`;
+  };
+  
+  const latestUrl = `/${versionInfo.baseSlug}`;
+  const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : new Date(entry.data.updated);
+}
+---
+
+{multipleVersions && (
+  <div class="version-navigation">
+    <div class="version-header">
+      <Icon name="heroicons:document-text" size={16} />
+      <span class="version-info">
+        Version {currentVersion} of {totalVersions}
+      </span>
+      {lastUpdated && (
+        <span class="version-date">
+          Updated {lastUpdated.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </span>
+      )}
+    </div>
+    
+    <div class="version-controls">
+      <div class="nav-buttons">
+        {prevVersion ? (
+          <a href={getVersionUrl(prevVersion)} class="nav-button">
+            <Icon name="heroicons:chevron-left" size={16} />
+            v{prevVersion.data.version ?? 1}
+          </a>
+        ) : (
+          <span class="nav-button disabled">
+            <Icon name="heroicons:chevron-left" size={16} />
+            v{currentVersion}
+          </span>
+        )}
+        
+        {!versionInfo.isLatest && (
+          <a href={latestUrl} class="nav-button latest">
+            Latest
+          </a>
+        )}
+        
+        {nextVersion ? (
+          <a href={getVersionUrl(nextVersion)} class="nav-button">
+            v{nextVersion.data.version ?? 1}
+            <Icon name="heroicons:chevron-right" size={16} />
+          </a>
+        ) : versionInfo.isLatest ? (
+          <span class="nav-button disabled">
+            Latest
+            <Icon name="heroicons:chevron-right" size={16} />
+          </span>
+        ) : null}
+      </div>
+      
+      <button class="show-history" id="toggleHistory">
+        <span>Show version history</span>
+        <Icon name="heroicons:chevron-down" size={16} id="historyChevron" />
+      </button>
+    </div>
+    
+    <div class="version-history" id="versionHistory" style="display: none;">
+      <h4>Version History:</h4>
+      <ul class="history-list">
+        {versionInfo.allVersions.slice().reverse().map((version) => {
+          const versionNum = version.data.version ?? 1;
+          const isCurrentVersion = versionNum === currentVersion;
+          const versionUrl = getVersionUrl(version);
+          const isLatestVersion = version === versionInfo.allVersions[versionInfo.allVersions.length - 1];
+          
+          return (
+            <li class={`history-item ${isCurrentVersion ? 'current' : ''}`}>
+              <div class="version-label">
+                {isLatestVersion ? (
+                  <a href={versionUrl}>v{versionNum} (Current)</a>
+                ) : (
+                  <a href={versionUrl}>v{versionNum}</a>
+                )}
+                {isCurrentVersion && <span class="current-indicator">You are here</span>}
+              </div>
+              {version.data.versionSummary && (
+                <p class="version-summary">{version.data.versionSummary}</p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </div>
+)}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('toggleHistory');
+    const historyDiv = document.getElementById('versionHistory');
+    const chevron = document.getElementById('historyChevron');
+    
+    if (toggleButton && historyDiv && chevron) {
+      toggleButton.addEventListener('click', function() {
+        const isHidden = historyDiv.style.display === 'none';
+        historyDiv.style.display = isHidden ? 'block' : 'none';
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        toggleButton.querySelector('span')!.textContent = isHidden 
+          ? 'Hide version history' 
+          : 'Show version history';
+      });
+    }
+  });
+</script>
+
+<style>
+  .version-navigation {
+    background: var(--color-cream);
+    border: 1px solid var(--color-tinted-cream);
+    border-radius: 8px;
+    padding: var(--space-m);
+    margin: var(--space-l) 0;
+    font-family: var(--font-sans);
+  }
+  
+  .version-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-s);
+  }
+  
+  .version-info {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-700);
+  }
+  
+  .version-date {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    margin-left: auto;
+  }
+  
+  .version-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-m);
+  }
+  
+  .nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  
+  .nav-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-xs);
+    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-button:not(.disabled) {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    color: var(--color-sea-blue);
+  }
+  
+  .nav-button:not(.disabled):hover {
+    background: var(--color-gray-50);
+    border-color: var(--color-sea-blue);
+    transform: translateY(-1px);
+  }
+  
+  .nav-button.latest {
+    background: var(--color-sea-blue);
+    color: var(--color-white);
+    border-color: var(--color-sea-blue);
+  }
+  
+  .nav-button.latest:hover {
+    background: var(--color-dark-sea-blue);
+  }
+  
+  .nav-button.disabled {
+    color: var(--color-gray-400);
+    cursor: not-allowed;
+  }
+  
+  .show-history {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    background: none;
+    border: none;
+    color: var(--color-gray-600);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    padding: var(--space-2xs) 0;
+    transition: color 0.2s ease;
+  }
+  
+  .show-history:hover {
+    color: var(--color-sea-blue);
+  }
+  
+  .show-history svg {
+    transition: transform 0.3s ease;
+  }
+  
+  .version-history {
+    margin-top: var(--space-m);
+    padding-top: var(--space-m);
+    border-top: 1px solid var(--color-tinted-cream);
+  }
+  
+  .version-history h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-gray-700);
+    margin: 0 0 var(--space-s) 0;
+  }
+  
+  .history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  
+  .history-item {
+    padding: var(--space-xs);
+    border-radius: 4px;
+    background: var(--color-white);
+  }
+  
+  .history-item.current {
+    background: var(--color-light-sea-blue);
+    border: 1px solid var(--color-sea-blue);
+  }
+  
+  .version-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+  }
+  
+  .version-label a {
+    color: var(--color-sea-blue);
+    text-decoration: none;
+  }
+  
+  .version-label a:hover {
+    text-decoration: underline;
+  }
+  
+  .current-indicator {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    font-weight: normal;
+    margin-left: auto;
+  }
+  
+  .version-summary {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    margin: var(--space-2xs) 0 0 0;
+    line-height: var(--leading-relaxed);
+  }
+  
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .version-controls {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-s);
+    }
+    
+    .version-header {
+      flex-wrap: wrap;
+    }
+    
+    .version-date {
+      margin-left: 0;
+      width: 100%;
+      margin-top: var(--space-2xs);
+    }
+    
+    .nav-buttons {
+      width: 100%;
+      justify-content: space-between;
+    }
+    
+    .show-history {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>

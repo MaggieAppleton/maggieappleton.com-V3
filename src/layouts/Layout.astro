@@ -10,11 +10,12 @@ export interface Props {
 	desc?: string;
 	type?: string;
 	coverImage?: string;
+	canonicalURL?: string;
 }
 
-const { title, desc, type, coverImage } = Astro.props;
+const { title, desc, type, coverImage, canonicalURL: overrideCanonicalURL } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
+const canonicalURL = overrideCanonicalURL || new URL(Astro.url.pathname, Astro.site).toString();
 
 // Generate OG image URL
 const currentPath = Astro.url.pathname;
