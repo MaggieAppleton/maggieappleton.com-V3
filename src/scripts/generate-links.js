@@ -2,7 +2,10 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { fileURLToPath } from "url";
-import { extractBaseSlug, getLatestVersion, groupContentByBaseSlug } from "../utils/versionUtils.js";
+// Import the extractBaseSlug function locally since we can't import TS from JS
+const extractBaseSlug = (slug) => {
+  return slug.replace(/-v\d+$/, '');
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -32,29 +32,25 @@ switch (entry.collection) {
 const versionInfo = getVersionInfo(entry, allEntries);
 const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
 
-// Don't render if there's only one version
-if (!multipleVersions) {
-  // Return empty component
-} else {
-  const currentVersion = versionInfo.version;
-  const totalVersions = versionInfo.allVersions.length;
-  
-  // Get previous and next versions
-  const currentIndex = versionInfo.allVersions.findIndex(v => (v.data.version ?? 1) === currentVersion);
-  const prevVersion = currentIndex > 0 ? versionInfo.allVersions[currentIndex - 1] : null;
-  const nextVersion = currentIndex < totalVersions - 1 ? versionInfo.allVersions[currentIndex + 1] : null;
-  
-  // Generate URLs
-  const getVersionUrl = (version: VersionedContent) => {
-    const versionNum = version.data.version ?? 1;
-    return versionNum === versionInfo.allVersions[versionInfo.allVersions.length - 1].data.version 
-      ? `/${versionInfo.baseSlug}` 
-      : `/v${versionNum}/${versionInfo.baseSlug}`;
-  };
-  
-  const latestUrl = `/${versionInfo.baseSlug}`;
-  const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : new Date(entry.data.updated);
-}
+// Initialize variables for all cases
+const currentVersion = versionInfo.version;
+const totalVersions = versionInfo.allVersions.length;
+
+// Get previous and next versions
+const currentIndex = versionInfo.allVersions.findIndex(v => (v.data.version ?? 1) === currentVersion);
+const prevVersion = currentIndex > 0 ? versionInfo.allVersions[currentIndex - 1] : null;
+const nextVersion = currentIndex < totalVersions - 1 ? versionInfo.allVersions[currentIndex + 1] : null;
+
+// Generate URLs
+const getVersionUrl = (version: VersionedContent) => {
+  const versionNum = version.data.version ?? 1;
+  return versionNum === versionInfo.allVersions[versionInfo.allVersions.length - 1].data.version 
+    ? `/${versionInfo.baseSlug}` 
+    : `/v${versionNum}/${versionInfo.baseSlug}`;
+};
+
+const latestUrl = `/${versionInfo.baseSlug}`;
+const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : new Date(entry.data.updated);
 ---
 
 {multipleVersions && (
