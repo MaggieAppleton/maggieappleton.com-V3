@@ -1,38 +1,6 @@
 [
   {
     "ids": [
-      "The Dark Forest and Generative AI"
-    ],
-    "slug": "ai-dark-forest",
-    "growthStage": "budding",
-    "description": "Proving you're a human on a web flooded with generative AI content",
-    "outboundLinks": [
-      {
-        "matchedId": "dark forest theory",
-        "title": "The Dark Forest and the Cozy Web",
-        "slug": "cozy-web",
-        "growthStage": "budding",
-        "description": "An illustrated diagram exposing the inner layers of the dark and cozy web"
-      },
-      {
-        "matchedId": "digital gardens",
-        "title": "A Brief History & Ethos of the Digital Garden",
-        "slug": "garden-history",
-        "growthStage": "evergreen",
-        "description": "A newly revived philosophy for publishing personal knowledge on the web"
-      }
-    ],
-    "inboundLinks": [
-      {
-        "title": "The Expanding Dark Forest and Generative AI",
-        "slug": "forest-talk",
-        "growthStage": "evergreen",
-        "description": "An exploration of the problems and possible futures of flooding the web with generative AI content"
-      }
-    ]
-  },
-  {
-    "ids": [
       "A Treatise on AI Chatbots Undermining the Enlightenment"
     ],
     "slug": "ai-enlightenment",
@@ -302,12 +270,6 @@
       }
     ],
     "inboundLinks": [
-      {
-        "title": "The Dark Forest and Generative AI",
-        "slug": "ai-dark-forest",
-        "growthStage": "budding",
-        "description": "Proving you're a human on a web flooded with generative AI content"
-      },
       {
         "title": "A Short History of Bi-Directional Links",
         "slug": "bidirectionals",
@@ -1114,12 +1076,6 @@
       }
     ],
     "inboundLinks": [
-      {
-        "title": "The Dark Forest and Generative AI",
-        "slug": "ai-dark-forest",
-        "growthStage": "budding",
-        "description": "Proving you're a human on a web flooded with generative AI content"
-      },
       {
         "title": "A Brief History & Ethos of the Digital Garden",
         "slug": "garden-history",
@@ -3443,22 +3399,7 @@
     "slug": "forest-talk",
     "growthStage": "evergreen",
     "description": "An exploration of the problems and possible futures of flooding the web with generative AI content",
-    "outboundLinks": [
-      {
-        "matchedId": "The Dark Forest and Generative AI",
-        "title": "The Dark Forest and Generative AI",
-        "slug": "ai-dark-forest",
-        "growthStage": "budding",
-        "description": "Proving you're a human on a web flooded with generative AI content"
-      },
-      {
-        "matchedId": "The Dark Forest and Generative AI",
-        "title": "The Dark Forest and Generative AI",
-        "slug": "ai-dark-forest",
-        "growthStage": "budding",
-        "description": "Proving you're a human on a web flooded with generative AI content"
-      }
-    ],
+    "outboundLinks": [],
     "inboundLinks": [
       {
         "title": "On Opening Essays, Conference Talks, and Jam Jars",
