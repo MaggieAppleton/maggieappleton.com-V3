@@ -15,11 +15,25 @@ export function isVersionedFile(filename: string): boolean {
 
 export function extractVersionFromFilename(filename: string): number {
   const match = filename.match(/-v(\d+)\.mdx$/);
-  return match ? parseInt(match[1], 10) : 1; // Default to version 1 if no version suffix
+  return match ? parseInt(match[1], 10) : 0; // 0 indicates latest version (no suffix)
 }
 
-export function getVersionFromEntry(entry: VersionedContent): number {
-  return extractVersionFromFilename(entry.id);
+export function getVersionFromEntry(entry: VersionedContent, allEntries?: VersionedContent[]): number {
+  const rawVersion = extractVersionFromFilename(entry.id);
+  if (rawVersion > 0) {
+    return rawVersion; // Explicit version number
+  }
+  
+  // No version suffix means this is the latest version
+  // Find the highest version number among all versions of this post
+  if (allEntries) {
+    const baseSlug = extractBaseSlug(getSlug(entry));
+    const versions = getAllVersionsForPost(baseSlug, allEntries);
+    const maxVersion = Math.max(...versions.map(v => extractVersionFromFilename(v.id)).filter(v => v > 0));
+    return maxVersion > 0 ? maxVersion + 1 : 1;
+  }
+  
+  return 1; // Fallback
 }
 
 export function isArchivedVersion(entry: VersionedContent, allEntries: VersionedContent[]): boolean {
@@ -61,21 +75,30 @@ export function groupContentByBaseSlug(entries: VersionedContent[]): Map<string,
 }
 
 export function getLatestVersion(versions: VersionedContent[]): VersionedContent {
+  // The latest version is the one without a version suffix (rawVersion = 0)
+  const latestWithoutSuffix = versions.find(v => extractVersionFromFilename(v.id) === 0);
+  if (latestWithoutSuffix) {
+    return latestWithoutSuffix;
+  }
+  
+  // If no file without suffix, find the highest numbered version
   return versions.reduce((latest, current) => {
-    const currentVersion = getVersionFromEntry(current);
-    const latestVersion = getVersionFromEntry(latest);
+    const currentVersion = extractVersionFromFilename(current.id);
+    const latestVersion = extractVersionFromFilename(latest.id);
     return currentVersion > latestVersion ? current : latest;
   });
 }
 
 export function getAllVersionsForPost(baseSlug: string, allEntries: VersionedContent[]): VersionedContent[] {
-  return allEntries
-    .filter(entry => extractBaseSlug(getSlug(entry)) === baseSlug)
-    .sort((a, b) => {
-      const versionA = getVersionFromEntry(a);
-      const versionB = getVersionFromEntry(b);
-      return versionA - versionB;
-    });
+  const filtered = allEntries.filter(entry => extractBaseSlug(getSlug(entry)) === baseSlug);
+  return filtered.sort((a, b) => {
+    const versionA = extractVersionFromFilename(a.id);
+    const versionB = extractVersionFromFilename(b.id);
+    // Files without version suffix (version 0) should come last as they're the latest
+    if (versionA === 0) return 1;
+    if (versionB === 0) return -1;
+    return versionA - versionB;
+  });
 }
 
 export function getVersionInfo(currentEntry: VersionedContent, allEntries: VersionedContent[]): VersionInfo {
@@ -85,7 +108,7 @@ export function getVersionInfo(currentEntry: VersionedContent, allEntries: Versi
   
   return {
     baseSlug,
-    version: getVersionFromEntry(currentEntry),
+    version: getVersionFromEntry(currentEntry, allEntries),
     isLatest: getSlug(currentEntry) === getSlug(latestVersion),
     allVersions
   };
@@ -108,7 +131,7 @@ export function generateVersionedPaths(entries: VersionedContent[]): Array<{ slu
     
     // Add versioned paths for all versions
     for (const version of versions) {
-      const versionNumber = version.data.version ?? 1;
+      const versionNumber = getVersionFromEntry(version, entries);
       const versionedSlug = getVersionedSlug(baseSlug, versionNumber);
       paths.push({ slug: versionedSlug, entry: version });
     }

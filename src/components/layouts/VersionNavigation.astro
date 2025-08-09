@@ -37,14 +37,14 @@ const currentVersion = versionInfo.version;
 const totalVersions = versionInfo.allVersions.length;
 
 // Get previous and next versions
-const currentIndex = versionInfo.allVersions.findIndex(v => getVersionFromEntry(v) === currentVersion);
+const currentIndex = versionInfo.allVersions.findIndex(v => getVersionFromEntry(v, allEntries) === currentVersion);
 const prevVersion = currentIndex > 0 ? versionInfo.allVersions[currentIndex - 1] : null;
 const nextVersion = currentIndex < totalVersions - 1 ? versionInfo.allVersions[currentIndex + 1] : null;
 
 // Generate URLs
 const getVersionUrl = (version: VersionedContent) => {
-  const versionNum = getVersionFromEntry(version);
-  const latestVersionNum = getVersionFromEntry(versionInfo.allVersions[versionInfo.allVersions.length - 1]);
+  const versionNum = getVersionFromEntry(version, allEntries);
+  const latestVersionNum = getVersionFromEntry(versionInfo.allVersions[versionInfo.allVersions.length - 1], allEntries);
   return versionNum === latestVersionNum
     ? `/${versionInfo.baseSlug}` 
     : `/v${versionNum}/${versionInfo.baseSlug}`;
@@ -77,7 +77,7 @@ const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : ne
         {prevVersion ? (
           <a href={getVersionUrl(prevVersion)} class="nav-button">
             <Icon name="heroicons:chevron-left" size={16} />
-            v{getVersionFromEntry(prevVersion)}
+            v{getVersionFromEntry(prevVersion, allEntries)}
           </a>
         ) : (
           <span class="nav-button disabled">
@@ -94,7 +94,7 @@ const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : ne
         
         {nextVersion ? (
           <a href={getVersionUrl(nextVersion)} class="nav-button">
-            v{getVersionFromEntry(nextVersion)}
+            v{getVersionFromEntry(nextVersion, allEntries)}
             <Icon name="heroicons:chevron-right" size={16} />
           </a>
         ) : versionInfo.isLatest ? (
@@ -115,7 +115,7 @@ const lastUpdated = entry.data.updated instanceof Date ? entry.data.updated : ne
       <h4>Version History:</h4>
       <ul class="history-list">
         {versionInfo.allVersions.slice().reverse().map((version) => {
-          const versionNum = getVersionFromEntry(version);
+          const versionNum = getVersionFromEntry(version, allEntries);
           const isCurrentVersion = versionNum === currentVersion;
           const versionUrl = getVersionUrl(version);
           const isLatestVersion = version === versionInfo.allVersions[versionInfo.allVersions.length - 1];
