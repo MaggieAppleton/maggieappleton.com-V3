@@ -8,6 +8,7 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Image } from "astro:assets";
 import { Icon } from "astro-icon/components";
+import { extractBaseSlug } from "../utils/versionUtils";
 
 // Import the images
 import talks1 from "../images/general/talks_1.webp";
@@ -80,7 +81,7 @@ const sortedTalks = talks.sort(
 					<div class="grid-item">
 						<TalkCard
 							id={talk.id}
-							slug={talk.id}
+							slug={extractBaseSlug(talk.id)}
 							title={talk.data.title}
 							conferences={talk.data.conferences}
 							date={talk.data.updated}

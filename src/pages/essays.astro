@@ -7,6 +7,7 @@ import EssayCard from "../components/cards/EssayCard.astro";
 import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { Icon } from "astro-icon/components";
+import { extractBaseSlug } from "../utils/versionUtils";
 
 // Get all essays that aren't drafts
 const essays = await getCollection("essays", ({ data }) => !data.draft);
@@ -39,7 +40,7 @@ const sortedEssays = essays.sort(
 					<div class="grid-item">
 						<EssayCard
 							id={essay.id}
-							slug={essay.id}
+							slug={extractBaseSlug(essay.id)}
 							cover={essay.data.cover}
 							title={essay.data.title}
 							growthStage={essay.data.growthStage}

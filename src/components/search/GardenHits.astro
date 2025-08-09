@@ -8,6 +8,7 @@ import TalkCard from "../cards/TalkCard.astro";
 import SmidgeonCard from "../cards/SmidgeonCard.astro";
 import NowCard from "../cards/NowCard.astro";
 import { extractPreview } from "../../utils/extractPreview";
+import { extractBaseSlug } from "../../utils/versionUtils";
 
 interface Post {
 	id: string;
@@ -76,7 +77,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 				const commonProps = {
 					key: i,
 					id: post.id,
-					slug: post.data.type === "now" ? `now-${post.id}` : post.id,
+					slug: post.data.type === "now" ? `now-${post.id}` : extractBaseSlug(post.id),
 					date: dateField,
 				};
 
