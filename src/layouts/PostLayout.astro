@@ -10,7 +10,6 @@ import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionNavigation from "../components/layouts/VersionNavigation.astro";
-import ArchiveWarning from "../components/layouts/ArchiveWarning.astro";
 import { getCanonicalUrlFromEntry } from "../utils/versionUtils";
 
 // You'll need to find Astro alternatives for these React components:
@@ -23,7 +22,11 @@ type Props = {
 		| CollectionEntry<"patterns">["data"]
 		| CollectionEntry<"talks">["data"];
 	headings: MarkdownHeading[];
-	entry?: CollectionEntry<"essays"> | CollectionEntry<"notes"> | CollectionEntry<"patterns"> | CollectionEntry<"talks">;
+	entry?:
+		| CollectionEntry<"essays">
+		| CollectionEntry<"notes">
+		| CollectionEntry<"patterns">
+		| CollectionEntry<"talks">;
 };
 
 const { frontmatter, entry } = Astro.props;
@@ -32,7 +35,7 @@ const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 
 // Calculate canonical URL for versioned content
-const canonicalURL = entry 
+const canonicalURL = entry
 	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
 	: undefined;
 
@@ -44,9 +47,7 @@ const backlinks = currentPost?.inboundLinks || [];
 
 // Only essays and talks have cover images
 const coverImage =
-	frontmatter.type === "essay" || frontmatter.type === "talk"
-		? frontmatter.cover?.src
-		: undefined;
+	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 ---
 
 <Layout
@@ -62,19 +63,13 @@ const coverImage =
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
 					<span>
-						{
-							frontmatter.type.charAt(0).toUpperCase() +
-								frontmatter.type.slice(1)
-						}s
+						{frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1)}s
 					</span>
 				</a>
 			</div>
 			<GrowthIcon
 				size="16"
-				growthStage={frontmatter.growthStage as
-					| "budding"
-					| "evergreen"
-					| "seedling"}
+				growthStage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"}
 			/>
 			<p>{frontmatter.growthStage}</p>
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
@@ -97,7 +92,6 @@ const coverImage =
 	</header>
 
 	<div class="version-components-container">
-		{entry && <ArchiveWarning entry={entry} />}
 		{entry && <VersionNavigation entry={entry} />}
 	</div>
 
