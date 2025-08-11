@@ -21,7 +21,8 @@ Built with Astro
 MDX  
 Backlinks  
 Tooltip hover previews with Tippy.js  
-Masonry grids with just CSS Webmentions with Brid.gy and Webmention.io  
+Masonry grids with just CSS  
+Webmentions with Brid.gy and Webmention.io  
 Typed collections – essays, notes, patterns, talks, podcasts, smidgeons, library, antilibrary, and
 now updates
 
