@@ -11,8 +11,27 @@ function stripMarkdown(text) {
     .replace(/[*_`~]/g, ""); // Remove markdown formatting characters
 }
 
+// Helper to convert relative paths to absolute URLs
+function makeAbsolute(url, siteUrl) {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  if (url.startsWith('/')) {
+    return siteUrl + url;
+  }
+  return siteUrl + '/' + url;
+}
+
+// Helper to fix img tags with relative paths in HTML content
+function fixImagePaths(html, siteUrl) {
+  return html.replace(/<img([^>]*)\ssrc="([^"]*)"([^>]*)>/g, (match, beforeSrc, src, afterSrc) => {
+    const absoluteSrc = makeAbsolute(src, siteUrl);
+    return `<img${beforeSrc} src="${absoluteSrc}"${afterSrc}>`;
+  });
+}
+
 // Helper to strip MDX component tags but preserve images
-function stripMDXComponents(text) {
+function stripMDXComponents(text, siteUrl) {
   return (
     text
       // Convert ResourceBook components to a simpler format with image and text (handling multiline format)
@@ -26,12 +45,12 @@ function stripMDXComponents(text) {
       // Convert BasicImage components to standard img tags
       .replace(
         /<BasicImage[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/>/g,
-        (match, src, alt) => `<img src="${src}" alt="${alt}" />`,
+        (match, src, alt) => `<img src="${makeAbsolute(src, siteUrl)}" alt="${alt}" />`,
       )
       // Convert RemoteImage components to standard img tags
       .replace(
         /<RemoteImage[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/>/g,
-        (match, src, alt) => `<img src="${src}" alt="${alt}" />`,
+        (match, src, alt) => `<img src="${makeAbsolute(src, siteUrl)}" alt="${alt}" />`,
       )
       // Remove Spacer components
       .replace(/<Spacer[^>]*\/>/g, "")
@@ -87,13 +106,14 @@ export async function GET(context) {
           .join("\n");
 
         // First strip MDX components, then render markdown
-        const processedContent = parser.render(stripMDXComponents(contentWithoutImports));
+        const processedContent = parser.render(stripMDXComponents(contentWithoutImports, context.site));
+        const contentWithAbsoluteImages = fixImagePaths(processedContent, context.site);
 
         return {
           title: post.data.title,
           pubDate: post.data.startDate,
           link: `/now-${post.id}/`,
-          content: sanitizeHtml(processedContent, {
+          content: sanitizeHtml(contentWithAbsoluteImages, {
             allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
             allowedAttributes: {
               ...sanitizeHtml.defaults.allowedAttributes,
@@ -115,8 +135,14 @@ export async function GET(context) {
           .join("\n");
 
         // First strip MDX components, then render markdown
-        const processedContent = stripMDXComponents(contentWithoutImports);
+        const processedContent = stripMDXComponents(contentWithoutImports, context.site);
         const renderedContent = parser.render(processedContent);
+        const finalContent = (post.data.external
+          ? `<a href="${post.data.external.url}">${post.data.external.title}</a>\n\n`
+          : post.data.citation
+            ? `<a href="${post.data.citation.url}">${post.data.citation.title}</a>\n\n`
+            : "") + renderedContent;
+        const contentWithAbsoluteImages = fixImagePaths(finalContent, context.site);
 
         return {
           title: post.data.title,
@@ -128,11 +154,7 @@ export async function GET(context) {
               : stripMarkdown(firstLine || ""),
           link: `/${post.id}/`,
           content: sanitizeHtml(
-            (post.data.external
-              ? `<a href="${post.data.external.url}">${post.data.external.title}</a>\n\n`
-              : post.data.citation
-                ? `<a href="${post.data.citation.url}">${post.data.citation.title}</a>\n\n`
-                : "") + renderedContent,
+            contentWithAbsoluteImages,
             {
               allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
               allowedAttributes: {
