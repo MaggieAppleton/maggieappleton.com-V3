@@ -1,5 +1,5 @@
 import { getCollection } from "astro:content";
-import { slugifyTopic, deslugifyTopic } from "./slugifyTopic";
+import { slugifyTopic } from "./slugifyTopic";
 
 export async function getAllTopics() {
   const essays = await getCollection("essays", ({ data }) => !data.draft);
@@ -54,11 +54,11 @@ export async function getPostsForTopic(topicSlug: string) {
     ...now,
     ...smidgeons,
   ];
-  const topic = deslugifyTopic(topicSlug);
 
   return allContent.filter((post) => {
     if (!post.data.topics) return false;
-    // Case-insensitive comparison
-    return post.data.topics.some((t) => t.toLowerCase() === topic.toLowerCase());
+    // Instead of trying to perfectly reconstruct the original topic,
+    // compare slugified versions for more reliable matching
+    return post.data.topics.some((t) => slugifyTopic(t) === topicSlug);
   });
 }
