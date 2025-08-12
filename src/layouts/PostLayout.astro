@@ -10,6 +10,7 @@ import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionNavigation from "../components/layouts/VersionNavigation.astro";
+import VersionDropdown from "../components/layouts/VersionDropdown.astro";
 import { getCanonicalUrlFromEntry } from "../utils/versionUtils";
 
 // You'll need to find Astro alternatives for these React components:
@@ -79,15 +80,20 @@ const coverImage =
 			{frontmatter.description && <p>{frontmatter.description}</p>}
 		</div>
 		<div class="metadata">
-			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
-			<Dates
-				startDate={frontmatter.startDate instanceof Date
-					? frontmatter.startDate.toISOString()
-					: frontmatter.startDate}
-				updated={frontmatter.updated instanceof Date
-					? frontmatter.updated.toISOString()
-					: frontmatter.updated}
-			/>
+			<div class="metadata-left">
+				{frontmatter.topics && <Topics topics={frontmatter.topics} />}
+			</div>
+			<div class="metadata-right">
+				<Dates
+					startDate={frontmatter.startDate instanceof Date
+						? frontmatter.startDate.toISOString()
+						: frontmatter.startDate}
+					updated={frontmatter.updated instanceof Date
+						? frontmatter.updated.toISOString()
+						: frontmatter.updated}
+				/>
+				{entry && <VersionDropdown entry={entry} />}
+			</div>
 		</div>
 	</header>
 
@@ -158,6 +164,20 @@ const coverImage =
 		justify-content: space-between;
 		display: flex;
 		flex-direction: row;
+		align-items: flex-start;
+		gap: var(--space-s);
+	}
+
+	.metadata-left {
+		flex: 1;
+	}
+
+	.metadata-right {
+		flex-shrink: 0;
+		text-align: right;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 	}
 
 	.styled-main {
@@ -170,6 +190,13 @@ const coverImage =
 	@media (max-width: 768px) {
 		.metadata {
 			flex-direction: column;
+			text-align: left;
+			align-items: flex-start;
+			gap: var(--space-xs);
+		}
+
+		.metadata-right {
+			width: 100%;
 			text-align: left;
 			align-items: flex-start;
 		}

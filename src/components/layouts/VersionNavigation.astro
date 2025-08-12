@@ -36,108 +36,36 @@ switch (entry.collection) {
 const versionInfo = getVersionInfo(entry, allEntries);
 const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
 
-// Initialize variables for all cases
-const currentVersion = versionInfo.version;
-const totalVersions = versionInfo.allVersions.length;
-
-// Get previous and next versions
-const currentIndex = versionInfo.allVersions.findIndex(
-	(v) => getVersionFromEntry(v) === currentVersion,
-);
-const prevVersion = currentIndex > 0 ? versionInfo.allVersions[currentIndex - 1] : null;
-const nextVersion =
-	currentIndex < totalVersions - 1 ? versionInfo.allVersions[currentIndex + 1] : null;
-
-// Generate URLs
-const getVersionUrl = (version: VersionedContent) => {
-	const versionNum = getVersionFromEntry(version);
-	const latestVersionNum = getVersionFromEntry(
-		versionInfo.allVersions[versionInfo.allVersions.length - 1],
-	);
-	return versionNum === latestVersionNum
-		? `/${versionInfo.baseSlug}`
-		: `/v${versionNum}/${versionInfo.baseSlug}`;
-};
-
 const latestUrl = `/${versionInfo.baseSlug}`;
-const lastUpdated =
-	entry.data.updated instanceof Date ? entry.data.updated : new Date(entry.data.updated);
 const isArchived = !versionInfo.isLatest;
 ---
 
 {
-	multipleVersions && (
-		<div class={`version-navigation ${isArchived ? "archived" : ""}`}>
+	multipleVersions && isArchived && (
+		<div class="version-navigation archived">
 			<div class="bar">
-				<span class="small">
-					{isArchived ? (
-						<>
-							Older version v{currentVersion} of {totalVersions} ·{" "}
-							<a href={latestUrl} class="link">
-								View latest
-							</a>
-						</>
-					) : (
-						<>
-							Version v{currentVersion} of {totalVersions}
-						</>
-					)}
-				</span>
-				<nav class="inline-nav">
-					{prevVersion ? (
-						<a href={getVersionUrl(prevVersion)} class="link">
-							<Icon name="heroicons:chevron-left" size={14} /> v{getVersionFromEntry(prevVersion)}
-						</a>
-					) : (
-						<span class="muted">
-							<Icon name="heroicons:chevron-left" size={14} /> v{currentVersion}
-						</span>
-					)}
-					<span class="divider">·</span>
-					{nextVersion ? (
-						<a href={getVersionUrl(nextVersion)} class="link">
-							v{getVersionFromEntry(nextVersion)} <Icon name="heroicons:chevron-right" size={14} />
-						</a>
-					) : (
-						<span class="muted">
-							Latest <Icon name="heroicons:chevron-right" size={14} />
-						</span>
-					)}
-				</nav>
+				<div class="message">
+					<Icon name="heroicons:exclamation-triangle" size={18} class="warning-icon" />
+					<span class="message-text">
+						This is an older version of this {entry.collection.slice(0, -1)}. Read the latest version updated
+						on {versionInfo.allVersions[versionInfo.allVersions.length - 1].data.updated
+							? new Date(versionInfo.allVersions[versionInfo.allVersions.length - 1].data.updated instanceof Date 
+								? versionInfo.allVersions[versionInfo.allVersions.length - 1].data.updated.toISOString() 
+								: versionInfo.allVersions[versionInfo.allVersions.length - 1].data.updated).toLocaleDateString('en-US', { 
+									year: 'numeric', 
+									month: 'long', 
+									day: 'numeric' 
+								})
+							: ''}
+					</span>
+				</div>
+				<a href={latestUrl} class="view-latest-btn">
+					View latest →
+				</a>
 			</div>
-			<details class="history">
-				<summary class="summary">Version history</summary>
-				<ul class="history-list">
-					{versionInfo.allVersions
-						.slice()
-						.reverse()
-						.map((version) => {
-							const versionNum = getVersionFromEntry(version);
-							const isCurrentVersion = versionNum === currentVersion;
-							const versionUrl = getVersionUrl(version);
-							const isLatestVersion =
-								version === versionInfo.allVersions[versionInfo.allVersions.length - 1];
-							return (
-								<li class={`history-item ${isCurrentVersion ? "current" : ""}`}>
-									<a href={versionUrl} class="history-link">
-										<span class="badge">
-											v{versionNum}
-											{isLatestVersion ? " · current" : ""}
-										</span>
-										{version.data.versionSummary && (
-											<span class="summary-text">{version.data.versionSummary}</span>
-										)}
-									</a>
-								</li>
-							);
-						})}
-				</ul>
-			</details>
 		</div>
 	)
 }
-
-<!-- no JS needed; using native details/summary -->
 
 <style>
 	.version-navigation {
@@ -150,7 +78,9 @@ const isArchived = !versionInfo.isLatest;
 	}
 
 	.version-navigation.archived {
-		background: var(--color-cream);
+		background: #fdf2f8;
+		border: 1px solid #fecaca;
+		padding: var(--space-s) var(--space-s);
 	}
 
 	.bar {
@@ -158,6 +88,41 @@ const isArchived = !versionInfo.isLatest;
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--space-s);
+	}
+
+	.message {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-xs);
+		flex: 1;
+	}
+
+	.warning-icon {
+		color: #dc2626;
+		flex-shrink: 0;
+		margin-top: 2px;
+	}
+
+	.message-text {
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-800);
+		line-height: var(--leading-snug);
+	}
+
+	.view-latest-btn {
+		font-size: var(--font-size-xs);
+		color: var(--color-sea-blue);
+		text-decoration: none;
+		font-weight: 600;
+		flex-shrink: 0;
+		padding: var(--space-4) var(--space-8);
+		border-radius: var(--border-radius-sm);
+		transition: background-color 0.2s ease;
+	}
+
+	.view-latest-btn:hover {
+		background: rgba(4, 165, 187, 0.1);
+		text-decoration: none;
 	}
 
 	.small {
@@ -246,7 +211,12 @@ const isArchived = !versionInfo.isLatest;
 		.bar {
 			flex-direction: column;
 			align-items: flex-start;
-			gap: var(--space-2xs);
+			gap: var(--space-xs);
+		}
+
+		.view-latest-btn {
+			align-self: flex-start;
+			margin-top: var(--space-xs);
 		}
 	}
 </style>

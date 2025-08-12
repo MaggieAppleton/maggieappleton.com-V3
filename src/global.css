@@ -506,7 +506,7 @@ pre code {
 
 .metadata span,
 span.metadata {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-family: var(--font-sans);
   color: var(--color-gray-600);
 }
