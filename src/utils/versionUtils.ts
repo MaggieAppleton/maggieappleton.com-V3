@@ -141,3 +141,56 @@ export function getCanonicalUrl(entry: VersionedContent, baseUrl: string): strin
   const baseSlug = extractBaseSlug(entry.id);
   return new URL(`/${baseSlug}`, baseUrl).toString();
 }
+
+/**
+ * Get canonical dates for a post (consistent across all versions)
+ * - startDate: The earliest startDate from any version (when first published)
+ * - updated: The latest updated date from any version (most recent update)
+ */
+export function getCanonicalDates(currentEntry: VersionedContent, allEntries: VersionedContent[]): { startDate: string | Date, updated?: string | Date } {
+  if (!isVersionedEntry(currentEntry)) {
+    // For non-versioned entries, just return their own dates
+    return {
+      startDate: currentEntry.data.startDate,
+      updated: currentEntry.data.updated
+    };
+  }
+  
+  const baseSlug = extractBaseSlug(currentEntry.id);
+  const allVersions = getAllVersionsForPost(baseSlug, allEntries);
+  
+  // Find the earliest startDate (when the post was first published)
+  let earliestStartDate = allVersions[0].data.startDate;
+  
+  // Find the latest updated date (most recent update across all versions)
+  let latestUpdated = allVersions[0].data.updated;
+  
+  for (const version of allVersions) {
+    // Compare startDates to find the earliest
+    if (version.data.startDate) {
+      const versionStart = version.data.startDate instanceof Date ? version.data.startDate : new Date(version.data.startDate);
+      const currentEarliest = earliestStartDate instanceof Date ? earliestStartDate : new Date(earliestStartDate);
+      
+      if (versionStart < currentEarliest) {
+        earliestStartDate = version.data.startDate;
+      }
+    }
+    
+    // Compare updated dates to find the latest
+    if (version.data.updated) {
+      const versionUpdated = version.data.updated instanceof Date ? version.data.updated : new Date(version.data.updated);
+      const currentLatest = latestUpdated ? 
+        (latestUpdated instanceof Date ? latestUpdated : new Date(latestUpdated)) :
+        new Date(0); // If no latest yet, use epoch
+      
+      if (versionUpdated > currentLatest) {
+        latestUpdated = version.data.updated;
+      }
+    }
+  }
+  
+  return {
+    startDate: earliestStartDate,
+    updated: latestUpdated
+  };
+}

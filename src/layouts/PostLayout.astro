@@ -9,9 +9,10 @@ import linkMaps from "../links.json";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
-import VersionNavigation from "../components/layouts/VersionNavigation.astro";
+import VersionWarning from "../components/layouts/VersionWarning.astro";
 import VersionDropdown from "../components/layouts/VersionDropdown.astro";
-import { getCanonicalUrlFromEntry } from "../utils/versionUtils";
+import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
+import { getCollection } from "astro:content";
 
 // You'll need to find Astro alternatives for these React components:
 // - BackToTop
@@ -39,6 +40,35 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 const canonicalURL = entry
 	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
 	: undefined;
+
+// Get canonical dates for versioned content (consistent across all versions)
+let canonicalDates = { 
+	startDate: frontmatter.startDate, 
+	updated: frontmatter.updated 
+};
+if (entry) {
+	// Get all entries of the same collection type to find canonical dates
+	let allEntries: typeof entry[] = [];
+	switch (entry.collection) {
+		case "essays":
+			allEntries = (await getCollection("essays")) as typeof entry[];
+			break;
+		case "notes":
+			allEntries = (await getCollection("notes")) as typeof entry[];
+			break;
+		case "patterns":
+			allEntries = (await getCollection("patterns")) as typeof entry[];
+			break;
+		case "talks":
+			allEntries = (await getCollection("talks")) as typeof entry[];
+			break;
+	}
+	const versionedDates = getCanonicalDates(entry, allEntries);
+	canonicalDates = {
+		startDate: versionedDates.startDate,
+		updated: versionedDates.updated
+	};
+}
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -85,12 +115,12 @@ const coverImage =
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={frontmatter.startDate instanceof Date
-						? frontmatter.startDate.toISOString()
-						: frontmatter.startDate}
-					updated={frontmatter.updated instanceof Date
-						? frontmatter.updated.toISOString()
-						: frontmatter.updated}
+					startDate={canonicalDates.startDate instanceof Date
+						? canonicalDates.startDate.toISOString()
+						: canonicalDates.startDate}
+					updated={canonicalDates.updated ? (canonicalDates.updated instanceof Date
+						? canonicalDates.updated.toISOString()
+						: canonicalDates.updated) : ""}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>
@@ -98,7 +128,7 @@ const coverImage =
 	</header>
 
 	<div class="version-components-container">
-		{entry && <VersionNavigation entry={entry} />}
+		{entry && <VersionWarning entry={entry} />}
 	</div>
 
 	<main class="styled-main">
