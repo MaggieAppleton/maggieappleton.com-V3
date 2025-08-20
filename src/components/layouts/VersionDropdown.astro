@@ -309,9 +309,9 @@ const getVersionUrl = (version: VersionedContent) => {
 	@media (max-width: 768px) {
 		.version-menu {
 			right: var(--space-xs);
-			left: var(--space-xs);
+			left: auto;
 			min-width: auto;
-			width: 85vw;
+			width: min(400px, calc(100vw - 2 * var(--space-xs)));
 		}
 	}
 </style>
