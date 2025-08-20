@@ -3,8 +3,15 @@ import path from "path";
 import matter from "gray-matter";
 import { fileURLToPath } from "url";
 // Import the extractBaseSlug function locally since we can't import TS from JS
-const extractBaseSlug = (slug) => {
-  return slug.replace(/-v\d+$/, '');
+const extractBaseSlug = (filePath) => {
+  // Handle folder-based versioning: "ai-dark-forest/ai-dark-forest-v1" -> "ai-dark-forest"
+  const pathParts = filePath.split('/');
+  if (pathParts.length > 1) {
+    // It's in a folder, use the folder name as the base slug
+    return pathParts[0];
+  }
+  // Fallback: remove version suffix from filename for backwards compatibility
+  return filePath.replace(/-v\d+$/, '');
 };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,10 +27,29 @@ const bracketsExtractor = (content) => {
   return matches.map((match) => match.slice(2, -2));
 };
 
-// Get all content files from a directory
+// Get all content files from a directory, including those in subdirectories
 const getFilesFromDir = (dir) => {
   try {
-    return fs.readdirSync(dir).filter((file) => file.endsWith(".mdx"));
+    const items = fs.readdirSync(dir);
+    const files = [];
+    
+    items.forEach((item) => {
+      const fullPath = path.join(dir, item);
+      const stat = fs.statSync(fullPath);
+      
+      if (stat.isDirectory()) {
+        // It's a directory, look for .mdx files inside it
+        const subFiles = fs.readdirSync(fullPath)
+          .filter((file) => file.endsWith(".mdx"))
+          .map((file) => `${item}/${file}`); // Preserve folder structure in the path
+        files.push(...subFiles);
+      } else if (item.endsWith(".mdx")) {
+        // It's a direct .mdx file
+        files.push(item);
+      }
+    });
+    
+    return files;
   } catch (e) {
     console.warn(`No directory found for ${dir}`);
     return [];
@@ -37,16 +63,19 @@ const getDataForBacklinks = (fileNames, filePath) => {
       const file = fs.readFileSync(path.join(filePath, fileName), "utf8");
       const { content, data } = matter(file);
       const slug = fileName.replace(/\.mdx?$/, "");
-      const { title, aliases, growthStage, description, draft } = data;
+      const { title, aliases, growthStage, description, draft, version: frontmatterVersion } = data;
 
       // Skip draft posts
       if (draft === true) {
         return null;
       }
 
-      // Extract version from filename
-      const versionMatch = fileName.match(/-v(\d+)\.mdx$/);
-      const version = versionMatch ? parseInt(versionMatch[1], 10) : 1;
+      // Extract version from frontmatter first, then fall back to filename pattern
+      let version = frontmatterVersion;
+      if (!version) {
+        const versionMatch = fileName.match(/-v(\d+)\.mdx$/);
+        version = versionMatch ? parseInt(versionMatch[1], 10) : 1;
+      }
 
       return {
         content,
