@@ -103,6 +103,13 @@
   --color-light-salmon: #ffd09c;
   --color-dark-salmon: #e1624f;
 
+  /* Opacity variants for colors */
+  /* Crimson variants */
+  --color-crimson-5: color-mix(in srgb, var(--color-bright-crimson) 5%, transparent);
+  --color-crimson-10: color-mix(in srgb, var(--color-bright-crimson) 10%, transparent);
+  --color-crimson-20: color-mix(in srgb, var(--color-bright-crimson) 20%, transparent);
+  --color-crimson-50: color-mix(in srgb, var(--color-bright-crimson) 50%, transparent);
+
   /* Fonts */
   --font-serif: "Canela Deck", serif;
   --font-body: "Canela Text", serif;

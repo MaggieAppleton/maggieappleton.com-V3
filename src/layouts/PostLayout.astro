@@ -42,31 +42,31 @@ const canonicalURL = entry
 	: undefined;
 
 // Get canonical dates for versioned content (consistent across all versions)
-let canonicalDates = { 
-	startDate: frontmatter.startDate, 
-	updated: frontmatter.updated 
+let canonicalDates = {
+	startDate: frontmatter.startDate,
+	updated: frontmatter.updated,
 };
 if (entry) {
 	// Get all entries of the same collection type to find canonical dates
-	let allEntries: typeof entry[] = [];
+	let allEntries: (typeof entry)[] = [];
 	switch (entry.collection) {
 		case "essays":
-			allEntries = (await getCollection("essays")) as typeof entry[];
+			allEntries = (await getCollection("essays")) as (typeof entry)[];
 			break;
 		case "notes":
-			allEntries = (await getCollection("notes")) as typeof entry[];
+			allEntries = (await getCollection("notes")) as (typeof entry)[];
 			break;
 		case "patterns":
-			allEntries = (await getCollection("patterns")) as typeof entry[];
+			allEntries = (await getCollection("patterns")) as (typeof entry)[];
 			break;
 		case "talks":
-			allEntries = (await getCollection("talks")) as typeof entry[];
+			allEntries = (await getCollection("talks")) as (typeof entry)[];
 			break;
 	}
 	const versionedDates = getCanonicalDates(entry, allEntries);
 	canonicalDates = {
 		startDate: versionedDates.startDate,
-		updated: versionedDates.updated
+		updated: versionedDates.updated,
 	};
 }
 
@@ -118,18 +118,18 @@ const coverImage =
 					startDate={canonicalDates.startDate instanceof Date
 						? canonicalDates.startDate.toISOString()
 						: canonicalDates.startDate}
-					updated={canonicalDates.updated ? (canonicalDates.updated instanceof Date
-						? canonicalDates.updated.toISOString()
-						: canonicalDates.updated) : ""}
+					updated={canonicalDates.updated
+						? canonicalDates.updated instanceof Date
+							? canonicalDates.updated.toISOString()
+							: canonicalDates.updated
+						: ""}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>
 		</div>
+		{entry && <VersionWarning entry={entry} />}
 	</header>
 
-	<div class="version-components-container">
-		{entry && <VersionWarning entry={entry} />}
-	</div>
 
 	<main class="styled-main">
 		<slot />
@@ -306,17 +306,5 @@ const coverImage =
 
 	.back-link a:hover span {
 		transform: translate3d(3px, 0, 0);
-	}
-
-	.version-components-container {
-		max-width: 800px;
-		margin: 0 auto;
-		padding: 0 var(--space-xs);
-	}
-
-	@media (max-width: 768px) {
-		.version-components-container {
-			padding: 0 var(--space-xs);
-		}
 	}
 </style>
