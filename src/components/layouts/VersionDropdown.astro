@@ -317,11 +317,6 @@ const getVersionUrl = (version: VersionedContent) => {
 			isOpen = true;
 			menu.classList.add("open");
 			trigger.setAttribute("aria-expanded", "true");
-			// Focus first option for keyboard users
-			if (optionsArray.length > 0) {
-				currentIndex = 0;
-				optionsArray[currentIndex].focus();
-			}
 		}
 
 		function closeDropdown() {
@@ -342,7 +337,9 @@ const getVersionUrl = (version: VersionedContent) => {
 				currentIndex = currentIndex > 0 ? currentIndex - 1 : optionsArray.length - 1;
 			}
 
-			optionsArray[currentIndex].focus();
+			if (currentIndex >= 0 && currentIndex < optionsArray.length) {
+				optionsArray[currentIndex].focus();
+			}
 		}
 
 		// Click/tap to toggle
@@ -361,11 +358,16 @@ const getVersionUrl = (version: VersionedContent) => {
 			switch (e.key) {
 				case "Enter":
 				case " ":
+					e.preventDefault();
+					if (!isOpen) {
+						openDropdown();
+					}
+					break;
 				case "ArrowDown":
 					e.preventDefault();
 					if (!isOpen) {
 						openDropdown();
-					} else if (e.key === "ArrowDown") {
+					} else {
 						navigateOptions("down");
 					}
 					break;
@@ -399,8 +401,9 @@ const getVersionUrl = (version: VersionedContent) => {
 					closeDropdown();
 					break;
 				case "Tab":
-					// Allow tab to close dropdown and continue normal tab flow
+					// Close dropdown and let tab continue naturally
 					closeDropdown();
+					// Don't prevent default to allow normal tab navigation
 					break;
 			}
 		});
