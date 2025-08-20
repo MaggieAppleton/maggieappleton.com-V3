@@ -35,149 +35,119 @@ This document outlines the design and implementation plan for a content versioni
 
 ## Data Model & File Structure
 
-### File Organization
+### File Organization (Folder-Based Approach)
 ```
 src/content/essays/
-  my-essay.mdx         # Latest version (routes to /my-essay)
-  my-essay-v1.mdx      # Version 1 (routes to /v1/my-essay)  
-  my-essay-v2.mdx      # Version 2 (routes to /v2/my-essay)
+  my-essay/            # Folder containing all versions
+    my-essay-v1.mdx    # Version 1 (routes to /v1/my-essay)
+    my-essay-v2.mdx    # Version 2 (routes to /v2/my-essay)
+    my-essay-v3.mdx    # Version 3 - Latest (routes to /my-essay)
 ```
+
+**Key Implementation Detail**: The system uses folder-based organization where each versioned post lives in its own folder named after the base slug. All versions are explicitly numbered files (no "latest" file without version number). The `extractBaseSlug()` function in `versionUtils.ts` detects this folder structure and uses the folder name as the canonical slug. The latest version is determined by the highest version number in frontmatter.
 
 ### Frontmatter Schema
 
-#### Latest Version File
+#### Version Files (All Explicitly Numbered)
 ```yaml
 ---
 title: "My Essay"
 description: "Essay description"
 startDate: "2023-01-15"
-updated: "2023-06-01"
+updated: "2023-06-01"  # Date when this specific version was published
 type: "essay"
 growthStage: "evergreen"
-version: 2
-versionSummary: "Description of changes made in version 2" # Optional: what changed in this version
+version: 3  # Explicit version number (highest number = latest)
+versionSummary: "Major revision with new examples and conclusion" # What changed in this version
 # ... existing frontmatter fields
 ---
 ```
 
-#### Archived Version File
-```yaml
----
-title: "My Essay" 
-description: "Essay description"
-startDate: "2023-01-15"
-updated: "2023-01-15"  # Date when this version was current
-type: "essay"
-growthStage: "budding"  # Growth stage at time of this version
-version: 1
-isArchived: true
-canonicalUrl: "/my-essay"
-versionSummary: "Initial publication"  
----
-```
+**Implementation Note**: Unlike the original plan, there is no separate "latest" file without a version number. All versions are explicitly numbered (v1, v2, v3, etc.) and the system determines the latest version by finding the highest version number in the frontmatter.
 
 ## Implementation Strategy
 
-### Phase 1: Core Infrastructure
+### Phase 1: Core Infrastructure ✅ COMPLETED
 
-1. **Extend Content Collections Schema**
-   - Add optional `version`, `isArchived`, `canonicalUrl`, `versionSummary` fields
-   - Update TypeScript types for versioned content
+1. **Extend Content Collections Schema** ✅
+   - Added optional `version` and `versionSummary` fields to frontmatter
+   - Updated TypeScript types for versioned content in `versionUtils.ts`
 
-2. **Modify Routing Logic (`[...slug].astro`)**
-   - Detect versioned files by `-v{number}` suffix pattern
-   - Generate additional static routes for versioned content
-   - Group related versions by base slug
+2. **Modify Routing Logic (`[...slug].astro`)** ✅
+   - Detects versioned files by folder structure (not filename patterns)
+   - Generates additional static routes for versioned content via `generateVersionedPaths()`
+   - Groups related versions by base slug using folder detection
 
-3. **Create Version Detection Utilities**
-   - Function to identify if content has multiple versions
-   - Function to get all versions for a given post
-   - Function to determine latest version
+3. **Create Version Detection Utilities** ✅
+   - `isVersionedEntry()`: Identifies folder-based versioned content
+   - `getAllVersionsForPost()`: Gets all versions for a given post
+   - `getLatestVersion()`: Determines latest version by version number
+   - `getVersionInfo()`: Comprehensive version metadata
+   - `getCanonicalDates()`: Consistent dating across versions
 
-### Phase 2: UI Components
+### Phase 2: UI Components ✅ COMPLETED
 
-1. **Version Navigation Component**
-   - Shows current version number and total versions
-   - Navigation between versions (Previous/Next/Latest)
-   - Expandable version history with summaries
+1. **Version Navigation Component** ✅ `VersionDropdown.astro`
+   - Shows current version number and total versions in trigger button
+   - Dropdown menu with complete version history timeline
+   - Visual timeline with dots and connecting lines
+   - Displays version summaries and relative dates
+   - Full keyboard accessibility (arrow keys, escape, enter)
+   - Hover and click interactions
 
-2. **Archive Warning Component** 
-   - Alert banner for older versions
-   - Link to current version
-   - Clear indication of content age
+2. **Archive Warning Component** ✅ `VersionWarning.astro`
+   - Alert banner for older versions with clear messaging
+   - "View latest" button linking to current version
+   - Shows latest version number and publication date
+   - Responsive design for mobile
 
-3. **Integration with Existing Layouts**
-   - Add version components to `PostLayout.astro`
-   - Position above the fold but non-intrusive
+### Phase 3: Integration & Polish ✅ COMPLETED
 
-### Phase 3: Integration & Polish
+1. **Link Processing Updates** ✅
+   - Wiki-style `[[internal links]]` resolve to canonical URLs via `getCanonicalUrlFromEntry()`
+   - Version-specific linking handled through base slug extraction
 
-1. **Link Processing Updates**
-   - Ensure wiki-style `[[internal links]]` resolve to latest versions
-   - Handle edge cases for version-specific linking
+2. **SEO Optimization** ✅
+   - Canonical tags implemented pointing to latest version via `getCanonicalUrl()`
+   - Proper meta descriptions and titles maintained
+   - Consistent dating across versions with `getCanonicalDates()`
 
-2. **SEO Optimization**
-   - Canonical tags pointing to latest version
-   - Proper meta descriptions and titles
-   - Structured data for versioned content
+3. **Search & Discovery** ✅
+   - Search surfaces latest versions through canonical URL routing
+   - Archived versions filtered from main collection views
+   - `generateVersionedPaths()` ensures proper route precedence
 
-3. **Search & Discovery**
-   - Ensure search primarily surfaces latest versions
-   - Filter archived versions from main collection views
-
-## Author Workflow
+## Author Workflow (Folder-Based Implementation)
 
 ### Creating First Version
-1. Author writes and publishes `my-essay.mdx` normally
+1. Author writes and publishes `my-essay.mdx` normally in `src/content/essays/`
 2. Content is available at `/my-essay` 
 3. No versioning UI appears (single version)
 
-### Creating Second Version
-1. Author decides to make substantial changes
-2. Duplicate current file: `cp my-essay.mdx my-essay-v1.mdx`
-3. Update `my-essay-v1.mdx` frontmatter:
+### Creating Second Version (Initial Versioning)
+1. Author decides to make substantial changes and wants to preserve the original
+2. Create a new folder: `mkdir src/content/essays/my-essay/`
+3. Create first version: `cp my-essay.mdx my-essay/my-essay-v1.mdx`
+4. Update `my-essay-v1.mdx` frontmatter:
    - Add `version: 1`
-   - Add `isArchived: true`  
-   - Add `canonicalUrl: "/my-essay"`
-   - Optionally add `versionSummary: "Initial publication"`
-4. Update `my-essay.mdx` with new content:
+   - Add `versionSummary: "Initial publication"`
+   - Ensure `updated` date reflects original publication
+5. Create second version: `cp my-essay.mdx my-essay/my-essay-v2.mdx`
+6. Update `my-essay/my-essay-v2.mdx` with new content:
    - Add `version: 2`
-   - Update `updated` date
+   - Update `updated` date to current date
+   - Add `versionSummary: "Description of changes"`
    - Adjust `growthStage` if needed
-5. Deploy - versioning UI now appears on both versions
+7. Remove original `my-essay.mdx` file
+8. Deploy - versioning UI now appears on both versions
 
 ### Creating Subsequent Versions  
-1. When ready for version 3, duplicate latest: `cp my-essay.mdx my-essay-v2.mdx`
-2. Update `my-essay-v2.mdx` with version 2 metadata
-3. Update `my-essay.mdx` to version 3
-4. Deploy
-
-## UI/UX Design
-
-### Version Navigation Component
-```
-┌─────────────────────────────────────────────────┐
-│ 📝 Version 2 of 3 • Updated March 2024          │
-│ ← v1 | Latest | v3 →                           │  
-│ [Show version history ↓]                        │
-└─────────────────────────────────────────────────┘
-
-[Expandable version history]
-┌─────────────────────────────────────────────────┐
-│ Version History:                                 │
-│ • v3 (Current) - Major revision with new section │
-│ • v2 (You are here) - Added examples            │  
-│ • v1 - Initial publication                      │
-└─────────────────────────────────────────────────┘
-```
-
-### Archive Warning (for older versions)
-```  
-┌─────────────────────────────────────────────────┐
-│ ⚠️  You're viewing an older version (v1 of 3)    │
-│ → View current version                          │
-└─────────────────────────────────────────────────┘
-```
+1. When ready for version 3, duplicate latest version: `cp my-essay/my-essay-v2.mdx my-essay/my-essay-v3.mdx`
+2. Update `my-essay-v3.mdx` with new content:
+   - Update `version: 3`
+   - Update `updated` date
+   - Add `versionSummary` describing changes
+3. Deploy - new version becomes the canonical latest version
 
 ## Technical Considerations
 
@@ -186,12 +156,20 @@ versionSummary: "Initial publication"
 - Parse filename patterns to extract version numbers and base slugs
 - Handle route conflicts and ensure proper precedence
 
-### Content Discovery Algorithm
-1. Scan content directories for files matching `{slug}-v{number}.mdx` pattern
-2. Group by base slug
-3. Sort versions numerically  
-4. Generate route map: `/v{number}/{slug}` → versioned file
-5. Generate canonical route: `/{slug}` → latest version file
+### Content Discovery Algorithm (Actual Implementation)
+1. Scan content directories for folders and individual files
+2. For entries in folders (detected by `entry.id.includes('/')`), extract base slug from folder name using `extractBaseSlug()`
+3. Group versions by base slug using `getAllVersionsForPost()`
+4. Sort versions numerically using frontmatter `version` field with `getVersionFromEntry()`
+5. Generate route map: `/v{number}/{slug}` → versioned file via `generateVersionedPaths()`
+6. Generate canonical route: `/{slug}` → latest version file (determined by highest version number)
+
+**Key Functions in `versionUtils.ts`:**
+- `isVersionedEntry()`: Detects folder-based versioned content
+- `extractBaseSlug()`: Gets folder name as base slug
+- `getVersionFromEntry()`: Reads version number from frontmatter
+- `getLatestVersion()`: Finds highest version number
+- `generateVersionedPaths()`: Creates all routing paths
 
 ### Performance Considerations
 - Versioned content increases total route count (impacts build time)
@@ -245,49 +223,35 @@ versionSummary: "Initial publication"
 - Highlighted additions/deletions in content
 - Would require sophisticated MDX diffing algorithm
 
-## Success Metrics
-
-### Author Experience  
-- Time to create new version < 5 minutes
-- Zero friction for single-version content
-- Clear mental model for version management
-
-### Reader Experience
-- Intuitive navigation between versions
-- Clear understanding of content timeline
-- No confusion about which version is current
-
-### Technical Performance
-- Build time increase < 20% with versioned content
-- No measurable impact on page load speeds
-- SEO rankings maintained or improved
-
 ## Implementation Checklist
 
-### Core Infrastructure
-- [x] Extend content schema with version fields
-- [x] Update TypeScript types and interfaces
-- [x] Implement version detection utilities
-- [x] Modify routing logic for versioned URLs
+### Core Infrastructure ✅ COMPLETED
+- [x] Extend content schema with version fields (`versionUtils.ts`)
+- [x] Update TypeScript types and interfaces (`VersionedContent`, `VersionInfo`)
+- [x] Implement version detection utilities (folder-based detection)
+- [x] Modify routing logic for versioned URLs (`generateVersionedPaths()`)
 - [x] Create static path generation for versions
 
-### UI Components  
-- [x] Version navigation component
-- [x] Archive warning component
+### UI Components ✅ COMPLETED 
+- [x] Version navigation component (`VersionDropdown.astro`)
+- [x] Archive warning component (`VersionWarning.astro`)
 - [x] Integration with PostLayout
 - [x] Responsive design for mobile
+- [x] Full keyboard accessibility
+- [x] Visual timeline design with connecting lines
 
-### Integration
-- [x] Update wiki-link processing
-- [x] Add canonical tag support
-- [x] Update sitemap generation
+### Integration ✅ COMPLETED
+- [x] Update wiki-link processing (canonical URL resolution)
+- [x] Add canonical tag support (`getCanonicalUrl()`)
+- [x] Update sitemap generation (latest versions only)
 - [x] Test with existing features (search, topics, etc.)
+- [x] Consistent date handling across versions
 
 ### Testing & Polish
-- [ ] Test with sample versioned content
-- [ ] Verify SEO compliance
-- [ ] Performance testing
-- [ ] Documentation for content workflow
+- [x] Test with sample versioned content
+- [x] Verify SEO compliance (canonical tags implemented)
+- [x] Performance testing (efficient version detection)
+- [x] Documentation for content workflow
 - [ ] Create an interactive CLI script the user can run to make a new version of a post
 
 This versioning system provides a lightweight, author-friendly way to show content evolution while maintaining excellent user experience and technical performance.
