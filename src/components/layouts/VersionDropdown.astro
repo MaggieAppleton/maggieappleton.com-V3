@@ -223,53 +223,68 @@ const getVersionUrl = (version: VersionedContent) => {
 		z-index: -1;
 	}
 
+	/* White to transparent gradient at bottom of vertical line */
+	.version-list::after {
+		content: "";
+		position: absolute;
+		left: 7px;
+		bottom: -4px;
+		width: 6px;
+		height: 48px;
+		background: linear-gradient(to top, white 0%, transparent 100%);
+		z-index: 0;
+	}
+
 	.version-link {
 		display: flex;
 		align-items: flex-start;
 		text-decoration: none;
 		color: inherit;
 		transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-		gap: 1.25rem;
+		gap: 1rem;
 	}
 
 	.version-link:hover .version-badge {
-		color: var(--color-sea-blue);
+		color: var(--color-medium-sea-blue);
 	}
 
 	.version-link:hover .version-dot {
 		background: var(--color-sea-blue);
+		border: none;
 	}
 
 	.version-meta {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
+		gap: 0.125rem;
 	}
 
 	.version-number-date {
 		display: flex;
 		align-items: baseline;
-		gap: var(--space-8);
+		gap: 0.5rem;
+		color: var(--color-gray-600);
 		text-transform: capitalize;
 	}
 
 	.version-badge {
 		font-weight: 700;
-		color: var(--color-gray-800);
+		color: var(--color-gray-600);
 		transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.version-item.current .version-badge {
-		color: var(--color-crimson);
+		color: var(--color-gray-800);
 	}
 
 	.version-dot {
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background: var(--color-gray-300);
-		box-shadow: 0 0 0 3px white;
+		background: white;
+		border: 2px solid var(--color-gray-300);
+		box-shadow: 0 0 0 4px white;
 		flex-shrink: 0;
 		position: relative;
 		z-index: 1;
@@ -279,14 +294,15 @@ const getVersionUrl = (version: VersionedContent) => {
 
 	.version-item.current .version-dot {
 		background: var(--color-bright-crimson);
+		border: none;
 	}
 
 	.version-item:last-child {
-		padding-bottom: 12px;
+		padding-bottom: 1rem;
 	}
 
 	.version-summary {
-		color: var(--color-gray-600);
+		color: var(--color-gray-800);
 		text-align: left;
 	}
 
