@@ -1,0 +1,150 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import { getVersionInfo, hasMultipleVersions, getLatestVersion } from "../../utils/versionUtils";
+import { getCollection } from "astro:content";
+
+type VersionedContent =
+	| CollectionEntry<"essays">
+	| CollectionEntry<"notes">
+	| CollectionEntry<"patterns">
+	| CollectionEntry<"talks">;
+
+interface Props {
+	entry: VersionedContent;
+}
+
+const { entry } = Astro.props;
+
+// Get all entries of the same collection type to find versions
+let allEntries: VersionedContent[] = [];
+switch (entry.collection) {
+	case "essays":
+		allEntries = (await getCollection("essays")) as VersionedContent[];
+		break;
+	case "notes":
+		allEntries = (await getCollection("notes")) as VersionedContent[];
+		break;
+	case "patterns":
+		allEntries = (await getCollection("patterns")) as VersionedContent[];
+		break;
+	case "talks":
+		allEntries = (await getCollection("talks")) as VersionedContent[];
+		break;
+}
+
+const versionInfo = getVersionInfo(entry, allEntries);
+const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
+
+const latestUrl = `/${versionInfo.baseSlug}`;
+const isArchived = !versionInfo.isLatest;
+
+// Helper function to format dates consistently
+function formatDate(date: string | Date | undefined): string {
+	if (!date) return "";
+
+	const dateObj = date instanceof Date ? date : new Date(date);
+	return dateObj.toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
+}
+
+// Get the latest version's info
+const latestVersion = getLatestVersion(versionInfo.allVersions);
+const latestVersionNumber = latestVersion.data.version || versionInfo.allVersions.length;
+const latestUpdatedDate = formatDate(latestVersion.data.updated);
+---
+
+{
+	multipleVersions && isArchived && (
+		<div class="version-warning archived">
+			<div class="message">
+				<Icon name="lucide:history" size={20} class="warning-icon" />
+
+				<span class="message-text">
+					You're reading version {versionInfo.version} of this {entry.collection.slice(0, -1)}. The
+					latest version (v{latestVersionNumber}) was published on {latestUpdatedDate}.
+				</span>
+			</div>
+			<a href={latestUrl} class="view-latest-btn">
+				View latest <Icon name="lucide:arrow-right" size={16} />
+			</a>
+		</div>
+	)
+}
+
+<style>
+	.version-warning {
+		border: 1px solid var(--color-crimson-20);
+		border-radius: var(--border-radius-base);
+		background: var(--color-crimson-5);
+		padding: 1.5rem;
+		font-family: var(--font-sans);
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: var(--space-s);
+		margin: var(--space-m) -14px 0;
+	}
+
+	.message {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-xs);
+		flex: 1;
+	}
+
+	.warning-icon {
+		color: var(--color-bright-crimson);
+		flex-shrink: 0;
+		margin-top: 2px;
+	}
+
+	.message-text {
+		font-size: var(--font-size-s);
+		color: var(--color-crimson);
+		max-width: 56ch;
+	}
+
+	.view-latest-btn {
+		font-size: var(--font-size-s);
+		color: var(--color-crimson);
+		background: white;
+		text-decoration: none;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0.25rem 0.75rem;
+		border-radius: 1rem;
+		transition: all 0.35s cubic-bezier(0.2, 1, 0.8, 1);
+	}
+
+	.view-latest-btn:hover {
+		text-decoration: none;
+		color: var(--color-medium-sea-blue);
+		box-shadow:
+			1px 0.9px 2.3px -3px rgba(150, 4, 98, 0.02),
+			2.4px 2.2px 5.5px -3px rgba(150, 4, 98, 0.03),
+			4.5px 4.1px 10.4px -3px rgba(150, 4, 98, 0.04),
+			8px 7.4px 18.5px -3px rgba(150, 4, 98, 0.05),
+			15px 13.8px 34.7px -3px rgba(150, 4, 98, 0.06),
+			36px 33px 83px -3px rgba(150, 4, 98, 0.12);
+	}
+
+	@media (max-width: 768px) {
+		.version-warning {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--space-xs);
+			margin: 2rem 0 0 0;
+		}
+
+		.view-latest-btn {
+			align-self: flex-start;
+			margin-top: var(--space-xs);
+		}
+	}
+</style>

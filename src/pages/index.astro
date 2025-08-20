@@ -11,6 +11,7 @@ import PatternCard from "../components/cards/PatternCard.astro";
 import UnderlineHoverLink from "../components/mdx/UnderlineHoverLink.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
+import { extractBaseSlug } from "../utils/versionUtils";
 
 const essays = await getCollection("essays", ({ data }) => data.featured === true && !data.draft);
 const notes = await getCollection("notes", ({ data }) => !data.draft);
@@ -76,7 +77,7 @@ const sortedPatterns = patterns
 						sortedEssays.map((essay) => (
 							<EssayCard
 								id={essay.id}
-								slug={essay.id}
+								slug={extractBaseSlug(essay.id)}
 								cover={essay.data.cover}
 								title={essay.data.title}
 								growthStage={essay.data.growthStage}

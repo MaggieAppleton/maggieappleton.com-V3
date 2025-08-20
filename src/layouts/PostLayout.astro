@@ -9,6 +9,10 @@ import linkMaps from "../links.json";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
+import VersionWarning from "../components/layouts/VersionWarning.astro";
+import VersionDropdown from "../components/layouts/VersionDropdown.astro";
+import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
+import { getCollection } from "astro:content";
 
 // You'll need to find Astro alternatives for these React components:
 // - BackToTop
@@ -20,12 +24,51 @@ type Props = {
 		| CollectionEntry<"patterns">["data"]
 		| CollectionEntry<"talks">["data"];
 	headings: MarkdownHeading[];
+	entry?:
+		| CollectionEntry<"essays">
+		| CollectionEntry<"notes">
+		| CollectionEntry<"patterns">
+		| CollectionEntry<"talks">;
 };
 
-const { frontmatter } = Astro.props;
+const { frontmatter, entry } = Astro.props;
 
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+
+// Calculate canonical URL for versioned content
+const canonicalURL = entry
+	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
+	: undefined;
+
+// Get canonical dates for versioned content (consistent across all versions)
+let canonicalDates = {
+	startDate: frontmatter.startDate,
+	updated: frontmatter.updated,
+};
+if (entry) {
+	// Get all entries of the same collection type to find canonical dates
+	let allEntries: (typeof entry)[] = [];
+	switch (entry.collection) {
+		case "essays":
+			allEntries = (await getCollection("essays")) as (typeof entry)[];
+			break;
+		case "notes":
+			allEntries = (await getCollection("notes")) as (typeof entry)[];
+			break;
+		case "patterns":
+			allEntries = (await getCollection("patterns")) as (typeof entry)[];
+			break;
+		case "talks":
+			allEntries = (await getCollection("talks")) as (typeof entry)[];
+			break;
+	}
+	const versionedDates = getCanonicalDates(entry, allEntries);
+	canonicalDates = {
+		startDate: versionedDates.startDate,
+		updated: versionedDates.updated,
+	};
+}
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -35,9 +78,7 @@ const backlinks = currentPost?.inboundLinks || [];
 
 // Only essays and talks have cover images
 const coverImage =
-	frontmatter.type === "essay" || frontmatter.type === "talk"
-		? frontmatter.cover?.src
-		: undefined;
+	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 ---
 
 <Layout
@@ -45,6 +86,7 @@ const coverImage =
 	desc={frontmatter.description}
 	type={frontmatter.type}
 	coverImage={coverImage}
+	canonicalURL={canonicalURL}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -52,19 +94,13 @@ const coverImage =
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
 					<span>
-						{
-							frontmatter.type.charAt(0).toUpperCase() +
-								frontmatter.type.slice(1)
-						}s
+						{frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1)}s
 					</span>
 				</a>
 			</div>
 			<GrowthIcon
 				size="16"
-				growthStage={frontmatter.growthStage as
-					| "budding"
-					| "evergreen"
-					| "seedling"}
+				growthStage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"}
 			/>
 			<p>{frontmatter.growthStage}</p>
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
@@ -74,17 +110,26 @@ const coverImage =
 			{frontmatter.description && <p>{frontmatter.description}</p>}
 		</div>
 		<div class="metadata">
-			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
-			<Dates
-				startDate={frontmatter.startDate instanceof Date
-					? frontmatter.startDate.toISOString()
-					: frontmatter.startDate}
-				updated={frontmatter.updated instanceof Date
-					? frontmatter.updated.toISOString()
-					: frontmatter.updated}
-			/>
+			<div class="metadata-left">
+				{frontmatter.topics && <Topics topics={frontmatter.topics} />}
+			</div>
+			<div class="metadata-right">
+				<Dates
+					startDate={canonicalDates.startDate instanceof Date
+						? canonicalDates.startDate.toISOString()
+						: canonicalDates.startDate}
+					updated={canonicalDates.updated
+						? canonicalDates.updated instanceof Date
+							? canonicalDates.updated.toISOString()
+							: canonicalDates.updated
+						: ""}
+				/>
+				{entry && <VersionDropdown entry={entry} />}
+			</div>
 		</div>
+		{entry && <VersionWarning entry={entry} />}
 	</header>
+
 
 	<main class="styled-main">
 		<slot />
@@ -149,6 +194,20 @@ const coverImage =
 		justify-content: space-between;
 		display: flex;
 		flex-direction: row;
+		align-items: flex-start;
+		gap: var(--space-s);
+	}
+
+	.metadata-left {
+		flex: 1;
+	}
+
+	.metadata-right {
+		flex-shrink: 0;
+		text-align: right;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 	}
 
 	.styled-main {
@@ -163,6 +222,15 @@ const coverImage =
 			flex-direction: column;
 			text-align: left;
 			align-items: flex-start;
+			gap: var(--space-xs);
+		}
+
+		.metadata-right {
+			width: 100%;
+			text-align: left;
+			align-items: flex-start;
+			flex-direction: row;
+			justify-content: space-between;
 		}
 
 		.styled-main {

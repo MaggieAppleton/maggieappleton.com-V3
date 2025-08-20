@@ -4,6 +4,7 @@ import SmidgeonLayout from "../layouts/SmidgeonLayout.astro";
 import ProseWrapper from "../components/layouts/ProseWrapper.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { render } from "astro:content";
+import { generateVersionedPaths } from "../utils/versionUtils";
 import TableOfContents from "../components/layouts/TableOfContents.astro";
 // Component imports
 import Title1 from "../components/mdx/typography/Title1.astro";
@@ -46,23 +47,33 @@ export async function getStaticPaths() {
 	const talks = await getCollection("talks");
 	const smidgeons = await getCollection("smidgeons");
 
+	// Generate versioned paths for content that supports versioning
+	const versionedEssayPaths = generateVersionedPaths(essays).map(({ slug, entry }) => ({
+		params: { slug },
+		props: { entry, type: "essay" } as const,
+	}));
+
+	const versionedNotePaths = generateVersionedPaths(notes).map(({ slug, entry }) => ({
+		params: { slug },
+		props: { entry, type: "note" } as const,
+	}));
+
+	const versionedPatternPaths = generateVersionedPaths(patterns).map(({ slug, entry }) => ({
+		params: { slug },
+		props: { entry, type: "pattern" } as const,
+	}));
+
+	const versionedTalkPaths = generateVersionedPaths(talks).map(({ slug, entry }) => ({
+		params: { slug },
+		props: { entry, type: "talk" } as const,
+	}));
+
 	return [
-		...essays.map((entry) => ({
-			params: { slug: entry.id },
-			props: { entry, type: "essay" } as const,
-		})),
-		...notes.map((entry) => ({
-			params: { slug: entry.id },
-			props: { entry, type: "note" } as const,
-		})),
-		...patterns.map((entry) => ({
-			params: { slug: entry.id },
-			props: { entry, type: "pattern" } as const,
-		})),
-		...talks.map((entry) => ({
-			params: { slug: entry.id },
-			props: { entry, type: "talk" } as const,
-		})),
+		...versionedEssayPaths,
+		...versionedNotePaths,
+		...versionedPatternPaths,
+		...versionedTalkPaths,
+		// Smidgeons don't support versioning, so keep the original mapping
 		...smidgeons.map((entry) => ({
 			params: { slug: entry.id },
 			props: { entry, type: "smidgeon" } as const,
@@ -111,7 +122,7 @@ const frontmatter = entry.data;
 			</ProseWrapper>
 		</SmidgeonLayout>
 	) : (
-		<PostLayout frontmatter={frontmatter} headings={headings}>
+		<PostLayout frontmatter={frontmatter} headings={headings} entry={entry}>
 			<ProseWrapper>
 				{headings.length > 0 && hasTOC(frontmatter) && frontmatter.toc && (
 					<TableOfContents headings={headings} />

@@ -7,6 +7,7 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
+import { extractBaseSlug } from "../utils/versionUtils";
 
 // Get all patterns that aren't drafts
 const patterns = await getCollection("patterns", ({ data }) => !data.draft);
@@ -42,7 +43,7 @@ const sortedPatterns = patterns.sort(
 					<div class="grid-item">
 						<PatternCard
 							id={pattern.id}
-							slug={pattern.id}
+							slug={extractBaseSlug(pattern.id)}
 							title={pattern.data.title}
 							growthStage={pattern.data.growthStage}
 							date={pattern.data.updated}

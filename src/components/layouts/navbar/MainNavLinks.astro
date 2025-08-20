@@ -109,108 +109,108 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 </div>
 
 <script>
-	import { animate } from "motion";
 
 	function initializeDropdown() {
-		const button = document.querySelector(".popover-button");
-		const megamenu = document.getElementById("garden-dropdown");
+		const button = document.querySelector(".popover-button") as HTMLButtonElement;
+		const megamenu = document.getElementById("garden-dropdown") as HTMLElement;
 
-		if (button && megamenu) {
-			// Force close on initialization
-			closeMegamenu();
+		if (!button || !megamenu) return;
 
-			// Remove existing listeners to prevent duplicates
-			const existingHandlers = (button as any)._megamenuHandlers;
-			if (existingHandlers) {
-				button.removeEventListener("click", existingHandlers.click);
-				document.removeEventListener("keydown", existingHandlers.keydown);
-				document.removeEventListener("focusout", existingHandlers.focusout);
-				document.removeEventListener("astro:before-preparation", existingHandlers.beforePrep);
-			}
-
-			// Create handler functions
-			const clickHandler = (e: Event) => {
-				e.stopPropagation();
-				if (megamenu.classList.contains("hidden")) {
-					openMegamenu();
-				} else {
-					closeMegamenu();
+		// Force close on initialization and reset styles
+		function closeMegamenu() {
+			if (!button || !megamenu) return;
+			
+			button.setAttribute("aria-expanded", "false");
+			
+			// Animate out first, then hide
+			megamenu.style.opacity = "0";
+			megamenu.style.transform = "rotateX(-15deg)";
+			megamenu.style.scale = "0.95";
+			
+			// Hide after animation completes
+			setTimeout(() => {
+				if (megamenu.style.opacity === "0") {
+					megamenu.classList.add("hidden");
 				}
-			};
-
-			const keydownHandler = (e: KeyboardEvent) => {
-				if (e.key === "Escape" && !megamenu.classList.contains("hidden")) {
-					closeMegamenu();
-					(button as HTMLElement)?.focus();
-				}
-			};
-
-			const focusoutHandler = (e: FocusEvent) => {
-				const target = e.relatedTarget as Node;
-				// Don't close if clicking a link inside the megamenu
-				if (target && megamenu.contains(target)) {
-					return;
-				}
-				if (!megamenu.contains(target) && !button.contains(target)) {
-					closeMegamenu();
-				}
-			};
-
-			// Store handlers for cleanup
-			(button as any)._megamenuHandlers = {
-				click: clickHandler,
-				keydown: keydownHandler,
-				focusout: focusoutHandler,
-				beforePrep: closeMegamenu
-			};
-
-			// Add event listeners
-			button.addEventListener("click", clickHandler);
-			document.addEventListener("keydown", keydownHandler);
-			document.addEventListener("focusout", focusoutHandler);
-			document.addEventListener("astro:before-preparation", closeMegamenu);
+			}, 250);
 		}
 
 		function openMegamenu() {
 			if (!megamenu || !button) return;
 			
-			megamenu.classList.remove("hidden");
 			button.setAttribute("aria-expanded", "true");
-
-			animate(
-				megamenu,
-				{
-					opacity: [0, 1],
-					transform: ["rotateX(90deg)", "rotateX(0deg)"],
-					scale: [0.95, 1]
-				},
-				{
-					duration: 0.3,
-					easing: "ease-out"
-				}
-			);
-		}
-
-		function closeMegamenu() {
-			if (!button || !megamenu) return;
 			
-			button.setAttribute("aria-expanded", "false");
-
-			animate(
-				megamenu,
-				{
-					opacity: [1, 0],
-					transform: ["rotateX(0deg)", "rotateX(90deg)"],
-					scale: [1, 0.95]
-				},
-				{
-					duration: 0.2,
-					easing: "ease-in"
-				}
-			).then(() => {
-				megamenu.classList.add("hidden");
+			// Show element first, then animate in
+			megamenu.classList.remove("hidden");
+			
+			// Force reflow before animating
+			megamenu.offsetHeight;
+			
+			// Animate in
+			requestAnimationFrame(() => {
+				megamenu.style.opacity = "1";
+				megamenu.style.transform = "rotateX(0deg)";
+				megamenu.style.scale = "1";
 			});
 		}
+
+		// Initialize closed state immediately without animation
+		button.setAttribute("aria-expanded", "false");
+		megamenu.classList.add("hidden");
+		megamenu.style.opacity = "0";
+		megamenu.style.transform = "rotateX(-15deg)";
+		megamenu.style.scale = "0.95";
+
+		// Remove existing listeners to prevent duplicates
+		const existingHandlers = (button as any)._megamenuHandlers;
+		if (existingHandlers) {
+			button.removeEventListener("click", existingHandlers.click);
+			document.removeEventListener("keydown", existingHandlers.keydown);
+			document.removeEventListener("focusout", existingHandlers.focusout);
+			document.removeEventListener("astro:before-preparation", existingHandlers.beforePrep);
+		}
+
+		// Create handler functions
+		const clickHandler = (e: Event) => {
+			e.stopPropagation();
+			if (megamenu.classList.contains("hidden")) {
+				openMegamenu();
+			} else {
+				closeMegamenu();
+			}
+		};
+
+		const keydownHandler = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && !megamenu.classList.contains("hidden")) {
+				closeMegamenu();
+				button.focus();
+			}
+		};
+
+		const focusoutHandler = (e: FocusEvent) => {
+			const target = e.relatedTarget as Node;
+			// Don't close if clicking a link inside the megamenu
+			if (target && megamenu.contains(target)) {
+				return;
+			}
+			if (!megamenu.contains(target) && !button.contains(target)) {
+				closeMegamenu();
+			}
+		};
+
+		// Store handlers for cleanup
+		(button as any)._megamenuHandlers = {
+			click: clickHandler,
+			keydown: keydownHandler,
+			focusout: focusoutHandler,
+			beforePrep: closeMegamenu
+		};
+
+		// Add event listeners
+		button.addEventListener("click", clickHandler);
+		document.addEventListener("keydown", keydownHandler);
+		document.addEventListener("focusout", focusoutHandler);
+		document.addEventListener("astro:before-preparation", closeMegamenu);
 	}
 
 	// Initialize on page load
@@ -349,6 +349,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		opacity: 0;
 		transform: rotateX(90deg);
 		scale: 0.95;
+		transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), scale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.megamenu.hidden {

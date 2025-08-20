@@ -7,6 +7,7 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
+import { extractBaseSlug } from "../utils/versionUtils";
 
 // Get all notes that aren't drafts
 const notes = await getCollection("notes", ({ data }) => !data.draft);
@@ -41,7 +42,7 @@ const sortedNotes = notes.sort(
 					<div class="grid-item">
 						<NoteCard
 							id={note.id}
-							slug={note.id}
+							slug={extractBaseSlug(note.id)}
 							title={note.data.title}
 							growthStage={note.data.growthStage}
 							date={note.data.updated}

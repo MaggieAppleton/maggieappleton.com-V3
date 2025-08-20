@@ -35,7 +35,9 @@ npm run build        # Production build
 - **Backlinks** - Automatic bidirectional linking  
 - **Growth stages** - Content maturity indicators (seedling → budding → evergreen) applied to most content types
 - **Topics** - Auto-generated from frontmatter
-- **Webmentions** - Social media interactions via Brid.gy
+- **Content versioning** - Folder-based versioning with automatic canonical URLs
+- **OG image generation** - Dynamic Open Graph images using Satori and Sharp
+- **Webmentions** - Social interactions via webmention.io API with brid.gy to fetch from multiple sites
 - **Masonry grids** - CSS-only responsive layouts
 - **Draft system** - Content can be marked as drafts to hide from production
 - **View transitions** - Uses Astro's view transitions. This can cause issues with JavaScript scripts loading after page loads.

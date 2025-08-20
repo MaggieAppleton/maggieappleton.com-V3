@@ -15,6 +15,7 @@ import { getAllTopics, getPostsForTopic } from "../../utils/getTopics";
 import { extractPreview } from "../../utils/extractPreview";
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
+import { extractBaseSlug } from "../../utils/versionUtils";
 
 type Post =
 	| CollectionEntry<"essays">
@@ -71,7 +72,7 @@ const sortedPosts = posts.sort((a, b) => {
 							<div class="grid-item">
 								<EssayCard
 									id={post.id}
-									slug={post.id}
+									slug={extractBaseSlug(post.id)}
 									title={post.data.title}
 									cover={post.data.cover}
 									growthStage={post.data.growthStage}
@@ -86,7 +87,7 @@ const sortedPosts = posts.sort((a, b) => {
 							<div class="grid-item">
 								<NoteCard
 									id={post.id}
-									slug={post.id}
+									slug={extractBaseSlug(post.id)}
 									title={post.data.title}
 									growthStage={post.data.growthStage}
 									date={post.data.updated}
@@ -100,7 +101,7 @@ const sortedPosts = posts.sort((a, b) => {
 							<div class="grid-item">
 								<PatternCard
 									id={post.id}
-									slug={post.id}
+									slug={extractBaseSlug(post.id)}
 									title={post.data.title}
 									growthStage={post.data.growthStage}
 									date={post.data.updated}
@@ -114,7 +115,7 @@ const sortedPosts = posts.sort((a, b) => {
 							<div class="grid-item">
 								<TalkCard
 									id={post.id}
-									slug={post.id}
+									slug={extractBaseSlug(post.id)}
 									title={post.data.title}
 									cover={post.data.cover}
 									description={post.data.description}

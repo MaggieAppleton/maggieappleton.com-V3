@@ -2,6 +2,7 @@ import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import sanitizeHtml from "sanitize-html";
 import MarkdownIt from "markdown-it";
+import { extractBaseSlug } from "../utils/versionUtils.ts";
 const parser = new MarkdownIt();
 
 // Helper to strip markdown from text
@@ -60,7 +61,7 @@ export async function GET(context) {
             : post.data.citation
               ? `${post.data.citation.title} by ${post.data.citation.authors.join(", ")}`
               : stripMarkdown(firstLine || ""),
-          link: `/${post.id}/`,
+          link: `/${extractBaseSlug(post.id)}/`,
           content: sanitizeHtml(
             (post.data.external
               ? `<a href="${post.data.external.url}">${post.data.external.title}</a>\n\n`

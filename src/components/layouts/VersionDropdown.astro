@@ -1,0 +1,441 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Icon } from "astro-icon/components";
+import { getVersionInfo, hasMultipleVersions, getVersionFromEntry } from "../../utils/versionUtils";
+import { getCollection } from "astro:content";
+import RelativeDate from "./RelativeDate.astro";
+
+type VersionedContent =
+	| CollectionEntry<"essays">
+	| CollectionEntry<"notes">
+	| CollectionEntry<"patterns">
+	| CollectionEntry<"talks">;
+
+interface Props {
+	entry: VersionedContent;
+}
+
+const { entry } = Astro.props;
+
+// Get all entries of the same collection type to find versions
+let allEntries: VersionedContent[] = [];
+switch (entry.collection) {
+	case "essays":
+		allEntries = (await getCollection("essays")) as VersionedContent[];
+		break;
+	case "notes":
+		allEntries = (await getCollection("notes")) as VersionedContent[];
+		break;
+	case "patterns":
+		allEntries = (await getCollection("patterns")) as VersionedContent[];
+		break;
+	case "talks":
+		allEntries = (await getCollection("talks")) as VersionedContent[];
+		break;
+}
+
+const versionInfo = getVersionInfo(entry, allEntries);
+const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
+
+// Initialize variables for all cases
+const currentVersion = versionInfo.version;
+const totalVersions = versionInfo.allVersions.length;
+
+// Generate URLs
+const getVersionUrl = (version: VersionedContent) => {
+	const versionNum = getVersionFromEntry(version);
+	const latestVersionNum = getVersionFromEntry(
+		versionInfo.allVersions[versionInfo.allVersions.length - 1],
+	);
+	return versionNum === latestVersionNum
+		? `/${versionInfo.baseSlug}`
+		: `/v${versionNum}/${versionInfo.baseSlug}`;
+};
+---
+
+{
+	multipleVersions && (
+		<div class="version-dropdown">
+			<button
+				class="version-trigger"
+				type="button"
+				aria-expanded="false"
+				aria-haspopup="listbox"
+				aria-label={`Version ${currentVersion} of ${totalVersions}. Open version history`}
+			>
+				<Icon name="lucide:history" size={14} />
+				<span class="version-text">
+					Version {currentVersion} of {totalVersions}
+				</span>
+				<Icon name="heroicons:chevron-down" size={14} />
+			</button>
+			<div class="version-menu" role="listbox" aria-label="Version history">
+				<div class="version-history-title">
+					<Icon name="lucide:history" size={16} />
+					Version History
+				</div>
+
+				<ul class="version-list" role="none">
+					{versionInfo.allVersions
+						.slice()
+						.reverse()
+						.map((version) => {
+							const versionNum = getVersionFromEntry(version);
+							const isCurrentVersion = versionNum === currentVersion;
+							const versionUrl = getVersionUrl(version);
+							return (
+								<li class={`version-item ${isCurrentVersion ? "current" : ""}`} role="none">
+									<a
+										href={versionUrl}
+										class="version-link"
+										role="option"
+										aria-selected={isCurrentVersion ? "true" : "false"}
+										aria-label={`Version ${versionNum}, ${version.data.versionSummary || "Go to this version"}`}
+									>
+										<div class="version-dot" />
+										<div class="version-meta">
+											<div class="version-number-date">
+												<span class="version-badge">V{versionNum}</span>
+												<RelativeDate
+													postDate={
+														version.data.updated instanceof Date
+															? version.data.updated.toISOString()
+															: version.data.updated
+													}
+												/>
+											</div>
+											{version.data.versionSummary && (
+												<span class="version-summary">{version.data.versionSummary}</span>
+											)}
+										</div>
+									</a>
+								</li>
+							);
+						})}
+				</ul>
+			</div>
+		</div>
+	)
+}
+
+<style>
+	.version-dropdown {
+		position: relative;
+		display: inline-block;
+		margin-top: var(--space-3xs);
+		right: -10px;
+	}
+
+	.version-dropdown::after {
+		content: "";
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		height: 8px;
+		pointer-events: auto;
+		z-index: 999;
+	}
+
+	.version-trigger {
+		background: none;
+		border: none;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-8);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--border-radius-base);
+		transition:
+			background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+			color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.version-trigger:hover {
+		background: var(--color-light-cream);
+		color: var(--color-crimson);
+	}
+
+	.version-trigger:hover svg {
+		color: var(--color-crimson);
+	}
+
+	.version-menu {
+		position: absolute;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		top: calc(100% + 4px);
+		right: 0;
+		background: white;
+		border: 1px solid var(--color-tinted-cream);
+		border-radius: var(--border-radius-base);
+		box-shadow: var(--box-shadow-md);
+		padding: var(--space-16);
+		min-width: 320px;
+		z-index: 1000;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-8px) scale(0.96);
+		transition:
+			opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+			visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.version-dropdown:hover .version-menu,
+	.version-dropdown .version-menu.open {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0) scale(1);
+	}
+
+	.version-history-title {
+		color: var(--color-gray-800);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		letter-spacing: 0.01rem;
+		padding-bottom: 1.25rem;
+	}
+
+	.version-list {
+		list-style: none;
+		padding: 0 0 0 3px;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.75rem;
+		position: relative;
+	}
+
+	/* Vertical line */
+	.version-list::before {
+		content: "";
+		position: absolute;
+		left: 8px;
+		top: 8px;
+		bottom: -4px;
+		width: 2px;
+		background: var(--color-gray-200);
+		z-index: -1;
+	}
+
+	/* White to transparent gradient at bottom of vertical line */
+	.version-list::after {
+		content: "";
+		position: absolute;
+		left: 7px;
+		bottom: -4px;
+		width: 6px;
+		height: 48px;
+		background: linear-gradient(to top, white 0%, transparent 100%);
+		z-index: 0;
+	}
+
+	.version-link {
+		display: flex;
+		align-items: flex-start;
+		text-decoration: none;
+		color: inherit;
+		transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+		gap: 1rem;
+	}
+
+	.version-link:hover .version-badge {
+		color: var(--color-medium-sea-blue);
+	}
+
+	.version-link:hover .version-dot {
+		background: var(--color-sea-blue);
+		border: none;
+	}
+
+	.version-meta {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+
+	.version-number-date {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		color: var(--color-gray-600);
+		text-transform: capitalize;
+	}
+
+	.version-badge {
+		font-weight: 700;
+		color: var(--color-gray-600);
+		transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.version-item.current .version-badge {
+		color: var(--color-gray-800);
+	}
+
+	.version-dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: white;
+		border: 2px solid var(--color-gray-300);
+		box-shadow: 0 0 0 4px white;
+		flex-shrink: 0;
+		position: relative;
+		z-index: 1;
+		margin-top: 6px;
+		transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.version-item.current .version-dot {
+		background: var(--color-bright-crimson);
+		border: none;
+	}
+
+	.version-item:last-child {
+		padding-bottom: 1rem;
+	}
+
+	.version-summary {
+		color: var(--color-gray-800);
+		text-align: left;
+	}
+
+	@media (max-width: 768px) {
+		.version-menu {
+			right: var(--space-xs);
+			left: auto;
+			min-width: auto;
+			width: min(400px, calc(100vw - 2 * var(--space-xs)));
+		}
+	}
+</style>
+
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		const dropdown = document.querySelector(".version-dropdown");
+		const trigger = dropdown?.querySelector(".version-trigger");
+		const menu = dropdown?.querySelector(".version-menu");
+		const options = dropdown?.querySelectorAll('[role="option"]');
+
+		if (!dropdown || !trigger || !menu) return;
+
+		let isOpen = false;
+		let currentIndex = -1;
+		const optionsArray = Array.from(options || []);
+
+		function openDropdown() {
+			isOpen = true;
+			menu.classList.add("open");
+			trigger.setAttribute("aria-expanded", "true");
+		}
+
+		function closeDropdown() {
+			isOpen = false;
+			menu.classList.remove("open");
+			trigger.setAttribute("aria-expanded", "false");
+			currentIndex = -1;
+			// Return focus to trigger
+			trigger.focus();
+		}
+
+		function navigateOptions(direction) {
+			if (!isOpen || optionsArray.length === 0) return;
+
+			if (direction === "down") {
+				currentIndex = currentIndex < optionsArray.length - 1 ? currentIndex + 1 : 0;
+			} else if (direction === "up") {
+				currentIndex = currentIndex > 0 ? currentIndex - 1 : optionsArray.length - 1;
+			}
+
+			if (currentIndex >= 0 && currentIndex < optionsArray.length) {
+				optionsArray[currentIndex].focus();
+			}
+		}
+
+		// Click/tap to toggle
+		trigger.addEventListener("click", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			if (isOpen) {
+				closeDropdown();
+			} else {
+				openDropdown();
+			}
+		});
+
+		// Keyboard navigation
+		trigger.addEventListener("keydown", function (e) {
+			switch (e.key) {
+				case "Enter":
+				case " ":
+					e.preventDefault();
+					if (!isOpen) {
+						openDropdown();
+					}
+					break;
+				case "ArrowDown":
+					e.preventDefault();
+					if (!isOpen) {
+						openDropdown();
+					} else {
+						navigateOptions("down");
+					}
+					break;
+				case "ArrowUp":
+					e.preventDefault();
+					if (isOpen) {
+						navigateOptions("up");
+					}
+					break;
+				case "Escape":
+					if (isOpen) {
+						closeDropdown();
+					}
+					break;
+			}
+		});
+
+		// Handle keyboard navigation within menu
+		menu.addEventListener("keydown", function (e) {
+			switch (e.key) {
+				case "ArrowDown":
+					e.preventDefault();
+					navigateOptions("down");
+					break;
+				case "ArrowUp":
+					e.preventDefault();
+					navigateOptions("up");
+					break;
+				case "Escape":
+					e.preventDefault();
+					closeDropdown();
+					break;
+				case "Tab":
+					// Close dropdown and let tab continue naturally
+					closeDropdown();
+					// Don't prevent default to allow normal tab navigation
+					break;
+			}
+		});
+
+		// Close on outside click
+		document.addEventListener("click", function (e) {
+			if (!dropdown.contains(e.target)) {
+				closeDropdown();
+			}
+		});
+
+		// Close on outside focus (for keyboard users)
+		document.addEventListener("focusin", function (e) {
+			if (!dropdown.contains(e.target)) {
+				closeDropdown();
+			}
+		});
+	});
+</script>

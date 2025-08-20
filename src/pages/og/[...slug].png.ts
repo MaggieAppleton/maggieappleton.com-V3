@@ -4,6 +4,7 @@ import sharp from "sharp";
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import type { ReactNode } from "react";
+import { extractBaseSlug, getLatestVersion, getAllVersionsForPost } from "../../utils/versionUtils";
 
 export async function getStaticPaths() {
   const [essays, notes, talks, patterns, smidgeons, nowPages] = await Promise.all([
@@ -21,45 +22,41 @@ export async function getStaticPaths() {
     props: { entry: any; type: string };
   }[] = [];
 
-  // Essays
-  essays.forEach((entry) => {
-    paths.push({
-      params: { slug: entry.id },
-      props: { entry, type: "essay" },
+  // Function to add paths for a collection with versioning support
+  const addContentPaths = (entries: any[], type: string) => {
+    const processedBaseSlugs = new Set<string>();
+    
+    entries.forEach((entry) => {
+      const baseSlug = extractBaseSlug(entry.id);
+      
+      // Only add canonical path once per base slug
+      if (!processedBaseSlugs.has(baseSlug)) {
+        const allVersions = getAllVersionsForPost(baseSlug, entries);
+        if (allVersions.length > 1) {
+          // This is versioned content, create canonical OG image using latest version
+          const latestVersion = getLatestVersion(allVersions);
+          paths.push({
+            params: { slug: baseSlug },
+            props: { entry: latestVersion, type },
+          });
+        } else {
+          // Single version content, use original entry
+          paths.push({
+            params: { slug: entry.id },
+            props: { entry, type },
+          });
+        }
+        processedBaseSlugs.add(baseSlug);
+      }
     });
-  });
+  };
 
-  // Notes
-  notes.forEach((entry) => {
-    paths.push({
-      params: { slug: entry.id },
-      props: { entry, type: "note" },
-    });
-  });
-
-  // Talks
-  talks.forEach((entry) => {
-    paths.push({
-      params: { slug: entry.id },
-      props: { entry, type: "talk" },
-    });
-  });
-
-  // Patterns
-  patterns.forEach((entry) => {
-    paths.push({
-      params: { slug: entry.id },
-      props: { entry, type: "pattern" },
-    });
-  });
-
-  // Smidgeons
-  smidgeons.forEach((entry) => {
-    paths.push({
-      params: { slug: entry.id },
-      props: { entry, type: "smidgeon" },
-    });
-  });
+  // Add paths for each content type
+  addContentPaths(essays, "essay");
+  addContentPaths(notes, "note");
+  addContentPaths(talks, "talk");
+  addContentPaths(patterns, "pattern");
+  addContentPaths(smidgeons, "smidgeon");
 
   // Now pages
   nowPages.forEach((entry) => {
