@@ -48,6 +48,9 @@ const sizes = "(max-width: 440px) 100vw, (max-width: 768px) 90vw, (max-width: 10
 
 // Modified GIF detection logic
 const isGif = typeof src === "string" && src.toLowerCase().endsWith(".gif");
+
+// Check if imageSrc is ImageMetadata (from glob) or a string (fallback/remote)
+const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
 ---
 
 <figure class:list={["container", { framed }]} style={`margin: ${margin || ""}`}>
@@ -56,9 +59,9 @@ const isGif = typeof src === "string" && src.toLowerCase().endsWith(".gif");
 		style={`max-width: ${widthWithUnit}`}
 	>
 		{
-			isGif ? (
+			isGif || !isImageMetadata ? (
 				<img
-					src={typeof imageSrc === "string" ? src : imageSrc.src}
+					src={typeof imageSrc === "string" ? imageSrc : imageSrc.src}
 					alt={alt}
 					class="styled-image"
 					loading="eager"
