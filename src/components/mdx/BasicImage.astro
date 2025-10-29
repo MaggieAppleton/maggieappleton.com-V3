@@ -29,11 +29,19 @@ const widthWithUnit = typeof width === "number" ? `${width}px` : width;
 // Use glob import to get all images
 const images = import.meta.glob<{ default: ImageMetadata }>("/src/images/**/*");
 
-// If src is a string and starts with "/images", try to find it in the glob
-const imageSrc =
-	typeof src === "string" && src.startsWith("/images")
-		? (await images["/src" + src]()).default
-		: src;
+// If src is a string and starts with "/images", try to find it in the glob safely
+let imageSrc: string | ImageMetadata = src as string | ImageMetadata;
+if (typeof src === "string" && src.startsWith("/images")) {
+	const key = "/src" + src;
+	const loader = images[key as keyof typeof images];
+	if (typeof loader === "function") {
+		const mod = await loader();
+		imageSrc = mod.default;
+	} else {
+		// Fallback to the original string if not found or not a function
+		imageSrc = src;
+	}
+}
 
 // Define sizes attribute for responsive images
 const sizes = "(max-width: 440px) 100vw, (max-width: 768px) 90vw, (max-width: 1024px) 85vw, 1100px";
