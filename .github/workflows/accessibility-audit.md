@@ -13,7 +13,7 @@ safe-outputs:
     title-prefix: "[a11y] "
     labels: [accessibility, automated-audit]
     max: 20
-engine: copilot
+engine: claude
 tools:
   playwright:
 steps:
