@@ -9,6 +9,9 @@ import { remarkWikiLink } from "./src/plugins/remark-wiki-link";
 // https://astro.build/config
 export default defineConfig({
   site: "https://maggieappleton.com",
+  // Server mode with static as default - allows /edit/* pages to be dynamic
+  // Most pages prerender by default; specific pages opt-out with prerender = false
+  output: "server",
   image: {
     domains: ["res.cloudinary.com"],
   },

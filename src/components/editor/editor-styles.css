@@ -1,0 +1,380 @@
+/* Editor Container */
+.editor-container {
+  max-width: 100%;
+  min-height: calc(100vh - 80px);
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  padding: var(--space-s) var(--space-l);
+  background: var(--color-light-cream);
+  border-bottom: 1px solid var(--color-gray-200);
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+}
+
+.toolbar-hint {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--border-radius-base);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-bright-crimson);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-crimson);
+}
+
+.btn-secondary {
+  background: var(--color-gray-200);
+  color: var(--color-black);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-300);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-gray-600);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-gray-100);
+}
+
+/* Editor Content Area */
+.editor-content {
+  padding: var(--space-l) var(--space-m);
+  background: linear-gradient(var(--color-cream) 0, white 110px);
+}
+
+/* Prose Wrapper - matches the blog's ProseWrapper.astro */
+.prose-wrapper {
+  display: grid;
+  grid-template-columns: 1fr min(72ch, 100%) 1fr;
+  font-size: var(--font-size-base);
+}
+
+.prose-wrapper > * {
+  grid-column: 2;
+}
+
+/* TipTap Editor Styling */
+.prose-editor {
+  outline: none;
+  font-family: var(--font-body);
+  color: var(--color-black);
+}
+
+.prose-editor:focus {
+  outline: none;
+}
+
+/* Paragraphs */
+.prose-editor p {
+  font-size: var(--font-size-base);
+  line-height: var(--leading-looser);
+  margin-bottom: var(--space-m);
+}
+
+@media (max-width: 767px) {
+  .prose-editor p {
+    line-height: var(--leading-loose);
+  }
+}
+
+/* Headings */
+.prose-editor h1 {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-2xl);
+  font-weight: normal;
+  margin: var(--space-2xl) 0 var(--space-m);
+  line-height: var(--leading-tight);
+}
+
+.prose-editor h2 {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-xl);
+  font-weight: 100;
+  margin: var(--space-xl) 0 var(--space-m);
+  line-height: var(--leading-base);
+}
+
+.prose-editor h3 {
+  font-family: var(--font-serif);
+  font-size: calc(var(--font-size-lg) / 1.1);
+  font-weight: 300;
+  line-height: var(--leading-base);
+  margin: var(--space-m) 0 var(--space-s);
+}
+
+.prose-editor h4 {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  margin: var(--space-s) 0 var(--space-xs);
+}
+
+/* Links */
+.prose-editor a {
+  color: var(--color-bright-crimson);
+  text-decoration: underline;
+  text-decoration-color: var(--color-crimson-20);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.prose-editor a:hover {
+  text-decoration-color: var(--color-bright-crimson);
+}
+
+/* Bold and Italic */
+.prose-editor strong {
+  font-weight: 600;
+}
+
+.prose-editor em {
+  font-style: italic;
+}
+
+/* Lists */
+.prose-editor ul,
+.prose-editor ol {
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: var(--space-m);
+}
+
+.prose-editor ul {
+  list-style: none;
+}
+
+.prose-editor ul > li {
+  margin-bottom: var(--space-xs);
+  line-height: var(--leading-loose);
+  margin-left: 2.5rem;
+  position: relative;
+}
+
+.prose-editor ul > li::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: -1.5rem;
+  background-image: url("/images/leaf-icon.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: 4px;
+  left: -2.5rem;
+}
+
+.prose-editor ol > li {
+  margin-bottom: var(--space-xs);
+  line-height: var(--leading-looser);
+  margin-left: 2.5rem;
+}
+
+/* Blockquotes */
+.prose-editor blockquote {
+  text-align: center;
+  padding: var(--space-m) 0 var(--space-xl);
+  border: none;
+  margin: 0;
+}
+
+.prose-editor blockquote p {
+  text-align: center;
+  max-width: 30ch;
+  margin: var(--space-m) auto;
+  font-size: var(--font-size-lg);
+  line-height: var(--leading-base);
+  display: inline-block;
+}
+
+.prose-editor blockquote::before,
+.prose-editor blockquote::after {
+  content: "";
+  display: block;
+  margin: 0 auto;
+  width: 3rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Horizontal Rules */
+.prose-editor hr {
+  margin: var(--space-xl) auto var(--space-2xl);
+  height: 3px;
+  background-color: var(--color-salmon);
+  border: none;
+  width: 20%;
+}
+
+/* Code */
+.prose-editor code {
+  background: var(--color-cream);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--border-radius-sm);
+  font-family: "IBM Plex Mono", "Dank Mono", "SF Mono", consolas, monospace;
+  font-size: calc(var(--font-size-base) * 0.85);
+}
+
+.prose-editor pre {
+  background: var(--color-black);
+  color: var(--color-light-cream);
+  padding: var(--space-24) var(--space-32);
+  border-radius: var(--border-radius-base);
+  font-family: "IBM Plex Mono", "Dank Mono", "SF Mono", consolas, monospace;
+  font-size: calc(var(--font-size-sm) * 1.1);
+  line-height: var(--leading-loose);
+  overflow-x: auto;
+  margin: 0 0 var(--space-m);
+}
+
+.prose-editor pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Placeholder */
+.prose-editor p.is-editor-empty:first-child::before {
+  color: var(--color-gray-400);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Component Placeholders */
+.component-placeholder {
+  background: var(--color-gray-100);
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--border-radius-base);
+  padding: var(--space-m);
+  margin: var(--space-m) 0;
+  position: relative;
+}
+
+.component-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-600);
+  background: white;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--border-radius-sm);
+  position: absolute;
+  top: calc(-1 * var(--space-12));
+  left: var(--space-m);
+}
+
+.component-preview {
+  font-family: "IBM Plex Mono", "Dank Mono", "SF Mono", consolas, monospace;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  max-height: 150px;
+  overflow: hidden;
+}
+
+/* Conflict Modal */
+.conflict-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.conflict-modal {
+  background: white;
+  padding: var(--space-l);
+  border-radius: var(--border-radius-lg);
+  max-width: 500px;
+  width: 90%;
+  box-shadow: var(--box-shadow-lg);
+}
+
+.conflict-modal h2 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin: 0 0 var(--space-s);
+  color: var(--color-bright-crimson);
+}
+
+.conflict-modal p {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--leading-base);
+  color: var(--color-gray-800);
+  margin: 0 0 var(--space-m);
+}
+
+.conflict-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.conflict-actions .btn {
+  width: 100%;
+  padding: var(--space-12) var(--space-16);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .editor-toolbar {
+    padding: var(--space-s);
+  }
+
+  .editor-content {
+    padding: var(--space-m) var(--space-s);
+  }
+
+  .prose-editor h1 {
+    margin: var(--space-xl) 0 var(--space-m);
+  }
+
+  .prose-editor h2 {
+    margin: var(--space-l) 0 var(--space-s);
+  }
+
+  .prose-editor hr {
+    margin: var(--space-l) auto;
+  }
+}

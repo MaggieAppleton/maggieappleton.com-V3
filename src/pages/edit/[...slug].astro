@@ -1,0 +1,140 @@
+---
+import fs from "fs/promises";
+import path from "path";
+import Layout from "../../layouts/Layout.astro";
+import PostEditor from "../../components/editor/PostEditor";
+
+// This page should render on-demand, not be prerendered
+export const prerender = false;
+
+// Only allow in dev mode
+if (import.meta.env.PROD) {
+  return Astro.redirect("/");
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/");
+}
+
+// Find the file across all content collections
+const collections = ["essays", "notes", "patterns", "talks", "smidgeons", "now"];
+let filePath: string | null = null;
+let fileContent: string = "";
+let collection: string = "";
+
+for (const col of collections) {
+  // Handle both flat files and versioned folders
+  const flatPath = path.join(process.cwd(), "src/content", col, `${slug}.mdx`);
+  const folderPath = path.join(process.cwd(), "src/content", col, slug, `${slug}.mdx`);
+
+  try {
+    await fs.access(flatPath);
+    filePath = flatPath;
+    collection = col;
+    break;
+  } catch {
+    try {
+      await fs.access(folderPath);
+      filePath = folderPath;
+      collection = col;
+      break;
+    } catch {
+      // Continue to next collection
+    }
+  }
+}
+
+if (!filePath) {
+  return Astro.redirect("/404");
+}
+
+// Read the file and get its modification time for conflict detection
+const stats = await fs.stat(filePath);
+fileContent = await fs.readFile(filePath, "utf-8");
+const lastModified = stats.mtimeMs;
+---
+
+<Layout title={`Editing: ${slug}`} description="Post editor">
+  <div class="editor-page">
+    <header class="editor-header">
+      <a href={`/${slug}`} class="back-link">← Back to post</a>
+      <h1>Editing: {slug}</h1>
+      <div class="header-actions">
+        <span class="collection-badge">{collection}</span>
+        <span class="save-status" id="save-status"></span>
+      </div>
+    </header>
+
+    <PostEditor
+      client:load
+      initialContent={fileContent}
+      slug={slug}
+      collection={collection}
+      filePath={filePath}
+      lastModified={lastModified}
+    />
+  </div>
+</Layout>
+
+<style>
+  .editor-page {
+    min-height: 100vh;
+    background: var(--color-cream);
+  }
+
+  .editor-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    padding: var(--space-m) var(--space-l);
+    border-bottom: 1px solid var(--color-gray-200);
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .editor-header h1 {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+  }
+
+  .back-link {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    color: var(--color-bright-crimson);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  .collection-badge {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--color-gray-100);
+    padding: var(--space-4) var(--space-8);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-gray-600);
+  }
+
+  .save-status {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+  }
+</style>

@@ -1,4 +1,7 @@
 ---
+// This page should be prerendered (static) since it uses getStaticPaths
+export const prerender = true;
+
 import PostLayout from "../layouts/PostLayout.astro";
 import SmidgeonLayout from "../layouts/SmidgeonLayout.astro";
 import ProseWrapper from "../components/layouts/ProseWrapper.astro";

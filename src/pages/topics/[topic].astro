@@ -1,4 +1,7 @@
 ---
+// This page should be prerendered (static) since it uses getStaticPaths
+export const prerender = true;
+
 import Layout from "../../layouts/Layout.astro";
 import Title2 from "../../components/mdx/typography/Title2.astro";
 import TitleWithCount from "../../components/layouts/TitleWithCount.astro";
