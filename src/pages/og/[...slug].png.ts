@@ -1,4 +1,3 @@
-// This page should be prerendered (static) since it uses getStaticPaths
 export const prerender = true;
 
 import fs from "fs/promises";
