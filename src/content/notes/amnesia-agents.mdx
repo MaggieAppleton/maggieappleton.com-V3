@@ -1,0 +1,113 @@
+---
+title: "Amnesia Agents & Making Memories"
+description: "Architectural patterns that give agents better memory, current failures, and what we can learn from cognitive science"
+updated: "2025-12-22"
+startDate: "2025-12-22"
+type: "note"
+topics: []
+growthStage: "seedling"
+draft: true
+---
+
+import AssumedAudience from "../../components/mdx/AssumedAudience.astro";
+import ChatHistoryTabs from "../../components/unique/ChatHistoryTabs.astro";
+import claudePersonal from "../../images/posts/amnesia-agents/claude-personal.webp";
+import chatgptPersonal from "../../images/posts/amnesia-agents/chatgpt-personal.jpg";
+
+<AssumedAudience>
+People building agentic systems with large language models and/or heavily using agentic LLM systems in their daily lives.
+</AssumedAudience>
+
+<Spacer size="xs" />
+
+Intro: lay out the problem. Current agents have no memory or shitty memory. We're in the early days of figuring out how to make agents remember in the ways we expect them to; as humans would.
+
+<IntroParagraph>Every AI agent currently has amnesia: signficiant, debilitating memory loss over time. [Even those with explicit memory features are so limited they fail to live up to our basic expectations. - this statement needs evidence]</IntroParagraph>
+
+[Why does memory matter? Human memory is central to intelligence.]
+
+Limited context windows mean models can't maintain coherence over extended conversations. The model runs out of context and begins to forget key details.
+
+[diagram of context windows running out – include current max context window lengths for various models]
+
+When your conversation goes on for a while, they can get confused and dumber. They forget what you did 10 minutes ago. Context rot [citation]
+
+[Example of Cursor being dumb]
+
+I was recently having a long chat with Claude about buying a home speaker system. We did a bunch of web research on various brands, reviews, and trade-offs. After settling on a Sonos Era 100, Claude was advising me not to buy a used one, pointing out the risk/reward trade-off didn't make sense if I was only "saving £60-80 total on a £920k house purchase."
+
+<BasicImage
+    framed
+	src="/images/posts/amnesia-agents/claude-lost-context.webp"
+	width="800"
+/>
+
+I'm sorry... what??
+
+This is a clear case of context and memory confusion. A few weeks ago I had Claude to help me compare some houses for sale in South London: one of them cost £920k<Footnote idName={1}>Yes, house prices in South London are disgusting and I will be in debt for a very long time for living here.</Footnote>. Claude saved this fact to the "top of mind" section of my Claude memory document, then erroneously injected it into this speaker debate.
+
+For anyone extensively using agentic systems these kinds of faceplants aren't surprising. They happen all the time.
+
+## The State of Memory
+
+Let's first look at the bog standard memory systems used by some of the most popular, general use agents: ChatGPT and Claude<Footnote idName={2}>Gemini and Microsoft Copilot have memory features too but I don't sincerely use them enough to evaluate them</Footnote>
+
+You can ask them "What do you know about me?" and if you're a heavy user like I am, they'll be able to recite a fair amount. Some examples, liberally redacted for obvious reasons.
+
+<ChatHistoryTabs
+    claudeImage={claudePersonal}
+    chatgptImage={chatgptPersonal}
+    claudeAlt="My Claude conversation history"
+    chatgptAlt="My ChatGPT conversation history"
+/>
+
+These two results look fairly similar – I use Claude and ChatGPT interchangeably, but rely on Claude more so I'm not surprised it has more detail. Both systems give you a way to manage your memories. Checking these underlying documents uncovers some of the core issues.
+
+Let's look at what ChatGPT has saved behind the scenes:
+
+<BasicImage
+    framed
+	src="/images/posts/amnesia-agents/chatgpt-memory.webp"
+	width="800"
+/>
+
+One obvious issue with saving a memory like "Baby is now 5 months old" is that it's out of date within a few weeks of being created. My baby's age is clearly changing all the time, and temporal information like this needs another layer of inferrence to be accurate. It needs to compare this statement to the current date and calculate the baby's current age each time.
+
+Handling a memory about a child's age might look like an edge case, but in fact every statement visible here is out of date. I am no longer learning Claude tool calls or building a Mochi API tool, the status of my Oura ring is now "actively in use" rather than "ordered", and I'm not planning to buy that sewing machine anymore.
+
+In addition to presenting a long list of out of date memories, ChatGPT is also giving me a bright orange warning that my memory is "86% full." This feels surprising for a technology promising us infinite intelligence that will replace all human labour to claim it's full with just irrelevant 30 memories in the bank. But I don't pay for ChatGPT pro so perhaps I shouldn't expect quality results here.
+
+<BasicImage
+    framed
+	src="/images/posts/amnesia-agents/context-butterfly.jpg"
+	width="600"
+/>
+
+
+## Memory Making
+
+Short-term working memory is less of a problem. Or at least has some decent solutions.
+As your working session and context gets longer, model performance degrades.
+This can be mitigated with context compaction and prompt compaction.
+
+Long-term memory is the more interesting challenge. By this I mean models remembering relevant, useful information across multiple working sessions, over many days, weeks, months, and years.
+
+On one level it might sound like a simple problem with a simple solution. Just save facts to a database and use RAG to retrieve the relevant ones when needed.
+
+But what does _relevant_ means in this context? How does the model know what's relevant to the conversation? How does the model know which facts are worth saving and which should be discarded?
+
+Long-term
+1. Explicit / declarative
+- Semantic memory - general knowledge
+- Episodic memory - events
+1. Implicit
+- Priming
+- Procedural (skills)
+
+### Forgetting and Decay
+
+Purposefully forgetting irrelevant information
+
+To make room for more
+
+### Metadata

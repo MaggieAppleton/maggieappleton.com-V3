@@ -1,0 +1,212 @@
+---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+	claudeImage: ImageMetadata;
+	chatgptImage: ImageMetadata;
+	claudeAlt?: string;
+	chatgptAlt?: string;
+}
+
+const {
+	claudeImage,
+	chatgptImage,
+	claudeAlt = "Claude conversation history",
+	chatgptAlt = "ChatGPT conversation history",
+} = Astro.props;
+---
+
+<div class="chat-history-container">
+	<div class="tabs">
+		<button class="tab active" data-tab="claude">Claude</button>
+		<button class="tab" data-tab="chatgpt">ChatGPT</button>
+	</div>
+	<div class="images-stack">
+		<Image
+			class="chat-image active"
+			data-image="claude"
+			src={claudeImage}
+			alt={claudeAlt}
+		/>
+		<Image
+			class="chat-image"
+			data-image="chatgpt"
+			src={chatgptImage}
+			alt={chatgptAlt}
+		/>
+	</div>
+</div>
+
+<script>
+	function initChatHistoryTabs() {
+		const container = document.querySelector(".chat-history-container");
+		if (!container) return;
+
+		const tabs = container.querySelectorAll(".tab");
+		const images = container.querySelectorAll(".chat-image");
+		const imagesStack = container.querySelector(".images-stack");
+
+		function updateStackHeight() {
+			// Set container height based on active image
+			const activeImage = container.querySelector(".chat-image.active");
+			if (activeImage && imagesStack) {
+				// Wait for image to load if not already loaded
+				if (activeImage.complete) {
+					imagesStack.style.height = `${activeImage.offsetHeight}px`;
+				} else {
+					activeImage.addEventListener("load", () => {
+						imagesStack.style.height = `${activeImage.offsetHeight}px`;
+					});
+				}
+			}
+		}
+
+		function switchTab(tabName) {
+			// Update tab buttons
+			tabs.forEach((tab) => {
+				if (tab.getAttribute("data-tab") === tabName) {
+					tab.classList.add("active");
+				} else {
+					tab.classList.remove("active");
+				}
+			});
+
+			// Update images
+			images.forEach((img) => {
+				if (img.getAttribute("data-image") === tabName) {
+					img.classList.add("active");
+				} else {
+					img.classList.remove("active");
+				}
+			});
+
+			// Update container height
+			updateStackHeight();
+		}
+
+		// Add click handlers
+		tabs.forEach((tab) => {
+			tab.addEventListener("click", () => {
+				const tabName = tab.getAttribute("data-tab");
+				switchTab(tabName);
+			});
+		});
+
+		// Set initial height
+		updateStackHeight();
+	}
+
+	// Initial setup
+	initChatHistoryTabs();
+
+	// Reinit on view transitions
+	document.addEventListener("astro:page-load", initChatHistoryTabs);
+</script>
+
+<style>
+	.chat-history-container {
+		width: 100%;
+		max-width: 900px;
+		margin: 2rem auto;
+		grid-column: 1/4 !important;
+	}
+
+	.tabs {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 2rem;
+		justify-content: center;
+	}
+
+	.tab {
+		padding: 0.5rem 1.5rem;
+		border: 1px solid var(--color-gray-200);
+		background: var(--color-cream);
+		border-radius: 2rem;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-base);
+		font-weight: 400;
+		color: var(--color-gray-700);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.tab:hover {
+		background: var(--color-gray-100);
+		border-color: var(--color-gray-300);
+	}
+
+	.tab.active {
+		background: var(--color-gray-800);
+		color: var(--color-cream);
+		border-color: var(--color-gray-800);
+	}
+
+	.images-stack {
+		position: relative;
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.chat-image {
+		position: absolute;
+		width: 100%;
+		max-width: 800px;
+		height: auto;
+		border: 1px solid var(--color-gray-200);
+		border-radius: 0.5rem;
+		box-shadow: var(--box-shadow-sm);
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		pointer-events: none;
+	}
+
+	/* Claude active (on top) */
+	.chat-image[data-image="claude"].active {
+		transform: translateX(0) scale(1);
+		opacity: 1;
+		z-index: 2;
+		pointer-events: auto;
+	}
+
+	/* Claude inactive (behind, peek left) */
+	.chat-image[data-image="claude"]:not(.active) {
+		transform: translateX(-30px) scale(0.95);
+		opacity: 0.6;
+		z-index: 1;
+	}
+
+	/* ChatGPT active (on top) */
+	.chat-image[data-image="chatgpt"].active {
+		transform: translateX(0) scale(1);
+		opacity: 1;
+		z-index: 2;
+		pointer-events: auto;
+	}
+
+	/* ChatGPT inactive (behind, peek right) */
+	.chat-image[data-image="chatgpt"]:not(.active) {
+		transform: translateX(30px) scale(0.95);
+		opacity: 0.6;
+		z-index: 1;
+	}
+
+	@media (max-width: 768px) {
+		.chat-history-container {
+			padding: 0 1rem;
+		}
+
+		.chat-image {
+			max-width: 100%;
+		}
+
+		/* Simplify stacking on mobile */
+		.chat-image:not(.active) {
+			transform: scale(0.95);
+			opacity: 0.4;
+		}
+	}
+</style>

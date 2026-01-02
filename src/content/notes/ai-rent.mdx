@@ -1,0 +1,80 @@
+---
+title: "The AI Rent is Too Damn Low"
+description: "The cost of AI inference is currently artificially subsidised far below what we'll pay in the future"
+updated: "2025-11-02"
+startDate: "2025-11-02"
+type: "note"
+topics: []
+growthStage: "seedling"
+draft: true
+---
+
+import AssumedAudience from "../../components/mdx/AssumedAudience.astro";
+
+<AssumedAudience>
+People who already believe that frontier models in consumer products (Claude, ChatGPT, Cursor, etc.) have genuine utility and are actively using them in their day-to-day work.
+</AssumedAudience>
+
+<Spacer size="xs" />
+
+<IntroParagraph>We're in the early days of paying AI rent. Mine is currently £33.20 a month: I pay £15.20 ($20 USD) for Cursor Pro and £18 for Claude Pro. I get Copilot for free though my work at Github, and I leech free tokens off OpenAI on the free tier of ChatGPT.</IntroParagraph>
+
+£33.20 is a generous price for what I get in return. In my particular role as a researcher and design engineer, the capabilities of Cursor, Claude, Copilot, and ChatGPT add genuine value to my day-to-day work and personal life. [How?] [They're a little zoo of capabilities I jump between depending on the task.]
+
+For people working in software development, I think we've already psychologically adjusted to the idea we'll be paying AI rent for a long time. Some people have wholeheartedly accepted this and forked out for the premium tier of X or Y, paying £200 for [access to blah blah blah].
+
+This puts all of us ahead of the curve. Most people are still paying £0.
+
+£33.20 feels fairly reasonable compared to my other utility bills. I pay £80 a month for gas and electricity and £45 a month for water. I value AI inference a lot. But not quite as highly as access to clean drinking water, light, and warmth throughout the chilly British winter.
+
+But this very reasonable price is artificially low. It costs Anthropic, Cursor, OpenAI, and Github far more to process my AI requests than I pay them.
+
+Cursor has garnered particular attention for the gaping hole in between what user pay for it and how much it actually costs to run. In September of 2025 I paid them my usual £15.20 ($20 USD) subscription and then proceeded to use £70.54 worth of tokens. That is 4.6x more than I paid them. I didn't do any nefarious or intentional workarounds to squeeze this value out of Cursor. I didn't even know I'd spent that much until I checked! I used the product as intended and stayed within my request allowance.
+
+Many people have discovered the horrifying true cost of inference by putting their API key directly into Claude Code without a subscription and watch it chew through tokens at $5/minute.
+
+We're in the Uber subsidy days of AI inference. Just like Uber and Lyft became household names by offering rides at a fraction of the price you'd pay a taxi driver, the venture capital money eventually ran out and they had raise prices to their actual value many years later.
+
+Anthropic, OpenAI, Google, Microsoft, and the thousands of startups wrapped around them are eating the cost of most of our tokens, in the name of market share. Cursor lets me bust through £74.54 worth of tokens because they want to earn my eternal loyalty as my go-to coding IDE over their competitors.
+
+The big bet is that inference costs will drop over time, making access to AI affordable for everyone to use in abundance.
+
+There's good precedence that the cost of inference has been dropping over time.
+"Research from Stanford's AI Index and Epoch AI shows that achieving a performance level equivalent to GPT-3.5 became over 280 times cheaper between November 2022 and October 2024"
+"So even though inference gets cheaper per query, the total energy used explodes as usage scales."
+
+Inference is when we send a prompt to a model and get a response back; the model “infers” what to say next based on its training. Inference takes place in the gargantuan data centres we keep hearing about.
+
+AI will never be as cheap as we have it now. Maybe we'll get regulated pricing like we do with electricity. It becomes part of the cost of living.
+
+Model training is a lot of the cost. Once the models are trained, we have them ~forvever? But we always need new and better models.
+
+If on-device AI becomes good enough for 80% of use cases, does your thesis collapse?
+On device AI might shift inference to our own devices. Smaller, more efficient models.
+
+Are you conflating "AI capabilities" with "access to frontier models from Big Tech"?
+
+But accessing the frontier models will always require us to pay rent to the big labs.
+
+I don't _need_ electricity. I could choose to live against the grain with candles and an ice box. The amish do it.
+
+## Claude Notes
+
+1. AI products are massively subsidized — companies like Cursor are charging $20/month while users consume $60-100 worth of inference, similar to Uber's early days of below-cost pricing to gain market share.
+
+2. Current pricing is unsustainable — there's a huge gap (at least 10x) between what's being spent on data center infrastructure versus revenue generated from AI products.
+
+3. Future costs will be much higher — AI subscriptions will likely rise to $200-300/month (or more) once companies need to actually cover their costs and turn a profit.
+
+4. AI will become a utility bill — like electricity, AI will shift from a luxury to an essential monthly expense that people just pay without questioning, because not having it means being less capable.
+
+5. This creates inequality — those who can afford premium AI access will be more intelligent and capable, widening the gap between rich and poor (the Matthew Effect).
+
+several authors are already arguing that AI should be treated as a public utility with regulated access, similar to how electricity was regulated in the early 20th century
+https://jacobin.com/2025/07/artificial-intelligence-regulation-public-utility
+
+Sequoia estimated that the AI industry spent $50 billion on the Nvidia chips used to train advanced AI models last year, but brought in only $3 billion in revenue. [source](https://www.wsj.com/tech/ai/a-peter-thiel-backed-ai-startup-cognition-labs-seeks-2-billion-valuation-998fa39d). that's a 17:1 ratio (check)
+
+everyone is comparing it to building out the railroads
+
+The Matthew Effect is the phenomenon where individuals with initial advantages accrue further success, leading to a widening gap between the "haves" and "have-nots". Popularized by sociologist Robert Merton, the term originates from a verse in the Gospel of Matthew
