@@ -1,0 +1,339 @@
+---
+import fs from "fs/promises";
+import path from "path";
+import yaml from "js-yaml";
+import Layout from "../../layouts/Layout.astro";
+import PostEditor from "../../components/editor/PostEditor";
+import GrowthIcon from "../../components/layouts/GrowthIcon.astro";
+import Topics from "../../components/layouts/Topics.astro";
+import Dates from "../../components/layouts/Dates.astro";
+import { Icon } from "astro-icon/components";
+
+// This page should render on-demand, not be prerendered
+export const prerender = false;
+
+// Only allow in dev mode - redirect to home in production
+if (import.meta.env.PROD) {
+  return Astro.redirect("/", 307);
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/");
+}
+
+// Find the file across all content collections
+const collections = ["essays", "notes", "patterns", "talks", "smidgeons", "now"];
+let filePath: string | null = null;
+let fileContent: string = "";
+let collection: string = "";
+
+for (const col of collections) {
+  // Handle both flat files and versioned folders
+  const flatPath = path.join(process.cwd(), "src/content", col, `${slug}.mdx`);
+  const folderPath = path.join(process.cwd(), "src/content", col, slug, `${slug}.mdx`);
+
+  try {
+    await fs.access(flatPath);
+    filePath = flatPath;
+    collection = col;
+    break;
+  } catch {
+    try {
+      await fs.access(folderPath);
+      filePath = folderPath;
+      collection = col;
+      break;
+    } catch {
+      // Continue to next collection
+    }
+  }
+}
+
+if (!filePath) {
+  return Astro.redirect("/404");
+}
+
+// Read the file and get its modification time for conflict detection
+const stats = await fs.stat(filePath);
+fileContent = await fs.readFile(filePath, "utf-8");
+const lastModified = stats.mtimeMs;
+
+// Parse frontmatter
+interface Frontmatter {
+  title?: string;
+  description?: string;
+  topics?: string[];
+  growthStage?: "seedling" | "budding" | "evergreen";
+  startDate?: string | Date;
+  updated?: string | Date;
+  draft?: boolean;
+  type?: string;
+}
+
+let frontmatter: Frontmatter = {};
+const frontmatterMatch = fileContent.match(/^---\n([\s\S]*?)\n---/);
+if (frontmatterMatch) {
+  try {
+    frontmatter = yaml.load(frontmatterMatch[1]) as Frontmatter;
+  } catch (e) {
+    console.error("Failed to parse frontmatter:", e);
+  }
+}
+
+// Get the type from collection if not in frontmatter
+const postType = frontmatter.type || collection.replace(/s$/, ""); // essays -> essay
+---
+
+<Layout title={`Editing: ${frontmatter.title || slug}`} description="Post editor">
+  <div class="editor-page">
+    <!-- Toolbar -->
+    <header class="editor-toolbar-header">
+      <a href={`/${slug}`} class="back-link">
+        <Icon name="heroicons:arrow-left" size={14} />
+        Back to post
+      </a>
+      <span class="editing-label">Editing</span>
+      <span class="collection-badge">{collection}</span>
+    </header>
+
+    <!-- Post header (read-only) -->
+    <header class="post-header">
+      <div class="above-title">
+        <div class="type-indicator">
+          <a href={`/${postType}s`}>
+            <Icon name="heroicons:arrow-left" size={16} />
+            <span>{postType.charAt(0).toUpperCase() + postType.slice(1)}s</span>
+          </a>
+        </div>
+        {frontmatter.growthStage && (
+          <>
+            <GrowthIcon
+              size="16"
+              growthStage={frontmatter.growthStage}
+            />
+            <p class="growth-label">{frontmatter.growthStage}</p>
+          </>
+        )}
+        {frontmatter.draft && <span class="draft-label">Draft</span>}
+      </div>
+      <div class="title-container">
+        <h1>{frontmatter.title || slug}</h1>
+        {frontmatter.description && <p class="description">{frontmatter.description}</p>}
+      </div>
+      <div class="metadata">
+        <div class="metadata-left">
+          {frontmatter.topics && <Topics topics={frontmatter.topics} />}
+        </div>
+        <div class="metadata-right">
+          <Dates
+            startDate={frontmatter.startDate instanceof Date
+              ? frontmatter.startDate.toISOString()
+              : frontmatter.startDate || ""}
+            updated={frontmatter.updated
+              ? frontmatter.updated instanceof Date
+                ? frontmatter.updated.toISOString()
+                : frontmatter.updated
+              : ""}
+          />
+        </div>
+      </div>
+    </header>
+
+    <PostEditor
+      client:load
+      initialContent={fileContent}
+      slug={slug}
+      collection={collection}
+      filePath={filePath}
+      lastModified={lastModified}
+    />
+  </div>
+</Layout>
+
+<style>
+  .editor-page {
+    min-height: 100vh;
+    background: white;
+  }
+
+  /* Editor toolbar at top */
+  .editor-toolbar-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+    padding: var(--space-s) var(--space-l);
+    border-bottom: 1px solid var(--color-gray-200);
+    background: var(--color-light-cream);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-600);
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    color: var(--color-bright-crimson);
+  }
+
+  .editing-label {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-sea-blue);
+    margin-left: auto;
+  }
+
+  .collection-badge {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--color-gray-100);
+    padding: var(--space-4) var(--space-8);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-gray-600);
+  }
+
+  /* Post header - matches PostLayout.astro */
+  .post-header {
+    max-width: 800px;
+    margin: var(--space-l) auto 0;
+    padding: 0 var(--space-m);
+  }
+
+  .above-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: 24px;
+  }
+
+  .above-title a,
+  .above-title p,
+  .growth-label {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .type-indicator a {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-bright-crimson);
+    text-decoration: none;
+  }
+
+  .type-indicator a:hover {
+    color: var(--color-sea-blue);
+  }
+
+  .type-indicator svg {
+    width: 0;
+    transition: all 0.3s ease;
+  }
+
+  .type-indicator a:hover svg {
+    width: 16px;
+    margin-right: 2px;
+  }
+
+  .title-container {
+    padding: var(--space-s) 0 var(--space-l);
+    border-bottom: 1px solid var(--color-tinted-cream);
+  }
+
+  .title-container h1 {
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    line-height: var(--leading-tighter);
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .title-container .description {
+    font-size: var(--font-size-md);
+    margin: var(--space-s) 0 0 0;
+    color: var(--color-gray-600);
+    line-height: var(--leading-base);
+  }
+
+  .metadata {
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-s);
+    padding: var(--space-s) 0;
+  }
+
+  .metadata-left {
+    flex: 1;
+  }
+
+  .metadata-right {
+    flex-shrink: 0;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .draft-label {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-700);
+    margin-left: var(--space-xs);
+  }
+
+  @media (max-width: 768px) {
+    .post-header {
+      padding: 0 var(--space-xs);
+    }
+
+    .metadata {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+    }
+
+    .metadata-right {
+      width: 100%;
+      text-align: left;
+      align-items: flex-start;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+
+    .title-container h1 {
+      font-size: var(--font-size-xl);
+    }
+
+    .title-container .description {
+      font-size: var(--font-size-base);
+    }
+  }
+</style>

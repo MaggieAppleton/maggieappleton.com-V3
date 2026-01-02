@@ -1,3 +1,5 @@
+export const prerender = true;
+
 import fs from "fs/promises";
 import satori from "satori";
 import sharp from "sharp";
