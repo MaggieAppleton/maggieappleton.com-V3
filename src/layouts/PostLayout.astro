@@ -36,6 +36,9 @@ const { frontmatter, entry } = Astro.props;
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 
+// Check if we're in development mode
+const isDev = import.meta.env.DEV;
+
 // Calculate canonical URL for versioned content
 const canonicalURL = entry
 	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
@@ -104,6 +107,12 @@ const coverImage =
 			/>
 			<p>{frontmatter.growthStage}</p>
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
+			{isDev && (
+				<a href={`/edit/${currentSlug}`} class="edit-button">
+					<Icon name="heroicons:pencil-square" size={14} />
+					Edit
+				</a>
+			)}
 		</div>
 		<div class="title-container">
 			<h1>{frontmatter.title}</h1>
@@ -308,5 +317,32 @@ const coverImage =
 
 	.back-link a:hover span {
 		transform: translate3d(3px, 0, 0);
+	}
+
+	.edit-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin-left: auto;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: bold;
+		padding: 4px 8px;
+		border-radius: 4px;
+		background-color: var(--color-sea-blue);
+		color: white;
+		text-decoration: none;
+		transition: background-color 0.15s ease;
+	}
+
+	.edit-button:hover {
+		background-color: var(--color-dark-sea-blue, #3a7a8a);
+	}
+
+	.edit-button svg {
+		width: 14px;
+		height: 14px;
 	}
 </style>
