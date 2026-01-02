@@ -1,0 +1,81 @@
+---
+interface Props {
+	avatar: string;
+}
+
+const { avatar } = Astro.props;
+---
+
+<article class="tweet">
+	<div class="tweet-avatar">
+		<img src={avatar} alt="A geometric pattern avatar" />
+	</div>
+	<div class="tweet-content">
+		<div class="tweet-text">
+			<slot />
+		</div>
+	</div>
+</article>
+
+<style>
+	.tweet {
+		display: flex;
+		gap: 16px;
+		padding: 20px 24px;
+		border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+		transition: background-color 0.2s;
+	}
+
+	.tweet:hover {
+		background-color: var(--color-gray-50, #f9fafb);
+	}
+
+	.tweet-avatar {
+		flex-shrink: 0;
+		width: 32px;
+		height: 32px;
+	}
+
+	.tweet-avatar img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	.tweet-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.tweet-text {
+		font-family: var(--font-sans) !important;
+		line-height: 1.5;
+		word-wrap: break-word;
+		margin-top: -3px;
+	}
+
+	.tweet-text :global(a) {
+		color: var(--color-sea-blue, #1d4ed8);
+		text-decoration: none;
+	}
+
+	.tweet-text :global(a:hover) {
+		text-decoration: underline;
+	}
+
+	@media (max-width: 768px) {
+		.tweet {
+			padding: 10px 12px;
+		}
+
+		.tweet-avatar {
+			width: 28px;
+			height: 28px;
+		}
+
+		.tweet-text {
+			font-size: 14px;
+		}
+	}
+</style>
