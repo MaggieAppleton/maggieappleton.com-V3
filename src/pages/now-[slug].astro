@@ -15,9 +15,7 @@ import Spacer from "../components/mdx/Spacer.astro";
 import { Icon } from "astro-icon/components";
 
 export async function getStaticPaths() {
-	const nowEntries = await getCollection("now", ({ data }) => {
-		return data.draft !== true;
-	});
+	const nowEntries = await getCollection("now");
 
 	return nowEntries.map((entry) => ({
 		params: { slug: entry.id },
