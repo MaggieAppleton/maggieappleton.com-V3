@@ -10,49 +10,51 @@ external:
 draft: true
 ---
 
-Steve Yegge just published an [elaborate manifesto](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) about Gastown, his Mad Max-themed agent orchestrator that runs dozens of coding agents simultaneously. It's entirely vibecoded, thoughtlessly designed with off-the-cuff solutions, and inefficiently burning through (tens of?) thousands of dollars a month in API costs.
+Steve Yegge just published an [elaborate manifesto](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) about Gastown, his Mad Max-themed agent orchestrator that runs dozens of interconnected coding agents simultaneously. It's entirely vibecoded, thoughtlessly designed with off-the-cuff solutions, and inefficiently burning through (tens of?) thousands of dollars a month in API costs.
 
 I think it's both utterly unhinged and important to take seriously in the conversation about how agents will change the nature of software development.
 
 Not because it's a serious, working development tool (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
 
-I also think Yegge deserves some praise for exercising the agency to take a swing at a system like this, despite the inefficiencies and chaos of this iteration. And then running a public tour of his shitty, quarter-built plane while it's mid-flight.
+I also think Yegge deserves some praise for exercising agency and taking a swing at a system like this, despite the inefficiencies and chaos of this iteration. And then running a public tour of his shitty, quarter-built plane while it's mid-flight.
 
 When I was taken to the Tate Modern as a child I'd point at Mark Rothko pieces and say to my mother "I could do that", and she would say "yes, but you didn't."
 
-<BasicImage src="/images/posts/gastown/rothko.png" alt="Mark Rothko's Orange and Yellow" />
+<BasicImage src="/images/smidgeons/rothko.png" alt="Mark Rothko's Orange and Yellow" />
 
-Many people have talked about what large-scale, automated agent orchestration systems _could_ look like in a few years, and no one else attempted to sincerely build it. Points to Yegge.
+Many people have talked about what large-scale, automated agent orchestration systems _could_ look like in a few years, and no one else attempted to sincerely build it.
 
-I should be clear have not used Gastown. Yegge emphatically told me not to. Multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
+I should be clear that I have not used Gastown. Yegge emphatically told me not to. Multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
 
-[quote from the piece]
+<BasicImage src="/images/smidgeons/gastown-1.png" alt="Yegge's essay saying 'Warning danger caution: Get the f**k out. You will die.' followed by a list of reasons why I shouldn't use Gastown" />
 
 But here's what stood out to me from the parts of the manifesto I could comprehend:
 
 **1. Design and planning becomes the bottleneck when you hand all production code over to agentic systems.**
 
-There's an irony here: automating code execution reveals design and planning as the non-automatable bottleneck. As Yegge puts it: "Gas Town churns through implementation plans so quickly that you have to do a LOT of design and planning to keep the engine fed."
+Automating all production code reveals that design and planning are the bottleneck. As Yegge puts it: "Gas Town churns through implementation plans so quickly that you have to do a LOT of design and planning to keep the engine fed."
 
 When 20-30 AI agents can execute code faster than you can specify what to build, the developer role fundamentally shifts. Yegge describes it explicitly: you become "a Product Manager, and Gas Town is an Idea Compiler. You just make up features, design them, file the implementation plans, and then sling the work around."
 
-The entire MEOW stack (Molecular Expression of Work) exists to solve this planning bottleneck. Workflows must be pre-designed as "formulas" (workflow templates in TOML), which get "cooked" into "protomolecules" (instantiable workflow graphs), which become "molecules" (actual work sequences) that agents execute step-by-step. Yegge's even building a "Mol Mall"—a marketplace for pre-packaged workflow templates—to help scale the supply of designed work.
+The entire MEOW stack (Molecular Expression of Work) exists to solve this planning bottleneck. Workflows must be pre-designed as "formulas" (workflow templates in TOML), which get "cooked" into "protomolecules" (instantiable workflow graphs), which become "molecules" (actual work sequences) that agents execute step-by-step.
 
-Your job becomes: think → design → template → multiply. The implementation? That's just execution.
+Your job becomes: think → design → template → multiply.
 
 **2. The system is "expensive as hell" but the economics still might make sense**
 
-Yegge describes Gastown as "expensive as hell" and warns "you won't like Gas Town if you ever have to think, even for a moment, about where money comes from." He's already on his second Claude Code account and expects to need a third "by the end of next week."
+Yegge describes Gastown as "expensive as hell... you won't like Gas Town if you ever have to think, even for a moment, about where money comes from." He's already on his second Claude Code account and expects to need a third "by the end of next week."
 
 Let's do some napkin math. Claude API accounts have spending limits around $5-10k per month. Running 20-30 agents continuously across 2-3 accounts suggests Gastown is burning somewhere in the **$10k-30k per month range** (though this is rough estimation given limited data).
 
 That sounds absurd until you compare it to a US senior developer salary: $150k-200k per year works out to $12.5k-17k per month. If Gastown genuinely multiplies throughput by 5-10x, the cost per unit of valuable work starts to look competitive with human labor.
 
-The current cost is artificially inflated by system inefficiency—work gets lost, bugs get fixed 2-3 times, designs go missing and need redoing. It's chaos. As models improve and orchestration patterns mature, costs should drop while output quality rises.
+The current cost is artificially inflated by system inefficiency. Work gets lost, bugs get fixed 2-3 times, designs go missing and need redoing. It's chaos. As models improve and orchestration patterns mature, costs should drop while output quality rises.
 
 This isn't practical for indie developers. But for companies? The economics might already be defensible, and will only get better.
 
-**3. Buried in the chaos are sketches of future agent orchestration patterns**
+**3. Agent roles, git tracking, and execution patterns**
+
+Buried in the chaos are sketches of future agent orchestration patterns
 
 The terminology is overwhelming: polecats, deacons, dogs, Boot the dog, seancing, beads, epics, molecules, protomolecules, MEOW stack, convoys, patrols, wisps, hooks, GUPP. I got lost somewhere after the MEOW stack.
 
