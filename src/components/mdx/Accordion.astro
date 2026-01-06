@@ -99,6 +99,7 @@ const { header } = Astro.props;
 	}
 
 	.accordion-panel {
+		display: none;
 		height: 0;
 		overflow: hidden;
 		opacity: 0;
@@ -179,6 +180,7 @@ const { header } = Astro.props;
 					// Opening animation
 					if (panel instanceof HTMLElement) {
 						panel.style.display = "block"; // Ensure panel is visible for animation
+						panel.classList.add("open");
 						animate(
 							panel,
 							{
@@ -216,6 +218,7 @@ const { header } = Astro.props;
 							},
 						).then(() => {
 							panel.style.display = "none";
+							panel.classList.remove("open");
 						});
 
 						if (moreText instanceof HTMLElement) {
