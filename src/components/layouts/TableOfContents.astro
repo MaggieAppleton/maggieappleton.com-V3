@@ -215,7 +215,8 @@ const { headings } = Astro.props;
 		let isCollapsed = false;
 		let isAutoCollapsed = false;
 		let isScrollingToSection = false;
-		
+		let disableAutoCollapse = false;
+
 		const desktopContainer = document.querySelector(".desktop-container") as HTMLElement;
 		const tocHeader = document.getElementById("desktop-toc-header");
 		const arrowIcon = tocHeader?.querySelector(".arrow-icon");
@@ -253,6 +254,7 @@ const { headings } = Astro.props;
 		const desktopClickHandler = () => {
 			isCollapsed = !isCollapsed;
 			isAutoCollapsed = false;
+			disableAutoCollapse = false; // Re-enable auto-collapse when user manually toggles
 			desktopContainer?.classList.toggle("collapsed", isCollapsed);
 			arrowIcon?.classList.toggle("collapsed", isCollapsed);
 		};
@@ -265,7 +267,7 @@ const { headings } = Astro.props;
 
 		// Scroll handler for desktop auto-collapse
 		const scrollHandler = () => {
-			if (!desktopContainer || isScrollingToSection) return;
+			if (!desktopContainer || isScrollingToSection || disableAutoCollapse) return;
 
 			const containerRect = desktopContainer.getBoundingClientRect();
 			const isAtTop = containerRect.top <= 32;
@@ -301,6 +303,7 @@ const { headings } = Astro.props;
 		document.querySelectorAll(".toc-link").forEach((link) => {
 			const linkClickHandler = (e: Event) => {
 				e.preventDefault();
+				e.stopPropagation();
 				const targetId = (link as HTMLAnchorElement).getAttribute("href")?.slice(1);
 				if (!targetId) return;
 
@@ -308,11 +311,14 @@ const { headings } = Astro.props;
 				if (!targetElement) return;
 
 				isScrollingToSection = true;
+				disableAutoCollapse = true; // Disable auto-collapse after clicking TOC link
+
 				targetElement.scrollIntoView({
 					behavior: "smooth",
 					block: "start",
 				});
 
+				// Re-enable scrolling flag after smooth scroll completes
 				setTimeout(() => {
 					isScrollingToSection = false;
 				}, 1000);
