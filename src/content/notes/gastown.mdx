@@ -15,6 +15,12 @@ import LinkCard from "../../components/mdx/LinkCard.astro";
 import SimpleCard from "../../components/mdx/SimpleCard.astro";
 import Spacer from "../../components/mdx/Spacer.astro";
 import Accordion from "../../components/mdx/Accordion.astro";
+import Subtext from "../../components/mdx/Typography/Subtext.astro";
+import QuoteSource from "../../components/mdx/QuoteSource.astro";
+import CostComparisonChart from "../../components/unique/gastown/CostComparisonChart.astro";
+import BeadsGitDiagram from "../../components/unique/gastown/BeadsGitDiagram.astro";
+import AgentWorkflowDiagram from "../../components/unique/gastown/AgentWorkflowDiagram.astro";
+import HierarchyDiagram from "../../components/unique/gastown/HierarchyDiagram.astro";
 
 <IntroParagraph>Steve Yegge recently published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gastown, his Mad Max-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gastown is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
 
@@ -22,9 +28,9 @@ It's both utterly unhinged and important to take seriously as an indication of h
 
 <LinkCard url="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" title="Welcome to Gastown" author="Steve Yegge" width="770px" image="/images/posts/gastown/gastown-cover.webp" fullCardLink />
 
-<Spacer size="xs" />
+You should at least skim through the original article before continuing to read my reflections. First, because I'm not going to comprehensively summarise it.<Footnote idName={1}>A challenging task given the sprawling, haphazard nature of the piece</Footnote> And second, because a even a one minute glance over Yegge's style of writing will make the vibes clear. 
 
-We should take it seriously not because it's a serious, working development tool (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
+We should take Yegge's creation seriously not because it's a serious, working development tool (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
 
 <Accordion header="What is Design Fiction?">
 "Design fiction" or "speculative design" is a branch of design where you creating things (objects, prototypes, sketches) from a plausible near future. Not to predict what's going to happen, but to provoke questions and start conversations about what _could_ happen. Not in a bright-and-glorious-flying-cars way that futurism can sometimes fall into. But, most helpfully, in a way that thinks about banal details, overlooked everyday interactions, low status objects, imperfect implementations, knock-on effects, and inconviences. See the Near Future Lab's short [explainer video](https://nearfuturelaboratory.com/what-is-design-fiction/) and their [Manual of Design Fiction](https://www.waterstones.com/book/the-manual-of-design-fiction/julian-bleecker/nick-foster/9789083499390) if you want to learn more.
@@ -32,9 +38,9 @@ We should take it seriously not because it's a serious, working development tool
 
 I also think Yegge deserves praise for exercising agency and taking a swing at a system like this, despite the inefficiencies and chaos of this iteration. And then running a public tour of his shitty, quarter-built plane while it's mid-flight.
 
-When I was taken to the Tate Modern as a child I'd point at Mark Rothko pieces and say to my mother "I could do that", and she would say "yes, but you didn't." Many people have talked about what large-scale, automated agent orchestration systems _could_ look like in a few years, and no one else attempted to sincerely build it.
+When I was taken to the Tate Modern as a child I'd point at [Mark Rothko](https://en.wikipedia.org/wiki/Mark_Rothko) pieces and say to my mother "I could do that", and she would say "yes, but you didn't." Many people have talked about what large-scale, automated agent orchestration systems _could_ look like in a few years, and no one else attempted to sincerely build it.
 
-<GridColumns maxWidth="800px">
+<GridColumns maxWidth="800px" margin="0 auto 1.5rem">
 
 <BasicImage src="/images/posts/gastown/rothko1.jpg" alt="Mark Rothko's Orange and Yellow" />
 
@@ -42,15 +48,29 @@ When I was taken to the Tate Modern as a child I'd point at Mark Rothko pieces a
 
 </GridColumns>
 
-I should be transparent and say that I have not used Gastown in earnest. I have only lighly poked at it, because I do not qualify as a serious user when I'm only on level 5 of Yegge's 7 levels of automation:
+<Subtext>“Orange and Yellow" and "Royal Red and Blue" by Mark Rothko</Subtext>
 
-[pic of the levels of automation test]
+<Spacer size="2xs" />
 
-Yegge also warned me not to seriously use it multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
+I should be transparent and say that I have not used Gastown in earnest. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around levels 4-6 in Yegge's 8 levels of automation: using an IDE where the agent is the primariy interface, and on occassion juggling a handful of consecutive CLI agents.
 
-<BasicImage width="800px" framed src="/images/posts/gastown/gastown-1.png" alt="Yegge's essay saying 'Warning danger caution: Get the f**k out. You will die.' followed by a list of reasons why I shouldn't use Gastown" />
+<BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. Note: annotate and makr where I am" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gastown" />
 
-But I have grokked the basic concepts and spent more time with this manifesto than is warranted, and here is what stood out to me from the parts I could comprehend:
+Gastown is a full level 8 piece of tooling. Yegge also warned me not to seriously use Gastown multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
+
+[Stage 4: In IDE, wide agent: Your agent gradually grows to fill the screen. Code is just for diffs.
+
+Stage 5: CLI, single agent. YOLO. Diffs scroll by. You may or may not look at them.
+
+Stage 6: CLI, multi-agent, YOLO. You regularly use 3 to 5 parallel instances. You are very fast.
+
+Stage 7: 10+ agents, hand-managed. You are starting to push the limits of hand-management.
+
+Stage 8: Building your own orchestrator. You are on the frontier, automating your workflow.]
+
+<BasicImage width="800px" framed src="/images/posts/gastown/gastown-quote-1.png" alt="Yegge's emphatic warnings and reasons why we shouldn't use Gastown (highlights mine)" showalt  />
+
+But I have grokked the basic concepts and spent more time with this manifesto than is warranted, asking Claude multiple times to once again clarify the architecure and capabilites at play. And here is what stood out to me from the parts I could comprehend:
 
 ## 1. Design and planning becomes the bottleneck when agents write all the code
 
@@ -64,13 +84,15 @@ These are the kind of decisions that agents cannot make for you. They require yo
 
 With agents to hand, it's easy to get ahead of yourself, stumbling forward into stacks of generated functions that should never have been prompted into existence, because they do not correctly render your intentions or achieve your goals.
 
-Gastown seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design this system ahead of time, thoughtfully considerating which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
+Gastown seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design the shape of this system ahead of time, thoughtfully considerating which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
 
 He just made stuff up as he went. He says as much himself: "Gas Town is complicated. Not because I wanted it to be, but because I had to keep adding components until it was a self-sustaining machine." Gastown is composed of "especially difficult [theories] because it’s a bunch of bullshit I pulled out of my arse over the past 3 weeks, and I named it after badgers and stuff." It was slapdashed together over "17 days, 75k lines of code, 2000 commits. It finally got off the ground (GUPP started working) just 2 days ago."<Footnote idName={2}>Do not ask what GUPP is; I cannot tell you</Footnote>
 
-This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46458936) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gastown is an extention, suffers the same issue:
+This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46463757) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gastown is an extention, suffers the same issue:
 
-<SimpleCard alignLeft>
+<SimpleCard alignLeft margin="var(--space-3xs) auto var(--space-l)">
+
+<QuoteSource source="hackernews" author="qcnguy" date="Jan 5th, 2026" url="https://news.ycombinator.com/item?id=46463757" />
 
 "Beads is a good idea with a bad implementation. It's not a designed product in the sense we are used to, it's more like **a stream of consciousness converted directly into code. It's a program that isn't only vibe coded, it was vibe designed too.**"
 
@@ -78,7 +100,7 @@ This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=4645
 
 </SimpleCard>
 
-Friends and colleagues of mine who have been brave enough to try out Gastown report the same thing; this thing fits the shape of Yegge's brain and no one else's. I'd categorise that as a design fail, given this is a public product that I assume Yegge wants _at least some_ people to use.
+Friends and colleagues of mine who have been brave enough to try out Gastown in more depth report the same thing; this thing fits the shape of Yegge's brain and no one else's. I'd categorise that as a moderate design fail, given this is a public product that I assume Yegge wants _at least some_ people to try out. The onboarding is baptism by fire.
 
 This feels like one of the most critical, emerging footguns of liberally hands-off agentic development. You can move so fast you never stop to think. It is so easy to prompt, you don't fully consider what you're building at each step of the process. It is only once you are hip-deep in poor architectural decisions, inscrutable bugs, and a fuzzy memory of what you set out to do, do you realise you have burned a billion tokens in exchange for a pile of hot trash.
 
@@ -88,95 +110,129 @@ Now that I've just harshly critiqued the design of Gastown, I will turn around a
 
 If you step back and squint, this mishmash of concepts reveals a few underlying patterns that future agentic systems will likely follow:
 
-### Persistent agent roles and hierarchical supervision
+### Agents have specialised roles with hierarchical supervision
 
-Every agent in Gastown has a persisent, named role that survives between sessions.
+Every agent in Gastown has a permanent, specialised role. When an agent spins up a new session, it knows who it is and what job it needs to do. Some examples:
 
-There is a hierarchical structure to how they communicate. The mayor is the main coordinator of everything, the witness does X, the deacon does Y. Polecats are the grunt workers directed by [the mayor? decaon? all?].
+- **The Mayor** is the human concierge: it's the main agent you talk to. It talks to all the other agents for you, kicking off work, recieving notifications when things finish, and managing the flow of production.
+- **Polecats** are temporary grunt workers. They complete single, isolated tasks, then disappear after submitting their work to be merged.
+- **The Witness** surpervises the Polecats and helps them get unstuck. Its job is to solve problems and nudge the proletariat workers along.
+- **The Refinery** manages the merge queue into the main branch. It evaluates each piece of work waiting to be merged, resolving conflicts in the process. It can creatively “reimagine” implementations if merge conflicts get too hairy, while trying to keep the intent of the original work.
 
-Mayor
-Deacon
-Polecats
-Merge agent to prevent conflicts
+There are many more characters in this town, but these give you a flavour of the system. Giving each agent a single job means you can prompt them more precisely, limit what they're allowed to touch, and run lots of them at once without them stepping on each other's toes.
 
-Agents have persistent identities (like employees with names and job roles), while sessions are temporary (like work shifts). There's hierarchical supervision—a Mayor agent manages Witness agents who oversee Polecat worker agents. A Deacon agent coordinates Dog helper agents. Roles specialize: some implement, some merge, some troubleshoot, some maintain. Like a factory with foremen, line workers, quality control, and maintenance crews.
+There's also a clear chain of command between these agents. You talk to the Mayor, who coordinates work across the system. The Witness supervises Polecat workers within each project. Something called called “Boot the Dog” supervises “the Deacon” which in turn supervises a crew of cross-project Dog helpers who do maitenance and cleaning.
+
+Here's the basic relationship structure of Gastown:
+
+<HierarchyDiagram />
+
+Since I'm making my own visuals here, I should say that Yegge made lots of his own ornate, zoopmorphic diagrams of Gastown's relationships, responsibilities, and workflows. But, given they were made entirely AI, they are pretty hard to decipher, filled with cluttered details, have arrows pointing the wrong direction, and are often missing key information. Case in point:
+
+<BasicImage width="800px" framed src="/images/posts/gastown/gastown-roles.webp" alt="The Cognition Engine – An AI generated diagram of who runs Gastown and their relationships" sourceTitle="Welcome to Gastown" showalt  />
+
+This chain of command means stuck workers can ask for help instead of spinning their wheels, you only have to directly talk to one agent (the Mayor) instead of thirty, and problems get caught before they spread. It's how human organisations scale, applied to agents.
 
 [We're missing the product team element - deploy engineers, product managers, visual testing]
 
-### Agent identities persist, sessions are ephemeral, agents sessions can seamlessly hand off to one another to solve context limitations
+### Agent roles persist, sessions are ephemeral
 
-Each agent has a permanent identity stored in Git (name, role, inbox, work hook), but the actual Claude Code sessions are ephemeral and disposable. When a session crashes or runs out of context, a new session spins up and inherits the same identity. The new session reads its Agent Bead from Git and picks up where it left off.
+A primary advantage of these agent identities is they stay consistent across multiple work sessions. Each agent's identity and work assignments are stored in Git, outside of agent memory, so they can't get lost or forgotten in the chaos.
 
-Through "seancing" (resuming old sessions) new agents can ask old agents to explain what they've done
+This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot]() will degrade the output enough that you constantly need to compact or start fresh sessions. Gastown's solution is to liberally let sessions die - when one crashes or fills up, a fresh session spins up and inherits the same persistent identity and work queue from Git.
+
+There's also a feature called "seancing" where new sessions can resume their predecessor's conversation to ask what happened and where things were left. The work survives the worker.
+
+### Atomic "beads" of work, tracked in git
+
+One of Gastown's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system]() Yegge built before Gastown; a precursor to this more ambitious civilisation.
+
+A bead is just a lightweight issue with an ID, a description, a status, and an assignee. It's stored as JSON in Git alongside your code.
+
+Beads chain together into "molecules". These are linked sequences of tasks that form a workflow. A release might be a 20-step molecule: bump version, run tests, build, create tag, publish. Each step has its own bead with acceptance criteria. If an agent crashes mid-molecule, the work doesn't disappear. The next session picks up the chain, sees which beads are done, and continues from there.
+
+<BeadsGitDiagram />
+
+### Feeding agents continous streams of work
+
+[the whole promise of gastown is agents come up with and assign themselves an endless stream of work, and then execute on it. this turns out to be hard to engineer]
+
+Every agent in Gastown has a "hook" that points to its currently assigned work. Work is continuously added to the hook as the agent finishes tasks. This means agents are, in theory, never left idle. 
+
+Getting current agents to check their hook and proceed with the task at hand is apparently quite unreliable in Gastown. Yegge had to develop a prodding system where manager agents further up the food chain yell at proletariat polecats to check for work and get started on it without human input.
+
+<AgentWorkflowDiagram />
+
+### Real-time messaging between agents
+
+Agents communicate through a mail system built on Beads. Each worker has an inbox, and messages are stored in Git alongside everything else. The gt nudge command sends real-time notifications via tmux, kicking agents into action when they're waiting for input. There's also a hierarchical heartbeat system - a daemon pings the Deacon every few minutes, which propagates "do your job" signals down to other workers, keeping the whole system moving.
 
 ### Merge queues and agent-managed conflicts
 
 Process one merge at a time. The refinery intelligently resolves conflicts. If a merge is too broken, the Refinery can "reimagine" the changes - essentially re-implementing the original intent against the new codebase. The agents can escalate the issue to a human if it gets too complex.
 
-### Atomic Units of Work, Tracked in Git
-
-Breaks work down into units, tracks them in git. Nothing can be lost. Where we are in the process is kept outside of agent context windows and can't be lost.
-
-### Automated Work Queues
-
-If work is assigned to an agent identity, they must do it. No waiting for human prompts. Work piles up in queues and gets processed. Patrol agents loop through checks with exponential backoff. The system achieves "nondeterministic idempotence"—work eventually completes even through crashes and chaos, because state is durable and agents can always resume.
-
-
-These patterns are messy and immature in Gastown. The system is held together with duct tape, tmux scripts, and vibe-coded chaos. But they hint at the fundamental primitives that cleaner, more general agent orchestration systems might be built from. Concepts that already exist in other domains (Kubernetes, Temporal, message queues) but haven't yet been properly adapted for agentic coding workflows.
+Stacked diffs are the future. Cursor buying Graphite.
 
 ## 3. The price is extremely high, but so is the (potential) value
 
 Yegge describes Gastown as "expensive as hell... you won't like Gas Town if you ever have to think, even for a moment, about where money comes from." He's on his second Claude account to get around Anthropic's spending limits.
 
-I can't find any mention online of the per-account limits, but let's conservatively assume he's spending at least $2k USD per month, and liberally $10k.
+I can't find any mention online of the per-account limits, but let's conservatively assume he's spending at least $1,000 USD per month, and liberally $5,000.
 
-The current cost is artificially inflated by system inefficiency. Work gets lost, bugs get fixed 2-3 times, designs go missing and need redoing. As models improve and orchestration patterns mature, costs should drop while output quality rises.
+The current cost is artificially inflated by system inefficiency. Work gets lost, bugs get fixed numerous times, designs go missing and need redoing. As models improve and orchestration patterns mature, costs should drop while output quality rises.
 
-But companies would happily pay near the $2-5k/month mark for a high quality, low waste version of this. 
+I expect companies would happily pay around the $1-3k/month mark for a higher quality, lower waste version of this. Maybe that sounds absurd until you compare it to an average US senior developer salary: $120,000 USD.<Footnote idName={3}>Salary average from [Indeed](https://www.indeed.com/career/senior-developer/salaries). Many people will pick bones over this because the market range is so broad. FAANG engineers in San Fransisco are paid closer to half a million, while developers in Europe are used to salaries in the $30-50k range. This seems like a sensible middle ground.</Footnote> If Gastown could genuinely speed up the work of a senior developer by 2-3x or more, it would easily be worth 10-30% of their salary. The cost per unit of valuable work starts to look competitive with human labor.
 
-That sounds absurd until you compare it to a US senior developer salary: $150k-200k per year works out to $12.5k-17k per month. If Gastown genuinely multiplies throughput by 5-10x, the cost per unit of valuable work starts to look competitive with human labor.
+<CostComparisonChart />
 
-The economics might already be defensible, and will only get better.
+The maths on paying for something like this might already be defensible in wealthier places like the US and parts of Western Europe. In spots where developer salaries are lower, we would expect the budget for AI assisted tools adjusts accordingly. Those places stick to $20-100 per month subscriptions, where you get less crazy scaled automation and more conversative useage.
 
 
 ## 4. Yegge never looks at the code. How long until we stop looking too?
 
-Yegge is leaning into the true definition of [vibecoding](): "It is 100% vibecoded. I've never seen the code, and I never care to."
+Yegge is leaning into the true definition of [vibecoding](https://x.com/karpathy/status/1886192184808149383?lang=en) with this project: "It is 100% vibecoded. I've never seen the code, and I never care to."
 
-One of the most divisive and heated debates I expect to unfold over this year is: should developers still look at code?
+One of the most divisive and heated debates I expect to unfold over the coming years is: should developers still look at code? The vast majoriy of us will say a resounding "yes, of course!" to this question, today, in January 2026. Many will be offended by the question, and find it absurd anyone is asking it.
 
-The vast majoriy of us will say a resounding "yes, of course" to this question, today, in early January 2026. Many will be offended by the question, and find it absurd anyone is asking it.
+A more conservative version of this question is: how _close_ should the code be in agentic software development tools? How easy should it be to access? How often do we expect developers to edit it by hand?
 
-I expect this to become a moralistic, personal identity debate: Will you embody the meticulous developer checking every diff and adjusting specific lines by hand? Or the hyper efficient directing agents from on high, briefly scanning the shape of syntax they're writing?
+Interfaces like Claude Code, Cursor, and Conductor do not put code front and centre in the experience. The agent is your first and primary interface. Trying to get to the code 
 
-[spectrum diagram: no looking at code to hand-writing code]
+I also expect this to become a moralistic, personal identity debate. Will you embody the meticulous developer checking every diff and adjusting specific lines by hand, looking down upon those who take the risk and let go of fine-grained control?
+Or the hyper efficient developer directing agents from on high, armed with a fleet of quality-assurance agents refining every line in the background and building out deterministic test suites to cover yourself, only briefly scanning the shape of syntax they're writing?
+
+I think turning this into a morally-tinged either/or debate is extremely unhelpful. First because “distance from the code” is a wide spectrum:
+
+[spectrum diagram]
 
 Yegge has clearly positioned himself at the extreme end of this spectrum.
 
-A more conversative way of asking it is: how close should the code be in the next generation of software developer tools? How easy should it be to access? How often do we expect developers to touch it?
+And second because the degree of freedom you hand over to agents depends on lots of factors, such as:
 
-[pic of conductor, claude on the web]
+### Domain and language
+Front-end vs backend makes a huge difference. Language is a poor medium for designing easing curves and aesthetic feelings—I always need to touch the CSS, and it's often faster to tweak directly than prompt. Visual and aesthetic work requires proximity. Meanwhile, Yegge's backend/infrastructure work may be genuinely more amenable to distance. Writing React and Tailwind gives you much better results than [example language]. 
 
-And the asnwer is, of course, it depends! It depends on a bunch of things:
+### Access to feedback loops and definitions of succes
+If the model can run and check tests, it has a much shorter, easier feedback loop. If the model is trying to design a unique visual diagram for you, it's going to fail a lot. It doesn't know you aesthetic preferences and had pretty poor visual reasoning skills. Deterministic outputs are easier to evaluate than non-deterministic ones. Clear definitions of success are easier to evaluate than subjective judgements. Debugging complexity matters too: visual glitches need eyes on them, while stack traces can be delegated. Type systems help create distance by catching errors agents might miss.
 
-**Domain/Area/Language**: Front-end vs backend makes a huge difference. Language is a poor medium for designing easing curves and aesthetic feelings—I always need to touch the CSS, and it's often faster to tweak directly than prompt. Visual and aesthetic work requires proximity. Meanwhile, Yegge's backend/infrastructure work may be genuinely more amenable to distance. Debugging complexity matters too: visual glitches need eyes on them, while stack traces can be delegated. Type systems help create distance by catching errors agents might miss.
+### Risk tolerance for shit going wrong
+Stakes matter. Weekend projects can tolerate chaos and rework. Production systems serving millions of users cannot. Corporate software has compliance and regulatory requirements. Team coordination gets harder when no one is looking at the code. Corporate vs small teams vs individuals.
 
-**Risk tolerance and implications for shit going wrong**: Stakes matter. Weekend projects can tolerate chaos and rework. Production systems serving millions of users cannot. Corporate software has compliance and regulatory requirements. Team coordination gets harder when no one is looking at the code. 
+"Gas Town sounds fun if you are accountable to nobody: not for code quality, design coherence or inferencing costs" - [HN](https://news.ycombinator.com/item?id=46458936)
 
-**Corporate vs small teams vs individuals**
+### Greenfield vs. brownfield projects
+Greenfield projects are easier to vibe-code than complex brownfield codebases where you need to understand existing patterns.
 
-**Greenfiled or Brownfield**: Greenfield projects are easier to vibe-code than complex brownfield codebases where you need to understand existing patterns.
+### Number of collaborators
+If you're solo of course you can YOLO. If you're working with more than a handful of people, you're have to agree on coding standards and 
 
-**How many people are working on this**
+### Your experience level
+More senior developers can prompt better, debug better, setup more stringent preferences earned through decades of seeing what can go wrong in scaled, production environments. Newer developers run a much higher risk of building a tower of cards.
 
-**Your experience level / how good you are at architecture and debugging**: Trust in agents builds through experience. Yegge's clearly reached a level of confidence most developers haven't. Tolerance for chaos and rework varies wildly—some people need precision, others optimize for speed. Cognitive preferences matter: are you a visual thinker who needs to see structure, or are you comfortable reasoning abstractly?
-
-**Time**: This all changes in 2-3 years. As models improve, trust will increase and tolerance for distance will grow. Backend and infrastructure work may shift dramatically toward distance. But some domains—UI/UX, creative coding, performance optimization—may remain proximity-dependent. New tools might bridge the gap: better visualization, semantic diffs, AI-assisted code review.
+This all changes in 2-3 years. As models improve, trust will increase and tolerance for distance will grow. Backend and infrastructure work may shift dramatically toward distance. But some domains—UI/UX, creative coding, performance optimization—may remain proximity-dependent. New tools might bridge the gap: better visualization, semantic diffs, AI-assisted code review.
 
 I'm currently in the code-must-be-close camp. But I expect to move into the code-at-a-distance camp within the next ~2~ years, depending on the rate of model improvements.
 
 I feel like we're having this debate a lot interally at Github Next. One of the projects within the team is agentic workers - autonomous agents running through Github actions that kick off in response to events: new PRs, new comments, new issues, or just run on a schedule like every weekday at 10am.
 
----
-
-I don't expect Gastown itself to survive. As I said, it's a provocative piece of speculative design, not a system many people will use in earnest. In the same way any poorly designed object or system gets abandoned, this manic creation is too poorly thought through to persist. But the problems it's wrestling with and the patterns it's stumbling toward will inform what comes next.
+I don't expect Gastown itself to survive. As I said, it's a provocative piece of speculative design, not a system many people will use in earnest. In the same way any poorly designed object or system gets abandoned, this manic creation is too poorly thought through to persist. But I expect the problems it's wrestling with and the patterns it's stumbling toward will certaintly show up in the next generation of development tools.

@@ -1,0 +1,263 @@
+---
+const developerSalary = 120000;
+const highCost = 36000; // $3k/month
+const lowCost = 12000; // $1k/month
+
+const highPercent = (highCost / developerSalary) * 100;
+const lowPercent = (lowCost / developerSalary) * 100;
+---
+
+<div class="chart-container">
+	<div class="labels-row">
+		<div class="label-group cheap-label" style="left: 0;">
+			<span class="label-text">Cheaper Gastown</span>
+			<span class="label-amount">$1k / month</span>
+			<span class="label-amount">$12,000</span>
+		</div>
+		<div class="label-group expensive-label" style={`left: ${highPercent}%;`}>
+			<span class="label-text">Expensive Gastown</span>
+			<span class="label-amount">$3k / month</span>
+			<span class="label-amount">$36,000</span>
+		</div>
+		<div class="label-group salary-label">
+			<span class="label-text">Senior Developer Salary</span>
+			<span class="label-amount">$10k / month</span>
+			<span class="label-amount">$120,000</span>
+		</div>
+	</div>
+
+	<div class="stacked-bar">
+		<div class="bar developer-bar"></div>
+		<div class="bar gastown-bar-high" style={`width: ${highPercent}%;`}>
+			<span class="bar-percent">{highPercent.toFixed(0)}%</span>
+		</div>
+		<div class="bar gastown-bar-low" style={`width: ${lowPercent}%;`}>
+			<span class="bar-percent">{lowPercent.toFixed(0)}%</span>
+		</div>
+	</div>
+
+	<!-- Mobile stacked layout -->
+	<div class="mobile-bars">
+		<div class="mobile-bar-group">
+			<div class="mobile-bar-row">
+				<div class="mobile-bar gastown-bar-low" style={`width: ${lowPercent}%;`}>
+					<span class="mobile-bar-percent">{lowPercent.toFixed(0)}%</span>
+				</div>
+				<div class="mobile-label-group">
+					<span class="mobile-label-text">Cheaper Gastown</span>
+					<span class="mobile-label-amount">$1k / month · $12,000</span>
+				</div>
+			</div>
+		</div>
+		<div class="mobile-bar-group">
+			<div class="mobile-bar-row">
+				<div class="mobile-bar gastown-bar-high" style={`width: ${highPercent}%;`}>
+					<span class="mobile-bar-percent">{highPercent.toFixed(0)}%</span>
+				</div>
+				<div class="mobile-label-group">
+					<span class="mobile-label-text">Expensive Gastown</span>
+					<span class="mobile-label-amount">$3k / month · $36,000</span>
+				</div>
+			</div>
+		</div>
+		<div class="mobile-bar-group">
+			<div class="mobile-bar developer-bar"></div>
+			<div class="mobile-label-group mobile-label-below">
+				<span class="mobile-label-text">Senior Developer Salary</span>
+				<span class="mobile-label-amount">$120,000 annually</span>
+			</div>
+		</div>
+	</div>
+
+	<p class="chart-caption">Annual cost as a percentage of developer salary</p>
+</div>
+
+<style>
+	.chart-container {
+		margin: var(--space-s) 0 var(--space-l);
+	}
+
+	.labels-row {
+		position: relative;
+		display: flex;
+		margin-bottom: var(--space-xs);
+		height: 3.5rem;
+	}
+
+	.label-group {
+		position: absolute;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.15rem;
+		font-family: var(--font-sans);
+		line-height: 1.3;
+	}
+
+	.label-group.salary-label {
+		right: 0;
+	}
+
+	.label-group.cheap-label {
+		align-items: flex-start;
+	}
+
+	.label-group.expensive-label {
+		align-items: flex-start;
+		margin-left: -3rem;
+	}
+
+	.label-text {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-gray-800);
+		white-space: nowrap;
+	}
+
+	.label-amount {
+		font-size: var(--font-size-xs);
+		font-weight: 400;
+		color: var(--color-gray-600);
+		white-space: nowrap;
+	}
+
+	.stacked-bar {
+		position: relative;
+		height: 40px;
+		border-radius: var(--border-radius-base);
+		overflow: hidden;
+	}
+
+	.bar {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		border-radius: var(--border-radius-base);
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		padding-right: var(--space-xs);
+	}
+
+	.developer-bar {
+		width: 100%;
+		background:
+			repeating-linear-gradient(
+				-50deg,
+				transparent,
+				transparent 4px,
+				color-mix(in srgb, var(--color-sea-blue) 50%, transparent) 4px,
+				color-mix(in srgb, var(--color-sea-blue) 50%, transparent) 8px
+			),
+			color-mix(in srgb, var(--color-sea-blue) 20%, transparent);
+	}
+
+	.gastown-bar-high {
+		background: var(--color-sea-blue);
+	}
+
+	.gastown-bar-low {
+		background: var(--color-dark-sea-blue);
+	}
+
+	.bar-percent {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: white;
+	}
+
+	.chart-caption {
+		margin-top: var(--space-xs);
+		margin-bottom: 0;
+		text-align: center;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+	}
+
+	/* Mobile layout - hidden by default */
+	.mobile-bars {
+		display: none;
+	}
+
+	/* Mobile: stack bars vertically */
+	@media (max-width: 608px) {
+		.labels-row {
+			display: none;
+		}
+
+		.stacked-bar {
+			display: none;
+		}
+
+		.mobile-bars {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-2xs);
+		}
+
+		.mobile-bar-group {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.mobile-bar-row {
+			display: flex;
+			align-items: center;
+			gap: var(--space-xs);
+		}
+
+		.mobile-label-group {
+			display: flex;
+			flex-direction: row;
+			align-items: baseline;
+			gap: 0.4rem;
+		}
+
+		.mobile-label-text {
+			font-family: var(--font-sans);
+			font-size: var(--font-size-xs);
+			font-weight: 600;
+			color: var(--color-gray-800);
+			white-space: nowrap;
+		}
+
+		.mobile-label-amount {
+			font-family: var(--font-sans);
+			font-size: var(--font-size-xs);
+			font-weight: 400;
+			color: var(--color-gray-600);
+			white-space: nowrap;
+		}
+
+		.mobile-label-below {
+			margin-top: 0.25rem;
+		}
+
+		.mobile-bar {
+			height: 32px;
+			border-radius: var(--border-radius-base);
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.mobile-bar-percent {
+			font-family: var(--font-sans);
+			font-size: var(--font-size-xs);
+			font-weight: 600;
+			color: white;
+		}
+
+		.mobile-bar.developer-bar {
+			width: 100%;
+		}
+
+		.chart-caption {
+			display: none;
+		}
+	}
+</style>

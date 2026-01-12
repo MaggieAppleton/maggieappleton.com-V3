@@ -1,0 +1,730 @@
+---
+/**
+ * AgentWorkflowDiagram - Animated diagram showing how work flows
+ * continuously to agents via hooks, with supervisor oversight
+ */
+---
+
+<figure class="workflow-diagram-container">
+	<div class="workflow-diagram" id="workflow-diagram">
+		
+		<!-- Supervisor Layer -->
+		<div class="supervisor-layer">
+			<div class="supervisor">
+				<div class="supervisor-icon">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+						<circle cx="12" cy="8" r="4"/>
+						<path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/>
+						<path d="M16 4l2 2-2 2" stroke-width="2"/>
+					</svg>
+				</div>
+				<span class="supervisor-label">Witness</span>
+				<span class="supervisor-role">supervises workers</span>
+			</div>
+			
+			<!-- Nudge arrows that appear during animation -->
+			<div class="nudge-arrows">
+				<div class="nudge nudge-1">
+					<svg viewBox="0 0 24 40" class="nudge-arrow">
+						<path d="M12 0 L12 30 M6 24 L12 30 L18 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+					<span class="nudge-text">nudge!</span>
+				</div>
+				<div class="nudge nudge-2">
+					<svg viewBox="0 0 24 40" class="nudge-arrow">
+						<path d="M12 0 L12 30 M6 24 L12 30 L18 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</div>
+			</div>
+		</div>
+
+		<!-- Workers Layer -->
+		<div class="workers-layer">
+			<div class="worker-column">
+				<div class="worker" id="worker-1">
+					<div class="worker-header">
+						<span class="worker-icon">P1</span>
+						<span class="worker-name">Polecat</span>
+					</div>
+					<div class="hook-area">
+						<div class="hook-label">hook</div>
+						<div class="hook-slot" id="hook-1">
+							<div class="bead-in-hook working" id="bead-w1">
+								<span class="bead-mini-title">Task A</span>
+								<span class="bead-spinner"></span>
+							</div>
+						</div>
+					</div>
+					<div class="worker-status" id="status-1">working...</div>
+				</div>
+				
+				<!-- Completed work drops down -->
+				<div class="completed-area" id="completed-1">
+					<div class="completed-bead" id="done-1">
+						<span>Task A</span>
+						<span class="checkmark">✓</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="worker-column">
+				<div class="worker stuck" id="worker-2">
+					<div class="worker-header">
+						<span class="worker-icon">P2</span>
+						<span class="worker-name">Polecat</span>
+					</div>
+					<div class="hook-area">
+						<div class="hook-label">hook</div>
+						<div class="hook-slot" id="hook-2">
+							<div class="bead-in-hook stuck" id="bead-w2">
+								<span class="bead-mini-title">Task B</span>
+								<span class="bead-stuck">!</span>
+							</div>
+						</div>
+					</div>
+					<div class="worker-status stuck-status" id="status-2">stuck</div>
+				</div>
+				
+				<div class="completed-area" id="completed-2"></div>
+			</div>
+
+			<div class="worker-column">
+				<div class="worker" id="worker-3">
+					<div class="worker-header">
+						<span class="worker-icon">P3</span>
+						<span class="worker-name">Polecat</span>
+					</div>
+					<div class="hook-area">
+						<div class="hook-label">hook</div>
+						<div class="hook-slot" id="hook-3">
+							<div class="bead-in-hook working" id="bead-w3">
+								<span class="bead-mini-title">Task C</span>
+								<span class="bead-spinner"></span>
+							</div>
+						</div>
+					</div>
+					<div class="worker-status" id="status-3">working...</div>
+				</div>
+				
+				<div class="completed-area" id="completed-3"></div>
+			</div>
+		</div>
+
+		<!-- Work Queue / Incoming beads -->
+		<div class="queue-layer">
+			<div class="queue-label">
+				<svg class="queue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+					<rect x="3" y="3" width="18" height="18" rx="2"/>
+					<path d="M9 9h6M9 13h6M9 17h4"/>
+				</svg>
+				Work Queue
+			</div>
+			<div class="queue-track">
+				<div class="queue-bead" id="queue-1">Task D</div>
+				<div class="queue-bead" id="queue-2">Task E</div>
+				<div class="queue-bead" id="queue-3">Task F</div>
+				<div class="queue-bead" id="queue-4">Task G</div>
+				<div class="queue-fade"></div>
+			</div>
+		</div>
+		
+		<!-- Play button overlay -->
+		<button class="play-button" id="play-button" aria-label="Play animation">
+			<svg viewBox="0 0 24 24" fill="currentColor">
+				<path d="M8 5v14l11-7z"/>
+			</svg>
+			<span>Play</span>
+		</button>
+	</div>
+	
+	<figcaption class="diagram-caption">
+		Work continuously flows to agent "hooks". A supervisor watches for stuck workers and nudges them back into action.
+	</figcaption>
+</figure>
+
+<style>
+	.workflow-diagram-container {
+		margin: var(--space-m) 0 var(--space-l);
+		padding: 0;
+	}
+
+	.workflow-diagram {
+		position: relative;
+		background: var(--color-light-cream);
+		border-radius: var(--border-radius-lg);
+		padding: var(--space-m) var(--space-l);
+		box-shadow: var(--box-shadow-sm);
+		min-height: 400px;
+		overflow: hidden;
+	}
+
+	/* Supervisor Layer */
+	.supervisor-layer {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-bottom: var(--space-s);
+		position: relative;
+	}
+
+	.supervisor {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		background: white;
+		border: 2px solid var(--color-purple);
+		border-radius: var(--border-radius-base);
+		padding: var(--space-2xs) var(--space-s);
+		box-shadow: var(--box-shadow-sm);
+	}
+
+	.supervisor-icon {
+		width: 28px;
+		height: 28px;
+		color: var(--color-purple);
+	}
+
+	.supervisor-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-gray-800);
+	}
+
+	.supervisor-role {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		color: var(--color-gray-500);
+	}
+
+	/* Nudge arrows */
+	.nudge-arrows {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		height: 60px;
+		pointer-events: none;
+	}
+
+	.nudge {
+		position: absolute;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	.nudge-1 {
+		left: 50%;
+		transform: translateX(-120px) translateY(-10px);
+	}
+
+	.nudge-2 {
+		left: 50%;
+		transform: translateX(80px) translateY(-10px);
+	}
+
+	.nudge-arrow {
+		width: 20px;
+		height: 35px;
+		color: var(--color-purple);
+	}
+
+	.nudge-text {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--color-purple);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	/* Workers Layer */
+	.workers-layer {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-m);
+		margin: var(--space-l) 0 var(--space-m);
+	}
+
+	.worker-column {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-xs);
+		min-width: 100px;
+	}
+
+	.worker {
+		background: white;
+		border: 1px solid var(--color-gray-300);
+		border-radius: var(--border-radius-base);
+		padding: var(--space-2xs) var(--space-xs);
+		box-shadow: var(--box-shadow-sm);
+		transition: all 0.3s ease;
+	}
+
+	.worker.stuck {
+		border-color: var(--color-salmon);
+		background: color-mix(in srgb, var(--color-salmon) 5%, white);
+	}
+
+	.worker-header {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: 0.3rem;
+	}
+
+	.worker-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		background: var(--color-sea-blue);
+		color: white;
+		border-radius: 50%;
+		font-family: var(--font-sans);
+		font-size: 10px;
+		font-weight: 600;
+	}
+
+	.worker.stuck .worker-icon {
+		background: var(--color-salmon);
+	}
+
+	.worker-name {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		color: var(--color-gray-800);
+	}
+
+	.hook-area {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.2rem;
+	}
+
+	.hook-label {
+		font-family: var(--font-sans);
+		font-size: 9px;
+		color: var(--color-gray-500);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.hook-slot {
+		width: 80px;
+		height: 32px;
+		border: 2px dashed var(--color-gray-300);
+		border-radius: var(--border-radius-sm);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.bead-in-hook {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.3rem;
+		background: white;
+		border: 1px solid var(--color-sea-blue);
+		border-radius: var(--border-radius-sm);
+		padding: 0.2rem 0.4rem;
+		width: calc(100% - 4px);
+		height: calc(100% - 4px);
+	}
+
+	.bead-in-hook.working {
+		background: color-mix(in srgb, var(--color-sea-blue) 10%, white);
+	}
+
+	.bead-in-hook.stuck {
+		background: color-mix(in srgb, var(--color-salmon) 15%, white);
+		border-color: var(--color-salmon);
+	}
+
+	.bead-mini-title {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		font-weight: 500;
+		color: var(--color-gray-800);
+	}
+
+	.bead-spinner {
+		width: 10px;
+		height: 10px;
+		border: 2px solid var(--color-gray-300);
+		border-top-color: var(--color-sea-blue);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	.bead-stuck {
+		font-family: var(--font-sans);
+		font-size: 11px;
+		font-weight: 700;
+		color: var(--color-salmon);
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	.worker-status {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		color: var(--color-sea-blue);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+
+	.worker-status.stuck-status {
+		color: var(--color-salmon);
+	}
+
+	/* Completed area */
+	.completed-area {
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.completed-bead {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		background: color-mix(in srgb, var(--color-salmon) 10%, white);
+		border: 1px solid color-mix(in srgb, var(--color-salmon) 30%, transparent);
+		border-radius: var(--border-radius-sm);
+		padding: 0.2rem 0.5rem;
+		font-family: var(--font-sans);
+		font-size: 10px;
+		color: var(--color-gray-700);
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	.completed-bead .checkmark {
+		color: var(--color-dark-salmon);
+		font-weight: 600;
+	}
+
+	/* Queue Layer */
+	.queue-layer {
+		background: 
+			repeating-linear-gradient(
+				0deg,
+				transparent,
+				transparent 12px,
+				color-mix(in srgb, var(--color-gray-200) 30%, transparent) 12px,
+				color-mix(in srgb, var(--color-gray-200) 30%, transparent) 13px
+			);
+		margin: 0 calc(var(--space-l) * -1) calc(var(--space-m) * -1);
+		padding: var(--space-s) var(--space-l);
+		border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+	}
+
+	.queue-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-gray-800);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: var(--space-2xs);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.queue-icon {
+		width: 14px;
+		height: 14px;
+		color: var(--color-gray-600);
+	}
+
+	.queue-track {
+		display: flex;
+		gap: var(--space-2xs);
+		position: relative;
+		overflow: hidden;
+		padding-right: 40px;
+	}
+
+	.queue-bead {
+		background: white;
+		border: 1px solid var(--color-gray-300);
+		border-radius: var(--border-radius-sm);
+		padding: 0.3rem 0.6rem;
+		font-family: var(--font-sans);
+		font-size: 11px;
+		font-weight: 500;
+		color: var(--color-gray-700);
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.queue-fade {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 60px;
+		background: linear-gradient(to right, transparent, var(--color-light-cream));
+		pointer-events: none;
+	}
+
+	/* Play button */
+	.play-button {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: white;
+		border: 2px solid var(--color-sea-blue);
+		border-radius: 30px;
+		padding: 0.6rem 1.2rem;
+		cursor: pointer;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-sea-blue);
+		box-shadow: var(--box-shadow-md);
+		transition: all 0.2s ease;
+		z-index: 10;
+	}
+
+	.play-button:hover {
+		background: var(--color-sea-blue);
+		color: white;
+	}
+
+	.play-button svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	.play-button.hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* Animation states */
+	.workflow-diagram.animating .nudge {
+		animation: nudge-appear 0.5s ease forwards;
+	}
+
+	.workflow-diagram.animating .nudge-1 {
+		animation-delay: 2s;
+	}
+
+	.workflow-diagram.animating .nudge-2 {
+		animation-delay: 2.2s;
+	}
+
+	@keyframes nudge-appear {
+		0% {
+			opacity: 0;
+			transform: translateX(var(--tx, 0)) translateY(-10px);
+		}
+		50% {
+			opacity: 1;
+			transform: translateX(var(--tx, 0)) translateY(0);
+		}
+		100% {
+			opacity: 0;
+			transform: translateX(var(--tx, 0)) translateY(10px);
+		}
+	}
+
+	.nudge-1 {
+		--tx: -120px;
+	}
+
+	.nudge-2 {
+		--tx: 80px;
+	}
+
+	.workflow-diagram.animating .completed-bead {
+		animation: complete-drop 0.5s ease forwards;
+		animation-delay: 3.5s;
+	}
+
+	@keyframes complete-drop {
+		0% {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Unstick animation */
+	.workflow-diagram.animating .worker.stuck {
+		animation: unstick 0.3s ease forwards;
+		animation-delay: 2.8s;
+	}
+
+	@keyframes unstick {
+		to {
+			border-color: var(--color-sea-blue);
+			background: white;
+		}
+	}
+
+	.workflow-diagram.animating .worker.stuck .worker-icon {
+		animation: unstick-icon 0.3s ease forwards;
+		animation-delay: 2.8s;
+	}
+
+	@keyframes unstick-icon {
+		to {
+			background: var(--color-sea-blue);
+		}
+	}
+
+	.workflow-diagram.animating .bead-in-hook.stuck {
+		animation: unstick-bead 0.3s ease forwards;
+		animation-delay: 2.8s;
+	}
+
+	@keyframes unstick-bead {
+		to {
+			background: color-mix(in srgb, var(--color-sea-blue) 10%, white);
+			border-color: var(--color-sea-blue);
+		}
+	}
+
+	.workflow-diagram.animating .stuck-status {
+		animation: unstick-status 0.3s ease forwards;
+		animation-delay: 2.8s;
+	}
+
+	@keyframes unstick-status {
+		to {
+			color: var(--color-sea-blue);
+		}
+	}
+
+	/* Queue slide animation */
+	.workflow-diagram.animating .queue-track {
+		animation: queue-slide 5s linear forwards;
+	}
+
+	@keyframes queue-slide {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-100px);
+		}
+	}
+
+	/* Caption */
+	.diagram-caption {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		text-align: center;
+		margin-top: var(--space-xs);
+		padding: 0 var(--space-m);
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 640px) {
+		.workflow-diagram {
+			padding: var(--space-s);
+		}
+
+		.workers-layer {
+			flex-direction: column;
+			align-items: center;
+			gap: var(--space-s);
+		}
+
+		.nudge-arrows {
+			display: none;
+		}
+
+		.queue-layer {
+			margin: 0 calc(var(--space-s) * -1) calc(var(--space-s) * -1);
+			padding: var(--space-s);
+		}
+	}
+</style>
+
+<script>
+	function initWorkflowDiagram() {
+		const diagram = document.getElementById('workflow-diagram');
+		const playButton = document.getElementById('play-button');
+		
+		if (!diagram || !playButton) return;
+		
+		let animationTimeout: ReturnType<typeof setTimeout> | null = null;
+		
+		function runAnimation() {
+			if (!diagram || !playButton) return;
+			
+			// Reset any previous animation
+			diagram.classList.remove('animating');
+			
+			// Force reflow
+			void diagram.offsetWidth;
+			
+			// Start animation
+			diagram.classList.add('animating');
+			playButton.classList.add('hidden');
+			
+			// Clear any existing timeout
+			if (animationTimeout) {
+				clearTimeout(animationTimeout);
+			}
+			
+			// Show play button again after animation completes
+			animationTimeout = setTimeout(() => {
+				if (playButton) {
+					playButton.classList.remove('hidden');
+				}
+			}, 6000);
+		}
+		
+		playButton.addEventListener('click', runAnimation);
+		
+		// Auto-play once when scrolled into view
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					setTimeout(runAnimation, 500);
+					observer.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.5 });
+		
+		observer.observe(diagram);
+	}
+	
+	// Initialize on DOM ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initWorkflowDiagram);
+	} else {
+		initWorkflowDiagram();
+	}
+	
+	// Re-initialize after Astro view transitions
+	document.addEventListener('astro:page-load', initWorkflowDiagram);
+</script>

@@ -1,0 +1,455 @@
+---
+/**
+ * HierarchyDiagram - Shows the hierarchical supervision structure
+ * of agents in Gastown: You → Mayor → (Deacon/Witness) → Workers
+ */
+import { Icon } from "astro-icon/components";
+---
+
+<figure class="diagram-container">
+	<div class="diagram">
+		<!-- Level 1: You/Overseer -->
+		<div class="hierarchy-level level-1">
+			<div class="agent-card overseer">
+				<div class="agent-icon">
+					<Icon name="heroicons:user" size={24} />
+				</div>
+				<div class="agent-info">
+					<span class="agent-name">You</span>
+					<span class="agent-role">Overseer</span>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Connector line down from You -->
+		<div class="connector-vertical"></div>
+		
+		<!-- Level 2: Mayor -->
+		<div class="hierarchy-level level-2">
+			<div class="agent-card mayor">
+				<div class="agent-icon">
+					<span class="emoji">🎩</span>
+				</div>
+				<div class="agent-info">
+					<span class="agent-name">Mayor</span>
+					<span class="agent-role">Your concierge</span>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Branching SVG from Mayor to supervisors -->
+		<svg class="branch-svg mayor-branch" viewBox="0 0 300 36" preserveAspectRatio="xMidYMid meet">
+			<path d="M 150 0 L 150 18 M 75 18 L 225 18 M 75 18 L 75 36 M 225 18 L 225 36" 
+				stroke="var(--color-gray-300)" stroke-width="2" fill="none"/>
+		</svg>
+		
+		<!-- Level 3: Supervisors side by side -->
+		<div class="hierarchy-level level-3">
+			<div class="supervisor-section deacon-section">
+				<!-- Boot monitors the Deacon -->
+				<div class="boot-monitor">
+					<div class="boot-card">
+						<div class="agent-card worker boot">
+							<span class="emoji small">🐕</span>
+							<span class="worker-name">Boot</span>
+						</div>
+						<span class="monitor-label">monitors</span>
+					</div>
+					<div class="monitor-arrow"></div>
+				</div>
+				
+				<div class="agent-card supervisor deacon">
+					<div class="agent-icon">
+						<span class="emoji">🐺</span>
+					</div>
+					<div class="agent-info">
+						<span class="agent-name">Deacon</span>
+						<span class="agent-role">Town daemon</span>
+					</div>
+				</div>
+				
+				<div class="connector-vertical short"></div>
+				
+				<!-- Dogs under Deacon -->
+				<div class="workers-row">
+					<div class="agent-card worker">
+						<span class="emoji small">🐶</span>
+					</div>
+					<div class="agent-card worker">
+						<span class="emoji small">🐶</span>
+					</div>
+				</div>
+				<span class="cluster-label">Dogs</span>
+			</div>
+			
+			<div class="supervisor-section witness-section">
+				<div class="agent-card supervisor witness">
+					<div class="agent-icon">
+						<span class="emoji">🦉</span>
+					</div>
+					<div class="agent-info">
+						<span class="agent-name">Witness</span>
+						<span class="agent-role">Worker supervisor</span>
+					</div>
+				</div>
+				
+				<!-- Branching SVG from Witness to workers -->
+				<svg class="branch-svg witness-branch" viewBox="0 0 180 32" preserveAspectRatio="xMidYMid meet">
+					<path d="M 90 0 L 90 16 M 45 16 L 135 16 M 45 16 L 45 32 M 135 16 L 135 32" 
+						stroke="var(--color-gray-300)" stroke-width="2" fill="none"/>
+				</svg>
+				
+				<!-- Workers under Witness -->
+				<div class="witness-workers">
+					<div class="worker-cluster polecats-cluster">
+						<div class="workers-row">
+							<div class="agent-card worker polecat">
+								<span class="emoji small">😺</span>
+							</div>
+							<div class="agent-card worker polecat">
+								<span class="emoji small">😺</span>
+							</div>
+							<div class="agent-card worker polecat">
+								<span class="emoji small">😺</span>
+							</div>
+						</div>
+						<span class="cluster-label">Polecats</span>
+					</div>
+					<div class="worker-cluster refinery-cluster">
+						<div class="agent-card worker refinery">
+							<span class="emoji small">🏭</span>
+							<span class="worker-name">Refinery</span>
+						</div>
+						<span class="cluster-label">Merge queue</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Side labels -->
+		<div class="side-label left-label">Town-level</div>
+		<div class="side-label right-label">Per-rig</div>
+	</div>
+	
+	<figcaption class="diagram-caption">
+		Each agent has a single specialised role. Supervisors help workers get unstuck and keep the system moving.
+	</figcaption>
+</figure>
+
+<style>
+	.diagram-container {
+		margin: var(--space-m) 0 var(--space-l);
+		padding: 0;
+	}
+
+	.diagram {
+		position: relative;
+		background: var(--color-light-cream);
+		border-radius: var(--border-radius-lg);
+		padding: var(--space-m) var(--space-xl) var(--space-m);
+		box-shadow: var(--box-shadow-sm);
+	}
+
+	/* Hierarchy levels */
+	.hierarchy-level {
+		display: flex;
+		justify-content: center;
+	}
+
+	.level-3 {
+		gap: var(--space-xl);
+		align-items: flex-start;
+	}
+
+	/* Agent cards */
+	.agent-card {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2xs);
+		background: white;
+		padding: var(--space-2xs) var(--space-xs);
+		border-radius: var(--border-radius-base);
+		box-shadow: var(--box-shadow-sm);
+		border: 2px solid transparent;
+	}
+
+	.agent-card.overseer {
+		border-color: var(--color-gray-400);
+		padding: var(--space-xs) var(--space-s);
+	}
+
+	.agent-card.mayor {
+		border-color: var(--color-sea-blue);
+		padding: var(--space-xs) var(--space-s);
+	}
+
+	.agent-card.supervisor {
+		flex-direction: column;
+		text-align: center;
+		padding: var(--space-xs) var(--space-s);
+		min-width: 110px;
+	}
+
+	.agent-card.deacon {
+		border-color: var(--color-gray-500);
+	}
+
+	.agent-card.witness {
+		border-color: var(--color-salmon);
+	}
+
+	.agent-card.worker {
+		flex-direction: column;
+		padding: 6px 8px;
+		background: var(--color-gray-100);
+		border: 1px solid var(--color-gray-300);
+		gap: 2px;
+	}
+
+	.agent-card.polecat {
+		padding: 6px;
+	}
+
+	/* Agent icons */
+	.agent-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-gray-100);
+	}
+
+	.overseer .agent-icon {
+		background: var(--color-gray-200);
+		color: var(--color-gray-700);
+	}
+
+	.mayor .agent-icon {
+		background: color-mix(in srgb, var(--color-sea-blue) 15%, white);
+	}
+
+	.emoji {
+		font-size: 20px;
+		line-height: 1;
+	}
+
+	.emoji.small {
+		font-size: 16px;
+	}
+
+	/* Agent info */
+	.agent-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.agent-name {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-s);
+		font-weight: 600;
+		color: var(--color-gray-800);
+	}
+
+	.worker-name {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		font-weight: 500;
+		color: var(--color-gray-700);
+	}
+
+	.agent-role {
+		font-family: var(--font-sans);
+		font-size: 11px;
+		color: var(--color-gray-500);
+	}
+
+	/* Connectors */
+	.connector-vertical {
+		width: 2px;
+		height: 16px;
+		background: var(--color-gray-300);
+		margin: 0 auto;
+	}
+
+	.connector-vertical.short {
+		height: 12px;
+	}
+
+	/* Branch SVGs */
+	.branch-svg {
+		display: block;
+		margin: 0 auto;
+	}
+
+	.mayor-branch {
+		width: 300px;
+		height: 36px;
+	}
+
+	.witness-branch {
+		width: 180px;
+		height: 32px;
+	}
+
+	.witness-section {
+		min-width: 180px;
+	}
+
+	.polecats-cluster {
+		width: 90px;
+	}
+
+	.refinery-cluster {
+		width: 90px;
+	}
+
+	/* Supervisor sections */
+	.supervisor-section {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.deacon-section {
+		position: relative;
+	}
+
+	/* Boot monitor - positioned to the side of Deacon */
+	.boot-monitor {
+		position: absolute;
+		left: -70px;
+		top: 20px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 0;
+	}
+
+	.boot-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.boot-monitor .agent-card {
+		padding: 4px 6px;
+	}
+
+	.monitor-label {
+		font-family: var(--font-sans);
+		font-size: 9px;
+		color: var(--color-gray-400);
+		font-style: italic;
+	}
+
+	.monitor-arrow {
+		width: 16px;
+		height: 2px;
+		background: var(--color-gray-300);
+		position: relative;
+		margin-top: -12px;
+	}
+
+	.monitor-arrow::after {
+		content: '';
+		position: absolute;
+		right: -4px;
+		top: -3px;
+		border: 4px solid transparent;
+		border-left-color: var(--color-gray-300);
+	}
+
+	/* Worker rows and clusters */
+	.workers-row {
+		display: flex;
+		gap: 6px;
+	}
+
+	.worker-cluster {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.witness-workers {
+		display: flex;
+		gap: var(--space-m);
+		justify-content: center;
+	}
+
+	.cluster-label {
+		font-family: var(--font-sans);
+		font-size: 10px;
+		color: var(--color-gray-500);
+		margin-top: 4px;
+	}
+
+	/* Side labels */
+	.side-label {
+		position: absolute;
+		font-family: var(--font-sans);
+		font-size: 9px;
+		color: var(--color-gray-400);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+	}
+
+	.left-label {
+		left: 10px;
+		top: 50%;
+		transform: translateY(-50%) rotate(180deg);
+	}
+
+	.right-label {
+		right: 10px;
+		top: 50%;
+		transform: translateY(-50%) rotate(180deg);
+	}
+
+	/* Caption */
+	.diagram-caption {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		text-align: center;
+		margin-top: var(--space-xs);
+		padding: 0 var(--space-m);
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 640px) {
+		.diagram {
+			padding: var(--space-m) var(--space-s);
+		}
+
+		.level-3 {
+			flex-direction: column;
+			gap: var(--space-m);
+			align-items: center;
+		}
+
+		.branch-svg {
+			display: none;
+		}
+
+		.connector-vertical.short {
+			display: block;
+		}
+
+		.witness-workers {
+			flex-direction: column;
+			gap: var(--space-s);
+		}
+
+		.side-label {
+			display: none;
+		}
+	}
+</style>

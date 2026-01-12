@@ -1,0 +1,566 @@
+---
+/**
+ * BeadsGitDiagram - Shows how work units (beads) persist in Git
+ * while agent sessions are ephemeral and replaceable
+ */
+import { Icon } from "astro-icon/components";
+---
+
+<figure class="diagram-container">
+	<div class="diagram">
+		<!-- Agent Sessions Layer -->
+		<div class="agents-layer">
+			<div class="layer-label">Agent Sessions <span class="sublabel">(ephemeral)</span></div>
+			
+			<!-- Recovery annotation - above terminals -->
+			<div class="recovery-annotation">
+				<span class="annotation-text">New session picks up work</span>
+				<svg class="recovery-arrow" viewBox="0 0 140 35" fill="none">
+					<path d="M20 30 Q 70 0, 120 30" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4" fill="none" stroke-linecap="round"/>
+					<path d="M15 22 L20 30 L28 26" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+					<path d="M112 26 L120 30 L125 22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+			</div>
+			
+			<div class="agents-row">
+				<!-- Crashed/errored session -->
+				<div class="agent-session crashed">
+					<div class="terminal-header">
+						<span class="traffic-light red"></span>
+						<span class="traffic-light yellow"></span>
+						<span class="traffic-light green"></span>
+					</div>
+					<div class="terminal-body">
+						<div class="terminal-line">
+							<span class="prompt">›</span>
+							<span class="text faded">building...</span>
+						</div>
+					</div>
+					<div class="terminal-input">
+						<span class="prompt">›</span>
+						<span class="cursor"></span>
+					</div>
+					<div class="error-badge">
+						<Icon name="heroicons:x-circle" size={20} />
+					</div>
+					<div class="session-label">Session A</div>
+				</div>
+
+				<!-- Active session picking up work -->
+				<div class="agent-session active">
+					<div class="terminal-header">
+						<span class="traffic-light red"></span>
+						<span class="traffic-light yellow"></span>
+						<span class="traffic-light green"></span>
+					</div>
+					<div class="terminal-body">
+						<div class="terminal-line">
+							<span class="prompt">›</span>
+							<span class="text">Building API...</span>
+						</div>
+					</div>
+					<div class="terminal-input">
+						<span class="prompt">›</span>
+						<span class="cursor blink"></span>
+					</div>
+					<div class="session-label active-label">Session B</div>
+				</div>
+
+				<!-- Idle session -->
+				<div class="agent-session idle">
+					<div class="terminal-header">
+						<span class="traffic-light red"></span>
+						<span class="traffic-light yellow"></span>
+						<span class="traffic-light green"></span>
+					</div>
+					<div class="terminal-body">
+						<div class="terminal-line">
+							<span class="prompt">›</span>
+							<span class="text faded">ready</span>
+						</div>
+					</div>
+					<div class="terminal-input">
+						<span class="prompt">›</span>
+						<span class="cursor"></span>
+					</div>
+					<div class="session-label">Session C</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Connection line between active session and active bead -->
+		<div class="session-bead-connection">
+			<svg viewBox="0 0 10 30" fill="none">
+				<line x1="5" y1="0" x2="5" y2="30" stroke="var(--color-sea-blue)" stroke-width="2" stroke-dasharray="4 3"/>
+			</svg>
+		</div>
+
+		<!-- Git/Beads Layer -->
+		<div class="git-layer">
+			<div class="layer-label">
+				<Icon name="heroicons:circle-stack" size={16} />
+				Work Units in Git <span class="sublabel">(persistent)</span>
+			</div>
+			
+			<div class="beads-chain">
+				<!-- Completed bead 1 -->
+				<div class="bead-wrapper">
+					<div class="bead completed">
+						<Icon name="heroicons:check" size={22} />
+					</div>
+					<span class="bead-label">Setup config</span>
+				</div>
+				
+				<div class="chain-link"></div>
+				
+				<!-- Completed bead 2 -->
+				<div class="bead-wrapper">
+					<div class="bead completed">
+						<Icon name="heroicons:check" size={22} />
+					</div>
+					<span class="bead-label">Create schema</span>
+				</div>
+				
+				<div class="chain-link"></div>
+				
+				<!-- In-progress bead -->
+				<div class="bead-wrapper in-progress-wrapper">
+					<div class="bead in-progress">
+						<Icon name="heroicons:arrow-path" size={22} />
+					</div>
+					<span class="bead-label">Build API</span>
+				</div>
+				
+				<div class="chain-link"></div>
+				
+				<!-- Pending bead 1 -->
+				<div class="bead-wrapper">
+					<div class="bead pending">
+						<Icon name="heroicons:clock" size={20} />
+					</div>
+					<span class="bead-label">Write tests</span>
+				</div>
+				
+				<div class="chain-link"></div>
+				
+				<!-- Pending bead 2 -->
+				<div class="bead-wrapper">
+					<div class="bead pending">
+						<Icon name="heroicons:clock" size={20} />
+					</div>
+					<span class="bead-label">Deploy</span>
+				</div>
+			</div>
+			
+			<div class="git-backing">
+				<span class="git-label">Stored in .beads/ alongside your code</span>
+			</div>
+		</div>
+	</div>
+	
+	<figcaption class="diagram-caption">
+		Work persists in Git as linked "beads". When an agent session crashes, a new session picks up from the same point in the workflow.
+	</figcaption>
+</figure>
+
+<style>
+	.diagram-container {
+		margin: var(--space-m) 0 var(--space-l);
+		padding: 0;
+	}
+
+	.diagram {
+		position: relative;
+		background: var(--color-light-cream);
+		border-radius: var(--border-radius-lg);
+		padding: var(--space-m) var(--space-l);
+		box-shadow: var(--box-shadow-sm);
+		overflow: hidden;
+	}
+
+	/* Layer labels */
+	.layer-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-gray-800);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: var(--space-s);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.layer-label .sublabel {
+		font-weight: 400;
+		text-transform: none;
+		color: var(--color-gray-500);
+		letter-spacing: normal;
+	}
+
+	/* Agents Layer */
+	.agents-layer {
+		margin-bottom: var(--space-m);
+		padding-bottom: var(--space-l);
+		padding-top: var(--space-xl);
+		border-bottom: 1px dashed var(--color-gray-300);
+		position: relative;
+	}
+
+	.agents-row {
+		display: flex;
+		gap: var(--space-m);
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-bottom: var(--space-s);
+	}
+
+	/* Terminal-style session boxes */
+	.agent-session {
+		position: relative;
+		width: 150px;
+		height: 110px;
+		background: var(--color-gray-800);
+		border-radius: var(--border-radius-base);
+		box-shadow: var(--box-shadow-md);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.agent-session.crashed {
+		opacity: 0.5;
+	}
+
+	.agent-session.active {
+		box-shadow: 0 0 0 2px var(--color-sea-blue), var(--box-shadow-md);
+	}
+
+	.agent-session.idle {
+		opacity: 0.7;
+	}
+
+	.terminal-header {
+		display: flex;
+		gap: 5px;
+		padding: 8px 10px;
+		background: var(--color-gray-600);
+	}
+
+	.traffic-light {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+
+	.traffic-light.red {
+		background: #ff5f57;
+	}
+
+	.traffic-light.yellow {
+		background: #febc2e;
+	}
+
+	.traffic-light.green {
+		background: #28c840;
+	}
+
+	.agent-session.crashed .traffic-light {
+		opacity: 0.4;
+	}
+
+	.terminal-body {
+		flex: 1;
+		padding: 8px 10px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.terminal-line {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.terminal-line .prompt {
+		color: var(--color-sea-blue);
+		font-family: monospace;
+		font-size: 12px;
+		font-weight: bold;
+	}
+
+	.terminal-line .text {
+		color: #e0e0e0;
+		font-family: monospace;
+		font-size: 11px;
+	}
+
+	.terminal-line .text.faded {
+		color: var(--color-gray-500);
+	}
+
+	.terminal-input {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 6px 10px;
+		border-top: 1px solid var(--color-gray-600);
+		background: rgba(0,0,0,0.2);
+	}
+
+	.terminal-input .prompt {
+		color: var(--color-gray-500);
+		font-family: monospace;
+		font-size: 12px;
+	}
+
+	.cursor {
+		width: 7px;
+		height: 14px;
+		background: var(--color-gray-500);
+	}
+
+	.cursor.blink {
+		background: var(--color-sea-blue);
+		animation: blink 1s step-end infinite;
+	}
+
+	@keyframes blink {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0; }
+	}
+
+	/* Error badge for crashed session */
+	.error-badge {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		color: var(--color-salmon);
+		background: white;
+		border-radius: 50%;
+		width: 36px;
+		height: 36px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: var(--box-shadow-sm);
+	}
+
+	.session-label {
+		position: absolute;
+		bottom: -22px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-family: var(--font-sans);
+		font-size: 11px;
+		color: var(--color-gray-500);
+		white-space: nowrap;
+	}
+
+	.session-label.active-label {
+		color: var(--color-sea-blue);
+		font-weight: 600;
+	}
+
+	/* Connection line between active session and active bead */
+	.session-bead-connection {
+		display: flex;
+		justify-content: center;
+		margin: -8px 0;
+		position: relative;
+		z-index: 1;
+	}
+
+	.session-bead-connection svg {
+		width: 10px;
+		height: 30px;
+	}
+
+	/* Recovery annotation - positioned above terminals */
+	.recovery-annotation {
+		position: absolute;
+		top: 28px;
+		left: 50%;
+		transform: translateX(-100%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 180px;
+	}
+
+	.recovery-arrow {
+		width: 140px;
+		height: 35px;
+		color: var(--color-gray-500);
+		order: 2;
+	}
+
+	.annotation-text {
+		font-family: var(--font-sans);
+		font-size: 13px;
+		color: var(--color-gray-600);
+		text-align: center;
+		line-height: 1.3;
+		order: 1;
+		margin-bottom: 2px;
+	}
+
+	/* Git/Beads Layer */
+	.git-layer {
+		background: 
+			repeating-linear-gradient(
+				0deg,
+				transparent,
+				transparent 20px,
+				color-mix(in srgb, var(--color-gray-200) 40%, transparent) 20px,
+				color-mix(in srgb, var(--color-gray-200) 40%, transparent) 21px
+			);
+		margin: var(--space-s) calc(var(--space-l) * -1) calc(var(--space-m) * -1);
+		padding: var(--space-s) var(--space-l) var(--space-m);
+		border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+	}
+
+	.beads-chain {
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		gap: 0;
+		flex-wrap: wrap;
+		margin: var(--space-xs) 0;
+	}
+
+	.bead-wrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.bead {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+	}
+
+	.bead.completed {
+		background: var(--color-salmon);
+		color: white;
+	}
+
+	.bead.in-progress {
+		background: var(--color-sea-blue);
+		color: white;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-sea-blue) 30%, transparent);
+	}
+
+	.bead.in-progress :global(svg) {
+		animation: spin 2s linear infinite;
+	}
+
+	@keyframes spin {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+
+	.bead.pending {
+		background: white;
+		border: 2px dashed var(--color-gray-400);
+		color: var(--color-gray-500);
+	}
+
+	.bead-label {
+		font-family: var(--font-sans);
+		font-size: 11px;
+		color: var(--color-gray-700);
+		text-align: center;
+		max-width: 70px;
+		line-height: 1.2;
+	}
+
+	.in-progress-wrapper .bead-label {
+		color: var(--color-dark-sea-blue);
+		font-weight: 600;
+	}
+
+	.chain-link {
+		width: 24px;
+		height: 2px;
+		background: var(--color-gray-300);
+		margin-top: 23px;
+	}
+
+	.git-backing {
+		text-align: center;
+		margin-top: var(--space-s);
+	}
+
+	.git-label {
+		font-family: var(--font-sans);
+		font-size: 11px;
+		color: var(--color-gray-500);
+		font-style: italic;
+	}
+
+	/* Caption */
+	.diagram-caption {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		text-align: center;
+		margin-top: var(--space-xs);
+		padding: 0 var(--space-m);
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 640px) {
+		.diagram {
+			padding: var(--space-s);
+		}
+
+		.agents-row {
+			gap: var(--space-s);
+		}
+
+		.agent-session {
+			width: 130px;
+			height: 95px;
+		}
+
+		.recovery-annotation {
+			display: none;
+		}
+
+		.session-bead-connection {
+			display: none;
+		}
+
+		.beads-chain {
+			flex-direction: column;
+			align-items: center;
+			gap: var(--space-xs);
+		}
+
+		.bead-wrapper {
+			flex-direction: row;
+			gap: var(--space-xs);
+		}
+
+		.chain-link {
+			width: 2px;
+			height: 16px;
+			margin-top: 0;
+		}
+
+		.git-layer {
+			margin: var(--space-s) calc(var(--space-s) * -1) calc(var(--space-s) * -1);
+			padding: var(--space-s);
+		}
+	}
+</style>
