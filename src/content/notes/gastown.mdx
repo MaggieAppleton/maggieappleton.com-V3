@@ -125,7 +125,9 @@ There are many more characters in this town, but these give you a flavour of the
 
 There's also a clear chain of command between these agents. You talk to the Mayor, who coordinates work across the system. The Witness supervises Polecat workers within each project. Something called called “Boot the Dog” supervises “the Deacon” which in turn supervises a crew of cross-project Dog helpers who do maitenance and cleaning.
 
-Here's the basic relationship structure of Gas Town:
+This hierarchical approach solves both a coordination and attention problem. Without it, you the human are the one assigning tasks to dozens individual agents, checking who's stuck, who's idle, and who's waiting on work from someone else. With the Mayor as your single interface, that overhead disappears. The Mayor in Gas Town never writes code. [It assigns work to polecats, ...?]
+
+Here's the basic relationship structure of Gas Town, as best I can make out:
 
 <HierarchyDiagram />
 
@@ -135,9 +137,7 @@ Since I'm making my own visuals here, I should justify it by pointing out that w
 
 Does this help you understand how the system works? No? No.
 
-Anyway, back to the point: this chain of command means stuck workers can ask for help instead of spinning their wheels and you only have to directly talk to one agent (the Mayor) instead of thirty. It's how human organisations scale, applied to agents.
-
-[We're missing the product team element - deploy engineers, product managers, visual testing]
+Although I'll give Nano Banana and Steve points for world building and distintive characters. But I think still there's a lot of opportunity to diversify the cast. The agents in Gas Town are all generalist workers in the software developement pipeline. But we could add in any kind of specialist we want. dev ops, product managers, front-end debuggers. Think of Claude's Skills but applied to specialist custom agents.
 
 ### Agent roles persist, sessions are ephemeral
 
@@ -240,5 +240,7 @@ This all changes in 2-3 years. As models improve, trust will increase and tolera
 I'm currently in the code-must-be-close camp. But I expect to move into the code-at-a-distance camp within the next ~2~ years, depending on the rate of model improvements.
 
 I feel like we're having this debate a lot interally at Github Next. One of the projects within the team is agentic workers - autonomous agents running through Github actions that kick off in response to events: new PRs, new comments, new issues, or just run on a schedule like every weekday at 10am.
+
+---
 
 I don't expect Gas Town itself to survive. As I said, it's a provocative piece of speculative design, not a system many people will use in earnest. In the same way any poorly designed object or system gets abandoned, this manic creation is too poorly thought through to persist. But I expect the problems it's wrestling with and the patterns it's stumbling toward will certaintly show up in the next generation of development tools.
