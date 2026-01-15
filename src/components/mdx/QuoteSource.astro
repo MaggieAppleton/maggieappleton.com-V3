@@ -1,6 +1,6 @@
 ---
 interface Props {
-  source: "hackernews";
+  source: "hackernews" | "bluesky";
   author: string;
   date: string;
   url?: string;
@@ -12,7 +12,12 @@ const sourceConfig = {
   hackernews: {
     name: "Hacker News",
     color: "#ff6600",
-    logo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 18" width="22" height="18"><rect width="22" height="18" rx="4" fill="#ff6600"/><text x="11" y="12.5" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="9" font-weight="500">HN</text></svg>`,
+    logo: `<svg height="24" width="24" viewBox="4 4 188 188" xmlns="http://www.w3.org/2000/svg"><path d="m4 4h188v188h-188z" fill="#f60"/><path d="m73.2521756 45.01 22.7478244 47.39130083 22.7478244-47.39130083h19.56569631l-34.32352071 64.48661468v41.49338532h-15.98v-41.49338532l-34.32352071-64.48661468z" fill="#fff"/></svg>`,
+  },
+  bluesky: {
+    name: "Bluesky",
+    color: "#0085ff",
+    logo: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 64 57"><path fill="#006AFF" d="M13.873 3.805C21.21 9.332 29.103 20.537 32 26.55v15.882c0-.338-.13.044-.41.867-1.512 4.456-7.418 21.847-20.923 7.944-7.111-7.32-3.819-14.64 9.125-16.85-7.405 1.264-15.73-.825-18.014-9.015C1.12 23.022 0 8.51 0 6.55 0-3.268 8.579-.182 13.873 3.805ZM50.127 3.805C42.79 9.332 34.897 20.537 32 26.55v15.882c0-.338.13.044.41.867 1.512 4.456 7.418 21.847 20.923 7.944 7.111-7.32 3.819-14.64-9.125-16.85 7.405 1.264 15.73-.825 18.014-9.015C62.88 23.022 64 8.51 64 6.55c0-9.818-8.578-6.732-13.873-2.745Z"/></svg>`,
   },
 };
 

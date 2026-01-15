@@ -1,5 +1,5 @@
 ---
-title: "Gastown, Design Bottlenecks, and the Vibecoding Distance Debate"
+title: "Gas Town’s Agent Patterns, Design Bottlenecks, and the Code Distance Debate"
 description: "TBD"
 updated: "2026-01-02"
 startDate: "2026-01-02"
@@ -22,11 +22,11 @@ import BeadsGitDiagram from "../../components/unique/gastown/BeadsGitDiagram.ast
 import AgentWorkflowDiagram from "../../components/unique/gastown/AgentWorkflowDiagram.astro";
 import HierarchyDiagram from "../../components/unique/gastown/HierarchyDiagram.astro";
 
-<IntroParagraph>Steve Yegge recently published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gastown, his Mad Max-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gastown is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
+<IntroParagraph>Steve Yegge recently published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gas Town, his Mad-Max-Slow-Horses-Waterworld-etc-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gas Town is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
 
 It's both utterly unhinged and important to take seriously as an indication of how agents will change the nature of software development.
 
-<LinkCard url="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" title="Welcome to Gastown" author="Steve Yegge" width="770px" image="/images/posts/gastown/gastown-cover.webp" fullCardLink />
+<LinkCard url="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" title="Welcome to Gas Town" author="Steve Yegge" width="770px" image="/images/posts/gastown/gastown-cover.webp" fullCardLink />
 
 You should at least skim through the original article before continuing to read my reflections. First, because I'm not going to comprehensively summarise it.<Footnote idName={1}>A challenging task given the sprawling, haphazard nature of the piece</Footnote> And second, because a even a one minute glance over Yegge's style of writing will make the vibes clear. 
 
@@ -52,13 +52,15 @@ When I was taken to the Tate Modern as a child I'd point at [Mark Rothko](https:
 
 <Spacer size="2xs" />
 
-I should be transparent and say that I have not used Gastown in earnest. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around levels 4-6 in Yegge's 8 levels of automation: juggling a handful of consecutive CLI agents, but still paying close attention to the diffs and regularly checking code in an IDE.
+I should be transparent and say that I have not used Gas Town in earnest on any serious work. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around stages 4-6 in Yegge's 8 levels of automation:
 
-<BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. Note: annotate and mark where I am" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gastown" />
+<BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. From stage 1: using autocomplete to an IDE through to stage 8: using an agent orchestrator" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gas Town" />
 
-Gastown is a full-on stage 8 piece of tooling: using an orchestrator who manages dozens of other coding agents for you. Yegge also warned me not to seriously use Gastown multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
+I currently juggle a handful of consecutive Claude Code and OpenCode agents, but pay close attention to the diffs and regularly check code in an IDE. Which I guess puts me in the agentically conversative camp in this distressingly breakneck moment in history.
 
-<BasicImage width="800px" framed src="/images/posts/gastown/gastown-quote-1.png" alt="Yegge's emphatic warnings and reasons why we shouldn't use Gastown (highlights mine)" showalt  />
+Gas Town is a full-on stage 8 piece of tooling: using an orchestrator that manages dozens++ of other coding agents for you. Yegge also warned me not to seriously use Gas Town multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
+
+<BasicImage width="800px" framed src="/images/posts/gastown/gastown-quote-1.png" alt="Yegge's emphatic warnings and reasons why we shouldn't use Gas Town (highlights mine)" showalt  />
 
 But I have grokked the basic concepts and spent more time with this manifesto than is warranted. And here is what stood out to me from the parts I could comprehend:
 
@@ -74,11 +76,11 @@ These are the kind of decisions that agents cannot make for you. They require yo
 
 With agents to hand, it's easy to get ahead of yourself, stumbling forward into stacks of generated functions that should never have been prompted into existence, because they do not correctly render your intentions or achieve your goals.
 
-Gastown seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design the shape of this system ahead of time, thoughtfully considerating which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
+Gas Town seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design the shape of this system ahead of time, thoughtfully considerating which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
 
-He just made stuff up as he went. He says as much himself: "Gas Town is complicated. Not because I wanted it to be, but because I had to keep adding components until it was a self-sustaining machine." Gastown is composed of "especially difficult [theories] because it’s a bunch of bullshit I pulled out of my arse over the past 3 weeks, and I named it after badgers and stuff." It was slapdashed together over "17 days, 75k lines of code, 2000 commits. It finally got off the ground (GUPP started working) just 2 days ago."<Footnote idName={2}>Do not ask what GUPP is; I cannot tell you</Footnote>
+He just made stuff up as he went. He says as much himself: "Gas Town is complicated. Not because I wanted it to be, but because I had to keep adding components until it was a self-sustaining machine." Gas Town is composed of "especially difficult [theories] because it’s a bunch of bullshit I pulled out of my arse over the past 3 weeks, and I named it after badgers and stuff." It was slapdashed together over "17 days, 75k lines of code, 2000 commits. It finally got off the ground (GUPP started working) just 2 days ago."<Footnote idName={2}>Do not ask what GUPP is; I cannot concisely explain without getting deep into it. Which we'll do in a minute.</Footnote>
 
-This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46463757) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gastown is an extention, suffers the same issue:
+This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46463757) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gas Town is an extention, suffers the same issue:
 
 <SimpleCard alignLeft margin="var(--space-3xs) auto var(--space-l)">
 
@@ -90,19 +92,29 @@ This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=4646
 
 </SimpleCard>
 
-Friends and colleagues of mine who have been brave enough to try out Gastown in more depth report the same thing; this thing fits the shape of Yegge's brain and no one else's. I'd categorise that as a moderate design fail, given this is a public product that I assume Yegge wants _at least some_ people to try out. The onboarding is baptism by fire.
+Or [this review](https://bsky.app/profile/astrra.space/post/3mceq2adrik2s) from [astrra.space](https://astrra.space/home/) on Bluesky:
+
+<SimpleCard alignLeft margin="var(--space-3xs) auto var(--space-l)">
+
+<QuoteSource source="bluesky" author="astrra.space" date="Jan 14th, 2026" url="https://bsky.app/profile/astrra.space/post/3mceq2adrik2s" />
+
+"gas town [is] such a nightmare to use i love it... the mayor is dumb as rocks the witness regularly forgets to look at stuff the deacon makes his own rules the crew have the object permanence of a tank full of goldfish and the polecats seem intent on wreaking as much chaos on the project as they can. this is peak entertainment i swear"
+
+</SimpleCard>
+
+Friends and colleagues of mine who have been brave enough to try out Gas Town in more depth report the same thing; this thing fits the shape of Yegge's brain and no one else's. I'd categorise that as a moderate design fail, given this is a public product that I assume Yegge wants _at least some_ people to try out. The onboarding is baptism by fire.
 
 This feels like one of the most critical, emerging footguns of liberally hands-off agentic development. You can move so fast you never stop to think. It is so easy to prompt, you don't fully consider what you're building at each step of the process. It is only once you are hip-deep in poor architectural decisions, inscrutable bugs, and a fuzzy memory of what you set out to do, do you realise you have burned a billion tokens in exchange for a pile of hot trash.
 
 ## 2. Buried in the chaos are sketches of future agent orchestration patterns
 
-Now that I've just harshly critiqued the design of Gastown, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of undercooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
+Now that I've just harshly critiqued the design of Gas Town, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of undercooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
 
 If you step back and squint, this mishmash of concepts reveals a few underlying patterns that future agentic systems will likely follow:
 
 ### Agents have specialised roles with hierarchical supervision
 
-Every agent in Gastown has a permanent, specialised role. When an agent spins up a new session, it knows who it is and what job it needs to do. Some examples:
+Every agent in Gas Town has a permanent, specialised role. When an agent spins up a new session, it knows who it is and what job it needs to do. Some examples:
 
 - **The Mayor** is the human concierge: it's the main agent you talk to. It talks to all the other agents for you, kicking off work, recieving notifications when things finish, and managing the flow of production.
 - **Polecats** are temporary grunt workers. They complete single, isolated tasks, then disappear after submitting their work to be merged.
@@ -113,15 +125,17 @@ There are many more characters in this town, but these give you a flavour of the
 
 There's also a clear chain of command between these agents. You talk to the Mayor, who coordinates work across the system. The Witness supervises Polecat workers within each project. Something called called “Boot the Dog” supervises “the Deacon” which in turn supervises a crew of cross-project Dog helpers who do maitenance and cleaning.
 
-Here's the basic relationship structure of Gastown:
+Here's the basic relationship structure of Gas Town:
 
 <HierarchyDiagram />
 
-Since I'm making my own visuals here, I should say that Yegge made lots of his own ornate, zoopmorphic diagrams of Gastown's relationships, responsibilities, and workflows. But, given they were made entirely by AI (I assume Nano Banana), they are very hard to decipher, filled with cluttered details, have arrows pointing the wrong direction, and are often missing key information. Case in point:
+Since I'm making my own visuals here, I should justify it by pointing out that while Yegge made lots of his own ornate, zoopmorphic diagrams of Gas Town's architecture and workflows, they are unhelpful. Primarily because they were made entirely by Gemini's [Nano Banana](https://gemini.google/overview/image-generation/). And while Nano Banana is state-of-the-art at making diagrams, generative AI systems are still really shit at making illustrative diagrams. They are very hard to decipher, filled with cluttered details, have arrows pointing the wrong direction, and are often missing key information. Case in point:
 
-<BasicImage width="800px" framed src="/images/posts/gastown/gastown-roles.webp" alt="The Cognition Engine – An AI generated diagram of who runs Gastown and their relationships" sourceTitle="Welcome to Gastown" showalt  />
+<BasicImage width="800px" framed src="/images/posts/gastown/gastown-roles.webp" alt="The Cognition Engine – An AI generated diagram of who runs Gas Town and their relationships" sourceTitle="Welcome to Gas Town" showalt  />
 
-This chain of command means stuck workers can ask for help instead of spinning their wheels, you only have to directly talk to one agent (the Mayor) instead of thirty, and problems get caught before they spread. It's how human organisations scale, applied to agents.
+Does this help you understand how the system works? No? No.
+
+Anyway, back to the point: this chain of command means stuck workers can ask for help instead of spinning their wheels and you only have to directly talk to one agent (the Mayor) instead of thirty. It's how human organisations scale, applied to agents.
 
 [We're missing the product team element - deploy engineers, product managers, visual testing]
 
@@ -129,13 +143,13 @@ This chain of command means stuck workers can ask for help instead of spinning t
 
 A primary advantage of these agent identities is they stay consistent across multiple work sessions. Each agent's identity and work assignments are stored in Git, outside of agent memory, so they can't get lost or forgotten in the chaos.
 
-This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot]() will degrade the output enough that you constantly need to compact or start fresh sessions. Gastown's solution is to liberally let sessions die - when one crashes or fills up, a fresh session spins up and inherits the same persistent identity and work queue from Git.
+This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot]() will degrade the output enough that you constantly need to compact or start fresh sessions. Gas Town's solution is to liberally let sessions die - when one crashes or fills up, a fresh session spins up and inherits the same persistent identity and work queue from Git.
 
 There's also a feature called "seancing" where new sessions can resume their predecessor's conversation to ask what happened and where things were left. The work survives the worker.
 
 ### Atomic "beads" of work, tracked in git
 
-One of Gastown's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system]() Yegge built before Gastown; a precursor to this more ambitious civilisation.
+One of Gas Town's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system]() Yegge built before Gas Town; a precursor to this more ambitious civilisation.
 
 A bead is just a lightweight issue with an ID, a description, a status, and an assignee. It's stored as JSON in Git alongside your code.
 
@@ -145,11 +159,11 @@ Beads chain together into "molecules". These are linked sequences of tasks that 
 
 ### Feeding agents continous streams of work
 
-[the whole promise of gastown is agents come up with and assign themselves an endless stream of work, and then execute on it. this turns out to be hard to engineer]
+[the whole promise of Gas Town is agents come up with and assign themselves an endless stream of work, and then execute on it. this turns out to be hard to engineer]
 
-Every agent in Gastown has a "hook" that points to its currently assigned work. Work is continuously added to the hook as the agent finishes tasks. This means agents are, in theory, never left idle. 
+Every agent in Gas Town has a "hook" that points to its currently assigned work. Work is continuously added to the hook as the agent finishes tasks. This means agents are, in theory, never left idle. 
 
-Getting current agents to check their hook and proceed with the task at hand is apparently quite unreliable in Gastown. Yegge had to develop a prodding system where manager agents further up the food chain yell at proletariat polecats to check for work and get started on it without human input.
+Getting current agents to check their hook and proceed with the task at hand is apparently quite unreliable in Gas Town. Yegge had to develop a prodding system where manager agents further up the food chain yell at proletariat polecats to check for work and get started on it without human input.
 
 <AgentWorkflowDiagram />
 
@@ -165,13 +179,13 @@ Stacked diffs are the future. Cursor buying Graphite.
 
 ## 3. The price is extremely high, but so is the (potential) value
 
-Yegge describes Gastown as "expensive as hell... you won't like Gas Town if you ever have to think, even for a moment, about where money comes from." He's on his second Claude account to get around Anthropic's spending limits.
+Yegge describes Gas Town as "expensive as hell... you won't like Gas Town if you ever have to think, even for a moment, about where money comes from." He's on his second Claude account to get around Anthropic's spending limits.
 
 I can't find any mention online of the per-account limits, but let's conservatively assume he's spending at least $1,000 USD per month, and liberally $5,000.
 
 The current cost is artificially inflated by system inefficiency. Work gets lost, bugs get fixed numerous times, designs go missing and need redoing. As models improve and orchestration patterns mature, costs should drop while output quality rises.
 
-I expect companies would happily pay around the $1-3k/month mark for a higher quality, lower waste version of this. Maybe that sounds absurd until you compare it to an average US senior developer salary: $120,000 USD.<Footnote idName={3}>Salary average from [Indeed](https://www.indeed.com/career/senior-developer/salaries). Many people will pick bones over this because the market range is so broad. FAANG engineers in San Fransisco are paid closer to half a million, while developers in Europe are used to salaries in the $30-50k range. This seems like a sensible middle ground.</Footnote> If Gastown could genuinely speed up the work of a senior developer by 2-3x or more, it would easily be worth 10-30% of their salary. The cost per unit of valuable work starts to look competitive with human labor.
+I expect companies would happily pay around the $1-3k/month mark for a higher quality, lower waste version of this. Maybe that sounds absurd until you compare it to an average US senior developer salary: $120,000 USD.<Footnote idName={3}>Salary average from [Indeed](https://www.indeed.com/career/senior-developer/salaries). Many people will pick bones over this because the market range is so broad. FAANG engineers in San Fransisco are paid closer to half a million, while developers in Europe are used to salaries in the $30-50k range. This seems like a sensible middle ground.</Footnote> If Gas Town could genuinely speed up the work of a senior developer by 2-3x or more, it would easily be worth 10-30% of their salary. The cost per unit of valuable work starts to look competitive with human labor.
 
 <CostComparisonChart />
 
@@ -227,4 +241,4 @@ I'm currently in the code-must-be-close camp. But I expect to move into the code
 
 I feel like we're having this debate a lot interally at Github Next. One of the projects within the team is agentic workers - autonomous agents running through Github actions that kick off in response to events: new PRs, new comments, new issues, or just run on a schedule like every weekday at 10am.
 
-I don't expect Gastown itself to survive. As I said, it's a provocative piece of speculative design, not a system many people will use in earnest. In the same way any poorly designed object or system gets abandoned, this manic creation is too poorly thought through to persist. But I expect the problems it's wrestling with and the patterns it's stumbling toward will certaintly show up in the next generation of development tools.
+I don't expect Gas Town itself to survive. As I said, it's a provocative piece of speculative design, not a system many people will use in earnest. In the same way any poorly designed object or system gets abandoned, this manic creation is too poorly thought through to persist. But I expect the problems it's wrestling with and the patterns it's stumbling toward will certaintly show up in the next generation of development tools.
