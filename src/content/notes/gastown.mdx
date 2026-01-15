@@ -52,25 +52,15 @@ When I was taken to the Tate Modern as a child I'd point at [Mark Rothko](https:
 
 <Spacer size="2xs" />
 
-I should be transparent and say that I have not used Gastown in earnest. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around levels 4-6 in Yegge's 8 levels of automation: using an IDE where the agent is the primariy interface, and on occassion juggling a handful of consecutive CLI agents.
+I should be transparent and say that I have not used Gastown in earnest. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around levels 4-6 in Yegge's 8 levels of automation: juggling a handful of consecutive CLI agents, but still paying close attention to the diffs and regularly checking code in an IDE.
 
-<BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. Note: annotate and makr where I am" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gastown" />
+<BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. Note: annotate and mark where I am" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gastown" />
 
-Gastown is a full level 8 piece of tooling. Yegge also warned me not to seriously use Gastown multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
-
-[Stage 4: In IDE, wide agent: Your agent gradually grows to fill the screen. Code is just for diffs.
-
-Stage 5: CLI, single agent. YOLO. Diffs scroll by. You may or may not look at them.
-
-Stage 6: CLI, multi-agent, YOLO. You regularly use 3 to 5 parallel instances. You are very fast.
-
-Stage 7: 10+ agents, hand-managed. You are starting to push the limits of hand-management.
-
-Stage 8: Building your own orchestrator. You are on the frontier, automating your workflow.]
+Gastown is a full-on stage 8 piece of tooling: using an orchestrator who manages dozens of other coding agents for you. Yegge also warned me not to seriously use Gastown multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
 
 <BasicImage width="800px" framed src="/images/posts/gastown/gastown-quote-1.png" alt="Yegge's emphatic warnings and reasons why we shouldn't use Gastown (highlights mine)" showalt  />
 
-But I have grokked the basic concepts and spent more time with this manifesto than is warranted, asking Claude multiple times to once again clarify the architecure and capabilites at play. And here is what stood out to me from the parts I could comprehend:
+But I have grokked the basic concepts and spent more time with this manifesto than is warranted. And here is what stood out to me from the parts I could comprehend:
 
 ## 1. Design and planning becomes the bottleneck when agents write all the code
 
@@ -127,7 +117,7 @@ Here's the basic relationship structure of Gastown:
 
 <HierarchyDiagram />
 
-Since I'm making my own visuals here, I should say that Yegge made lots of his own ornate, zoopmorphic diagrams of Gastown's relationships, responsibilities, and workflows. But, given they were made entirely AI, they are pretty hard to decipher, filled with cluttered details, have arrows pointing the wrong direction, and are often missing key information. Case in point:
+Since I'm making my own visuals here, I should say that Yegge made lots of his own ornate, zoopmorphic diagrams of Gastown's relationships, responsibilities, and workflows. But, given they were made entirely by AI (I assume Nano Banana), they are very hard to decipher, filled with cluttered details, have arrows pointing the wrong direction, and are often missing key information. Case in point:
 
 <BasicImage width="800px" framed src="/images/posts/gastown/gastown-roles.webp" alt="The Cognition Engine – An AI generated diagram of who runs Gastown and their relationships" sourceTitle="Welcome to Gastown" showalt  />
 
@@ -196,7 +186,9 @@ One of the most divisive and heated debates I expect to unfold over the coming y
 
 A more conservative version of this question is: how _close_ should the code be in agentic software development tools? How easy should it be to access? How often do we expect developers to edit it by hand?
 
-Interfaces like Claude Code, Cursor, and Conductor do not put code front and centre in the experience. The agent is your first and primary interface. Trying to get to the code 
+Interfaces like Claude Code, Cursor, and Conductor do not put code front and centre in the experience. The agent is your first and primary interface. Trying to edit any code yourself is a roundabout journey of opening your IDE and navigating to the correct file.
+
+[screenshots of conductor, cursor, claude]
 
 I also expect this to become a moralistic, personal identity debate. Will you embody the meticulous developer checking every diff and adjusting specific lines by hand, looking down upon those who take the risk and let go of fine-grained control?
 Or the hyper efficient developer directing agents from on high, armed with a fleet of quality-assurance agents refining every line in the background and building out deterministic test suites to cover yourself, only briefly scanning the shape of syntax they're writing?
