@@ -1,0 +1,773 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageWrapper from "../components/layouts/PageWrapper.astro";
+import { parseDesignTokens, getTokensByCategory } from "../utils/parseDesignTokens";
+import { analyzeTokenUsage, sortByUsage, getUnusedTokens } from "../utils/analyzeTokenUsage";
+
+// Redirect if we're not in development mode
+if (import.meta.env.PROD) {
+	return Astro.redirect("/404");
+}
+
+// Parse tokens and analyze usage
+const allTokens = parseDesignTokens();
+const tokenNames = allTokens.map((t) => t.name);
+const usage = analyzeTokenUsage(tokenNames);
+const unusedTokens = getUnusedTokens(usage);
+
+const { colors, spacing, fontSizes, fontFamilies, leading, shadows, radii } =
+	getTokensByCategory(allTokens);
+
+// Sort colors by usage
+const sortedColors = sortByUsage(colors, usage);
+const sortedFontFamilies = sortByUsage(fontFamilies, usage);
+const sortedShadows = sortByUsage(shadows, usage);
+const sortedRadii = sortByUsage(radii, usage);
+
+// Sort font sizes by semantic order (small to large)
+const fontSizeOrder = ['xs', 'sm', 'base', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'];
+const sortedFontSizes = [...fontSizes].sort((a, b) => {
+	const aSize = a.name.replace('--font-size-', '');
+	const bSize = b.name.replace('--font-size-', '');
+	return fontSizeOrder.indexOf(aSize) - fontSizeOrder.indexOf(bSize);
+});
+
+// Sort leading by semantic order (tight to loose)
+const leadingOrder = ['tighter', 'tight', 'snug', 'base', 'loose', 'looser'];
+const sortedLeading = [...leading].sort((a, b) => {
+	const aLead = a.name.replace('--leading-', '');
+	const bLead = b.name.replace('--leading-', '');
+	return leadingOrder.indexOf(aLead) - leadingOrder.indexOf(bLead);
+});
+
+// Sort spacing by semantic order (small to large)
+const spacingSizeOrder = ['3xs', '2xs', 'xs', 's', 'm', 'l', 'xl', '2xl', '3xl', '4xl'];
+const spacingPairOrder = ['3xs-2xs', '2xs-xs', 'xs-s', 's-m', 'm-l', 'l-xl', 'xl-2xl', '2xl-3xl', '3xl-4xl'];
+
+// Group spacing by subcategory and sort each group
+const spacingGroups = {
+	tshirt: [...spacing.filter((s) => s.subcategory === "t-shirt")].sort((a, b) => {
+		const aSize = a.name.replace('--space-', '');
+		const bSize = b.name.replace('--space-', '');
+		return spacingSizeOrder.indexOf(aSize) - spacingSizeOrder.indexOf(bSize);
+	}),
+	numeric: [...spacing.filter((s) => s.subcategory === "numeric")].sort((a, b) => {
+		const aNum = parseInt(a.name.replace('--space-', ''));
+		const bNum = parseInt(b.name.replace('--space-', ''));
+		return aNum - bNum;
+	}),
+	fluidPair: [...spacing.filter((s) => s.subcategory === "fluid-pair")].sort((a, b) => {
+		const aSize = a.name.replace('--space-', '');
+		const bSize = b.name.replace('--space-', '');
+		return spacingPairOrder.indexOf(aSize) - spacingPairOrder.indexOf(bSize);
+	}),
+};
+
+// Group colors by subcategory
+const colorGroups = {
+	brand: sortedColors.filter((c) => c.subcategory === "brand"),
+	gray: sortedColors.filter((c) => c.subcategory === "gray"),
+	accent: sortedColors.filter((c) => c.subcategory === "accent"),
+	base: sortedColors.filter((c) => c.subcategory === "base"),
+	other: sortedColors.filter((c) => c.subcategory === "other"),
+};
+
+// Stats
+const totalTokens = allTokens.length;
+const unusedCount = unusedTokens.length;
+---
+
+<Layout title="Design System">
+	<PageWrapper>
+		<header class="page-header">
+			<h1>Design System</h1>
+			<span class="dev-badge">Dev Only</span>
+			<p class="stats">
+				{totalTokens} tokens defined &middot; {unusedCount} unused
+			</p>
+		</header>
+
+		<!-- Colors -->
+		<section class="token-section">
+			<h2>Colors</h2>
+
+			{
+				Object.entries(colorGroups).map(
+					([groupName, groupColors]) =>
+						groupColors.length > 0 && (
+							<div class="color-group">
+								<h3 class="group-title">{groupName}</h3>
+								<div class="color-grid">
+									{groupColors.map((color) => {
+										const count = usage.get(color.name) || 0;
+										const isUnused = count === 0;
+										return (
+											<button
+												class:list={["color-swatch", { unused: isUnused }]}
+												data-token={`var(${color.name})`}
+												title={`Click to copy var(${color.name})`}
+											>
+												<div class="swatch" style={`background-color: ${color.value}`} />
+												<div class="color-info">
+													<code class="token-name">{color.name}</code>
+													<span class="token-value">{color.value}</span>
+													<span class:list={["usage-count", { zero: isUnused }]}>
+														{count} uses
+													</span>
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						)
+				)
+			}
+		</section>
+
+		<!-- Typography -->
+		<section class="token-section">
+			<h2>Typography</h2>
+
+			<div class="subsection">
+				<h3 class="group-title">Font Families</h3>
+				<div class="font-family-list">
+					{
+						sortedFontFamilies.map((font) => {
+							const count = usage.get(font.name) || 0;
+							return (
+								<button class="font-family-item" data-token={`var(${font.name})`}>
+									<div class="font-sample" style={`font-family: ${font.value}`}>
+										The quick brown fox jumps over the lazy dog
+									</div>
+									<div class="font-info">
+										<code class="token-name">{font.name}</code>
+										<span class="token-value">{font.value}</span>
+										<span class="usage-count">{count} uses</span>
+									</div>
+								</button>
+							);
+						})
+					}
+				</div>
+			</div>
+
+			<div class="subsection">
+				<h3 class="group-title">Font Sizes</h3>
+				<div class="font-size-scale">
+					{
+						sortedFontSizes.map((size) => {
+							const count = usage.get(size.name) || 0;
+							const isUnused = count === 0;
+							return (
+								<button
+									class:list={["font-size-item", { unused: isUnused }]}
+									data-token={`var(${size.name})`}
+								>
+									<span class="size-sample" style={`font-size: ${size.value}`}>
+										Aa
+									</span>
+									<div class="size-info">
+										<code class="token-name">{size.name}</code>
+										<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
+									</div>
+								</button>
+							);
+						})
+					}
+				</div>
+			</div>
+
+			<div class="subsection">
+				<h3 class="group-title">Line Heights</h3>
+				<div class="leading-list">
+					{
+						sortedLeading.map((lead) => {
+							const count = usage.get(lead.name) || 0;
+							return (
+								<button class="leading-item" data-token={`var(${lead.name})`}>
+									<div class="leading-sample" style={`line-height: ${lead.value}`}>
+										This is sample text to demonstrate line height. Notice how the spacing between
+										lines changes.
+									</div>
+									<div class="leading-info">
+										<code class="token-name">{lead.name}</code>
+										<span class="token-value">{lead.value}</span>
+										<span class="usage-count">{count} uses</span>
+									</div>
+								</button>
+							);
+						})
+					}
+				</div>
+			</div>
+		</section>
+
+		<!-- Spacing -->
+		<section class="token-section">
+			<h2>Spacing</h2>
+
+			<div class="subsection">
+				<h3 class="group-title">T-Shirt Sizes</h3>
+				<div class="spacing-scale">
+					{
+						spacingGroups.tshirt.map((space) => {
+							const count = usage.get(space.name) || 0;
+							const isUnused = count === 0;
+							return (
+								<button
+									class:list={["spacing-item", { unused: isUnused }]}
+									data-token={`var(${space.name})`}
+								>
+									<div class="spacing-bar" style={`width: ${space.value}`} />
+									<div class="spacing-info">
+										<code class="token-name">{space.name}</code>
+										<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
+									</div>
+								</button>
+							);
+						})
+					}
+				</div>
+			</div>
+
+			{
+				spacingGroups.numeric.length > 0 && (
+					<div class="subsection">
+						<h3 class="group-title">Numeric (pixel-based)</h3>
+						<div class="spacing-scale">
+							{spacingGroups.numeric.map((space) => {
+								const count = usage.get(space.name) || 0;
+								const isUnused = count === 0;
+								return (
+									<button
+										class:list={["spacing-item", { unused: isUnused }]}
+										data-token={`var(${space.name})`}
+									>
+										<div class="spacing-bar" style={`width: ${space.value}`} />
+										<div class="spacing-info">
+											<code class="token-name">{space.name}</code>
+											<span class="token-value">{space.value}</span>
+											<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				)
+			}
+
+			{
+				spacingGroups.fluidPair.length > 0 && (
+					<div class="subsection">
+						<h3 class="group-title">Fluid Pairs (responsive)</h3>
+						<div class="spacing-scale">
+							{spacingGroups.fluidPair.map((space) => {
+								const count = usage.get(space.name) || 0;
+								const isUnused = count === 0;
+								return (
+									<button
+										class:list={["spacing-item", { unused: isUnused }]}
+										data-token={`var(${space.name})`}
+									>
+										<div class="spacing-bar fluid" style={`width: ${space.value}`} />
+										<div class="spacing-info">
+											<code class="token-name">{space.name}</code>
+											<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				)
+			}
+		</section>
+
+		<!-- Shadows -->
+		<section class="token-section">
+			<h2>Shadows</h2>
+			<div class="shadow-grid">
+				{
+					sortedShadows.map((shadow) => {
+						const count = usage.get(shadow.name) || 0;
+						return (
+							<button class="shadow-item" data-token={`var(${shadow.name})`}>
+								<div class="shadow-demo" style={`box-shadow: ${shadow.value}`} />
+								<div class="shadow-info">
+									<code class="token-name">{shadow.name}</code>
+									<span class="usage-count">{count} uses</span>
+								</div>
+							</button>
+						);
+					})
+				}
+			</div>
+		</section>
+
+		<!-- Border Radius -->
+		<section class="token-section">
+			<h2>Border Radius</h2>
+			<div class="radius-grid">
+				{
+					sortedRadii.map((radius) => {
+						const count = usage.get(radius.name) || 0;
+						return (
+							<button class="radius-item" data-token={`var(${radius.name})`}>
+								<div class="radius-demo" style={`border-radius: ${radius.value}`} />
+								<div class="radius-info">
+									<code class="token-name">{radius.name}</code>
+									<span class="token-value">{radius.value}</span>
+									<span class="usage-count">{count} uses</span>
+								</div>
+							</button>
+						);
+					})
+				}
+			</div>
+		</section>
+
+		<!-- Cleanup Report -->
+		<section class="token-section cleanup-section">
+			<h2>Cleanup Report</h2>
+			<p class="cleanup-intro">
+				These tokens are defined in <code>global.css</code> but never used in the codebase.
+			</p>
+
+			{
+				unusedTokens.length > 0 ? (
+					<div class="unused-list">
+						{unusedTokens.map((token) => {
+							const tokenData = allTokens.find((t) => t.name === token);
+							return (
+								<div class="unused-item">
+									<code class="token-name">{token}</code>
+									<span class="token-category">{tokenData?.category}</span>
+									<span class="suggestion">Safe to remove</span>
+								</div>
+							);
+						})}
+					</div>
+				) : (
+					<p class="all-used">All tokens are in use.</p>
+				)
+			}
+		</section>
+
+		<!-- Copy feedback toast -->
+		<div id="copy-toast" class="copy-toast">Copied!</div>
+	</PageWrapper>
+</Layout>
+
+<script>
+	// Copy to clipboard functionality
+	document.addEventListener("astro:page-load", () => {
+		const buttons = document.querySelectorAll("[data-token]");
+		const toast = document.getElementById("copy-toast");
+
+		buttons.forEach((button) => {
+			button.addEventListener("click", async () => {
+				const token = button.getAttribute("data-token");
+				if (token) {
+					await navigator.clipboard.writeText(token);
+
+					// Show toast
+					if (toast) {
+						toast.classList.add("visible");
+						setTimeout(() => {
+							toast.classList.remove("visible");
+						}, 1500);
+					}
+				}
+			});
+		});
+	});
+</script>
+
+<style>
+	.page-header {
+		margin-bottom: var(--space-l);
+	}
+
+	.page-header h1 {
+		display: inline;
+		margin-right: var(--space-s);
+	}
+
+	.dev-badge {
+		display: inline-block;
+		background: var(--color-salmon);
+		color: white;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		padding: 2px 6px;
+		border-radius: var(--border-radius-sm);
+		vertical-align: middle;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.stats {
+		margin-top: var(--space-2xs);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-600);
+	}
+
+	/* Sections */
+	.token-section {
+		margin-bottom: var(--space-xl);
+		background: white;
+		padding: var(--space-m);
+		border-radius: var(--border-radius-base);
+	}
+
+	.token-section h2 {
+		margin-bottom: var(--space-s);
+		font-size: var(--font-size-md);
+		color: var(--color-gray-800);
+		border-bottom: 1px solid var(--color-gray-300);
+		padding-bottom: var(--space-2xs);
+	}
+
+	.subsection {
+		margin-bottom: var(--space-m);
+	}
+
+	.group-title {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--color-gray-500);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: var(--space-xs);
+	}
+
+	/* Shared button styles */
+	button[data-token] {
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		transition: opacity 0.15s ease;
+		text-align: left;
+		padding: var(--space-2xs);
+		border-radius: var(--border-radius-sm);
+	}
+
+	button[data-token]:hover {
+		background: var(--color-gray-100);
+	}
+
+	button[data-token].unused {
+		opacity: 0.4;
+	}
+
+	.token-name {
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-800);
+		display: block;
+	}
+
+	.token-value {
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-500);
+		font-family: var(--font-sans);
+	}
+
+	.usage-count {
+		font-size: var(--font-size-xs);
+		font-family: var(--font-sans);
+		color: var(--color-gray-500);
+	}
+
+	.usage-count.zero {
+		color: var(--color-salmon);
+	}
+
+	/* Colors */
+	.color-group {
+		margin-bottom: var(--space-m);
+	}
+
+	.color-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		gap: var(--space-s);
+	}
+
+	.color-swatch {
+		display: flex;
+		align-items: center;
+		gap: var(--space-s);
+	}
+
+	.swatch {
+		width: 72px;
+		height: 72px;
+		border-radius: var(--border-radius-base);
+		flex-shrink: 0;
+	}
+
+	.color-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-width: 0;
+	}
+
+	/* Typography */
+	.font-family-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.font-family-item {
+		padding: var(--space-xs) 0;
+		border-bottom: 1px solid var(--color-gray-200);
+	}
+
+	.font-family-item:last-child {
+		border-bottom: none;
+	}
+
+	.font-sample {
+		font-size: var(--font-size-md);
+		color: var(--color-gray-800);
+	}
+
+	.font-info {
+		display: flex;
+		gap: var(--space-m);
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.font-size-scale {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-xs);
+	}
+
+	.font-size-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		min-width: 70px;
+	}
+
+	.size-sample {
+		font-family: var(--font-serif);
+		color: var(--color-gray-800);
+	}
+
+	.size-info {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.leading-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: var(--space-xs);
+	}
+
+	.leading-item {
+		padding: var(--space-xs) 0;
+	}
+
+	.leading-sample {
+		font-family: var(--font-body);
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-800);
+		max-width: 28ch;
+	}
+
+	.leading-info {
+		display: flex;
+		gap: var(--space-s);
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	/* Spacing */
+	.spacing-scale {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.spacing-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-s);
+	}
+
+	.spacing-bar {
+		height: 16px;
+		background: var(--color-sea-blue);
+		border-radius: 2px;
+		min-width: 4px;
+	}
+
+	.spacing-bar.fluid {
+		background: linear-gradient(90deg, var(--color-sea-blue), var(--color-medium-sea-blue));
+	}
+
+	.spacing-info {
+		display: flex;
+		gap: var(--space-s);
+		align-items: center;
+	}
+
+	/* Shadows */
+	.shadow-grid {
+		display: flex;
+		gap: var(--space-l);
+		flex-wrap: wrap;
+	}
+
+	.shadow-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.shadow-demo {
+		width: 80px;
+		height: 80px;
+		background: white;
+		border-radius: var(--border-radius-base);
+	}
+
+	.shadow-info {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	/* Border Radius */
+	.radius-grid {
+		display: flex;
+		gap: var(--space-l);
+		flex-wrap: wrap;
+	}
+
+	.radius-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.radius-demo {
+		width: 60px;
+		height: 60px;
+		background: var(--color-sea-blue);
+	}
+
+	.radius-info {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	/* Cleanup Section */
+	.cleanup-section {
+		background: var(--color-cream);
+		padding: var(--space-m);
+		border-radius: var(--border-radius-base);
+		border: 1px solid var(--color-gray-300);
+	}
+
+	.cleanup-section h2 {
+		border-bottom: none;
+		padding-bottom: 0;
+		margin-bottom: var(--space-2xs);
+	}
+
+	.cleanup-intro {
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-600);
+		margin-bottom: var(--space-s);
+	}
+
+	.unused-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.unused-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-m);
+		padding: var(--space-2xs) 0;
+	}
+
+	.unused-item .token-name {
+		min-width: 180px;
+	}
+
+	.token-category {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-500);
+		min-width: 70px;
+	}
+
+	.suggestion {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-salmon);
+	}
+
+	.all-used {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		color: var(--color-sea-blue);
+	}
+
+	/* Copy toast */
+	.copy-toast {
+		position: fixed;
+		bottom: var(--space-l);
+		left: 50%;
+		transform: translateX(-50%) translateY(20px);
+		background: var(--color-gray-800);
+		color: white;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		padding: var(--space-2xs) var(--space-s);
+		border-radius: var(--border-radius-base);
+		opacity: 0;
+		transition: all 0.2s ease;
+		pointer-events: none;
+	}
+
+	.copy-toast.visible {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+
+	/* Mobile */
+	@media (max-width: 768px) {
+		.color-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.font-size-scale {
+			gap: var(--space-2xs);
+		}
+
+		.spacing-info {
+			flex-wrap: wrap;
+		}
+	}
+</style>
