@@ -48,12 +48,8 @@ function categorizeToken(name: string, value: string): DesignToken | null {
       subcategory = "gray";
     } else if (name.includes("cream") || name === "--color-black") {
       subcategory = "base";
-    } else if (name.includes("crimson")) {
+    } else if (name.includes("crimson") || name.includes("sea-blue") || name.includes("salmon") || name.includes("purple") || name.includes("gold")) {
       subcategory = "brand";
-    } else if (name.includes("sea-blue")) {
-      subcategory = "brand";
-    } else if (name.includes("salmon") || name.includes("purple")) {
-      subcategory = "accent";
     }
 
     return { name, value, category: "color", subcategory };

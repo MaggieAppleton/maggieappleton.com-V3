@@ -100,7 +100,7 @@
   --color-dark-sea-blue: #00758f;
   --color-purple: #7558b2;
   --color-salmon: #fd8370;
-  --color-light-salmon: #ffd09c;
+  --color-gold: #ffd09c;
   --color-dark-salmon: #e1624f;
 
   /* Opacity variants for colors */
@@ -109,6 +109,13 @@
   --color-crimson-10: color-mix(in srgb, var(--color-bright-crimson) 10%, transparent);
   --color-crimson-20: color-mix(in srgb, var(--color-bright-crimson) 20%, transparent);
   --color-crimson-50: color-mix(in srgb, var(--color-bright-crimson) 50%, transparent);
+
+  /* Sea blue variants */
+  --color-sea-blue-5: color-mix(in srgb, var(--color-sea-blue) 20%, transparent);
+  --color-sea-blue-10: color-mix(in srgb, var(--color-sea-blue) 30%, transparent);
+  --color-sea-blue-20: color-mix(in srgb, var(--color-sea-blue) 40%, transparent);
+  --color-sea-blue-50: color-mix(in srgb, var(--color-sea-blue) 70%, transparent);
+
 
   /* Fonts */
   --font-serif: "Canela Deck", serif;
@@ -134,12 +141,12 @@
     1.3px 1.3px 6.7px -10px rgba(40, 10, 0, 0.03), 2.5px 2.5px 12.5px -10px rgba(40, 10, 0, 0.036),
     6px 6px 30px -10px rgba(40, 10, 0, 0.05);
 
-  --box-shadow-md: 1px 0.9px 2.3px -3px rgba(30, 10, 10, 0.04),
+  --box-shadow-lg: 1px 0.9px 2.3px -3px rgba(30, 10, 10, 0.04),
     2.4px 2.2px 5.5px -3px rgba(30, 10, 10, 0.05), 4.5px 4.1px 10.4px -3px rgba(30, 10, 10, 0.06),
     8px 7.4px 18.5px -3px rgba(30, 10, 10, 0.07), 15px 13.8px 34.7px -3px rgba(30, 10, 10, 0.08),
     36px 33px 83px -3px rgba(30, 10, 10, 0.2);
 
-  --box-shadow-lg: 0.2px 0.4px 0.8px -10px rgba(0, 0, 0, 0.03),
+  --box-shadow-md: 0.2px 0.4px 0.8px -10px rgba(0, 0, 0, 0.03),
     0.4px 0.9px 2px -10px rgba(0, 0, 0, 0.03), 0.8px 1.8px 3.8px -10px rgba(0, 0, 0, 0.038),
     1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.045), 2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.06),
     6px 14px 30px -10px rgba(0, 0, 0, 0.08);
@@ -202,9 +209,6 @@
   );
   --space-3xl: calc(
     ((var(--fc-3xl-min) / 16) * 1rem) + (var(--fc-3xl-max) - var(--fc-3xl-min)) * var(--fluid-bp)
-  );
-  --space-4xl: calc(
-    ((var(--fc-4xl-min) / 16) * 1rem) + (var(--fc-4xl-max) - var(--fc-4xl-min)) * var(--fluid-bp)
   );
 
   /* One-up pairs */
@@ -302,12 +306,6 @@
   --f-5-max: 81.8;
   --font-size-3xl: calc(
     ((var(--f-5-min) / 16) * 1rem) + (var(--f-5-max) - var(--f-5-min)) * var(--fluid-bp)
-  );
-
-  --f-6-min: 76.29;
-  --f-6-max: 106.34;
-  --font-size-4xl: calc(
-    ((var(--f-6-min) / 16) * 1rem) + (var(--f-6-max) - var(--f-6-min)) * var(--fluid-bp)
   );
 }
 
@@ -526,7 +524,7 @@ button {
 }
 
 mark {
-  background-color: var(--color-light-salmon);
+  background-color: var(--color-gold);
 }
 
 .visually-hidden {

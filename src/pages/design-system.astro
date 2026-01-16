@@ -67,7 +67,6 @@ const spacingGroups = {
 const colorGroups = {
 	brand: sortedColors.filter((c) => c.subcategory === "brand"),
 	gray: sortedColors.filter((c) => c.subcategory === "gray"),
-	accent: sortedColors.filter((c) => c.subcategory === "accent"),
 	base: sortedColors.filter((c) => c.subcategory === "base"),
 	other: sortedColors.filter((c) => c.subcategory === "other"),
 };
@@ -462,7 +461,13 @@ const unusedCount = unusedTokens.length;
 	}
 
 	button[data-token].unused {
-		opacity: 0.4;
+		opacity: 1;
+	}
+
+	button[data-token].unused .token-name,
+	button[data-token].unused .token-value,
+	button[data-token].unused .usage-count {
+		opacity: 0.5;
 	}
 
 	.token-name {
@@ -561,7 +566,7 @@ const unusedCount = unusedTokens.length;
 	}
 
 	.size-sample {
-		font-family: var(--font-serif);
+		font-family: var(--font-body);
 		color: var(--color-gray-800);
 	}
 
