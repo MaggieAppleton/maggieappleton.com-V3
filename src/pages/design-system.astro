@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
+import { Icon } from "astro-icon/components";
 import { parseDesignTokens, getTokensByCategory } from "../utils/parseDesignTokens";
 import { analyzeTokenUsage, sortByUsage, getUnusedTokens } from "../utils/analyzeTokenUsage";
 
@@ -355,6 +356,104 @@ const unusedCount = unusedTokens.length;
 						);
 					})
 				}
+			</div>
+		</section>
+
+		<!-- Icons -->
+		<section class="token-section">
+			<h2>Icons</h2>
+			
+			<div class="subsection">
+				<h3 class="group-title">Heroicons</h3>
+				<div class="icon-grid">
+					{[
+						'heroicons:academic-cap',
+						'heroicons:arrow-left',
+						'heroicons:arrow-path',
+						'heroicons:arrow-right',
+						'heroicons:arrow-right-20-solid',
+						'heroicons:arrow-top-right-on-square',
+						'heroicons:arrow-top-right-on-square-20-solid',
+						'heroicons:arrow-uturn-left',
+						'heroicons:bars-3',
+						'heroicons:bolt-solid',
+						'heroicons:book-open',
+						'heroicons:bookmark',
+						'heroicons:calendar',
+						'heroicons:chat-bubble-left',
+						'heroicons:check',
+						'heroicons:chevron-down',
+						'heroicons:chevron-right',
+						'heroicons:chevron-up',
+						'heroicons:chevron-up-solid',
+						'heroicons:circle-stack',
+						'heroicons:clock',
+						'heroicons:cube-transparent',
+						'heroicons:heart',
+						'heroicons:heart-solid',
+						'heroicons:link',
+						'heroicons:map-pin-20-solid',
+						'heroicons:microphone',
+						'heroicons:moon-solid',
+						'heroicons:paper-clip',
+						'heroicons:plus-circle',
+						'heroicons:presentation-chart-line',
+						'heroicons:rss',
+						'heroicons:rss-20-solid',
+						'heroicons:user',
+						'heroicons:user-solid',
+						'heroicons:users',
+						'heroicons:x-circle',
+						'heroicons:x-mark',
+					].map((iconName) => (
+						<div class="icon-item">
+							<Icon name={iconName} class="icon-demo" />
+							<code class="icon-name">{iconName.replace('heroicons:', '')}</code>
+						</div>
+					))}
+				</div>
+			</div>
+
+			<div class="subsection">
+				<h3 class="group-title">Lucide</h3>
+				<div class="icon-grid">
+					{[
+						'lucide:arrow-right',
+						'lucide:history',
+					].map((iconName) => (
+						<div class="icon-item">
+							<Icon name={iconName} class="icon-demo" />
+							<code class="icon-name">{iconName.replace('lucide:', '')}</code>
+						</div>
+					))}
+				</div>
+			</div>
+
+			<div class="subsection">
+				<h3 class="group-title">Custom (src/icons)</h3>
+				<div class="icon-grid">
+					{[
+						'bluesky',
+						'budding',
+						'dribbble',
+						'evergreen',
+						'github',
+						'link',
+						'linkedin',
+						'mastodon',
+						'number-one',
+						'number-two',
+						'number-three',
+						'pencil',
+						'seedling',
+						'twitter',
+					].map((iconName) => (
+						<div class="icon-item">
+							<Icon name={iconName} class="icon-demo" />
+							<code class="icon-name">{iconName}</code>
+						</div>
+					))}
+				</div>
 			</div>
 		</section>
 
@@ -720,6 +819,40 @@ const unusedCount = unusedTokens.length;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+	}
+
+	/* Icons */
+	.icon-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		gap: var(--space-xs);
+	}
+
+	.icon-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2xs);
+		padding: var(--space-xs);
+		border-radius: var(--border-radius-sm);
+		transition: background 0.15s ease;
+	}
+
+	.icon-item:hover {
+		background: var(--color-gray-100);
+	}
+
+	.icon-demo {
+		width: 24px;
+		height: 24px;
+		color: var(--color-gray-700);
+	}
+
+	.icon-name {
+		font-size: 11px;
+		color: var(--color-gray-500);
+		text-align: center;
+		word-break: break-word;
 	}
 
 	/* Cleanup Section */
