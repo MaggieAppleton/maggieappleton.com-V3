@@ -32,6 +32,19 @@ const sortedFontSizes = [...fontSizes].sort((a, b) => {
 	return fontSizeOrder.indexOf(aSize) - fontSizeOrder.indexOf(bSize);
 });
 
+// Font size pixel values (min → max)
+const fontSizePixels: Record<string, string> = {
+	'--font-size-xs': '14.5 → 15px',
+	'--font-size-sm': '16 → 16.5px',
+	'--font-size-base': '20 → 22px',
+	'--font-size-md': '25 → 29px',
+	'--font-size-lg': '30 → 36px',
+	'--font-size-xl': '39 → 44px',
+	'--font-size-2xl': '47 → 56px',
+	'--font-size-3xl': '58 → 82px',
+	'--font-size-4xl': '76 → 106px',
+};
+
 // Sort leading by semantic order (tight to loose)
 const leadingOrder = ['tighter', 'tight', 'snug', 'base', 'loose', 'looser'];
 const sortedLeading = [...leading].sort((a, b) => {
@@ -43,6 +56,20 @@ const sortedLeading = [...leading].sort((a, b) => {
 // Sort spacing by semantic order (small to large)
 const spacingSizeOrder = ['3xs', '2xs', 'xs', 's', 'm', 'l', 'xl', '2xl', '3xl', '4xl'];
 const spacingPairOrder = ['3xs-2xs', '2xs-xs', 'xs-s', 's-m', 'm-l', 'l-xl', 'xl-2xl', '2xl-3xl', '3xl-4xl'];
+
+// Spacing pixel values (min → max) based on base of 20-22px
+const spacingPixels: Record<string, string> = {
+	'--space-3xs': '5 → 5.5px',
+	'--space-2xs': '10 → 11px',
+	'--space-xs': '15 → 16.5px',
+	'--space-s': '20 → 22px',
+	'--space-m': '30 → 33px',
+	'--space-l': '40 → 44px',
+	'--space-xl': '60 → 66px',
+	'--space-2xl': '80 → 88px',
+	'--space-3xl': '120 → 132px',
+	'--space-4xl': '160 → 176px',
+};
 
 // Group spacing by subcategory and sort each group
 const spacingGroups = {
@@ -158,6 +185,7 @@ const unusedCount = unusedTokens.length;
 						sortedFontSizes.map((size) => {
 							const count = usage.get(size.name) || 0;
 							const isUnused = count === 0;
+							const pixels = fontSizePixels[size.name] || '';
 							return (
 								<button
 									class:list={["font-size-item", { unused: isUnused }]}
@@ -168,6 +196,7 @@ const unusedCount = unusedTokens.length;
 									</span>
 									<div class="size-info">
 										<code class="token-name">{size.name}</code>
+										<span class="token-value">{pixels}</span>
 										<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
 									</div>
 								</button>
@@ -189,9 +218,9 @@ const unusedCount = unusedTokens.length;
 										This is sample text to demonstrate line height. Notice how the spacing between
 										lines changes.
 									</div>
+									<span class="token-value">{lead.value}</span>
 									<div class="leading-info">
 										<code class="token-name">{lead.name}</code>
-										<span class="token-value">{lead.value}</span>
 										<span class="usage-count">{count} uses</span>
 									</div>
 								</button>
@@ -213,6 +242,7 @@ const unusedCount = unusedTokens.length;
 						spacingGroups.tshirt.map((space) => {
 							const count = usage.get(space.name) || 0;
 							const isUnused = count === 0;
+							const pixels = spacingPixels[space.name] || '';
 							return (
 								<button
 									class:list={["spacing-item", { unused: isUnused }]}
@@ -221,6 +251,7 @@ const unusedCount = unusedTokens.length;
 									<div class="spacing-bar" style={`width: ${space.value}`} />
 									<div class="spacing-info">
 										<code class="token-name">{space.name}</code>
+										<span class="token-value">{pixels}</span>
 										<span class:list={["usage-count", { zero: isUnused }]}>{count} uses</span>
 									</div>
 								</button>
@@ -584,6 +615,9 @@ const unusedCount = unusedTokens.length;
 
 	.leading-item {
 		padding: var(--space-xs) 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2xs);
 	}
 
 	.leading-sample {
@@ -591,6 +625,11 @@ const unusedCount = unusedTokens.length;
 		font-size: var(--font-size-sm);
 		color: var(--color-gray-800);
 		max-width: 28ch;
+	}
+
+	.leading-item > .token-value {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
 	}
 
 	.leading-info {
