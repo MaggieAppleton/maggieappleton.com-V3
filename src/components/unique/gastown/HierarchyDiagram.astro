@@ -3,23 +3,29 @@
  * HierarchyDiagram - Shows the hierarchical supervision structure
  * of agents in Gastown using Figma-exported SVGs
  **/
+import DesktopSVG from './Desktop.svg?raw';
+import MobileSVG from './Mobile.svg?raw';
 ---
 
 <figure class="diagram-container">
-  <img class="desktop-diagram" src="/images/posts/gastown/Desktop.svg" alt="Hierarchy diagram showing agent supervision structure" />
-  <img class="mobile-diagram" src="/images/posts/gastown/Mobile.svg" alt="Hierarchy diagram showing agent supervision structure" />
+  <div class="desktop-diagram" set:html={DesktopSVG} />
+  <div class="mobile-diagram" set:html={MobileSVG} />
 </figure>
 
 <style>
   .diagram-container {
     margin: 0;
     padding: var(--space-s) 0 var(--space-xl) 0;
+    width: 100%;
+    overflow: hidden;
   }
   
-  .desktop-diagram,
-  .mobile-diagram {
+  .desktop-diagram :global(svg),
+  .mobile-diagram :global(svg) {
     width: 100%;
     height: auto;
+    max-width: 100%;
+    display: block;
   }
   
   .desktop-diagram {
