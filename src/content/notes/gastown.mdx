@@ -21,6 +21,7 @@ import CostComparisonChart from "../../components/unique/gastown/CostComparisonC
 import BeadsGitDiagram from "../../components/unique/gastown/BeadsGitDiagram.astro";
 import AgentWorkflowDiagram from "../../components/unique/gastown/AgentWorkflowDiagram.astro";
 import HierarchyDiagram from "../../components/unique/gastown/HierarchyDiagram.astro";
+import Resuming from "../../components/unique/gastown/Resuming.astro";
 
 <IntroParagraph>Steve Yegge recently published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gas Town, his Mad-Max-Slow-Horses-Waterworld-etc-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gas Town is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
 
@@ -123,11 +124,9 @@ Every agent in Gas Town has a permanent, specialised role. When an agent spins u
 
 There are many more characters in this town, but these give you a flavour of the system. Giving each agent a single job means you can prompt them more precisely, limit what they're allowed to touch, and run lots of them at once without them stepping on each other's toes.
 
-There's also a clear chain of command between these agents. You talk to the Mayor, who coordinates work across the system. The Witness supervises Polecat workers within each project. Something called called “Boot the Dog” supervises “the Deacon” which in turn supervises a crew of cross-project Dog helpers who do maitenance and cleaning.
+There's also a clear chain of command between these agents. You talk to the Mayor, who coordinates work across the system. The Mayor in Gas Town never writes code. It talks to you, then creates work tasks and assigns them to workers. A set of system supervisors called the Witness, the Deacon, and “Boot the Dog” intermittently nudge the grunt workers and each other to check everyone is doing their work. There's also a crew of Dog helpers who do maintenance and cleaning.
 
-This hierarchical approach solves both a coordination and attention problem. Without it, you the human are the one assigning tasks to dozens individual agents, checking who's stuck, who's idle, and who's waiting on work from someone else. With the Mayor as your single interface, that overhead disappears. The Mayor in Gas Town never writes code. [It assigns work to polecats, ...?]
-
-Here's the basic relationship structure of Gas Town, as best I can make out:
+It's easier if I try and show you. Here's the basic relationship structure of Gas Town, as best I can make out:
 
 <HierarchyDiagram />
 
@@ -137,19 +136,23 @@ Since I'm making my own visuals here, I should justify it by pointing out that w
 
 Does this help you understand how the system works? No? No.
 
-Although I'll give Nano Banana and Steve points for world building and distintive characters. But I think still there's a lot of opportunity to diversify the cast. The agents in Gas Town are all generalist workers in the software developement pipeline. But we could add in any kind of specialist we want. dev ops, product managers, front-end debuggers. Think of Claude's Skills but applied to specialist custom agents.
+Gas Town's hierarchical approach solves both a coordination and attention problem. Without it, you are the one assigning tasks to dozens individual agents, checking who's stuck, who's idle, and who's waiting on work from someone else. With the Mayor as your single interface, that overhead disappears. You can continuously talk to the Mayor without interrupting any agents or getting in the way, or having to think much about which one is doing what. This is less cognitive overhead than constantly switching tabs between Claudes.
+
+I think there's a lot of opportunity to diversify the cast of characters here and make more use of [specialist subagents](https://code.claude.com/docs/en/sub-agents). The agents in Gas Town are all generalist workers in the software developement pipeline. But we could add in any kind of specialist we want: a dev ops expert, a product manager, a front-end debugger, an accessiblity checker, a documentation writer. These would be called in on-demand to apply their special skills and tools.
 
 ### Agent roles persist, sessions are ephemeral
 
-A primary advantage of these agent identities is they stay consistent across multiple work sessions. Each agent's identity and work assignments are stored in Git, outside of agent memory, so they can't get lost or forgotten in the chaos.
+Another advantage of these agent identities is they stay consistent across multiple work sessions. Each agent's identity and work assignments are stored in Git, outside of agent memory, so they can't get lost or forgotten in the chaos.
 
-This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot]() will degrade the output enough that you constantly need to compact or start fresh sessions. Gas Town's solution is to liberally let sessions die - when one crashes or fills up, a fresh session spins up and inherits the same persistent identity and work queue from Git.
+This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot](https://research.trychroma.com/context-rot) will degrade the output enough that you constantly need to compact or start fresh sessions.
 
-There's also a feature called "seancing" where new sessions can resume their predecessor's conversation to ask what happened and where things were left. The work survives the worker.
+Gas Town's solution is to liberally let sessions die - when one crashes or fills up, a fresh session appears and inherits the same persistent identity and work queue from Git. The new session can also ask the previous session questions, finding our what happened and where things were left, through "seancing".
+
+<Resuming />
 
 ### Atomic "beads" of work, tracked in git
 
-One of Gas Town's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system]() Yegge built before Gas Town; a precursor to this more ambitious civilisation.
+One of Gas Town's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system](https://github.com/steveyegge/beads) Yegge built before Gas Town; a precursor to this more ambitious civilisation.
 
 A bead is just a lightweight issue with an ID, a description, a status, and an assignee. It's stored as JSON in Git alongside your code.
 
