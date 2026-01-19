@@ -23,15 +23,15 @@ import AgentWorkflowDiagram from "../../components/unique/gastown/AgentWorkflowD
 import HierarchyDiagram from "../../components/unique/gastown/HierarchyDiagram.astro";
 import Resuming from "../../components/unique/gastown/Resuming.astro";
 
-<IntroParagraph>Steve Yegge recently published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gas Town, his Mad-Max-Slow-Horses-Waterworld-etc-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gas Town is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
+<IntroParagraph>A few weeks ago Steve Yegge published an elaborate [manifesto and guide](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04) to Gas Town, his Mad-Max-Slow-Horses-Waterworld-etc-themed agent orchestrator that runs dozens of coding agents simultaneously in a metaphorical town of automated activity. Gas Town is entirely vibecoded, hastily designed with off-the-cuff solutions, and inefficiently burning through thousands of dollars a month in API costs.</IntroParagraph>
 
-It's both utterly unhinged and important to take seriously as an indication of how agents will change the nature of software development.
+And yet it's already lit divisive fires and sparks of change across the software engineering community. First because it's utterly unhinged, and second because it's a serious indication of how agents will change the nature of software development from this point on.
 
 <LinkCard url="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" title="Welcome to Gas Town" author="Steve Yegge" width="770px" image="/images/posts/gastown/gastown-cover.webp" fullCardLink />
 
-You should at least skim through the original article before continuing to read my reflections. First, because I'm not going to comprehensively summarise it.<Footnote idName={1}>A challenging task given the sprawling, haphazard nature of the piece</Footnote> And second, because a even a one minute glance over Yegge's style of writing will make the vibes clear. 
+You should at least skim through Yegge's original article before continuing to read my reflections. First, because I'm not going to comprehensively summarise it.<Footnote idName={1}>A challenging task given the sprawling, haphazard nature of the piece</Footnote> And second, because a even a one minute glance over Yegge's style of writing will make the vibes clear. 
 
-We should take Yegge's creation seriously not because it's a serious, working development tool (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
+We should take Yegge's creation seriously not because it's a serious, working tool for developers (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
 
 <Accordion header="What is Design Fiction?">
 "Design fiction" or "speculative design" is a branch of design where you creating things (objects, prototypes, sketches) from a plausible near future. Not to predict what's going to happen, but to provoke questions and start conversations about what _could_ happen. Not in a bright-and-glorious-flying-cars way that futurism can sometimes fall into. But, most helpfully, in a way that thinks about banal details, overlooked everyday interactions, low status objects, imperfect implementations, knock-on effects, and inconviences. See the Near Future Lab's short [explainer video](https://nearfuturelaboratory.com/what-is-design-fiction/) and their [Manual of Design Fiction](https://www.waterstones.com/book/the-manual-of-design-fiction/julian-bleecker/nick-foster/9789083499390) if you want to learn more.
@@ -109,7 +109,7 @@ This feels like one of the most critical, emerging footguns of liberally hands-o
 
 ## 2. Buried in the chaos are sketches of future agent orchestration patterns
 
-Now that I've just harshly critiqued the design of Gas Town, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of undercooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
+Now that I've just critiqued the design of Gas Town, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of undercooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
 
 If you step back and squint, this mishmash of concepts reveals a few underlying patterns that future agentic systems will likely follow:
 
@@ -140,33 +140,27 @@ Gas Town's hierarchical approach solves both a coordination and attention proble
 
 I think there's a lot of opportunity to diversify the cast of characters here and make more use of [specialist subagents](https://code.claude.com/docs/en/sub-agents). The agents in Gas Town are all generalist workers in the software developement pipeline. But we could add in any kind of specialist we want: a dev ops expert, a product manager, a front-end debugger, an accessiblity checker, a documentation writer. These would be called in on-demand to apply their special skills and tools.
 
-### Agent roles persist, sessions are ephemeral
+### Agent roles and tasks persist, sessions are ephemeral
 
-Another advantage of these agent identities is they stay consistent across multiple work sessions. Each agent's identity and work assignments are stored in Git, outside of agent memory, so they can't get lost or forgotten in the chaos.
+One of the major limitations of current coding agents is running out of context. Before you even hit the limits of a context window, [context rot](https://research.trychroma.com/context-rot) degrades the output enough that it's not worth keeping. We constantly have to compact or start fresh sessions.
 
-This solves one of the major limitations of current agentic workflows: running out of context. Even before you hit the literal limits of a context window, [context rot](https://research.trychroma.com/context-rot) will degrade the output enough that you constantly need to compact or start fresh sessions.
-
-Gas Town's solution is to liberally let sessions die - when one crashes or fills up, a fresh session appears and inherits the same persistent identity and work queue from Git. The new session can also ask the previous session questions, finding our what happened and where things were left, through "seancing".
+Gas Town's solution to this is make each agent session disposable by design. It stores the important information – agent identities and tasks – in Git, then liberally kills off sessions and spins up fresh ones when needed. New sessions are told their identity and currently assigned work, and continue on where the last one left off. Gas Town also lets new sessions ask their predecessors what happened through "seancing": resuming the last session as a separate instance in order to let the new agent ask questions about unfinished work.
 
 <Resuming />
 
-### Atomic "beads" of work, tracked in git
+This saving and recalling is all done through Gas Town's "Beads" system.<Footnote idName={3}>Beads is also the name of the [memory management system](https://github.com/steveyegge/beads) Yegge built before Gas Town; a precursor to this more ambitious civilisation.</Footnote> Beads are tiny, trackable units of work – like issues in an issue tracker – stored as JSON in Git alongside your code. Each bead has an ID, description, status, and assignee. Agent identities are also stored as beads, giving each worker a persistent address that survives session crashes.
 
-One of Gas Town's better ideas is moving task tracking out of agentic memory. Tiny, trackable units of work called "beads" are stored in Git where they cannot be forgotten or hallucinated away. Beads is also the name of the [memory management system](https://github.com/steveyegge/beads) Yegge built before Gas Town; a precursor to this more ambitious civilisation.
+Beads chain together into "molecules" – linked sequences of tasks that form a workflow. A release workflow might include bumping the version number, running linters, waiting for CI, building, and publishing. Each step has its own bead with acceptance criteria. If an agent crashes mid-molecule, the next session picks up the chain, sees which steps are done, and carries on from there.
 
-A bead is just a lightweight issue with an ID, a description, a status, and an assignee. It's stored as JSON in Git alongside your code.
-
-Beads chain together into "molecules". These are linked sequences of tasks that form a workflow. A release might be a 20-step molecule: bump version, run tests, build, create tag, publish. Each step has its own bead with acceptance criteria. If an agent crashes mid-molecule, the work doesn't disappear. The next session picks up the chain, sees which beads are done, and continues from there.
-
-<BeadsGitDiagram />
+Yegge didn't invent this pattern of tracking atomic tasks outside agent memory in something structured like JSON. Anthropic described the same approach in their research on [effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents), just published in November 2025. I give it a hot minute before this lands in Claude Code.
 
 ### Feeding agents continous streams of work
 
-[the whole promise of Gas Town is agents come up with and assign themselves an endless stream of work, and then execute on it. this turns out to be hard to engineer]
+The whole promise of an orchestration system like Gas Town is it's a perpetual motion machine. You simply give high level orders to the mayor, and a zoo of agents runs off to break it down into tasks, assign them, execute them, check for bugs, fix the bugs, review the code, and merge it in.
 
-Every agent in Gas Town has a "hook" that points to its currently assigned work. Work is continuously added to the hook as the agent finishes tasks. This means agents are, in theory, never left idle. 
+Keeping the system running 
 
-Getting current agents to check their hook and proceed with the task at hand is apparently quite unreliable in Gas Town. Yegge had to develop a prodding system where manager agents further up the food chain yell at proletariat polecats to check for work and get started on it without human input.
+Every agent in Gas Town has a "hook" that points to its current work queue. When a task finishes, new work gets added. The goal here is agents are never idle: there's always something waiting for them.
 
 <AgentWorkflowDiagram />
 
