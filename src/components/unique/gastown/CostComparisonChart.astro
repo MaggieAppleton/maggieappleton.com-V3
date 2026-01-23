@@ -207,6 +207,7 @@ const lowPercent = (lowCost / developerSalary) * 100;
 			display: flex;
 			align-items: center;
 			gap: var(--space-xs);
+			overflow: hidden;
 		}
 
 		.mobile-label-group {
@@ -214,6 +215,9 @@ const lowPercent = (lowCost / developerSalary) * 100;
 			flex-direction: row;
 			align-items: baseline;
 			gap: 0.4rem;
+			flex-wrap: wrap;
+			min-width: 0;
+			flex: 1;
 		}
 
 		.mobile-label-text {

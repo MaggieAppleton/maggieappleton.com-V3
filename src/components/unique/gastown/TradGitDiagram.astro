@@ -12,7 +12,6 @@ import TradGit from "./trad-git.svg?raw";
 
 <style>
     .diagram-container {
-        margin: 0;
         padding: var(--space-s) 0 var(--space-xl) 0;
         width: 100%;
         overflow: hidden;
@@ -21,8 +20,15 @@ import TradGit from "./trad-git.svg?raw";
     .desktop-diagram :global(svg) {
         width: 100%;
         height: auto;
-        max-width: 100%;
+        max-width: 660px;
         display: block;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 660px) {
+        .desktop-diagram :global(svg) {
+            max-width: 100%;
+        }
     }
 
     .desktop-diagram {
