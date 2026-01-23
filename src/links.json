@@ -1594,7 +1594,7 @@
   },
   {
     "ids": [
-      "Gas Town’s Agent Patterns, Design Bottlenecks, and Distant Code"
+      "Gas Town’s Agent Patterns, Design Bottlenecks, and the Problems with Vibecoding at Scale"
     ],
     "slug": "gastown",
     "growthStage": "evergreen",
