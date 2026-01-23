@@ -3,25 +3,27 @@ import { Picture } from "astro:assets";
 import type { ImageMetadata } from "astro";
 
 interface Props {
-	src: string;
-	alt?: string;
-	width?: string | number;
-	margin?: string;
-	showalt?: boolean;
-	sourceUrl?: string;
-	sourceTitle?: string;
-	framed?: boolean;
+    src: string;
+    alt?: string;
+    width?: string | number;
+    margin?: string;
+    showalt?: boolean;
+    sourceUrl?: string;
+    sourceTitle?: string;
+    framed?: boolean;
+    quality?: number;
 }
 
 const {
-	src,
-	alt = "",
-	width = 1100,
-	margin,
-	showalt = false,
-	sourceUrl,
-	sourceTitle,
-	framed = false,
+    src,
+    alt = "",
+    width = 1100,
+    margin,
+    showalt = false,
+    sourceUrl,
+    sourceTitle,
+    framed = false,
+    quality = 90,
 } = Astro.props;
 
 const widthWithUnit = typeof width === "number" ? `${width}px` : width;
@@ -32,15 +34,15 @@ const images = import.meta.glob<{ default: ImageMetadata }>("/src/images/**/*");
 // If src is a string and starts with "/images", try to find it in the glob safely
 let imageSrc: string | ImageMetadata = src as string | ImageMetadata;
 if (typeof src === "string" && src.startsWith("/images")) {
-	const key = "/src" + src;
-	const loader = images[key as keyof typeof images];
-	if (typeof loader === "function") {
-		const mod = await loader();
-		imageSrc = mod.default;
-	} else {
-		// Fallback to the original string if not found or not a function
-		imageSrc = src;
-	}
+    const key = "/src" + src;
+    const loader = images[key as keyof typeof images];
+    if (typeof loader === "function") {
+        const mod = await loader();
+        imageSrc = mod.default;
+    } else {
+        // Fallback to the original string if not found or not a function
+        imageSrc = src;
+    }
 }
 
 // Define sizes attribute for responsive images
@@ -54,112 +56,113 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
 ---
 
 <figure class:list={["container", { framed }]} style={`margin: ${margin || ""}`}>
-	<div
-		class:list={["image-wrapper", { "image-frame": framed }]}
-		style={`max-width: ${widthWithUnit}`}
-	>
-		{
-			isGif || !isImageMetadata ? (
-				<img
-					src={typeof imageSrc === "string" ? imageSrc : imageSrc.src}
-					alt={alt}
-					class="styled-image"
-					loading="eager"
-				/>
-			) : (
-				<Picture
-					src={imageSrc as ImageMetadata}
-					alt={alt}
-					sizes={sizes}
-					formats={["avif", "webp", "jpg"]}
-					width={typeof width === "number" ? width : parseInt(width)}
-					class="styled-image"
-					loading="eager"
-					decoding="async"
-				/>
-			)
-		}
-	</div>
-	{
-		showalt &&
-			(sourceUrl ? (
-				<figcaption>
-					{alt} – Source: <a href={sourceUrl}>{sourceTitle}</a>
-				</figcaption>
-			) : (
-				<figcaption>{alt}</figcaption>
-			))
-	}
+    <div
+        class:list={["image-wrapper", { "image-frame": framed }]}
+        style={`max-width: ${widthWithUnit}`}
+    >
+        {
+            isGif || !isImageMetadata ? (
+                <img
+                    src={typeof imageSrc === "string" ? imageSrc : imageSrc.src}
+                    alt={alt}
+                    class="styled-image"
+                    loading="eager"
+                />
+            ) : (
+                <Picture
+                    src={imageSrc as ImageMetadata}
+                    alt={alt}
+                    sizes={sizes}
+                    formats={["avif", "webp", "jpg", "png"]}
+                    width={typeof width === "number" ? width : parseInt(width)}
+                    quality={quality}
+                    class="styled-image"
+                    loading="eager"
+                    decoding="async"
+                />
+            )
+        }
+    </div>
+    {
+        showalt &&
+            (sourceUrl ? (
+                <figcaption>
+                    {alt} – Source: <a href={sourceUrl}>{sourceTitle}</a>
+                </figcaption>
+            ) : (
+                <figcaption>{alt}</figcaption>
+            ))
+    }
 </figure>
 
 <style>
-	.container {
-		grid-column: 1 / 4 !important;
-		text-align: center;
-		margin: var(--space-s) auto var(--space-l);
-		max-width: inherit;
-	}
+    .container {
+        grid-column: 1 / 4 !important;
+        text-align: center;
+        margin: var(--space-s) auto var(--space-l);
+        max-width: inherit;
+    }
 
-	.image-wrapper {
-		display: flex;
-		justify-content: center;
-		position: relative;
-		width: 100%;
-		margin: 0 auto;
-		height: auto;
-	}
+    .image-wrapper {
+        display: flex;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+        margin: 0 auto;
+        height: auto;
+    }
 
-	.image-wrapper::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: var(--border-radius-sm);
-		animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
+    .image-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--border-radius-sm);
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
 
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 0.1;
-		}
-		50% {
-			opacity: 0.3;
-		}
-	}
+    @keyframes pulse {
+        0%,
+        100% {
+            opacity: 0.1;
+        }
+        50% {
+            opacity: 0.3;
+        }
+    }
 
-	.styled-image {
-		height: auto;
-		width: 100%;
-		max-width: 100%;
-		margin: 0 auto !important;
-		border-radius: var(--border-radius-sm);
-		position: relative;
-		z-index: 1;
-		object-fit: contain;
-		display: block;
-	}
+    .styled-image {
+        height: auto;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto !important;
+        border-radius: var(--border-radius-sm);
+        position: relative;
+        z-index: 1;
+        object-fit: contain;
+        display: block;
+    }
 
-	.image-frame {
-		border: 1px solid var(--color-tinted-cream);
-		border-radius: var(--border-radius-base);
-		box-shadow: var(--box-shadow-md);
-		margin-bottom: var(--space-xs);
-		contain: content;
-	}
+    .image-frame {
+        border: 1px solid var(--color-tinted-cream);
+        border-radius: var(--border-radius-base);
+        box-shadow: var(--box-shadow-md);
+        margin-bottom: var(--space-xs);
+        contain: content;
+    }
 
-	figcaption {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
-		line-height: 1.5;
-		width: 100%;
-		max-width: 800px;
-		margin: var(--space-s) auto 0;
-	}
+    figcaption {
+        font-family: var(--font-sans);
+        font-size: var(--font-size-sm);
+        color: var(--color-gray-600);
+        line-height: 1.5;
+        width: 100%;
+        max-width: 800px;
+        margin: var(--space-s) auto 0;
+    }
 
-	@media (max-width: 768px) {
-		.container {
-			margin: var(--space-s) auto;
-		}
-	}
+    @media (max-width: 768px) {
+        .container {
+            margin: var(--space-s) auto;
+        }
+    }
 </style>
