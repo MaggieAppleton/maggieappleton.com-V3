@@ -33,7 +33,7 @@ You should at least skim through Yegge's original article before continuing to r
 We should take Yegge's creation seriously not because it's a serious, working tool for today's developers (it isn't). But because it's a good piece of speculative design fiction that asks provocative questions and reveals the shape of constraints we'll face as agentic coding systems mature and grow.
 
 <Accordion header="What is Design Fiction?">
-"Design fiction" or "speculative design" is a branch of design where you creating things (objects, prototypes, sketches) from a plausible near future. Not to predict what's going to happen, but to provoke questions and start conversations about what _could_ happen. Not in a bright-and-glorious-flying-cars way that futurism can sometimes fall into. But, most helpfully, in a way that thinks about banal details, overlooked everyday interactions, low status objects, imperfect implementations, knock-on effects, and inconviences. See the Near Future Lab's short [explainer video](https://nearfuturelaboratory.com/what-is-design-fiction/) and their [Manual of Design Fiction](https://www.waterstones.com/book/the-manual-of-design-fiction/julian-bleecker/nick-foster/9789083499390) if you want to learn more.
+"Design fiction" or "speculative design" is a branch of design where you creating things (objects, prototypes, sketches) from a plausible near future. Not to predict what's going to happen, but to provoke questions and start conversations about what _could_ happen. Not in a bright-and-glorious-flying-cars way that futurism can sometimes fall into. But, most helpfully, in a way that thinks about banal details, overlooked everyday interactions, low status objects, imperfect implementations, knock-on effects, and inconveniences. See the Near Future Lab's short [explainer video](https://nearfuturelaboratory.com/what-is-design-fiction/) and their [Manual of Design Fiction](https://www.waterstones.com/book/the-manual-of-design-fiction/julian-bleecker/nick-foster/9789083499390) if you want to learn more.
 </Accordion>
 
 I also think Yegge deserves praise for exercising agency and taking a swing at a system like this, despite the inefficiencies and chaos of this iteration. And then running a public tour of his shitty, quarter-built plane while it's mid-flight.
@@ -52,11 +52,11 @@ When I was taken to the Tate Modern as a child I'd point at [Mark Rothko](https:
 
 <Spacer size="2xs" />
 
-I should be transparent and say that I have not used Gas Town in earnest on any serious work. I have only lighly poked at it, because I do not qualify as a serious user when I'm still hovering around stages 4-6 in Yegge's 8 levels of automation:
+I should be transparent and say that I have not used Gas Town in earnest on any serious work. I have only lightly poked at it, because I do not qualify as a serious user when I'm still hovering around stages 4-6 in Yegge's 8 levels of automation:
 
 <BasicImage width="800px" src="/images/posts/gastown/stages.webp" alt="Yegge's eight levels of automation. From stage 1: using autocomplete to an IDE through to stage 8: using an agent orchestrator" showalt sourceUrl="https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04" sourceTitle="Welcome to Gas Town" />
 
-I currently juggle a handful of consecutive [Claude Code](https://code.claude.com/docs/en/overview) and [OpenCode](https://opencode.ai/) agents, but pay close attention to the diffs and regularly check code in an IDE. Which I guess puts me in the agentically conversative camp in this distressingly breakneck moment in history.
+I currently juggle a handful of consecutive [Claude Code](https://code.claude.com/docs/en/overview) and [OpenCode](https://opencode.ai/) agents, but pay close attention to the diffs and regularly check code in an IDE. Which I guess puts me in the agentically conservative camp in this distressingly breakneck moment in history.
 
 Gas Town is a full-on stage 8 piece of tooling: using an orchestrator that manages dozens+ of other coding agents for you. Yegge also warned me not to seriously use Gas Town multiple times, in increasingly threatening typography. I trust his guidance on his own slush pile.
 
@@ -76,11 +76,11 @@ These are the kind of decisions that agents cannot make for you. They require yo
 
 With agents to hand, it's easy to get ahead of yourself, stumbling forward into stacks of generated functions that should never have been prompted into existence, because they do not correctly render your intentions or achieve your goals.
 
-Gas Town seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design the shape of this system ahead of time, thoughtfully considerating which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
+Gas Town seems to be halfway into this pitfall. The biggest flaw in Yegge's creation is that it is poorly designed. I mean this in the sense that he absolutely did not design the shape of this system ahead of time, thoughtfully considering which metaphors and primitives would make this effective, efficient, easy to use, and comprehensible.
 
 He just made stuff up as he went. He says as much himself: "Gas Town is complicated. Not because I wanted it to be, but because I had to keep adding components until it was a self-sustaining machine." Gas Town is composed of "especially difficult [theories] because it’s a bunch of bullshit I pulled out of my arse over the past 3 weeks, and I named it after badgers and stuff." It was slapdashed together over "17 days, 75k lines of code, 2000 commits. It finally got off the ground (GUPP started working) just 2 days ago."<Footnote idName={3}>Do not ask what GUPP is; I cannot concisely explain without getting deep into it. Which we'll do in a minute.</Footnote>
 
-This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46463757) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gas Town is an extention, suffers the same issue:
+This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=46463757) describes the problem well, and points out that Yegge's previous [Beads](https://github.com/steveyegge/beads) project, of which Gas Town is an extension, suffers the same issue:
 
 <SimpleCard alignLeft margin="var(--space-3xs) auto var(--space-l)">
 
@@ -88,7 +88,7 @@ This Hacker News [comment from qcnguy](https://news.ycombinator.com/item?id=4646
 
 "Beads is a good idea with a bad implementation. It's not a designed product in the sense we are used to, it's more like **a stream of consciousness converted directly into code. It's a program that isn't only vibe coded, it was vibe designed too.**"
 
-"Gas Town is clearly the same thing multiplied by ten thousand. **The number of overlapping and adhoc concepts in this design is overwhelming.** Steve is ahead of his time but we aren't going to end up using this stuff. Instead a few of the core insights will get incorporated into other agents in a simpler but no less effective way."
+"Gas Town is clearly the same thing multiplied by ten thousand. **The number of overlapping and ad hoc concepts in this design is overwhelming.** Steve is ahead of his time but we aren't going to end up using this stuff. Instead a few of the core insights will get incorporated into other agents in a simpler but no less effective way."
 
 </SimpleCard>
 
@@ -108,7 +108,7 @@ This feels like one of the most critical, emerging footguns of liberally hands-o
 
 ## 2. Buried in the chaos are sketches of future agent orchestration patterns
 
-Now that I've just critiqued the design of Gas Town, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of undercooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
+Now that I've just critiqued the design of Gas Town, I will turn around and say that while the current amalgamation of polecats, convoys, deacons, molecules, protomolecules, mayors, seances, hooks, beads, witnesses, wisps, rigs, refineries, and dogs is a bunch of under cooked spaghetti, Yegge's patterns _roughly_ sketch out some useful conceptual shapes for future agentic systems.
 
 If you step back and squint, this mishmash of concepts reveals a few underlying patterns that future agentic systems will likely follow:
 
@@ -116,10 +116,10 @@ If you step back and squint, this mishmash of concepts reveals a few underlying 
 
 Every agent in Gas Town has a permanent, specialised role. When an agent spins up a new session, it knows who it is and what job it needs to do. Some examples:
 
-- **The Mayor** is the human concierge: it's the main agent you talk to. It talks to all the other agents for you, kicking off work, recieving notifications when things finish, and managing the flow of production.
+- **The Mayor** is the human concierge: it's the main agent you talk to. It talks to all the other agents for you, kicking off work, receiving notifications when things finish, and managing the flow of production.
 - **Polecats** are temporary grunt workers. They complete single, isolated tasks, then disappear after submitting their work to be merged.
-- **The Witness** surpervises the Polecats and helps them get unstuck. Its job is to solve problems and nudge the proletariat workers along.
-- **The Refinery** manages the merge queue into the main branch. It evaluates each piece of work waiting to be merged, resolving conflicts in the process. It can creatively “reimagine” implementations if merge conflicts get too hairy, while trying to keep the intent of the original work.
+- **The Witness** supervises the Polecats and helps them get unstuck. Its job is to solve problems and nudge the proletariat workers along.
+- **The Refinery** manages the merge queue into the main branch. It evaluates each piece of work waiting to be merged, resolving conflicts in the process. It can creatively “re-imagine” implementations if merge conflicts get too hairy, while trying to keep the intent of the original work.
 
 There are many more characters in this town, but these give you a flavour of the system. Giving each agent a single job means you can prompt them more precisely, limit what they're allowed to touch, and run lots of them at once without them stepping on each other's toes.
 
@@ -137,7 +137,7 @@ Does this help you understand how the system works? No? No.
 
 Gas Town's hierarchical approach solves both a coordination and attention problem. Without it, you are the one assigning tasks to dozens individual agents, checking who's stuck, who's idle, and who's waiting on work from someone else. With the Mayor as your single interface, that overhead disappears. You can continuously talk to the Mayor without interrupting any agents or getting in the way, or having to think much about which one is doing what. This is less cognitive overhead than constantly switching tabs between Claudes.
 
-I think there's a lot of opportunity to diversify the cast of characters here and make more use of [specialist subagents](https://code.claude.com/docs/en/sub-agents). The agents in Gas Town are all generalist workers in the software developement pipeline. But we could add in any kind of specialist we want: a dev ops expert, a product manager, a front-end debugger, an accessiblity checker, a documentation writer. These would be called in on-demand to apply their special skills and tools.
+I think there's a lot of opportunity to diversify the cast of characters here and make more use of [specialist subagents](https://code.claude.com/docs/en/sub-agents). The agents in Gas Town are all generalist workers in the software development pipeline. But we could add in any kind of specialist we want: a dev ops expert, a product manager, a front-end debugger, an accessibility checker, a documentation writer. These would be called in on-demand to apply their special skills and tools.
 
 ### Agent roles and tasks persist, sessions are ephemeral
 
@@ -151,7 +151,7 @@ This saving and recalling is all done through Gas Town's "Beads" system.<Footnot
 
 Yegge didn't invent this pattern of tracking atomic tasks outside agent memory in something structured like JSON. Anthropic described the same approach in their research on [effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents), just published in November 2025. I give it a hot minute before this type of task tracking lands in Claude Code.
 
-### Feeding agents continous streams of work
+### Feeding agents continuous streams of work
 
 The whole promise of an orchestration system like Gas Town is it's a perpetual motion machine. You give high-level orders to the mayor, and then a zoo of agents kicks off to break it down into tasks, assign them, execute them, check for bugs, fix the bugs, review the code, and merge it in.
 
@@ -161,13 +161,13 @@ Each worker agent in Gas Town has its own queue of assigned work and a "hook" po
 
 This principle of "workers always do their work" is better in theory than practice. It turns out to be slightly difficult to make happen because of the way current models are trained. They're designed as helpful assistants who wait politely for human instructions. They're not used to checking a task queue and independently getting on with things.
 
-Gas Town's patchwork solution to this is aggressive prompting and constant nudging. Supervisor agents spend their time poking workers to see if anyone's stalled out or run dry on work. When one goes quiet, they send it a ping which jolts the agent into checking its queue and getting back to work. These periodic nudges move through the agent hierarchy like a heartbeat keeping everything moving. This is a decent bandaid for the first version, but more serious efforts at agent orchestration systems will need reliable ways to keep agents on task.
+Gas Town's patchwork solution to this is aggressive prompting and constant nudging. Supervisor agents spend their time poking workers to see if anyone's stalled out or run dry on work. When one goes quiet, they send it a ping which jolts the agent into checking its queue and getting back to work. These periodic nudges move through the agent hierarchy like a heartbeat keeping everything moving. This is a decent band-aid for the first version, but more serious efforts at agent orchestration systems will need reliable ways to keep agents on task.
 
 ### Merge queues and agent-managed conflicts
 
 When you have a bunch of agents all working in parallel, you're of course going to run into merge conflicts. Each agent is off on its own branch, and by the time it finishes its task, the main branch might look completely different – other changes have landed, the code has moved on. The later an agent finishes, the worse this gets. Normally you, the human, takes on the burden of sorting out the mess and deciding which changes to keep. But if agents are running on their own, something has to do that job for them.
 
-So Gas Town has a dedicated merge agent – the Refinery – that works through the merge queue one change at a time. It looks at each merge request, resolves any conflicts, and gets it into main. When things get really tangled – when so much has changed that the original work doesn't even make sense anymore – it can creatively "reimagine" the changes: re-doing the work to fit the new codebase. Or escalate to a human if needed.
+So Gas Town has a dedicated merge agent – the Refinery – that works through the merge queue one change at a time. It looks at each merge request, resolves any conflicts, and gets it into main. When things get really tangled – when so much has changed that the original work doesn't even make sense anymore – it can creatively "re-imagine" the changes: re-doing the work to fit the new codebase. Or escalate to a human if needed.
 
 But there's another way to sidestep merge conflict nightmares that Gas Town doesn't have built in: ditch PRs for [stacked diffs](https://newsletter.pragmaticengineer.com/p/stacked-diffs). The traditional git workflow puts each feature on its own branch for days or weeks, accumulating commits, then getting merged back as one chunky PR.
 
@@ -187,7 +187,7 @@ I can't find any mention online of the per-account limits, but let's conservativ
 
 The current cost is almost certainly artificially inflated by system inefficiency. Work gets lost, bugs get fixed numerous times, designs go missing and need redoing. As models improve and orchestration patterns mature, the cost of orchestrators like this should drop while output quality rises.
 
-I expect companies would happily pay around the $1-3k/month mark for a sane, understandable, higher quality, and lower waste version of Gas Town. Maybe that sounds absurd to you, given we've all become anchored to the articifically low rate of $100-200/month for unlimited usage by the major providers. But once the AI bubble pops, the VC funds dry up, and providers have to charge the true cost of inference at scale, we should expect that "unlimited" tier to look a lot pricier.
+I expect companies would happily pay around the $1-3k/month mark for a sane, understandable, higher quality, and lower waste version of Gas Town. Maybe that sounds absurd to you, given we've all become anchored to the artificially low rate of $100-200/month for unlimited usage by the major providers. But once the AI bubble pops, the VC funds dry up, and providers have to charge the true cost of inference at scale, we should expect that "unlimited" tier to look a lot pricier.
 
 Even when that comes to pass, a few thousand is pretty reasonable when you compare it to an average US senior developer salary: $120,000 USD.<Footnote idName={6}>Salary average from [Indeed](https://www.indeed.com/career/senior-developer/salaries). Many people will pick bones over this because the market range is so broad. FAANG engineers in San Fransisco are paid closer to half a million, while developers in Europe are used to salaries in the $30-50k range. This seems like a sensible middle ground.</Footnote> If Gas Town could genuinely speed up the work of a senior developer by 2-3x or more, it would easily be worth 10-30% of their salary. The cost per unit of valuable work starts to look competitive with human labor. 
 
