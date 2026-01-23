@@ -1594,6 +1594,16 @@
   },
   {
     "ids": [
+      "Gas Town’s Agent Patterns, Design Bottlenecks, and Distant Code"
+    ],
+    "slug": "gastown",
+    "growthStage": "evergreen",
+    "description": "On agent orchestration patterns, why design and critical thinking are the new bottlenecks, and whether we should let go of looking at code",
+    "outboundLinks": [],
+    "inboundLinks": []
+  },
+  {
+    "ids": [
       "Gathering Structures"
     ],
     "slug": "gathering-structures",

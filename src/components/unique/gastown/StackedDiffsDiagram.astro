@@ -1,0 +1,31 @@
+---
+/**
+ * HierarchyDiagram - Shows the hierarchical supervision structure
+ * of agents in Gastown using Figma-exported SVGs
+ **/
+import StackedDiffs from "./stacked-diffs.svg?raw";
+---
+
+<figure class="diagram-container">
+    <div class="desktop-diagram" set:html={StackedDiffs} />
+</figure>
+
+<style>
+    .diagram-container {
+        margin: 0;
+        padding: var(--space-s) 0 var(--space-xl) 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .desktop-diagram :global(svg) {
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+        display: block;
+    }
+
+    .desktop-diagram {
+        display: block;
+    }
+</style>
