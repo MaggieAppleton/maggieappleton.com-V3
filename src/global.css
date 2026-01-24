@@ -67,6 +67,9 @@
 }
 
 :root {
+  /* Color scheme for browser UI */
+  color-scheme: light dark;
+
   /* Spacing */
   --space-4: 0.25rem;
   --space-8: 0.5rem;
@@ -82,6 +85,7 @@
   --space-160: 10rem;
 
   /* Colors */
+  --color-white: #ffffff;
   --color-light-cream: #fcfbf7;
   --color-cream: #f6f5f1;
   --color-tinted-cream: #e6e3e1;
@@ -256,6 +260,43 @@
 @media screen and (min-width: 1200px) {
   :root {
     --fluid-screen: calc(var(--fluid-max-width) * 1px);
+  }
+}
+
+/* Dark mode colors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Base/Background colors */
+    --color-white: #252420;
+    --color-cream: #1c1b18;
+    --color-light-cream: #252420;
+    --color-tinted-cream: #3a3835;
+
+    /* Text colors - inverted warm grays */
+    --color-black: #ebe8e4;
+    --color-gray-800: #d4d1cc;
+    --color-gray-600: #a8a5a0;
+    --color-gray-500: #8e8f94;
+    --color-gray-400: #6b6864;
+    --color-gray-300: #4a4845;
+    --color-gray-200: #3a3835;
+    --color-gray-100: #2d2b28;
+
+    /* Accent colors - brightened for dark backgrounds */
+    --color-crimson: #e85aab;
+    --color-bright-crimson: #ff7ac4;
+    --color-sea-blue: #2bc4da;
+    --color-medium-sea-blue: #04a5bb;
+    --color-dark-sea-blue: #008ba3;
+    --color-purple: #9b7fd9;
+    --color-salmon: #ff9a8a;
+    --color-dark-salmon: #fd8370;
+    --color-gold: #e5b876;
+
+    /* Box shadows - stronger for dark mode */
+    --box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --box-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --box-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   }
 }
 

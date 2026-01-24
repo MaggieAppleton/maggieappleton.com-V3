@@ -169,7 +169,7 @@ const getVersionUrl = (version: VersionedContent) => {
 		font-size: var(--font-size-xs);
 		top: calc(100% + 4px);
 		right: 0;
-		background: white;
+		background: var(--color-white);
 		border: 1px solid var(--color-tinted-cream);
 		border-radius: var(--border-radius-base);
 		box-shadow: var(--box-shadow-lg);
@@ -231,7 +231,7 @@ const getVersionUrl = (version: VersionedContent) => {
 		bottom: -4px;
 		width: 6px;
 		height: 48px;
-		background: linear-gradient(to top, white 0%, transparent 100%);
+		background: linear-gradient(to top, var(--color-white) 0%, transparent 100%);
 		z-index: 0;
 	}
 
@@ -282,9 +282,9 @@ const getVersionUrl = (version: VersionedContent) => {
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background: white;
+		background: var(--color-white);
 		border: 2px solid var(--color-gray-300);
-		box-shadow: 0 0 0 4px white;
+		box-shadow: 0 0 0 4px var(--color-white);
 		flex-shrink: 0;
 		position: relative;
 		z-index: 1;
