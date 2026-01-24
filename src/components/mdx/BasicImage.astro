@@ -11,7 +11,7 @@ interface Props {
     sourceUrl?: string;
     sourceTitle?: string;
     framed?: boolean;
-    quality?: number;
+    highQuality?: boolean;
 }
 
 const {
@@ -23,8 +23,10 @@ const {
     sourceUrl,
     sourceTitle,
     framed = false,
-    quality = 90,
+    highQuality = false,
 } = Astro.props;
+
+const quality = highQuality ? 95 : undefined;
 
 const widthWithUnit = typeof width === "number" ? `${width}px` : width;
 
