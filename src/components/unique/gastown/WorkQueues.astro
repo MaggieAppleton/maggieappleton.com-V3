@@ -45,4 +45,97 @@ import MobileSVG from './WorkQueues-Mobile.svg?raw';
     }
   }
 
+  /* Dark mode styles */
+  @media (prefers-color-scheme: dark) {
+    /* Card backgrounds: white → dark */
+    .desktop-diagram :global(svg [fill="white"]),
+    .mobile-diagram :global(svg [fill="white"]) {
+      fill: #2d2b28;
+    }
+
+    /* Card border strokes: light gray → dark gray */
+    .desktop-diagram :global(svg [stroke="#E6E3E1"]),
+    .mobile-diagram :global(svg [stroke="#E6E3E1"]) {
+      stroke: #4a4845;
+    }
+
+    /* White strokes → dark */
+    .desktop-diagram :global(svg [stroke="white"]),
+    .mobile-diagram :global(svg [stroke="white"]) {
+      stroke: #2d2b28;
+    }
+
+    /* Light pink backgrounds → dark pink */
+    .desktop-diagram :global(svg [fill="#F6EAF0"]),
+    .mobile-diagram :global(svg [fill="#F6EAF0"]) {
+      fill: #3d2233;
+    }
+
+    /* Dark text → light */
+    .desktop-diagram :global(svg [fill="#363634"]),
+    .mobile-diagram :global(svg [fill="#363634"]) {
+      fill: #d4d1cc;
+    }
+
+    /* Medium gray text → lighter */
+    .desktop-diagram :global(svg [fill="#74706D"]),
+    .mobile-diagram :global(svg [fill="#74706D"]) {
+      fill: #a8a5a0;
+    }
+
+    /* Crimson → bright pink */
+    .desktop-diagram :global(svg [fill="#960563"]),
+    .mobile-diagram :global(svg [fill="#960563"]) {
+      fill: #f5a0d0;
+    }
+
+    /* Coral/orange → brighter */
+    .desktop-diagram :global(svg [fill="#FD8270"]),
+    .mobile-diagram :global(svg [fill="#FD8270"]) {
+      fill: #ff9a8a;
+    }
+
+    /* Teal → brighter */
+    .desktop-diagram :global(svg [fill="#04A5BB"]),
+    .mobile-diagram :global(svg [fill="#04A5BB"]) {
+      fill: #2bc4da;
+    }
+
+    /* Pink/mauve fill → adjusted for dark */
+    .desktop-diagram :global(svg [fill="#CD91B5"]),
+    .mobile-diagram :global(svg [fill="#CD91B5"]) {
+      fill: #d4a0c0;
+    }
+
+    /* Pink/mauve stroke → adjusted for dark */
+    .desktop-diagram :global(svg [stroke="#CD91B5"]),
+    .mobile-diagram :global(svg [stroke="#CD91B5"]) {
+      stroke: #d4a0c0;
+    }
+
+    /* Light coral strokes → adjusted for dark */
+    .desktop-diagram :global(svg [stroke="#FFC8C0"]),
+    .mobile-diagram :global(svg [stroke="#FFC8C0"]) {
+      stroke: #cc8a82;
+    }
+
+    /* Invert shadows: use CSS filter to darken the beige shadows */
+    .desktop-diagram :global(svg [filter*="filter0_dd"]),
+    .desktop-diagram :global(svg [filter*="filter4_dd"]),
+    .mobile-diagram :global(svg [filter*="filter0_dd"]),
+    .mobile-diagram :global(svg [filter*="filter4_dd"]) {
+      filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.3)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+    }
+
+    /* Smaller shadows for the middle cards */
+    .desktop-diagram :global(svg [filter*="filter1_d"]),
+    .desktop-diagram :global(svg [filter*="filter2_d"]),
+    .desktop-diagram :global(svg [filter*="filter3_d"]),
+    .mobile-diagram :global(svg [filter*="filter1_d"]),
+    .mobile-diagram :global(svg [filter*="filter2_d"]),
+    .mobile-diagram :global(svg [filter*="filter3_d"]) {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    }
+  }
+
 </style>

@@ -179,8 +179,10 @@
     stroke-linecap="round"
     stroke-linejoin="round"></path>
   <defs>
+    <!-- Light mode shadow filter -->
     <filter
       id="filter0_dd_46_53"
+      class="light-shadow"
       x="0"
       y="63"
       width="259"
@@ -217,6 +219,46 @@
       <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_46_53" result="shape"
       ></feBlend>
     </filter>
+    <!-- Dark mode shadow filter -->
+    <filter
+      id="filter0_dd_46_53_dark"
+      class="dark-shadow"
+      x="0"
+      y="63"
+      width="259"
+      height="288"
+      filterUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB"
+    >
+      <feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood>
+      <feColorMatrix
+        in="SourceAlpha"
+        type="matrix"
+        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+        result="hardAlpha"></feColorMatrix>
+      <feOffset dy="4"></feOffset>
+      <feGaussianBlur stdDeviation="7"></feGaussianBlur>
+      <feComposite in2="hardAlpha" operator="out"></feComposite>
+      <feColorMatrix
+        type="matrix"
+        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0"></feColorMatrix>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_dark"></feBlend>
+      <feColorMatrix
+        in="SourceAlpha"
+        type="matrix"
+        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+        result="hardAlpha"></feColorMatrix>
+      <feOffset dy="1"></feOffset>
+      <feGaussianBlur stdDeviation="1.5"></feGaussianBlur>
+      <feComposite in2="hardAlpha" operator="out"></feComposite>
+      <feColorMatrix
+        type="matrix"
+        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0"></feColorMatrix>
+      <feBlend mode="normal" in2="effect1_dropShadow_dark" result="effect2_dropShadow_dark"
+      ></feBlend>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_dark" result="shape"
+      ></feBlend>
+    </filter>
     <clipPath id="clip0_46_53">
       <rect width="32" height="32" fill="white" transform="translate(73.5 109)"></rect>
     </clipPath>
@@ -227,5 +269,94 @@
   svg {
     display: block;
     margin: var(--space-s) auto var(--space-xl);
+  }
+
+  /* Dark mode styles */
+  @media (prefers-color-scheme: dark) {
+    /* White card backgrounds to dark */
+    svg :global([fill="white"]) {
+      fill: #2d2b28;
+    }
+
+    /* Card borders */
+    svg :global([stroke="#E6E3E1"]) {
+      stroke: #4a4845;
+    }
+
+    /* Light gray borders */
+    svg :global([stroke="#D3D3D1"]) {
+      stroke: #4a4845;
+    }
+
+    /* Light pink backgrounds */
+    svg :global([fill="#F6EAF0"]) {
+      fill: #3d2233;
+    }
+
+    /* Crimson icons - brighten for dark mode */
+    svg :global([fill="#960563"]) {
+      fill: #f5a0d0;
+    }
+
+    /* Terminal window backgrounds - make darker */
+    svg :global(path[fill="#363634"][d^="M354"]) {
+      fill: #1a1816 !important;
+    }
+
+    /* Dark text to light (excludes terminal backgrounds via specificity) */
+    svg :global([fill="#363634"]) {
+      fill: #d4d1cc;
+    }
+
+    /* Medium gray text to lighter */
+    svg :global([fill="#74706D"]) {
+      fill: #a8a5a0;
+    }
+
+    /* Dark gray fills (terminal UI elements) - make darker */
+    svg :global(circle[fill="#4A4A47"]),
+    svg :global(rect[fill="#4A4A47"]) {
+      fill: #2a2826;
+    }
+
+    /* Dark gray text - make lighter */
+    svg :global(path[fill="#4A4A47"]) {
+      fill: #a8a5a0;
+    }
+
+    /* Teal - brighten for dark mode */
+    svg :global([fill="#04A5BB"]) {
+      fill: #2bc4da;
+    }
+
+    /* Coral/orange - slightly brighten */
+    svg :global([fill="#FD8270"]) {
+      fill: #ff9a8a;
+    }
+
+    /* Gray strokes - medium gray */
+    svg :global([stroke="#73736F"]) {
+      stroke: #9a9896;
+    }
+
+    /* Gray fills */
+    svg :global([fill="#73736F"]) {
+      fill: #9a9896;
+    }
+
+    /* Connector line strokes */
+    svg :global([stroke="#AFB0B6"]) {
+      stroke: #6a6866;
+    }
+
+    /* Connector line fills */
+    svg :global([fill="#AFB0B6"]) {
+      fill: #6a6866;
+    }
+
+    /* Swap to dark shadow filter */
+    svg :global(g[filter="url(#filter0_dd_46_53)"]) {
+      filter: url(#filter0_dd_46_53_dark);
+    }
   }
 </style>

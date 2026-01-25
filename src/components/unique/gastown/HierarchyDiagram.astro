@@ -44,4 +44,128 @@ import MobileSVG from './Hierarchy-Mobile.svg?raw';
       display: block;
     }
   }
+
+  /* Dark mode adjustments */
+  @media (prefers-color-scheme: dark) {
+    /* Card backgrounds: white -> dark */
+    .desktop-diagram :global(rect[fill="white"]),
+    .mobile-diagram :global(rect[fill="white"]) {
+      fill: #2d2b28;
+    }
+    
+    /* Card borders */
+    .desktop-diagram :global(rect[stroke="#E6E3E1"]),
+    .mobile-diagram :global(rect[stroke="#E6E3E1"]) {
+      stroke: #4a4845;
+    }
+    
+    /* White strokes → page background color */
+    .desktop-diagram :global(svg [stroke="white"]),
+    .mobile-diagram :global(svg [stroke="white"]) {
+      stroke: #1c1b18;
+    }
+    
+    /* Light blue icon backgrounds -> darker teal */
+    .desktop-diagram :global(rect[fill="#D8EEF1"]),
+    .mobile-diagram :global(rect[fill="#D8EEF1"]) {
+      fill: #1a3a3f;
+    }
+    
+    /* Light pink icon backgrounds -> darker crimson */
+    .desktop-diagram :global(rect[fill="#F6EAF0"]),
+    .mobile-diagram :global(rect[fill="#F6EAF0"]) {
+      fill: #3d2233;
+    }
+    
+    /* Dark text -> light text */
+    .desktop-diagram :global(path[fill="#363634"]),
+    .mobile-diagram :global(path[fill="#363634"]) {
+      fill: #d4d1cc;
+    }
+    
+    /* Medium gray text -> lighter */
+    .desktop-diagram :global(path[fill="#74706D"]),
+    .mobile-diagram :global(path[fill="#74706D"]) {
+      fill: #a8a5a0;
+    }
+    
+    /* Darker text -> lighter */
+    .desktop-diagram :global(path[fill="#4A4A47"]),
+    .mobile-diagram :global(path[fill="#4A4A47"]) {
+      fill: #d4d1cc;
+    }
+    
+    /* Gray strokes -> lighter */
+    .desktop-diagram :global([stroke="#73736F"]),
+    .mobile-diagram :global([stroke="#73736F"]) {
+      stroke: #8e8f94;
+    }
+    
+    /* Connector lines -> lighter */
+    .desktop-diagram :global([stroke="#AFB0B6"]),
+    .mobile-diagram :global([stroke="#AFB0B6"]) {
+      stroke: #6b6864;
+    }
+    
+    /* Brighten crimson accent colors for dark mode - make them much more visible */
+    /* Target all crimson color variants found in the SVG using broad selectors */
+    .desktop-diagram :global(svg [fill="#960563"]),
+    .desktop-diagram :global(svg [fill="#5F053E"]),
+    .desktop-diagram :global(svg [fill="#5f053e"]),
+    .mobile-diagram :global(svg [fill="#960563"]),
+    .mobile-diagram :global(svg [fill="#5F053E"]),
+    .mobile-diagram :global(svg [fill="#5f053e"]) {
+      fill: #f5a0d0 !important;
+    }
+    
+    .desktop-diagram :global(svg [stroke="#960563"]),
+    .desktop-diagram :global(svg [stroke="#5F053E"]),
+    .desktop-diagram :global(svg [stroke="#5f053e"]),
+    .mobile-diagram :global(svg [stroke="#960563"]),
+    .mobile-diagram :global(svg [stroke="#5F053E"]),
+    .mobile-diagram :global(svg [stroke="#5f053e"]) {
+      stroke: #f5a0d0 !important;
+    }
+    
+    .desktop-diagram :global(path[fill="#028BA3"]),
+    .mobile-diagram :global(path[fill="#028BA3"]) {
+      fill: #2bc4da;
+    }
+    
+    .desktop-diagram :global(path[fill="#04A5BB"]),
+    .mobile-diagram :global(path[fill="#04A5BB"]) {
+      fill: #2bc4da;
+    }
+    
+    .desktop-diagram :global([stroke="#028BA3"]),
+    .mobile-diagram :global([stroke="#028BA3"]) {
+      stroke: #2bc4da;
+    }
+    
+    .desktop-diagram :global([stroke="#FD8270"]),
+    .mobile-diagram :global([stroke="#FD8270"]) {
+      stroke: #ff9a8a;
+    }
+    
+    .desktop-diagram :global(path[fill="#FD8270"]),
+    .mobile-diagram :global(path[fill="#FD8270"]) {
+      fill: #ff9a8a;
+    }
+    
+    .desktop-diagram :global(circle[fill="#FD8270"]),
+    .mobile-diagram :global(circle[fill="#FD8270"]) {
+      fill: #ff9a8a;
+    }
+    
+    .desktop-diagram :global(circle[fill="#04A5BB"]),
+    .mobile-diagram :global(circle[fill="#04A5BB"]) {
+      fill: #2bc4da;
+    }
+    
+    /* Override light-colored shadows with dark ones */
+    .desktop-diagram :global(g[filter]),
+    .mobile-diagram :global(g[filter]) {
+      filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3)) drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2)) !important;
+    }
+  }
 </style>

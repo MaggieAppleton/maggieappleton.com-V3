@@ -34,4 +34,37 @@ import StackedDiffs from "./stacked-diffs.svg?raw";
     .desktop-diagram {
         display: block;
     }
+
+    /* Dark mode styles */
+    @media (prefers-color-scheme: dark) {
+        /* White backgrounds/fills → dark */
+        .desktop-diagram :global(svg [fill="white"]) {
+            fill: #2d2b28;
+        }
+
+        /* Black fills → light (for contrast inversion) */
+        .desktop-diagram :global(svg [fill="black"]) {
+            fill: #d4d1cc;
+        }
+
+        /* Medium gray text → lighter */
+        .desktop-diagram :global(svg [fill="#74706D"]) {
+            fill: #a8a5a0;
+        }
+
+        /* Crimson stroke → bright pink */
+        .desktop-diagram :global(svg [stroke="#960563"]) {
+            stroke: #f5a0d0;
+        }
+
+        /* Coral stroke → brighter */
+        .desktop-diagram :global(svg [stroke="#FD8270"]) {
+            stroke: #ff9a8a;
+        }
+
+        /* Teal stroke → brighter */
+        .desktop-diagram :global(svg [stroke="#028BA3"]) {
+            stroke: #2bc4da;
+        }
+    }
 </style>
