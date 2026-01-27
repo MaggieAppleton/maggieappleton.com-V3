@@ -1,0 +1,64 @@
+---
+title: "New Words"
+description: "A collection of words I've come across that I didn't know before"
+startDate: "2026-01-27"
+updated: "2026-01-27"
+type: "note"
+topics: ["Linguistics", "Language", "Learning"]
+growthStage: "seedling"
+---
+
+import WordEntry from "../../components/mdx/WordEntry.astro";
+import GridColumns from "../../components/mdx/GridColumns.astro";
+import IntroParagraph from "../../components/mdx/IntroParagraph.astro";
+
+<IntroParagraph>
+
+This is a growing collection of delightful words I've encountered while reading. Some are obscure, some are technical, and some are just plain fun to say. Each entry includes the word's definition and where I first came across it.
+
+</IntroParagraph>
+
+<GridColumns columns={2} alignItems="top">
+
+<WordEntry 
+  word="Defenestration" 
+  sourceTitle="The Better Angels of Our Nature" 
+  sourceAuthor="Steven Pinker"
+>
+
+The act of throwing someone out of a window. Surprisingly specific, and surprisingly common enough in history to warrant its own word.
+
+</WordEntry>
+
+<WordEntry 
+  word="Petrichor" 
+  sourceTitle="Nature" 
+  sourceAuthor="Bear & Thomas"
+  sourceLink="https://www.nature.com/articles/205"
+>
+
+The pleasant, earthy smell produced when rain falls on dry ground. The word combines the Greek petros (stone) and ichor (the fluid that flows in the veins of the gods).
+
+</WordEntry>
+
+<WordEntry 
+  word="Sonder" 
+  sourceTitle="The Dictionary of Obscure Sorrows" 
+  sourceAuthor="John Koenig"
+>
+
+The realization that each random passerby is living a life as vivid and complex as your own—populated with their own ambitions, friends, routines, worries and inherited craziness.
+
+</WordEntry>
+
+<WordEntry 
+  word="Apricity" 
+  sourceTitle="Forgotten English" 
+  sourceAuthor="Jeffrey Kacirk"
+>
+
+The warmth of the sun in winter. One of those perfectly specific words that captures a feeling we've all experienced but never had a name for.
+
+</WordEntry>
+
+</GridColumns>
