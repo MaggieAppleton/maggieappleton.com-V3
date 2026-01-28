@@ -31,9 +31,7 @@ const { word, sourceTitle, sourceAuthor, sourceLink, sentence } = Astro.props;
     )}
   </div>
   {sentence && (
-    <div class="sentence">
-      <span class="quote-mark">"</span>{sentence}<span class="quote-mark">"</span>
-    </div>
+    <q class="sentence">{sentence}</q>
   )}
 </div>
 
@@ -117,16 +115,15 @@ const { word, sourceTitle, sourceAuthor, sourceLink, sentence } = Astro.props;
   }
 
   .sentence {
+    display: block;
     font-family: var(--font-body);
     font-size: var(--font-size-sm);
     color: var(--color-gray-600);
     line-height: var(--leading-normal);
     font-style: italic;
-    margin-top: var(--space-xs);
+    margin-top: var(--space-2xs);
     padding-top: var(--space-xs);
-  }
-
-  .quote-mark {
-    color: var(--color-gray-400);
+    border-top: 1px solid var(--color-tinted-cream);
+    quotes: '"' '"';
   }
 </style>
