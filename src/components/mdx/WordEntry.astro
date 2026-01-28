@@ -4,9 +4,10 @@ interface Props {
   sourceTitle: string;
   sourceAuthor?: string;
   sourceLink?: string;
+  sentence?: string;
 }
 
-const { word, sourceTitle, sourceAuthor, sourceLink } = Astro.props;
+const { word, sourceTitle, sourceAuthor, sourceLink, sentence } = Astro.props;
 ---
 
 <div class="word-entry">
@@ -29,6 +30,11 @@ const { word, sourceTitle, sourceAuthor, sourceLink } = Astro.props;
       </>
     )}
   </div>
+  {sentence && (
+    <div class="sentence">
+      <span class="quote-mark">"</span>{sentence}<span class="quote-mark">"</span>
+    </div>
+  )}
 </div>
 
 <style>
@@ -108,5 +114,19 @@ const { word, sourceTitle, sourceAuthor, sourceLink } = Astro.props;
     background-color: var(--color-gray-300);
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .sentence {
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    line-height: var(--leading-normal);
+    font-style: italic;
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+  }
+
+  .quote-mark {
+    color: var(--color-gray-400);
   }
 </style>
