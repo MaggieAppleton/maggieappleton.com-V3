@@ -58,8 +58,6 @@ You are a senior developer performing a daily code quality review of this Astro/
 
 6. **Update cache-memory** with the directory you just processed.
 
-**Before creating a PR**, use GitHub search to check if a `[code-quality]` draft PR is already open (search `repo:maggieappleton/maggieappleton.com-V3 is:pr is:open in:title "[code-quality]"`). If one already exists, call `noop` instead of opening another.
-
 7. **Open a draft PR** with your changes titled: `Improve <filename>` with:
    - A clear description of what was changed and why
    - Specific notes on any bugs fixed or logical issues resolved
