@@ -46,9 +46,11 @@ You are a senior developer performing a daily code quality review of this Astro/
    - **Dead code**: unused variables, imports, or functions
    - **Maintainability**: opportunities to extract reusable helpers, simplify complex expressions, reduce duplication
 
-4. **Select one file** to improve — choose the file with the highest-value improvements. Focus on changes that make the code meaningfully better, not cosmetic tweaks.
+4. **Check for existing open PRs** — before selecting a file, list all open pull requests in the repository. If any open PR (including draft PRs) already touches or fixes the same file or issue you are considering, skip that file and pick a different one. This avoids creating duplicate PRs for work that is already in progress.
 
-5. **Make targeted edits** to that one file:
+5. **Select one file** to improve — choose the file with the highest-value improvements. Focus on changes that make the code meaningfully better, not cosmetic tweaks.
+
+6. **Make targeted edits** to that one file:
    - Fix any bugs or logical flaws you found
    - Improve naming and structure for clarity
    - Add JSDoc comments to exported functions that lack them
@@ -56,14 +58,14 @@ You are a senior developer performing a daily code quality review of this Astro/
    - Do NOT change functionality — only improve clarity and correctness
    - Do NOT reformat the entire file — make surgical, purposeful edits
 
-6. **Update cache-memory** with the directory you just processed.
+7. **Update cache-memory** with the directory you just processed.
 
-7. **Open a draft PR** with your changes titled: `Improve <filename>` with:
+8. **Open a draft PR** with your changes titled: `Improve <filename>` with:
    - A clear description of what was changed and why
    - Specific notes on any bugs fixed or logical issues resolved
    - An explanation of any renamed symbols so reviewers can verify the intent is preserved
 
-8. If after reviewing the selected directory you find **nothing worth improving**, call `noop` to signal you completed the review with no changes needed, and still update cache-memory so the next run moves on.
+9. If after reviewing the selected directory you find **nothing worth improving**, call `noop` to signal you completed the review with no changes needed, and still update cache-memory so the next run moves on.
 
 ## Guidelines
 
