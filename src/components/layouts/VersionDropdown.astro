@@ -317,17 +317,7 @@ const getVersionUrl = (version: VersionedContent) => {
 </style>
 
 <script>
-	// Holds the AbortController for document-level listeners so they can be
-	// cleaned up before re-initialising on each view-transition navigation.
-	let abortController: AbortController | null = null;
-
-	function initializeVersionDropdown() {
-		// Tear down document-level listeners from the previous page before
-		// re-binding them, preventing duplicates across view transitions.
-		abortController?.abort();
-		abortController = new AbortController();
-		const { signal } = abortController;
-
+	document.addEventListener("DOMContentLoaded", function () {
 		const dropdown = document.querySelector(".version-dropdown");
 		const trigger = dropdown?.querySelector(".version-trigger");
 		const menu = dropdown?.querySelector(".version-menu");
@@ -434,33 +424,18 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 		});
 
-		// Close on outside click — signal ensures this is removed on next reinit
-		document.addEventListener(
-			"click",
-			function (e) {
-				if (!dropdown.contains(e.target as Node)) {
-					closeDropdown();
-				}
-			},
-			{ signal },
-		);
+		// Close on outside click
+		document.addEventListener("click", function (e) {
+			if (!dropdown.contains(e.target)) {
+				closeDropdown();
+			}
+		});
 
-		// Close on outside focus (for keyboard users) — same cleanup via signal
-		document.addEventListener(
-			"focusin",
-			function (e) {
-				if (!dropdown.contains(e.target as Node)) {
-					closeDropdown();
-				}
-			},
-			{ signal },
-		);
-	}
-
-	// Run on initial page load
-	initializeVersionDropdown();
-
-	// Re-run after each view-transition navigation so the dropdown works on
-	// pages reached without a full browser reload.
-	document.addEventListener("astro:page-load", initializeVersionDropdown);
+		// Close on outside focus (for keyboard users)
+		document.addEventListener("focusin", function (e) {
+			if (!dropdown.contains(e.target)) {
+				closeDropdown();
+			}
+		});
+	});
 </script>
