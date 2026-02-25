@@ -5,14 +5,23 @@ import MarkdownIt from "markdown-it";
 import { extractBaseSlug } from "../utils/versionUtils.ts";
 const parser = new MarkdownIt();
 
-// Helper to strip markdown from text
+/**
+ * Removes markdown formatting from plain text (links, bold, italic, etc.).
+ * @param {string} text - Raw markdown text
+ * @returns {string} Plain text with markdown syntax stripped
+ */
 function stripMarkdown(text) {
   return text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Replace markdown links with just the text
     .replace(/[*_`~]/g, ""); // Remove markdown formatting characters
 }
 
-// Helper to convert relative paths to absolute URLs
+/**
+ * Converts a relative URL to an absolute URL using the provided site base URL.
+ * @param {string} url - The URL to make absolute (may already be absolute)
+ * @param {string} siteUrl - The base site URL (e.g. "https://maggieappleton.com")
+ * @returns {string} The absolute URL
+ */
 function makeAbsolute(url, siteUrl) {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
@@ -23,7 +32,12 @@ function makeAbsolute(url, siteUrl) {
   return siteUrl + '/' + url;
 }
 
-// Helper to fix img tags with relative paths in HTML content
+/**
+ * Replaces relative `src` attributes on `<img>` tags in an HTML string with absolute URLs.
+ * @param {string} html - HTML string possibly containing relative image paths
+ * @param {string} siteUrl - The base site URL used to resolve relative paths
+ * @returns {string} HTML with all image paths made absolute
+ */
 function fixImagePaths(html, siteUrl) {
   return html.replace(/<img([^>]*)\ssrc="([^"]*)"([^>]*)>/g, (match, beforeSrc, src, afterSrc) => {
     const absoluteSrc = makeAbsolute(src, siteUrl);
@@ -31,7 +45,15 @@ function fixImagePaths(html, siteUrl) {
   });
 }
 
-// Helper to strip MDX component tags but preserve images
+/**
+ * Converts known MDX component tags to plain HTML equivalents and removes unrecognised ones.
+ * - `<ResourceBook>` → `<a>` link with author text
+ * - `<BasicImage>` / `<RemoteImage>` → standard `<img>` tags with absolute URLs
+ * - `<Spacer>` and all other custom components → removed entirely
+ * @param {string} text - Raw MDX/markdown source text
+ * @param {string} siteUrl - The base site URL used to resolve relative image paths
+ * @returns {string} Cleaned HTML-compatible text
+ */
 function stripMDXComponents(text, siteUrl) {
   return (
     text
@@ -124,16 +146,16 @@ export async function GET(context) {
         };
       }),
       ...smidgeons.map((post) => {
-        // Get first non-import, non-empty line of content
-        const firstLine = post.body
-          .split("\n")
-          .filter((line) => !line.startsWith("import") && line.trim() !== "")[0];
-
         // Filter out import statements from content
         const contentWithoutImports = post.body
           .split("\n")
           .filter((line) => !line.startsWith("import"))
           .join("\n");
+
+        // Get first non-empty line of the already-filtered content
+        const firstLine = contentWithoutImports
+          .split("\n")
+          .find((line) => line.trim() !== "");
 
         // First strip MDX components, then render markdown
         const processedContent = stripMDXComponents(contentWithoutImports, context.site);
