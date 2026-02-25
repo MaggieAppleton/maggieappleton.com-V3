@@ -127,7 +127,6 @@ const blockList = [
 	"thebrandingstore.net",
 	"development-tools.net",
 	"itdirectory.my",
-	"www.sacramentowebdesigngroup.com",
 	"engrmks.com.ng",
 	"www.xspdf.com",
 	"isokunoffice.club",
@@ -142,26 +141,14 @@ const blockList = [
 	"www.fourthcity.net",
 	"www.engrmks.com.ng",
 	"711web.com",
-	"techupd.com",
-	"www.67nj.org",
-	"tipsxd.com",
 	"www.new.pixel-forge.ca",
-	"pixallus.com",
-	"wpnewshub.com",
 	"tecriter.wordpressarena.com",
 	"reddits.contractwebsites.com",
 	"wawas-kingdom.com",
-	"dztechno.com",
-	"wpguynews.com",
-	"www.digitasbuzz.in",
 	"watchfvsslive.co",
-	"gotutoral.com",
 	"techfans.co.uk",
-	"pikopong.com",
-	"marketingsolution.com.au",
 	"reportwire.org",
 	"www.codeificant.com",
-	"tipsxd.com",
 	"wpdesigns.live",
 	"gigatechnews.com",
 	"blogs.thebitx.com",
@@ -178,8 +165,6 @@ const blockList = [
 	"dentedreality.com.au",
 	"platoblockchain.net",
 	"aayugcreation.com",
-	"www.67nj.org",
-	"wpnewshub.com",
 	"codinghindi.in",
 	"programmer.chimpymail.com",
 	"sayed.work",
@@ -223,7 +208,6 @@ const blockList = [
 	"usae.sit",
 	"helpbuildweb.com",
 	"sharewarepile.com",
-	"sharewaredepo.com",
 	"www.codersjungle.com",
 	"www.monsterstudios.com.ng",
 	"technewsbeats.com",
@@ -237,7 +221,7 @@ const blockList = [
 	"deboramontoli.it",
 ];
 
-// remove mentions where mention[wm-source] matches blockList
+// remove mentions where the domain of mention.url matches the blockList
 const filteredMentions = mentionWithContent.filter((mention: WebMention) => {
 	const domain = mention.url.split("/")[2];
 	const isBlocked = blockList.includes(domain);
@@ -319,7 +303,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 				{likesAndReposts.length > 0 && (
 					<div class="likes-images-container">
 						<div class="likes-container">
-							{likesWithoutDuplicates.slice(0, 20).map((like: WebMention, index: number) =>
+							{likesWithoutDuplicates.slice(0, 20).map((like: WebMention) =>
 								like.author.photo ? (
 									<div class="single-image">
 										<img src={like.author.photo} alt={like.author.name} />
@@ -350,6 +334,7 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 							<div class="mentions-content-container">
 								{filteredMentions.map((mention: WebMention, index: number) => {
 									const platform = platformType(mention);
+									const source = sourceType(mention);
 									return (
 										<div class:list={["reply", { hidden: index >= 4 }]}>
 											{mention.author.photo ? (
@@ -377,11 +362,11 @@ const likesWithoutDuplicates = likesAndReposts.filter(
 															<Icon name={platform.icon} size={16} class={platform.class} />
 														)}
 														<span class="mention-type">{mentionType(mention)}</span>
-														{sourceType(mention) && (
+														{source && (
 															<Icon
-																name={sourceType(mention)}
+																name={source}
 																size={16}
-																class={`${sourceType(mention)}-svg`}
+																class={`${source}-svg`}
 															/>
 														)}
 														{mention.name && <span class="post-name">in {mention.name}</span>}
