@@ -14,9 +14,6 @@ import VersionDropdown from "../components/layouts/VersionDropdown.astro";
 import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 
-// You'll need to find Astro alternatives for these React components:
-// - BackToTop
-
 type Props = {
 	frontmatter:
 		| CollectionEntry<"essays">["data"]
@@ -79,6 +76,15 @@ const backlinks = currentPost?.inboundLinks || [];
 // Only essays and talks have cover images
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
+
+const startDateISO =
+	canonicalDates.startDate instanceof Date
+		? canonicalDates.startDate.toISOString()
+		: canonicalDates.startDate;
+const updatedISO =
+	canonicalDates.updated instanceof Date
+		? canonicalDates.updated.toISOString()
+		: (canonicalDates.updated ?? "");
 ---
 
 <Layout
@@ -115,14 +121,8 @@ const coverImage =
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={canonicalDates.startDate instanceof Date
-						? canonicalDates.startDate.toISOString()
-						: canonicalDates.startDate}
-					updated={canonicalDates.updated
-						? canonicalDates.updated instanceof Date
-							? canonicalDates.updated.toISOString()
-							: canonicalDates.updated
-						: ""}
+					startDate={startDateISO}
+					updated={updatedISO}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>
