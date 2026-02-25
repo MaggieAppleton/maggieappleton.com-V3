@@ -77,7 +77,6 @@ const backlinks = currentPost?.inboundLinks || [];
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 
-// Normalise dates to ISO strings so the template stays simple
 const startDateISO =
 	canonicalDates.startDate instanceof Date
 		? canonicalDates.startDate.toISOString()
