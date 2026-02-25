@@ -883,10 +883,7 @@ const data = [
 		});
 	}
 
-	// Initialize the chart when the DOM is ready
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initChart);
-	} else {
-		initChart();
-	}
+	// Initialize on first load and after view transitions
+	initChart();
+	document.addEventListener("astro:page-load", initChart);
 </script>

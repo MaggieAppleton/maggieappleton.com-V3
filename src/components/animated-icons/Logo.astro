@@ -131,9 +131,6 @@
 		}
 	}
 
-	// Initialize when DOM is ready
-	document.addEventListener("DOMContentLoaded", initializeLogoAnimation);
-
-	// Re-initialize after Astro view transitions
+	// Initialize on first load and after view transitions
 	document.addEventListener("astro:page-load", initializeLogoAnimation);
 </script>
