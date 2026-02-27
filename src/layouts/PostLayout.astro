@@ -67,6 +67,10 @@ if (entry) {
 	};
 }
 
+// Capitalise the content type for the back-link label (e.g. "essay" → "Essay")
+const contentTypeLabel =
+	frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1);
+
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
 
@@ -100,7 +104,7 @@ const updatedISO =
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
 					<span>
-						{frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1)}s
+						{contentTypeLabel}s
 					</span>
 				</a>
 			</div>

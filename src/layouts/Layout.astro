@@ -15,6 +15,9 @@ export interface Props {
 
 const { title, desc, type, coverImage, canonicalURL: overrideCanonicalURL } = Astro.props;
 
+const DEFAULT_DESCRIPTION =
+	"Maggie's digital garden filled with visual essays on programming, design, and anthropology";
+
 const canonicalURL = overrideCanonicalURL || new URL(Astro.url.pathname, Astro.site).toString();
 
 // Generate OG image URL based on canonical path so all versions share the same image
@@ -80,8 +83,7 @@ declare global {
 		</script>
 		<SEO
 			title={title}
-			description={desc ||
-				"Maggie's digital garden filled with visual essays on programming, design, and anthropology"}
+			description={desc || DEFAULT_DESCRIPTION}
 			canonical={canonicalURL}
 			openGraph={{
 				basic: {
@@ -92,9 +94,7 @@ declare global {
 				},
 				optional: {
 					locale: "en_GB",
-					description:
-						desc ||
-						"Maggie's digital garden filled with visual essays on programming, design, and anthropology",
+					description: desc || DEFAULT_DESCRIPTION,
 				},
 				image: {
 					alt: title || "Maggie Appleton's digital garden",
