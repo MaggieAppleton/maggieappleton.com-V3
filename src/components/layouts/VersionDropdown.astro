@@ -317,7 +317,7 @@ const getVersionUrl = (version: VersionedContent) => {
 </style>
 
 <script>
-	document.addEventListener("DOMContentLoaded", function () {
+	function initializeVersionDropdown() {
 		const dropdown = document.querySelector(".version-dropdown");
 		const trigger = dropdown?.querySelector(".version-trigger");
 		const menu = dropdown?.querySelector(".version-menu");
@@ -437,5 +437,9 @@ const getVersionUrl = (version: VersionedContent) => {
 				closeDropdown();
 			}
 		});
-	});
+	}
+
+	// Initialize on first load and after view transitions
+	initializeVersionDropdown();
+	document.addEventListener("astro:page-load", initializeVersionDropdown);
 </script>
