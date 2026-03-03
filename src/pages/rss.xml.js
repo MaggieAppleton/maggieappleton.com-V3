@@ -84,6 +84,33 @@ function stripMDXComponents(text, siteUrl) {
   );
 }
 
+/**
+ * Strips import statements from a post body and renders it to HTML,
+ * converting MDX component tags to plain HTML equivalents.
+ * Returns both the import-filtered raw text (for first-line extraction)
+ * and the final rendered HTML string.
+ * @param {string} body - Raw post body content
+ * @param {string} siteUrl - Base site URL used to resolve relative image paths
+ * @returns {{ bodyWithoutImports: string, renderedHtml: string }}
+ */
+function prepareBodyContent(body, siteUrl) {
+  const bodyWithoutImports = body
+    .split("\n")
+    .filter((line) => !line.startsWith("import"))
+    .join("\n");
+  const renderedHtml = parser.render(stripMDXComponents(bodyWithoutImports, siteUrl));
+  return { bodyWithoutImports, renderedHtml };
+}
+
+/** Shared sanitize-html options that allow img tags with src and alt attributes. */
+const SANITIZE_OPTIONS = {
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
+  allowedAttributes: {
+    ...sanitizeHtml.defaults.allowedAttributes,
+    img: ["src", "alt"],
+  },
+};
+
 export async function GET(context) {
   const notes = await getCollection("notes", ({ data }) => !data.draft);
   const essays = await getCollection("essays", ({ data }) => !data.draft);
@@ -122,50 +149,25 @@ export async function GET(context) {
         link: `/${extractBaseSlug(post.id)}/`,
       })),
       ...now.map((post) => {
-        // Filter out import statements from content
-        const contentWithoutImports = post.body
-          .split("\n")
-          .filter((line) => !line.startsWith("import"))
-          .join("\n");
-
-        // First strip MDX components, then render markdown
-        const processedContent = parser.render(stripMDXComponents(contentWithoutImports, context.site));
-        const contentWithAbsoluteImages = fixImagePaths(processedContent, context.site);
-
+        const { renderedHtml } = prepareBodyContent(post.body, context.site);
         return {
           title: post.data.title,
           pubDate: post.data.startDate,
           link: `/now-${post.id}/`,
-          content: sanitizeHtml(contentWithAbsoluteImages, {
-            allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
-            allowedAttributes: {
-              ...sanitizeHtml.defaults.allowedAttributes,
-              img: ["src", "alt"],
-            },
-          }),
+          content: sanitizeHtml(fixImagePaths(renderedHtml, context.site), SANITIZE_OPTIONS),
         };
       }),
       ...smidgeons.map((post) => {
-        // Filter out import statements from content
-        const contentWithoutImports = post.body
-          .split("\n")
-          .filter((line) => !line.startsWith("import"))
-          .join("\n");
+        const { bodyWithoutImports, renderedHtml } = prepareBodyContent(post.body, context.site);
 
-        // Get first non-empty line of the already-filtered content
-        const firstLine = contentWithoutImports
-          .split("\n")
-          .find((line) => line.trim() !== "");
+        // Use first non-empty line as fallback description for plain-text smidgeons
+        const firstLine = bodyWithoutImports.split("\n").find((line) => line.trim() !== "");
 
-        // First strip MDX components, then render markdown
-        const processedContent = stripMDXComponents(contentWithoutImports, context.site);
-        const renderedContent = parser.render(processedContent);
-        const finalContent = (post.data.external
+        const prefix = post.data.external
           ? `<a href="${post.data.external.url}">${post.data.external.title}</a>\n\n`
           : post.data.citation
             ? `<a href="${post.data.citation.url}">${post.data.citation.title}</a>\n\n`
-            : "") + renderedContent;
-        const contentWithAbsoluteImages = fixImagePaths(finalContent, context.site);
+            : "";
 
         return {
           title: post.data.title,
@@ -176,16 +178,7 @@ export async function GET(context) {
               ? `${post.data.citation.title} by ${post.data.citation.authors.join(", ")}`
               : stripMarkdown(firstLine || ""),
           link: `/${extractBaseSlug(post.id)}/`,
-          content: sanitizeHtml(
-            contentWithAbsoluteImages,
-            {
-              allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
-              allowedAttributes: {
-                ...sanitizeHtml.defaults.allowedAttributes,
-                img: ["src", "alt"],
-              },
-            },
-          ),
+          content: sanitizeHtml(fixImagePaths(prefix + renderedHtml, context.site), SANITIZE_OPTIONS),
         };
       }),
     ].sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf()),
