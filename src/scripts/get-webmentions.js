@@ -14,18 +14,22 @@ async function fetchWebmentions(since, perPage = 100) {
   let hasMore = true;
 
   while (hasMore) {
-    let url = `https://webmention.io/api/mentions.jf2?domain=maggieappleton.com&token=${TOKEN}&per-page=${perPage}&page=${page}`;
+    // Clamp the since date to the current time to avoid querying future dates
+    let sinceParam = since;
     if (since) {
-      // Ensure we're not using a future date
       const sinceDate = new Date(since);
       const now = new Date();
       if (sinceDate > now) {
         console.log(
           ">>> Warning: Last fetch time was in the future, resetting to current time",
         );
-        since = now.toISOString();
+        sinceParam = now.toISOString();
       }
-      url += `&since=${since}`;
+    }
+
+    let url = `https://webmention.io/api/mentions.jf2?domain=maggieappleton.com&token=${TOKEN}&per-page=${perPage}&page=${page}`;
+    if (sinceParam) {
+      url += `&since=${sinceParam}`;
     }
 
     console.log(`>>> Fetching webmentions page ${page}...`);
@@ -67,11 +71,9 @@ function writeToCache(data) {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR);
   }
-  // write data to cache json file
-  fs.writeFile(filePath, fileContent, (err) => {
-    if (err) throw err;
-    console.log(`>>> webmentions saved to ${filePath}`);
-  });
+  // write data to cache json file synchronously so errors propagate to the caller
+  fs.writeFileSync(filePath, fileContent);
+  console.log(`>>> webmentions saved to ${filePath}`);
 }
 
 // get cache contents from json file
@@ -92,7 +94,7 @@ function readFromCache() {
   };
 }
 
-async function ReadCacheAndFetch() {
+async function readCacheAndFetch() {
   console.log(">>> Starting webmention fetch...");
   const cache = readFromCache();
 
@@ -127,4 +129,4 @@ async function ReadCacheAndFetch() {
   return cache;
 }
 
-ReadCacheAndFetch();
+readCacheAndFetch().catch(console.error);
