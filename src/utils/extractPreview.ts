@@ -15,9 +15,11 @@ export function extractPreview(content: string, maxLength: number = 90): string 
     const line = lines[i].trim();
 
     if (line === "---") {
-      if (!inFrontmatter) {
+      if (!inFrontmatter && i === 0) {
+        // Only treat "---" as a frontmatter delimiter when it appears on the
+        // very first line; otherwise it's a Markdown horizontal rule.
         inFrontmatter = true;
-      } else {
+      } else if (inFrontmatter) {
         inFrontmatter = false;
         startIndex = i + 1;
         break;
@@ -36,7 +38,6 @@ export function extractPreview(content: string, maxLength: number = 90): string 
       !trimmed.startsWith("import ") &&
       !trimmed.startsWith("import{") &&
       !trimmed.startsWith("export ") &&
-      !trimmed.match(/^import\s*{/) &&
       !trimmed.startsWith("<") && // Skip component lines like <BasicImage />
       !trimmed.startsWith("#") // Skip headers for preview
     );
@@ -68,10 +69,8 @@ export function extractPreview(content: string, maxLength: number = 90): string 
     firstParagraph = currentParagraph;
   }
 
-  const rawText = firstParagraph;
-
   // Remove common markdown patterns
-  const cleanText = rawText
+  const cleanText = firstParagraph
     // Remove markdown links [text](url)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     // Remove markdown bold/italic **text** or *text*
