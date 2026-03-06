@@ -1,6 +1,16 @@
-import { visit } from "unist-util-visit";
+import { visit, SKIP } from "unist-util-visit";
 import linkMaps from "../links.json";
 
+/**
+ * Remark plugin that transforms `[[wiki-style links]]` in MDX content into
+ * `InternalTooltipLink` JSX elements with href, title, and description props.
+ *
+ * Link targets are resolved by matching the text inside `[[ ]]` against the
+ * `ids` array of each entry in `links.json` (case-insensitive). If no match
+ * is found the original `[[...]]` literal is left in place.
+ *
+ * @returns {import('unified').Transformer} A unified transformer function.
+ */
 export function remarkWikiLink() {
 	return (tree) => {
 		visit(tree, "text", (node, index, parent) => {
@@ -29,7 +39,6 @@ export function remarkWikiLink() {
 				);
 
 				if (matchedPost) {
-					// Create the InternalTooltipLink component
 					children.push({
 						type: "mdxJsxFlowElement",
 						name: "InternalTooltipLink",
@@ -40,6 +49,7 @@ export function remarkWikiLink() {
 								value: `/${matchedPost.slug}`,
 							},
 							{
+								// ids[0] is the canonical title for the post
 								type: "mdxJsxAttribute",
 								name: "title",
 								value: matchedPost.ids[0],
@@ -71,8 +81,10 @@ export function remarkWikiLink() {
 				});
 			}
 
-			// Replace the original node with our new children
+			// Replace the original node with our new children, then skip
+			// past all of them to avoid re-visiting the inserted text nodes.
 			parent.children.splice(index, 1, ...children);
+			return [SKIP, index + children.length];
 		});
 	};
 }
