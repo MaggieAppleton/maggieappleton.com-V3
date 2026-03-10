@@ -211,11 +211,12 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		width: 100%;
 		box-shadow: var(--box-shadow-sm);
 		margin-bottom: var(--space-s);
+		background-color: transparent;
+		transition: background-color 0.4s ease;
 	}
 
 	.reference-card:hover {
 		background-color: white;
-		transition: all 0.4s ease;
 		cursor: pointer;
 	}
 
@@ -227,12 +228,6 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		font-size: var(--font-size-sm);
 		color: var(--color-gray-600);
 		font-weight: 400;
-	}
-
-	.styled-main {
-		max-width: 800px;
-		margin: var(--space-xs) auto 0;
-		padding: var(--space-xs) 0 var(--space-2xl);
 	}
 
 	.back-link {
@@ -290,10 +285,6 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 			flex-wrap: wrap;
 			align-items: center;
 			gap: var(--space-s);
-		}
-
-		.styled-main {
-			padding: var(--space-xl) var(--space-xs);
 		}
 
 		.header-section {
