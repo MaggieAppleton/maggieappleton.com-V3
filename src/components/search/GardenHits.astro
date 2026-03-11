@@ -7,7 +7,6 @@ import PodcastCard from "../cards/PodcastCard.astro";
 import TalkCard from "../cards/TalkCard.astro";
 import SmidgeonCard from "../cards/SmidgeonCard.astro";
 import NowCard from "../cards/NowCard.astro";
-import { extractPreview } from "../../utils/extractPreview";
 import { extractBaseSlug } from "../../utils/versionUtils";
 
 interface Post {
@@ -52,10 +51,8 @@ interface Post {
 
 const { allPostData } = Astro.props;
 
-// No need to process again - Now posts already have preview extracted in garden.astro
-const processedPosts = allPostData;
-
-const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
+// Posts already have preview extracted upstream (e.g. in garden.astro)
+const sortedPosts = allPostData.sort((a: Post, b: Post) => {
 	const dateA = new Date(a.data.updated || a.data.startDate).getTime();
 	const dateB = new Date(b.data.updated || b.data.startDate).getTime();
 	return dateB - dateA;
@@ -178,7 +175,6 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 <script>
 	// Function to filter grid items
 	function filterGridItems(topic: string, growthStage: string, type: string) {
-		console.time("filter-operation");
 		const items = document.querySelectorAll<HTMLElement>(".grid-item");
 
 		items.forEach((htmlItem) => {
@@ -194,8 +190,6 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 			const isVisible = matchesTopic && matchesGrowthStage && matchesType;
 			htmlItem.classList.toggle("filtered-out", !isVisible);
 		});
-
-		console.timeEnd("filter-operation");
 	}
 
 	// Listen for filter changes with debounce
