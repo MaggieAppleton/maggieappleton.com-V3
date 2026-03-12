@@ -22,10 +22,10 @@ const canonicalURL = overrideCanonicalURL || new URL(Astro.url.pathname, Astro.s
 
 // Generate OG image URL based on canonical path so all versions share the same image
 const canonicalPathname = new URL(canonicalURL).pathname;
-const contentId = canonicalPathname.replace(/^\/?|\/?$/g, "");
+const contentId = canonicalPathname.replace(/^\/|\/$/g, "");
 
 // Use localhost URL in development, production URL otherwise
-const baseUrl = import.meta.env.DEV ? "http://localhost:4321" : Astro.site;
+const baseUrl = import.meta.env.DEV ? "http://localhost:4321" : Astro.site!;
 
 // Construct OG image URL - now just using the content ID directly
 const ogImageURL = type ? new URL(`/og/${contentId}.png`, baseUrl) : new URL(`/og.png`, baseUrl);
