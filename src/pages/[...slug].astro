@@ -23,17 +23,6 @@ import Spacer from "../components/mdx/Spacer.astro";
 type ContentType = "essay" | "note" | "pattern" | "talk" | "smidgeon";
 type Collections = "essays" | "notes" | "patterns" | "talks" | "smidgeons";
 
-// Add type definitions for different frontmatter types
-type BaseFrontmatter = {
-	title: string;
-	startDate: Date;
-	topics?: string[];
-};
-
-type SmidgeonFrontmatter = BaseFrontmatter & {
-	type: "smidgeon";
-};
-
 interface Props {
 	entry: CollectionEntry<Collections>;
 	type: ContentType;
@@ -81,7 +70,7 @@ export async function getStaticPaths() {
 	];
 }
 
-const { entry } = Astro.props;
+const { entry, type } = Astro.props;
 const { Content, headings } = await render(entry);
 
 const components = {
@@ -105,17 +94,12 @@ function hasTOC(data: any): data is { toc: boolean } {
 	return "toc" in data;
 }
 
-// Type guard for checking if frontmatter is SmidgeonFrontmatter
-function isSmidgeonFrontmatter(data: any): data is SmidgeonFrontmatter {
-	return data.type === "smidgeon";
-}
-
 // Prepare frontmatter data based on type
 const frontmatter = entry.data;
 ---
 
 {
-	isSmidgeonFrontmatter(frontmatter) ? (
+	type === "smidgeon" ? (
 		<SmidgeonLayout frontmatter={frontmatter}>
 			<ProseWrapper>
 				<Content components={components} />
