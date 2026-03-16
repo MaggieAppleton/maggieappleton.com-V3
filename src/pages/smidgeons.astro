@@ -45,6 +45,11 @@ const components = {
 	Spacer,
 };
 
+/** Number of smidgeons shown in the sticky sidebar for quick navigation. */
+const SIDEBAR_RECENT_COUNT = 8;
+/** Maximum characters shown for a smidgeon title in the sidebar before truncation. */
+const SIDEBAR_TITLE_MAX_LENGTH = 40;
+
 // Render all smidgeons content
 const renderedSmidgeons = await Promise.all(
 	sortedSmidgeons.map(async (smidgeon: CollectionEntry<"smidgeons">) => {
@@ -104,10 +109,10 @@ const renderedSmidgeons = await Promise.all(
 									{smidgeon.data.external && (
 										<a href={smidgeon.data.external.url} target="_blank" rel="noopener noreferrer">
 											<div class="reference-card">
-												<h1 class="content-header">
+												<h2 class="content-header">
 													{smidgeon.data.external.title}
 													<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-												</h1>
+												</h2>
 												{smidgeon.data.external.author && (
 													<p class="byline">
 														<Icon name="heroicons:user" size={14} />
@@ -123,10 +128,10 @@ const renderedSmidgeons = await Promise.all(
 										<a href={smidgeon.data.citation.url} target="_blank" rel="noopener noreferrer">
 											<div class="reference-card">
 												<div class="citation-header">
-													<h1 class="content-header">
+													<h2 class="content-header">
 														{smidgeon.data.citation.title}{" "}
 														<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-													</h1>
+													</h2>
 													<div class="citation-metadata">
 														<p class="byline">
 															<Icon name="heroicons:users" size={14} />
@@ -163,11 +168,11 @@ const renderedSmidgeons = await Promise.all(
 					<h3>Recent Smidgeons</h3>
 					<ul>
 						{
-							renderedSmidgeons.slice(0, 8).map((recentSmidgeon) => (
+							renderedSmidgeons.slice(0, SIDEBAR_RECENT_COUNT).map((recentSmidgeon) => (
 								<li>
 									<a href={`#smidgeon-${recentSmidgeon.id}`}>
-										{recentSmidgeon.data.title.length > 40
-											? `${recentSmidgeon.data.title.slice(0, 40)}...`
+										{recentSmidgeon.data.title.length > SIDEBAR_TITLE_MAX_LENGTH
+											? `${recentSmidgeon.data.title.slice(0, SIDEBAR_TITLE_MAX_LENGTH)}...`
 											: recentSmidgeon.data.title}
 									</a>
 								</li>
