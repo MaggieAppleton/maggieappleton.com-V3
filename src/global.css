@@ -106,6 +106,9 @@
   --color-salmon: #fd8370;
   --color-gold: #ffd09c;
   --color-dark-salmon: #e1624f;
+  --color-dusty-red: #b85c5c;
+  --color-light-dusty-red: #d4847f;
+  --color-dark-dusty-red: #8b4545;
 
   /* Opacity variants for colors */
   /* Crimson variants */
@@ -119,6 +122,12 @@
   --color-sea-blue-10: color-mix(in srgb, var(--color-sea-blue) 30%, transparent);
   --color-sea-blue-20: color-mix(in srgb, var(--color-sea-blue) 40%, transparent);
   --color-sea-blue-50: color-mix(in srgb, var(--color-sea-blue) 70%, transparent);
+
+  /* Dusty red variants */
+  --color-dusty-red-5: color-mix(in srgb, var(--color-dusty-red) 5%, transparent);
+  --color-dusty-red-10: color-mix(in srgb, var(--color-dusty-red) 10%, transparent);
+  --color-dusty-red-20: color-mix(in srgb, var(--color-dusty-red) 20%, transparent);
+  --color-dusty-red-50: color-mix(in srgb, var(--color-dusty-red) 50%, transparent);
 
 
   /* Fonts */
@@ -292,6 +301,9 @@
     --color-salmon: #ff9a8a;
     --color-dark-salmon: #fd8370;
     --color-gold: #e5b876;
+    --color-dusty-red: #d4847f;
+    --color-light-dusty-red: #e5a5a0;
+    --color-dark-dusty-red: #b85c5c;
 
     /* Box shadows - stronger for dark mode */
     --box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
