@@ -889,7 +889,7 @@ const data = [
 	let resizeHandler: (() => void) | null = null;
 
 	onPageLifecycle(() => {
-		const container = document.querySelector(".garmin-chart-container");
+		const container = document.querySelector(".chart-container");
 		if (container) initChart();
 
 		return () => {
