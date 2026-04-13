@@ -163,16 +163,19 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		});
 	}
 
-	initAllScrollySections();
-
 	const handleResize = () => scrollers.forEach((s) => s.resize());
-	window.addEventListener("resize", handleResize);
 
-	document.querySelectorAll(".scrolly-img").forEach((img) => {
-		img.addEventListener("load", handleResize);
-	});
+	function initAndAttachListeners() {
+		initAllScrollySections();
+		window.addEventListener("resize", handleResize);
+		document.querySelectorAll(".scrolly-img").forEach((img) => {
+			img.addEventListener("load", handleResize);
+		});
+	}
 
-	document.addEventListener("astro:page-load", initAllScrollySections);
+	initAndAttachListeners();
+
+	document.addEventListener("astro:page-load", initAndAttachListeners);
 
 	const cleanup = () => {
 		scrollers.forEach((s) => s.destroy());
