@@ -181,7 +181,7 @@ const { header } = Astro.props;
 					if (panel instanceof HTMLElement) {
 						panel.style.display = "block"; // Ensure panel is visible for animation
 						panel.classList.add("open");
-						animate(
+						(animate as any)(
 							panel,
 							{
 								height: ["0px", `${panel.scrollHeight}px`],
@@ -206,7 +206,7 @@ const { header } = Astro.props;
 					// Closing animation
 					if (panel instanceof HTMLElement) {
 						panel.style.height = `${panel.scrollHeight}px`; // Set current height before animating
-						animate(
+						(animate as any)(
 							panel,
 							{
 								height: [`${panel.scrollHeight}px`, "0px"],

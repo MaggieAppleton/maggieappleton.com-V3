@@ -39,7 +39,7 @@ const canonicalURL = entry
 	: undefined;
 
 // Get canonical dates for versioned content (consistent across all versions)
-let canonicalDates = {
+let canonicalDates: { startDate: Date; updated?: Date } = {
 	startDate: frontmatter.startDate,
 	updated: frontmatter.updated,
 };
@@ -48,8 +48,8 @@ if (entry) {
 	const allEntries = (await getCollection(entry.collection)) as (typeof entry)[];
 	const versionedDates = getCanonicalDates(entry, allEntries);
 	canonicalDates = {
-		startDate: versionedDates.startDate,
-		updated: versionedDates.updated,
+		startDate: new Date(versionedDates.startDate),
+		updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
 	};
 }
 
