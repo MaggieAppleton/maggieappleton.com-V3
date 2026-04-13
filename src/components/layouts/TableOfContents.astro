@@ -212,32 +212,10 @@ const { headings } = Astro.props;
 </style>
 
 <script>
-	let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
 
-	function cleanupTOC() {
-		clearTimeout(scrollTimeoutId);
-
-		const tocHeader = document.getElementById("desktop-toc-header");
-		const existingHandlers = (tocHeader as any)?._tocHandlers;
-		if (existingHandlers) {
-			tocHeader?.removeEventListener("click", existingHandlers.desktopClick);
-			const header = document.querySelector(".collapse-header");
-			header?.removeEventListener("click", existingHandlers.mobileClick);
-			window.removeEventListener("scroll", existingHandlers.scroll);
-		}
-
-		document.querySelectorAll(".toc-link").forEach((link) => {
-			const handler = (link as any)._tocLinkHandler;
-			if (handler) {
-				link.removeEventListener("click", handler);
-			}
-		});
-	}
-
-	function initializeTOC() {
-		// Clean up before re-initializing
-		cleanupTOC();
-
+	onPageLifecycle(() => {
+		let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
 		let isCollapsed = false;
 		let isAutoCollapsed = false;
 		let isScrollingToSection = false;
@@ -264,7 +242,7 @@ const { headings } = Astro.props;
 		const desktopClickHandler = () => {
 			isCollapsed = !isCollapsed;
 			isAutoCollapsed = false;
-			disableAutoCollapse = false; // Re-enable auto-collapse when user manually toggles
+			disableAutoCollapse = false;
 			desktopContainer?.classList.toggle("collapsed", isCollapsed);
 			arrowIcon?.classList.toggle("collapsed", isCollapsed);
 		};
@@ -295,21 +273,13 @@ const { headings } = Astro.props;
 			}
 		};
 
-		// Store handlers for cleanup
-		if (tocHeader) {
-			(tocHeader as any)._tocHandlers = {
-				desktopClick: desktopClickHandler,
-				mobileClick: mobileClickHandler,
-				scroll: scrollHandler
-			};
-		}
-
 		// Add event listeners
 		tocHeader?.addEventListener("click", desktopClickHandler);
 		header?.addEventListener("click", mobileClickHandler);
 		window.addEventListener("scroll", scrollHandler);
 
 		// Smooth scrolling for TOC links
+		const linkHandlers: Array<{ link: Element; handler: EventListener }> = [];
 		document.querySelectorAll(".toc-link").forEach((link) => {
 			const linkClickHandler = (e: Event) => {
 				e.preventDefault();
@@ -321,14 +291,13 @@ const { headings } = Astro.props;
 				if (!targetElement) return;
 
 				isScrollingToSection = true;
-				disableAutoCollapse = true; // Disable auto-collapse after clicking TOC link
+				disableAutoCollapse = true;
 
 				targetElement.scrollIntoView({
 					behavior: "smooth",
 					block: "start",
 				});
 
-				// Re-enable scrolling flag after smooth scroll completes
 				clearTimeout(scrollTimeoutId);
 				scrollTimeoutId = setTimeout(() => {
 					isScrollingToSection = false;
@@ -337,20 +306,18 @@ const { headings } = Astro.props;
 				history.pushState(null, "", `#${targetId}`);
 			};
 
-			// Store handler for cleanup
-			(link as any)._tocLinkHandler = linkClickHandler;
+			linkHandlers.push({ link, handler: linkClickHandler });
 			link.addEventListener("click", linkClickHandler);
 		});
-	}
 
-	// Initialize on page load
-	initializeTOC();
-
-	// Re-initialize after view transitions with a small delay to ensure DOM is ready
-	document.addEventListener("astro:page-load", () => {
-		requestAnimationFrame(() => {
-			initializeTOC();
-		});
+		return () => {
+			clearTimeout(scrollTimeoutId);
+			tocHeader?.removeEventListener("click", desktopClickHandler);
+			header?.removeEventListener("click", mobileClickHandler);
+			window.removeEventListener("scroll", scrollHandler);
+			linkHandlers.forEach(({ link, handler }) => {
+				link.removeEventListener("click", handler);
+			});
+		};
 	});
-	document.addEventListener("astro:before-swap", cleanupTOC);
 </script>

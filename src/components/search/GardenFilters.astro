@@ -253,6 +253,8 @@ const initialTopicsCount = 6;
 </style>
 
 <script>
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
+
 	interface FilterState {
 		topic: string;
 		growthStage: string;
@@ -342,38 +344,19 @@ const initialTopicsCount = 6;
 		);
 	}
 
-	function cleanup() {
+	onPageLifecycle(() => {
 		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");
 
-		toggleButton?.removeEventListener("click", handleToggleClick);
-		topicsList?.removeEventListener("click", handleTopicClick);
-		rightMenus?.removeEventListener("change", handleSelectChange);
-	}
+		toggleButton?.addEventListener("click", handleToggleClick);
+		topicsList?.addEventListener("click", handleTopicClick);
+		rightMenus?.addEventListener("change", handleSelectChange);
 
-	function init() {
-		cleanup();
-
-		const toggleButton = document.querySelector(".toggle-topics");
-		const topicsList = document.querySelector(".topics-list");
-		const rightMenus = document.querySelector(".right-menus");
-
-		if (toggleButton) {
-			toggleButton.addEventListener("click", handleToggleClick);
-		}
-		if (topicsList) {
-			topicsList.addEventListener("click", handleTopicClick);
-		}
-		if (rightMenus) {
-			rightMenus.addEventListener("change", handleSelectChange);
-		}
-	}
-
-	// Initialize on first load
-	init();
-
-	// Re-initialize after page navigation
-	document.addEventListener("astro:page-load", init);
-	document.addEventListener("astro:before-swap", cleanup);
+		return () => {
+			toggleButton?.removeEventListener("click", handleToggleClick);
+			topicsList?.removeEventListener("click", handleTopicClick);
+			rightMenus?.removeEventListener("change", handleSelectChange);
+		};
+	});
 </script>

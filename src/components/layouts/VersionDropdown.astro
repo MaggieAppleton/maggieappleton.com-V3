@@ -317,18 +317,9 @@ const getVersionUrl = (version: VersionedContent) => {
 </style>
 
 <script>
-	let currentDropdownState: {
-		outsideClickHandler: EventListener;
-		outsideFocusHandler: EventListener;
-		triggerClickHandler: EventListener;
-		triggerKeydownHandler: EventListener;
-		menuKeydownHandler: EventListener;
-	} | null = null;
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
 
-	function initVersionDropdown() {
-		// Clean up previous listeners first
-		cleanupVersionDropdown();
-
+	onPageLifecycle(() => {
 		const dropdown = document.querySelector(".version-dropdown");
 		const trigger = dropdown?.querySelector(".version-trigger") as HTMLElement | null;
 		const menu = dropdown?.querySelector(".version-menu") as HTMLElement | null;
@@ -449,32 +440,12 @@ const getVersionUrl = (version: VersionedContent) => {
 		document.addEventListener("click", outsideClickHandler);
 		document.addEventListener("focusin", outsideFocusHandler);
 
-		currentDropdownState = {
-			outsideClickHandler,
-			outsideFocusHandler,
-			triggerClickHandler,
-			triggerKeydownHandler,
-			menuKeydownHandler,
+		return () => {
+			trigger.removeEventListener("click", triggerClickHandler);
+			trigger.removeEventListener("keydown", triggerKeydownHandler);
+			menu.removeEventListener("keydown", menuKeydownHandler);
+			document.removeEventListener("click", outsideClickHandler);
+			document.removeEventListener("focusin", outsideFocusHandler);
 		};
-	}
-
-	function cleanupVersionDropdown() {
-		if (!currentDropdownState) return;
-		const { outsideClickHandler, outsideFocusHandler, triggerClickHandler, triggerKeydownHandler, menuKeydownHandler } = currentDropdownState;
-
-		const trigger = document.querySelector(".version-dropdown .version-trigger");
-		const menu = document.querySelector(".version-dropdown .version-menu");
-
-		trigger?.removeEventListener("click", triggerClickHandler);
-		trigger?.removeEventListener("keydown", triggerKeydownHandler);
-		menu?.removeEventListener("keydown", menuKeydownHandler);
-		document.removeEventListener("click", outsideClickHandler);
-		document.removeEventListener("focusin", outsideFocusHandler);
-
-		currentDropdownState = null;
-	}
-
-	initVersionDropdown();
-	document.addEventListener("astro:page-load", initVersionDropdown);
-	document.addEventListener("astro:before-swap", cleanupVersionDropdown);
+	});
 </script>
