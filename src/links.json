@@ -236,7 +236,7 @@
     "inboundLinks": [
       {
         "title": "Frequently Asked Questions",
-        "slug": "FAQ",
+        "slug": "faq",
         "growthStage": "seedling",
         "description": "Questions I am often asked to answer"
       }
@@ -712,7 +712,7 @@
       "frequently ask",
       "FAQ"
     ],
-    "slug": "FAQ",
+    "slug": "faq",
     "growthStage": "seedling",
     "description": "Questions I am often asked to answer",
     "outboundLinks": [
@@ -841,7 +841,7 @@
       },
       {
         "title": "Frequently Asked Questions",
-        "slug": "FAQ",
+        "slug": "faq",
         "growthStage": "seedling",
         "description": "Questions I am often asked to answer"
       }
@@ -1866,7 +1866,7 @@
       {
         "matchedId": "frequently ask",
         "title": "Frequently Asked Questions",
-        "slug": "FAQ",
+        "slug": "faq",
         "growthStage": "seedling",
         "description": "Questions I am often asked to answer"
       },
