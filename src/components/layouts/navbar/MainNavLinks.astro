@@ -109,25 +109,19 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 </div>
 
 <script>
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
 
-	function initializeDropdown() {
+	onPageLifecycle(() => {
 		const button = document.querySelector(".popover-button") as HTMLButtonElement;
 		const megamenu = document.getElementById("garden-dropdown") as HTMLElement;
 
 		if (!button || !megamenu) return;
 
-		// Force close on initialization and reset styles
 		function closeMegamenu() {
-			if (!button || !megamenu) return;
-			
 			button.setAttribute("aria-expanded", "false");
-			
-			// Animate out first, then hide
 			megamenu.style.opacity = "0";
 			megamenu.style.transform = "rotateX(-15deg)";
 			megamenu.style.scale = "0.95";
-			
-			// Hide after animation completes
 			setTimeout(() => {
 				if (megamenu.style.opacity === "0") {
 					megamenu.classList.add("hidden");
@@ -136,17 +130,9 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		}
 
 		function openMegamenu() {
-			if (!megamenu || !button) return;
-			
 			button.setAttribute("aria-expanded", "true");
-			
-			// Show element first, then animate in
 			megamenu.classList.remove("hidden");
-			
-			// Force reflow before animating
-			megamenu.offsetHeight;
-			
-			// Animate in
+			megamenu.offsetHeight; // Force reflow before animating
 			requestAnimationFrame(() => {
 				megamenu.style.opacity = "1";
 				megamenu.style.transform = "rotateX(0deg)";
@@ -154,23 +140,13 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 			});
 		}
 
-		// Initialize closed state immediately without animation
+		// Initialize closed state
 		button.setAttribute("aria-expanded", "false");
 		megamenu.classList.add("hidden");
 		megamenu.style.opacity = "0";
 		megamenu.style.transform = "rotateX(-15deg)";
 		megamenu.style.scale = "0.95";
 
-		// Remove existing listeners to prevent duplicates
-		const existingHandlers = (button as any)._megamenuHandlers;
-		if (existingHandlers) {
-			button.removeEventListener("click", existingHandlers.click);
-			document.removeEventListener("keydown", existingHandlers.keydown);
-			document.removeEventListener("focusout", existingHandlers.focusout);
-			document.removeEventListener("astro:before-preparation", existingHandlers.beforePrep);
-		}
-
-		// Create handler functions
 		const clickHandler = (e: Event) => {
 			e.stopPropagation();
 			if (megamenu.classList.contains("hidden")) {
@@ -180,44 +156,33 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 			}
 		};
 
-		const keydownHandler = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && !megamenu.classList.contains("hidden")) {
+		const keydownHandler = (e: Event) => {
+			if ((e as KeyboardEvent).key === "Escape" && !megamenu.classList.contains("hidden")) {
 				closeMegamenu();
 				button.focus();
 			}
 		};
 
-		const focusoutHandler = (e: FocusEvent) => {
-			const target = e.relatedTarget as Node;
-			// Don't close if clicking a link inside the megamenu
-			if (target && megamenu.contains(target)) {
-				return;
-			}
+		const focusoutHandler = (e: Event) => {
+			const target = (e as FocusEvent).relatedTarget as Node;
+			if (target && megamenu.contains(target)) return;
 			if (!megamenu.contains(target) && !button.contains(target)) {
 				closeMegamenu();
 			}
 		};
 
-		// Store handlers for cleanup
-		(button as any)._megamenuHandlers = {
-			click: clickHandler,
-			keydown: keydownHandler,
-			focusout: focusoutHandler,
-			beforePrep: closeMegamenu
-		};
-
-		// Add event listeners
 		button.addEventListener("click", clickHandler);
 		document.addEventListener("keydown", keydownHandler);
 		document.addEventListener("focusout", focusoutHandler);
 		document.addEventListener("astro:before-preparation", closeMegamenu);
-	}
 
-	// Initialize on page load
-	initializeDropdown();
-
-	// Re-initialize after each navigation
-	document.addEventListener("astro:page-load", initializeDropdown);
+		return () => {
+			button.removeEventListener("click", clickHandler);
+			document.removeEventListener("keydown", keydownHandler);
+			document.removeEventListener("focusout", focusoutHandler);
+			document.removeEventListener("astro:before-preparation", closeMegamenu);
+		};
+	});
 </script>
 
 <style>

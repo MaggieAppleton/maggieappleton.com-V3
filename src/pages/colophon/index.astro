@@ -9,12 +9,12 @@ import TooltipLink from "../../components/mdx/TooltipLink.astro";
 import Content from "./colophon-content.mdx";
 import type { MDXComponents } from "mdx/types";
 
-const components: MDXComponents = {
+const components = {
 	h1: Title1,
 	h2: Title2,
 	h3: Title3,
 	a: TooltipLink,
-};
+} as unknown as MDXComponents;
 ---
 
 <Layout title="Colophon of Maggie Appleton">

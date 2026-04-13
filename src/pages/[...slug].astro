@@ -122,7 +122,7 @@ const frontmatter = entry.data;
 			</ProseWrapper>
 		</SmidgeonLayout>
 	) : (
-		<PostLayout frontmatter={frontmatter} headings={headings} entry={entry}>
+		<PostLayout frontmatter={frontmatter} headings={headings} entry={entry as CollectionEntry<"essays"> | CollectionEntry<"notes"> | CollectionEntry<"patterns"> | CollectionEntry<"talks">}>
 			<ProseWrapper>
 				{headings.length > 0 && hasTOC(frontmatter) && frontmatter.toc && (
 					<TableOfContents headings={headings} />
