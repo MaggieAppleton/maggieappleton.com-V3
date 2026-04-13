@@ -44,22 +44,8 @@ let canonicalDates = {
 	updated: frontmatter.updated,
 };
 if (entry) {
-	// Get all entries of the same collection type to find canonical dates
-	let allEntries: (typeof entry)[] = [];
-	switch (entry.collection) {
-		case "essays":
-			allEntries = (await getCollection("essays")) as (typeof entry)[];
-			break;
-		case "notes":
-			allEntries = (await getCollection("notes")) as (typeof entry)[];
-			break;
-		case "patterns":
-			allEntries = (await getCollection("patterns")) as (typeof entry)[];
-			break;
-		case "talks":
-			allEntries = (await getCollection("talks")) as (typeof entry)[];
-			break;
-	}
+	// Fetch all entries from the same collection to resolve canonical dates across versions
+	const allEntries = (await getCollection(entry.collection)) as (typeof entry)[];
 	const versionedDates = getCanonicalDates(entry, allEntries);
 	canonicalDates = {
 		startDate: versionedDates.startDate,
