@@ -212,7 +212,32 @@ const { headings } = Astro.props;
 </style>
 
 <script>
+	let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+	function cleanupTOC() {
+		clearTimeout(scrollTimeoutId);
+
+		const tocHeader = document.getElementById("desktop-toc-header");
+		const existingHandlers = (tocHeader as any)?._tocHandlers;
+		if (existingHandlers) {
+			tocHeader?.removeEventListener("click", existingHandlers.desktopClick);
+			const header = document.querySelector(".collapse-header");
+			header?.removeEventListener("click", existingHandlers.mobileClick);
+			window.removeEventListener("scroll", existingHandlers.scroll);
+		}
+
+		document.querySelectorAll(".toc-link").forEach((link) => {
+			const handler = (link as any)._tocLinkHandler;
+			if (handler) {
+				link.removeEventListener("click", handler);
+			}
+		});
+	}
+
 	function initializeTOC() {
+		// Clean up before re-initializing
+		cleanupTOC();
+
 		let isCollapsed = false;
 		let isAutoCollapsed = false;
 		let isScrollingToSection = false;
@@ -234,22 +259,6 @@ const { headings } = Astro.props;
 		const header = document.querySelector(".collapse-header");
 		const content = document.querySelector(".collapse-content");
 		const mobileArrow = header?.querySelector(".arrow-icon");
-
-		// Clean up existing listeners if they exist
-		const existingHandlers = (tocHeader as any)?._tocHandlers;
-		if (existingHandlers) {
-			tocHeader?.removeEventListener("click", existingHandlers.desktopClick);
-			header?.removeEventListener("click", existingHandlers.mobileClick);
-			window.removeEventListener("scroll", existingHandlers.scroll);
-			
-			// Remove TOC link listeners
-			document.querySelectorAll(".toc-link").forEach((link, index) => {
-				const handler = (link as any)._tocLinkHandler;
-				if (handler) {
-					link.removeEventListener("click", handler);
-				}
-			});
-		}
 
 		// Desktop toggle handler
 		const desktopClickHandler = () => {
@@ -320,7 +329,8 @@ const { headings } = Astro.props;
 				});
 
 				// Re-enable scrolling flag after smooth scroll completes
-				setTimeout(() => {
+				clearTimeout(scrollTimeoutId);
+				scrollTimeoutId = setTimeout(() => {
 					isScrollingToSection = false;
 				}, 1000);
 
@@ -338,9 +348,9 @@ const { headings } = Astro.props;
 
 	// Re-initialize after view transitions with a small delay to ensure DOM is ready
 	document.addEventListener("astro:page-load", () => {
-		// Use requestAnimationFrame to ensure layout has been painted
 		requestAnimationFrame(() => {
 			initializeTOC();
 		});
 	});
+	document.addEventListener("astro:before-swap", cleanupTOC);
 </script>

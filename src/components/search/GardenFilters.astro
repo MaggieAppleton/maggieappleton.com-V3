@@ -342,7 +342,19 @@ const initialTopicsCount = 6;
 		);
 	}
 
+	function cleanup() {
+		const toggleButton = document.querySelector(".toggle-topics");
+		const topicsList = document.querySelector(".topics-list");
+		const rightMenus = document.querySelector(".right-menus");
+
+		toggleButton?.removeEventListener("click", handleToggleClick);
+		topicsList?.removeEventListener("click", handleTopicClick);
+		rightMenus?.removeEventListener("change", handleSelectChange);
+	}
+
 	function init() {
+		cleanup();
+
 		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");
@@ -363,4 +375,5 @@ const initialTopicsCount = 6;
 
 	// Re-initialize after page navigation
 	document.addEventListener("astro:page-load", init);
+	document.addEventListener("astro:before-swap", cleanup);
 </script>

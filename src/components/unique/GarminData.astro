@@ -876,17 +876,30 @@ const data = [
 		createChart();
 
 		// Resize handler
-		let resizeTimer: ReturnType<typeof setTimeout>;
-		window.addEventListener("resize", () => {
+		resizeHandler = () => {
 			clearTimeout(resizeTimer);
 			resizeTimer = setTimeout(createChart, 250);
-		});
+		};
+		window.addEventListener("resize", resizeHandler);
 	}
 
-	// Initialize the chart when the DOM is ready
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initChart);
-	} else {
-		initChart();
+	let resizeTimer: ReturnType<typeof setTimeout>;
+	let resizeHandler: (() => void) | null = null;
+
+	function setup() {
+		const container = document.querySelector(".garmin-chart-container");
+		if (container) initChart();
 	}
+
+	function cleanup() {
+		clearTimeout(resizeTimer);
+		if (resizeHandler) {
+			window.removeEventListener("resize", resizeHandler);
+			resizeHandler = null;
+		}
+	}
+
+	setup();
+	document.addEventListener("astro:page-load", setup);
+	document.addEventListener("astro:before-swap", cleanup);
 </script>

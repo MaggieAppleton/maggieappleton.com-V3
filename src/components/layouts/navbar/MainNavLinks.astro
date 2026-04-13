@@ -213,11 +213,24 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		document.addEventListener("astro:before-preparation", closeMegamenu);
 	}
 
+	function cleanupDropdown() {
+		const button = document.querySelector(".popover-button") as HTMLButtonElement;
+		const handlers = (button as any)?._megamenuHandlers;
+		if (handlers) {
+			button.removeEventListener("click", handlers.click);
+			document.removeEventListener("keydown", handlers.keydown);
+			document.removeEventListener("focusout", handlers.focusout);
+			document.removeEventListener("astro:before-preparation", handlers.beforePrep);
+			(button as any)._megamenuHandlers = null;
+		}
+	}
+
 	// Initialize on page load
 	initializeDropdown();
 
 	// Re-initialize after each navigation
 	document.addEventListener("astro:page-load", initializeDropdown);
+	document.addEventListener("astro:before-swap", cleanupDropdown);
 </script>
 
 <style>
