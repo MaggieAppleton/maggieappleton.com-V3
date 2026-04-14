@@ -28,7 +28,7 @@ now updates
 
 ## Media Hosting
 
-Videos (talk demos, etc.) are hosted on **Cloudflare R2** and served via `media.maggieappleton.com`.
+Videos are hosted on **Cloudflare R2** and served via `media.maggieappleton.com`.
 Images in content files are either optimized locally by Astro's `Picture` component or served from Cloudinary.
 
 To upload new videos to R2:
