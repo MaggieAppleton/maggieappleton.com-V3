@@ -12,7 +12,7 @@ import { Icon } from "astro-icon/components";
 			{preview && <p class="description">{preview}...</p>}
 			<div class="metadata-container">
 				<span>Now Update</span>
-				<svg width="4px" height="10px">
+				<svg width="4px" height="4px">
 					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
 				</svg>
 				<RelativeDate postDate={date} />
@@ -36,8 +36,10 @@ import { Icon } from "astro-icon/components";
 		font-weight: 400;
 	}
 
-	.metadata-container svg {
+	.now-card .metadata-container svg {
 		margin: 0 0.4rem;
+		position: relative;
+		top: 1px;
 	}
 
 	.description {
