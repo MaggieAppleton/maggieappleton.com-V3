@@ -14,6 +14,10 @@ const sectionId = `scrolly-${Math.random().toString(36).slice(2, 9)}`;
 // Detect video URLs by file extension
 const isVideo = (src: string) => /\.(mp4|webm|mov)(\?.*)?$/i.test(src);
 
+// Derive poster URL from video URL (convention: video.mp4 → video-poster.jpg)
+const getPosterUrl = (src: string) =>
+	src.replace(/\.(mp4|webm|mov)(\?.*)?$/i, "-poster.jpg");
+
 // Reuse TalkSlide's glob-based image resolution
 const imageGlobs = import.meta.glob<{ default: ImageMetadata }>(
 	"/src/images/**/*",
@@ -52,11 +56,12 @@ const widths = [600, 900, 1200];
 							class={`scrolly-img scrolly-video ${i === 0 ? "active" : ""}`}
 							data-img-index={i}
 							src={img.src}
+							poster={getPosterUrl(img.src)}
 							muted
 							loop
 							playsinline
 							controls
-							preload="metadata"
+							preload="none"
 						/>
 					) : img.isRemote || !img.resolved ? (
 						<img
@@ -89,11 +94,12 @@ const widths = [600, 900, 1200];
 					{img.isVideo ? (
 						<video
 							src={img.src}
+							poster={getPosterUrl(img.src)}
 							muted
 							loop
 							playsinline
 							controls
-							preload="metadata"
+							preload="none"
 						/>
 					) : img.isRemote || !img.resolved ? (
 						<img src={img.src} alt="" loading="lazy" />

@@ -708,40 +708,6 @@
   },
   {
     "ids": [
-      "Frequently Asked Questions",
-      "frequently ask",
-      "FAQ"
-    ],
-    "slug": "faq",
-    "growthStage": "seedling",
-    "description": "Questions I am often asked to answer",
-    "outboundLinks": [
-      {
-        "matchedId": "What App is That?",
-        "title": "What App is That?",
-        "slug": "apps",
-        "growthStage": "evergreen",
-        "description": "A guide to the apps and tools I use to create illustrations"
-      },
-      {
-        "matchedId": "Drawing Invisible Programming Concepts",
-        "title": "How to Draw Invisible Programming Concepts: Part I",
-        "slug": "drawinginvisibles1",
-        "growthStage": "evergreen",
-        "description": "A case study showing how I make illustrations for abstract programming concepts"
-      }
-    ],
-    "inboundLinks": [
-      {
-        "title": "The Best Illustration Books and Courses",
-        "slug": "illustration-resources",
-        "growthStage": "evergreen",
-        "description": "My favourite resources for learning to draw and developing your visual thinking skills"
-      }
-    ]
-  },
-  {
-    "ids": [
       "JavaScript Bits You Skipped the First Time Around",
       "JavaScript prototype inheritance"
     ],
@@ -1538,6 +1504,40 @@
         "slug": "programmatic-notes",
         "growthStage": "evergreen",
         "description": "Agent-based note-taking systems that can prompt and facilitate custom workflows"
+      }
+    ]
+  },
+  {
+    "ids": [
+      "Frequently Asked Questions",
+      "frequently ask",
+      "FAQ"
+    ],
+    "slug": "faq",
+    "growthStage": "seedling",
+    "description": "Questions I am often asked to answer",
+    "outboundLinks": [
+      {
+        "matchedId": "What App is That?",
+        "title": "What App is That?",
+        "slug": "apps",
+        "growthStage": "evergreen",
+        "description": "A guide to the apps and tools I use to create illustrations"
+      },
+      {
+        "matchedId": "Drawing Invisible Programming Concepts",
+        "title": "How to Draw Invisible Programming Concepts: Part I",
+        "slug": "drawinginvisibles1",
+        "growthStage": "evergreen",
+        "description": "A case study showing how I make illustrations for abstract programming concepts"
+      }
+    ],
+    "inboundLinks": [
+      {
+        "title": "The Best Illustration Books and Courses",
+        "slug": "illustration-resources",
+        "growthStage": "evergreen",
+        "description": "My favourite resources for learning to draw and developing your visual thinking skills"
       }
     ]
   },
@@ -3623,5 +3623,15 @@
         "description": "Designing with Language Models"
       }
     ]
+  },
+  {
+    "ids": [
+      "One Developer, Two Dozen Agents, Zero Alignment"
+    ],
+    "slug": "zero-alignment",
+    "growthStage": "evergreen",
+    "description": "Why we need collaborative AI engineering",
+    "outboundLinks": [],
+    "inboundLinks": []
   }
 ]

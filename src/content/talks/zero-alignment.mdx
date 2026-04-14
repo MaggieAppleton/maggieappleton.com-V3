@@ -1,0 +1,387 @@
+---
+title: "One Developer, Two Dozen Agents, Zero Alignment"
+description: "Why we need collaborative AI engineering"
+type: "talk"
+growthStage: "evergreen"
+topics: ["Artificial Intelligence"]
+updated: "2026-04-13"
+startDate: "2026-04-13"
+conferences:
+  [
+    { name: "AI Engineer Europe", date: "2026-04-11", location: "London, UK" }
+  ]
+cover: "../../images/covers/talk-za@2x.jpg"
+---
+
+import Video from "../../components/mdx/Video.astro";
+import ScrollyTalkSection from "../../components/mdx/ScrollyTalkSection.astro";
+
+<BasicImage framed margin="0 auto" src="/images/posts/zero-alignment/za-title.jpg" />
+
+<ScrollyTalkSection images={[
+  "/images/posts/zero-alignment/za-1.jpg",
+  "/images/posts/zero-alignment/za-2.jpg",
+  "/images/posts/zero-alignment/za-3.jpg",
+  "/images/posts/zero-alignment/za-4.jpg",
+  "/images/posts/zero-alignment/za-5.jpg",
+  "/images/posts/zero-alignment/za-6.jpg",
+  "/images/posts/zero-alignment/za-7.jpg",
+  "/images/posts/zero-alignment/za-8.jpg",
+  "/images/posts/zero-alignment/za-9.jpg",
+  "/images/posts/zero-alignment/za-10.jpg",
+  "/images/posts/zero-alignment/za-11.jpg",
+  "/images/posts/zero-alignment/za-12.jpg",
+  "/images/posts/zero-alignment/za-13.jpg",
+  "/images/posts/zero-alignment/za-14.jpg",
+  "/images/posts/zero-alignment/za-15.jpg",
+  "/images/posts/zero-alignment/za-16.jpg",
+  "/images/posts/zero-alignment/za-17.jpg",
+  "/images/posts/zero-alignment/za-18.jpg",
+  "/images/posts/zero-alignment/za-19.jpg",
+  "/images/posts/zero-alignment/za-20.jpg",
+  "/images/posts/zero-alignment/za-21.jpg",
+  "https://media.maggieappleton.com/videos/zero-alignment/1_session_list.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/3_switching_sessions.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/4_devserver.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/5_prompt_and_summary.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/7_chat_and_preview.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/8_shared_prompting.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/9_push_to_github.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/12_realtime_multiplayer_vscode.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/15_plan_mode.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/13_dashboard.mp4",
+  "https://media.maggieappleton.com/videos/zero-alignment/14_team_pulse.mp4",
+  "/images/posts/zero-alignment/za-22.jpg",
+  "/images/posts/zero-alignment/za-23.jpg",
+  "/images/posts/zero-alignment/za-24.jpg",
+  "/images/posts/zero-alignment/za-25.jpg",
+]}>
+<div data-slide="0">
+
+First, a quick intro. I'm Maggie and I'm a staff research engineer at GitHub Next. At least that's my title, but I'm actually a designer. Or I was, back when that was still a separate thing to engineering.
+
+Next is the labs team within GitHub. We work on more experimental, risky bets than the rest of org.
+Also known as the department of fuck around and find out.
+
+Like everyone else, we're trying to shape new agentic developer tools 
+
+</div>
+<div data-slide="1">
+
+This is what many people think peak developer productivity looks like right now - a wall of terminal-based coding agents running in parallel on one person's machine.
+
+</div>
+<div data-slide="2">
+
+I call it this "one man, a two dozen claudes" theory of the future.
+The pitch here is that one person with a fleet of agents will do the work of an entire team of developers.
+
+</div>
+<div data-slide="3">
+
+The main problem with this dream is it assumes software is made by one person.
+
+</div>
+<div data-slide="4">
+
+All these tools are single player interfaces.
+
+</div>
+<div data-slide="5">
+
+And they focus on scaling up the work of the individual.
+
+But there is limited value in scaling up an individual.
+
+Because software is not made by one person in a vacuum.
+It's a team sport. Everyone building it needs to agree on what they're building and why
+
+Believing individual productivity leads to great software...
+
+</div>
+<div data-slide="6">
+
+...is "nine women make a baby in one month" logic.
+
+More individual output doesn't solve problems that require everyone to communicate and coordinate. It makes them worse. 
+
+</div>
+<div data-slide="7">
+Implementation is rapidly becoming a solved problem, right?
+Writing code is now fast, it's getting cheap, and quality is going up and to the right.
+
+The hard question is no longer how to build it. It's should we build it.
+
+Agreeing on what to build is the new bottleneck.
+
+Everyone on the team needs to be involved in asking: 
+Are we making the right thing?
+Are we spending our energy in the right place?
+How do we have the most impact?
+
+When production is cheap, opportunity cost becomes the real cost.
+You can't build everything, and whatever you pick comes at the cost of everything else.
+</div>
+<div data-slide="8">
+Anyone who's shipped software on a team knows this isn't a new problem. Alignment has always been a bottleneck.
+
+But agents have made the cost of not being aligned as a team much higher.
+</div>
+<div data-slide="9">
+What makes it worse.. 
+</div>
+<div data-slide="10">
+...is our coordination tools are still from another era.
+
+GitHub, Slack, Jira, Linear, and the like, as they currently stand, are not designed for the agentic development world. 
+
+We’re funnelling masses of agentic outputs into platforms built for an outdated way of building software.
+The PR and the issue are the wrong primitives that can’t handle the speed, shape, and volume of agentic work.
+
+I know I work at Github so that might sound heretical, but I promise it's not controversial for me to say it.
+Very few people internally believe that PRs and issues are ideal primitives for the future of engineering.
+And there are a lots of us inside the machine exploring what comes next.
+</div>
+<div data-slide="11">
+So this is how the development process used to look. We had a planning phase, a building phase, a review phase.
+
+And we had all these touch points of alignment along the way.
+
+It was slow enough that we had time for conversations in Slack, Zoom meetings, comments on issues, and draft PRs to discuss details. Everyone could give their two cents, get advice from experts and seniors across the team, catch mistakes, and course-correct.
+
+By the time the code was reviewed and merged, the whole team had seen the work happening and was roughly on the same page.
+</div>
+<div data-slide="12">
+But that implementation window has collapsed.
+
+And because implementation is no longer as expensive and time-consuming...
+</div>
+<div data-slide="13">
+...we think we don't need to plan as much.
+
+So most of those early touch points disappear.
+</div>
+<div data-slide="14">
+We know that the review time for generated code has increased.
+
+So that creates more touch points for alignment, they're on the wrong side of the implementation.
+</div>
+<div data-slide="15">
+The time between logging an issue and an agent opening a PR for it is now only a few minutes.
+Code is so cheap we don't properly stop to think before prompting it.
+</div>
+<div data-slide="16">
+Unhelpfully, most current coding agents have a local plan mode that is unshared with others.
+
+So you're not even checking with your team on whether the plan is good before you ship it off to the agent. And we lose more alignment points.
+
+This leaves the poor pull request to carry the weight of all those checkpoints at the very end of the process when it's too late.
+And never what PRs were designed to do in the first place.
+
+None of our current tools give teams a shared space to discuss plans, gather the right context, and work with agents as a collective.
+</div>
+<div data-slide="17">
+We're all experiencing the repercussions of this. Going fast without good alignment leads to:
+
+**Wasted work**
+- Features that no one asked for, and that don't solve real problems
+- Receiving critical feedback after you've finished building something, so you have to toss the whole thing out
+
+**Coordination debt**
+- Hairy merge conflicts - multiple agents touching the same files
+- Duplicated work - you and another engineer assign agent to the same feature 
+- Giant stacks of PRs to review that no one has any context for
+
+So how do we solve this?
+</div>
+<div data-slide="18">
+We need tools that help everyone on the team align before the agents start working, not after.
+
+That alignment needs to happen constantly, alongside the implementation.
+
+Planning and building are no longer separate phases. They're a continuous cycle.
+The tools of the future need to bring planning, context-gathering, decision-making, and development under one roof.
+</div>
+<div data-slide="19">
+This is especially true because most of the context you need for alignment isn't in the codebase.
+
+It's in people's heads.
+- Your business context and financial resources determine what the correct thing to build is.
+- The political dynamics of who's in charge and who gets to make decisions. 
+- The product vision from your leaders and PMs
+- User research insights from designers and customer support
+- The organisation's history and what you've built before. 
+
+...all matter immensely when you're deciding what the right thing for your team to build is
+
+Agents can never discover this context on their own.
+You need a way to get humans to share it early and naturally, without adding process and overhead
+</div>
+<div data-slide="20">
+All of this has been very clear to us at Next, and so we've been building a new research prototype to explore how we might solve these problems.
+It's called Ace. It's not a prime time product yet.
+So if it looks a pretty rough around the edges, it's because it is.
+
+We're about to go into technical preview.
+We'll be user testing it with a few thousand people to learn more about how people collaborate in it, and iterate from there.
+</div>
+<div data-slide="21">
+Here we are in Ace. It probably looks pretty familiar. We’re not reinventing any more wheels than we need to.
+
+It's a bit like Slack, Github, Copilot, and a bunch of cloud computers had a baby.
+
+We have our sessions list here on the left.
+Sessions are where we do work. It's a multiplayer chat. Like channels in Slack.
+
+I have my teammates in here and we can talk about the work we're doing, but I also have my coding agents in here.
+</div>
+<div data-slide="22">
+Each session is more than a chat channel. It is also backed by a microVM, so a sandboxed computer in the cloud on its own git branch.
+
+The changes we make in each session are isolated, so we can work on parallel tasks and instantly switch between them.
+
+If I want to tap one of my teammates on the shoulder and get their thoughts on a feature I'm building, no one has to stash their git changes and pull down a branch, or wrangle any local worktrees.
+
+I just jump into their session, and see what they're up to.
+Including their whole prompting history with an agent to understand how they arrived at the current state of things.
+</div>
+<div data-slide="23">
+Just like a local machine, I can run terminal commands in a session. I've run bun install and bun dev to get my current project running.
+
+Here we can see my live preview open on the side in the browser.
+My demo project here is a calm version of Hacker News that only shows me the top stories from the last three months.
+
+I'm going to ask the agent to change the colour theme to purple. And we can see it appears instantly in my preview.
+
+The agent has automatically made a commit for me with a nice readable commit message.
+And I can open the diff to make sure it's implemented the way I want. Everything you'd expect from a coding agent.
+</div>
+<div data-slide="24">
+So we're ready to do some real work, I have my team mates in this session with me.
+And I'm going to ask Ace to add some additional colour themes to my app.
+I pick which model I want to use. Opus 4.6.
+Ace is gonna get started.
+
+We have this handy summary block in the top right that is always up to date with the latest changes in this session, whether they're from me or somebody else.
+This means I can switch between sessions and stay always oriented about what's happening, even with many parallel streams of work.
+</div>
+<div data-slide="25">
+But the more important thing is I want to talk to my team mates.
+I can ask them what they think of the current changes.
+
+They can spin up the dev server themselves.
+
+Remember, we're all working on the same computer in the cloud so this is no problem.
+We can all see the same preview, we can all write terminal commands and see shared outputs.
+No one is going to say it doesn't work on my machine.
+</div>
+<div data-slide="26">
+My team mates Nate and Idan are jumping in here
+They've taken screenshots, they've suggesting some alternative features, and asking questions.
+
+And we can see Nate is now asking the Ace agent to make changes.
+I initially kicked off this session, but we can both prompt the agent. It's multiplayer prompting.
+The agent can also read our whole conversation - that's all input to the prompt.
+
+This kind of accessible Slack-like interface with access to a coding agent means that everyone involved in creating software - not just developers, but designers and PMs - can all be in the same conversation, seeing what's happening in real time as a feature gets built.
+
+If you're thinking, why not just use Slack? It's because Slack is never going to become a fully featured software development tool. It doesn't have the right primitives, and it's not going to add them. Ace is explicitly for software development, but is more welcoming to other team members than your terminal.
+</div>
+<div data-slide="27">
+Anyway, back to shipping our changes. We like how this looks so we're going to create a PR.
+Because eventually all this code has to go back to Github.
+
+We can create this PR from directly inside Ace.
+We can open it on GitHub. It has a link back to our Ace session.
+This is all backwards compatible.
+</div>
+<div data-slide="28">
+And sometimes you still need to touch code.
+I find this is still true for front-end design work. Agents are shit at CSS.
+
+We can still open our project in VS Code.
+We have real time, mulitplayer code editing with everyone in that session.
+
+Because again, this is a microVM cloud computer.
+
+I can close my laptop and work can continue. My session doesn't die. My teammates can keep chatting to Ace and making progress.
+
+We don't have mobile interface yet, but we're building it, and the microVMs will make the mobile experience seamless. I'll be able to open Ace on my phone I don't have to SSH into a terminal instance and keep my laptop open. Or go buy a Mac Mini to keep things available. I just talk to my always-on Ace agent in the cloud.
+</div>
+<div data-slide="29">
+For bigger, more complex features, you'll want the agent to write a plan.
+That's a very standard workflow at this point.
+
+So here we're chatting about adding variable time frames to our calm hacker news app and I then ask Ace to make a plan.
+
+And so here we are in the plan.
+I can see all my teammates cursors. We can collaboratively edit it together.
+
+Nate is making suggestions about using a dropdown for the interface rather than a segmented group. Idan is updating the requirements so the agent knows to do it.
+
+And once we're happy with all the details, we can go back to chat and ask Ace to build this and off it goes.
+</div>
+<div data-slide="30">
+I'm now jumping over to our dashboard in Ace.
+
+A lot of the planning and discussion that would otherwise happen in Slack or GitHub issues, is now happening in our sessions. We have access to lots of rich context on what work is underway and can helpfully summarise it
+
+So here, it's Monday morning and I'm trying to remember what I left unfinished last Friday.
+And Ace is prompting me to keep working on some react hooks I was writing as part of a refactor. Which is helpful since I have crappy human memory after a long weekend.
+
+From here I can start a new session, or in the "pick back up" section, in one click I can open a session to keep going on my unmerged refactor PR.
+
+I can also see a list of my recently completed PRs and issues to stroke my ego and make me feel productive.
+</div>
+<div data-slide="31">
+On the right, we have a Team Pulse section that summarises what my co-workers have been up to over the last couple of days.
+
+I can see Nate has been shipping a lobby channel. And David has been fixing access token issues.
+
+There's also a raw feed of recent PRs and issues on this repo. But I find the summary mode much more helpful.
+
+One of the biggest challenges of agentic development is that the speed and volume of work makes it hard to keep up with what your coworkers are doing. They've now shipped five features a day instead of one.
+
+This dashboard is our first pass at making agents proactive in bringing that context to you.
+
+If all your conversations around the code are available to agents, it gives them access to a social information fabric where they can help you get oriented every morning and stay aligned with your team. They could notify you of decisions or pull you into conversations where someone is about to extend a feature you originally built.
+
+This is no longer a bunch of solo disconnected terminal instances on individual computers. This becomes a living intelligent environment where everyone shares the same workspace and context.
+</div>
+<div data-slide="32">
+This is all about reclaiming your time. Before coding agents came along, none of us had enough time and energy to make our products the way we wanted to.
+
+I guarantee everyone in this room has shipped software they're not proud of.
+Maybe you didn't do enough user research, or consider design problems in enough detail, or think through the implications of your architecture choices.
+
+Not because you didn't want to, but because implementation took up so much of our time and effort.
+</div>
+<div data-slide="33">
+But we've been gifted a lot of that time back.
+
+We have an opportunity to not just go faster and build a giant pile of the same crappy software.
+but instead to make much better software through more rigorous critical thinking and better alignment in the planning stage.
+
+By doing more exploration, more research, and thinking through problems more deeply than we could have before.
+Agents allow us to scale our teams in a way that, if done right, should lead to higher-quality software.
+</div>
+<div data-slide="34">
+Many people are now realising that in a world of fast, cheap software, quality becomes the new differentiator.
+
+The bar is being set much higher
+Craftsmanship is what will set you apart from the vibe-coded slop.
+
+But craft still costs time and energy. It is not free, and in order to buy the time and energy for it, you need to do fewer things better, which requires strong alignment. 
+
+There are also more distractions than ever. It's very easy to prompt your way to the wrong thing or to add tons of unnecessary, unhelpful features to your product.
+
+The dream for me is that we end up with tools - whether it's Ace or others - that create environments where teams can think rigorously together about hard problems. Our agentic tools should help us do higher quality work, get aligned faster, and build a few exceptional things, rather than a thousand crappy ones.
+</div>
+<div data-slide="35">
+Thank you very much for listening.
+
+This QR code will take you to a form where you can put in your GitHub username to get early access to the Ace technical preview.
+
+You can read more about the GitHub Next team on githubnext.com
+</div>
+</ScrollyTalkSection>
