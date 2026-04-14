@@ -12,7 +12,7 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 			<p class="description">{description}</p>
 			<div class="metadata-container">
 				<span>Note</span>
-				<svg width="4px" height="10px">
+				<svg width="4px" height="4px">
 					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
 				</svg>
 				<RelativeDate postDate={date} />
@@ -36,8 +36,10 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		font-weight: 400;
 	}
 
-	.metadata-container svg {
+	.note-card .metadata-container svg {
 		margin: 0 0.4rem;
+		position: relative;
+		top: 1px;
 	}
 
 	.description {
