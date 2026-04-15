@@ -274,6 +274,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		margin-bottom: 0;
 	}
 
+	.scrolly-text :global([data-slide]:last-child) {
+		padding-bottom: 50vh;
+	}
+
 	/* Mobile images hidden on desktop */
 	.mobile-image {
 		display: none;
@@ -313,6 +317,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		.scrolly-text :global([data-slide]) {
 			min-height: auto;
 			padding: var(--space-m) 0;
+		}
+
+		.scrolly-text :global([data-slide]:last-child) {
+			padding-bottom: var(--space-m);
 		}
 
 		/* Override first-slide desktop offset */
