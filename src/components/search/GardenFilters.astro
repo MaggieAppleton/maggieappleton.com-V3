@@ -6,7 +6,6 @@ interface Props {
 }
 
 const { topics } = Astro.props;
-const initialTopicsCount = 6;
 ---
 
 <div class="container">
@@ -19,25 +18,11 @@ const initialTopicsCount = 6;
 		</div>
 		<div id="topics-menu" class="topics-list">
 			{
-				topics.slice(0, initialTopicsCount).map((topic) => (
-					<button class="topic-button visible" data-topic={topic}>
+				topics.map((topic) => (
+					<button class="topic-button" data-topic={topic}>
 						{topic}
 					</button>
 				))
-			}
-			{
-				topics.slice(initialTopicsCount).map((topic) => (
-					<button class="topic-button hidden" data-topic={topic}>
-						{topic}
-					</button>
-				))
-			}
-			{
-				topics.length > initialTopicsCount && (
-					<button class="toggle-topics" data-show-more="true">
-						Show More
-					</button>
-				)
 			}
 		</div>
 	</div>
@@ -176,8 +161,10 @@ const initialTopicsCount = 6;
 	}
 
 	.topics-container {
-		display: inline-flex;
+		display: flex;
 		flex-direction: row;
+		flex: 1;
+		min-width: 0;
 	}
 	@media (max-width: 768px) {
 		.topics-container {
@@ -187,11 +174,22 @@ const initialTopicsCount = 6;
 
 	.topics-list {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		gap: 4px;
+		overflow-x: auto;
+		scrollbar-width: none;
+		-webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+		mask-image: linear-gradient(to right, black 85%, transparent 100%);
+		padding-bottom: 2px;
+		padding-right: var(--space-xl);
+	}
+
+	.topics-list::-webkit-scrollbar {
+		display: none;
 	}
 
 	.topic-button {
+		flex-shrink: 0;
 		border: none;
 		background: none;
 		padding: var(--space-3xs) var(--space-2xs);
@@ -199,10 +197,6 @@ const initialTopicsCount = 6;
 		color: var(--color-gray-800);
 		cursor: pointer;
 		transition: all 0.4s ease;
-	}
-
-	.topic-button.hidden {
-		display: none;
 	}
 
 	.topic-button:hover {
@@ -217,38 +211,6 @@ const initialTopicsCount = 6;
 
 	.topic-button.selected:hover {
 		background-color: var(--color-medium-sea-blue);
-	}
-
-	.toggle-topics {
-		flex-shrink: 0;
-		margin: 0;
-		padding: var(--space-3xs) var(--space-2xs);
-		border-radius: var(--border-radius-base);
-		color: var(--color-gray-700);
-		transition: all 0.4s ease;
-		line-height: 1.2;
-		margin-top: var(--space-3xs);
-		font-size: calc(var(--font-size-xs) / 1.2);
-		text-transform: uppercase;
-		letter-spacing: 0.04rem;
-		color: var(--color-crimson);
-		border: none;
-		background: none;
-	}
-
-	@media (max-width: 768px) {
-		.toggle-topics {
-			display: none;
-		}
-	}
-
-	.toggle-topics:hover {
-		background-color: white;
-		cursor: pointer;
-	}
-
-	.toggle-topics:disabled {
-		display: none;
 	}
 </style>
 
@@ -266,21 +228,6 @@ const initialTopicsCount = 6;
 		growthStage: "",
 		type: "",
 	};
-
-	function handleToggleClick(e: Event) {
-		const toggleButton = e.currentTarget as HTMLButtonElement;
-		const isShowingMore = toggleButton.getAttribute("data-show-more") === "true";
-		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
-
-		topicButtons.forEach((button, index) => {
-			if (index >= 6) {
-				button.classList.toggle("hidden", !isShowingMore);
-			}
-		});
-
-		toggleButton.textContent = isShowingMore ? "Show Less" : "Show More";
-		toggleButton.setAttribute("data-show-more", (!isShowingMore).toString());
-	}
 
 	function handleTopicClick(e: Event) {
 		const button = (e.target as HTMLElement).closest(".topic-button");
@@ -345,16 +292,13 @@ const initialTopicsCount = 6;
 	}
 
 	onPageLifecycle(() => {
-		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
 		const rightMenus = document.querySelector(".right-menus");
 
-		toggleButton?.addEventListener("click", handleToggleClick);
 		topicsList?.addEventListener("click", handleTopicClick);
 		rightMenus?.addEventListener("change", handleSelectChange);
 
 		return () => {
-			toggleButton?.removeEventListener("click", handleToggleClick);
 			topicsList?.removeEventListener("click", handleTopicClick);
 			rightMenus?.removeEventListener("change", handleSelectChange);
 		};
