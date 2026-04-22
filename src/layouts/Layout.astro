@@ -70,11 +70,8 @@ declare global {
 		<link rel="preconnect" href="https://media.maggieappleton.com" />
 		<link rel="canonical" href={canonicalURL} />
 		<ClientRouter />
-		<script
-			type="text/partytown"
-			async
-			src="https://www.googletagmanager.com/gtag/js?id=G-PT3NSRSMLT"></script>
-		<script type="text/partytown">
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-PT3NSRSMLT"></script>
+		<script is:inline>
 			window.dataLayer = window.dataLayer || [];
 			function gtag() {
 				dataLayer.push(arguments);

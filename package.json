@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",
-    "@astrojs/partytown": "^2.1.2",
     "@astrojs/react": "^4.0.0",
     "@astrojs/rss": "^4.0.10",
     "@iconify-json/heroicons": "^1.2.1",
