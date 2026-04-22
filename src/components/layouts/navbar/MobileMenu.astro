@@ -27,6 +27,7 @@ import { Icon } from "astro-icon/components";
 		background: var(--color-cream);
 		z-index: 1000;
 		transition: right 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	--close-duration: 0.3s;
 		padding: var(--space-xl) var(--space-m);
 	}
 
@@ -62,6 +63,7 @@ import { Icon } from "astro-icon/components";
 
 <script>
 	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
+	import { navigate } from "astro:transitions/client";
 
 	onPageLifecycle(() => {
 		const mobileMenu = document.getElementById("mobile-menu") as HTMLElement;
@@ -69,20 +71,40 @@ import { Icon } from "astro-icon/components";
 
 		if (!mobileMenu || !links) return;
 
+		// Instant close for non-click navigation (back button, etc.)
 		const closeMobileMenu = () => {
 			mobileMenu.classList.remove("open");
 			document.body.style.overflow = "auto";
 		};
 
+		const handleLinkClick = (e: Event) => {
+			const link = e.currentTarget as HTMLAnchorElement;
+			e.preventDefault();
+
+			// Fast ease-in for closing (open keeps its spring feel)
+			mobileMenu.style.transition = `right var(--close-duration, 0.3s) ease-in`;
+			mobileMenu.classList.remove("open");
+			document.body.style.overflow = "auto";
+
+			mobileMenu.addEventListener(
+				"transitionend",
+				() => {
+					mobileMenu.style.transition = "";
+					navigate(link.href);
+				},
+				{ once: true }
+			);
+		};
+
 		links.forEach((link) => {
-			link.addEventListener("click", closeMobileMenu);
+			link.addEventListener("click", handleLinkClick);
 		});
 
 		document.addEventListener("astro:before-preparation", closeMobileMenu);
 
 		return () => {
 			links.forEach((link) => {
-				link.removeEventListener("click", closeMobileMenu);
+				link.removeEventListener("click", handleLinkClick);
 			});
 			document.removeEventListener("astro:before-preparation", closeMobileMenu);
 		};
