@@ -302,6 +302,7 @@ const TYPES = [
 		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
 		opacity: 0;
 		transform: translateY(-4px);
+		pointer-events: none;
 		transition:
 			opacity 160ms ease-out,
 			transform 160ms ease-out;
@@ -312,6 +313,7 @@ const TYPES = [
 	.filter-popover[data-open="true"] .filter-panel {
 		opacity: 1;
 		transform: translateY(0);
+		pointer-events: auto;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.filter-panel {
@@ -907,7 +909,7 @@ const TYPES = [
 		filterState.types = [];
 
 		const topicsList = document.querySelector<HTMLElement>(".topics-list");
-		const filterPopovers = document.querySelector(".right-menus");
+		const filterPopovers = document.querySelector<HTMLElement>(".right-menus");
 		const leftBtn = document.getElementById("scroll-left") as HTMLElement;
 		const rightBtn = document.getElementById("scroll-right") as HTMLElement;
 
@@ -918,20 +920,15 @@ const TYPES = [
 
 		syncUI();
 
+		let onScroll: (() => void) | undefined;
 		if (topicsList && leftBtn && rightBtn) {
 			updateScrollButtons(topicsList, leftBtn, rightBtn);
 
-			const onScroll = () => updateScrollButtons(topicsList, leftBtn, rightBtn);
+			onScroll = () => updateScrollButtons(topicsList, leftBtn, rightBtn);
 			topicsList.addEventListener("scroll", onScroll, { passive: true });
 
 			leftBtn.addEventListener("click", () => topicsList.scrollBy({ left: -160, behavior: "smooth" }));
 			rightBtn.addEventListener("click", () => topicsList.scrollBy({ left: 160, behavior: "smooth" }));
-
-			return () => {
-				topicsList.removeEventListener("click", handleTopicClick);
-				rightMenus?.removeEventListener("change", handleSelectChange);
-				topicsList.removeEventListener("scroll", onScroll);
-			};
 		}
 
 		return () => {
@@ -939,6 +936,7 @@ const TYPES = [
 			filterPopovers?.removeEventListener("click", handlePopoverClick);
 			document.removeEventListener("click", handleDocumentClick);
 			document.removeEventListener("keydown", handleKeydown);
+			if (onScroll) topicsList?.removeEventListener("scroll", onScroll);
 		};
 	});
 </script>
