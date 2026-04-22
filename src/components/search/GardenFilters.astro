@@ -31,14 +31,22 @@ const TYPES = [
 				<rect width="2" height="14"></rect>
 			</svg>
 		</div>
-		<div id="topics-menu" class="topics-list">
-			{
-				topics.map((topic) => (
-					<button class="topic-button" data-topic={topic}>
-						{topic}
-					</button>
-				))
-			}
+		<div class="scroll-container">
+			<button class="scroll-btn scroll-btn-left" id="scroll-left" aria-label="Scroll topics left">
+				<Icon name="heroicons:chevron-left" size={16} />
+			</button>
+			<div id="topics-menu" class="topics-list">
+				{
+					topics.map((topic) => (
+						<button class="topic-button" data-topic={topic}>
+							{topic}
+						</button>
+					))
+				}
+			</div>
+			<button class="scroll-btn scroll-btn-right" id="scroll-right" aria-label="Scroll topics right">
+				<Icon name="heroicons:chevron-right" size={16} />
+			</button>
 		</div>
 	</div>
 
@@ -453,6 +461,47 @@ const TYPES = [
 		}
 	}
 
+	.scroll-container {
+		position: relative;
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+	}
+
+	.scroll-btn {
+		position: absolute;
+		z-index: 2;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: var(--color-cream);
+		border: 1px solid var(--color-gray-300);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 0;
+		color: var(--color-gray-700);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.2s ease;
+	}
+
+	.scroll-btn.visible {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.scroll-btn-left {
+		left: 0;
+	}
+
+	.scroll-btn-right {
+		right: 0;
+	}
+
 	.topics-list {
 		display: flex;
 		flex-wrap: nowrap;
@@ -463,6 +512,21 @@ const TYPES = [
 		mask-image: linear-gradient(to right, black 85%, transparent 100%);
 		padding-bottom: 2px;
 		padding-right: var(--space-xl);
+	}
+
+	.topics-list.fade-left {
+		-webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 85%, transparent 100%);
+		mask-image: linear-gradient(to right, transparent 0%, black 10%, black 85%, transparent 100%);
+	}
+
+	.topics-list.at-end {
+		-webkit-mask-image: linear-gradient(to right, black 100%);
+		mask-image: linear-gradient(to right, black 100%);
+	}
+
+	.topics-list.fade-left.at-end {
+		-webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%);
+		mask-image: linear-gradient(to right, transparent 0%, black 10%);
 	}
 
 	.topics-list::-webkit-scrollbar {
@@ -828,13 +892,24 @@ const TYPES = [
 		}
 	}
 
+	function updateScrollButtons(list: HTMLElement, leftBtn: HTMLElement, rightBtn: HTMLElement) {
+		const atStart = list.scrollLeft <= 0;
+		const atEnd = list.scrollLeft + list.clientWidth >= list.scrollWidth - 1;
+		leftBtn.classList.toggle("visible", !atStart);
+		rightBtn.classList.toggle("visible", !atEnd);
+		list.classList.toggle("fade-left", !atStart);
+		list.classList.toggle("at-end", atEnd);
+	}
+
 	onPageLifecycle(() => {
 		filterState.topic = "";
 		filterState.growthStage = "";
 		filterState.types = [];
 
-		const topicsList = document.querySelector(".topics-list");
+		const topicsList = document.querySelector<HTMLElement>(".topics-list");
 		const filterPopovers = document.querySelector(".right-menus");
+		const leftBtn = document.getElementById("scroll-left") as HTMLElement;
+		const rightBtn = document.getElementById("scroll-right") as HTMLElement;
 
 		topicsList?.addEventListener("click", handleTopicClick);
 		filterPopovers?.addEventListener("click", handlePopoverClick);
@@ -842,6 +917,22 @@ const TYPES = [
 		document.addEventListener("keydown", handleKeydown);
 
 		syncUI();
+
+		if (topicsList && leftBtn && rightBtn) {
+			updateScrollButtons(topicsList, leftBtn, rightBtn);
+
+			const onScroll = () => updateScrollButtons(topicsList, leftBtn, rightBtn);
+			topicsList.addEventListener("scroll", onScroll, { passive: true });
+
+			leftBtn.addEventListener("click", () => topicsList.scrollBy({ left: -160, behavior: "smooth" }));
+			rightBtn.addEventListener("click", () => topicsList.scrollBy({ left: 160, behavior: "smooth" }));
+
+			return () => {
+				topicsList.removeEventListener("click", handleTopicClick);
+				rightMenus?.removeEventListener("change", handleSelectChange);
+				topicsList.removeEventListener("scroll", onScroll);
+			};
+		}
 
 		return () => {
 			topicsList?.removeEventListener("click", handleTopicClick);
