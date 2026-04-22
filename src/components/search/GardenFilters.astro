@@ -7,6 +7,22 @@ interface Props {
 
 const { topics } = Astro.props;
 const initialTopicsCount = 6;
+
+const GROWTH_STAGES = [
+	{ value: "seedling", label: "Seedling" },
+	{ value: "budding", label: "Budding" },
+	{ value: "evergreen", label: "Evergreen" },
+];
+
+const TYPES = [
+	{ value: "essay", label: "Essays" },
+	{ value: "note", label: "Notes" },
+	{ value: "pattern", label: "Patterns" },
+	{ value: "talk", label: "Talks" },
+	{ value: "podcast", label: "Podcasts" },
+	{ value: "now", label: "Now Updates" },
+	{ value: "smidgeon", label: "Smidgeons" },
+];
 ---
 
 <div class="container">
@@ -43,47 +59,156 @@ const initialTopicsCount = 6;
 	</div>
 
 	<div class="right-menus">
-		<div class="mobile-topics">
-			<div class="select-wrapper">
-				<select id="topics-select" aria-label="Topics">
-					<option value="">All Topics</option>
-					{topics.map((topic) => <option value={topic}>{topic}</option>)}
-				</select>
-				<Icon name="heroicons:chevron-down" size={16} />
+		<div class="mobile-topics filter-popover" data-filter-group="topic" data-select-mode="single">
+			<button
+				class="filter-trigger"
+				type="button"
+				aria-haspopup="listbox"
+				aria-expanded="false"
+				aria-controls="topic-popover"
+			>
+				<span class="filter-trigger-label" data-role="label">All Topics</span>
+				<Icon name="heroicons:chevron-down" size={16} class="filter-chevron" />
+			</button>
+			<div
+				class="filter-panel"
+				id="topic-popover"
+				role="listbox"
+				aria-label="Topic"
+				hidden
+			>
+				<button
+					class="filter-option filter-option-clear"
+					type="button"
+					role="option"
+					data-value=""
+					aria-selected="true"
+				>
+					<span class="filter-check" aria-hidden="true"></span>
+					<span class="filter-option-label">All Topics</span>
+				</button>
+				{
+					topics.map((topic) => (
+						<button
+							class="filter-option"
+							type="button"
+							role="option"
+							data-value={topic}
+							aria-selected="false"
+						>
+							<span class="filter-check" aria-hidden="true" />
+							<span class="filter-option-label">{topic}</span>
+							<span class="filter-count" data-role="count">0</span>
+						</button>
+					))
+				}
 			</div>
 		</div>
-		<div class="select-wrapper">
-			<select id="growth-stages-select" aria-label="Growth Stages">
-				<option value="">All Growth Stages</option>
-				<option value="seedling">Seedling</option>
-				<option value="budding">Budding</option>
-				<option value="evergreen">Evergreen</option>
-			</select>
-			<Icon name="heroicons:chevron-down" size={16} />
+
+		<div class="filter-popover" data-filter-group="growth-stage" data-select-mode="single">
+			<button
+				class="filter-trigger"
+				type="button"
+				aria-haspopup="listbox"
+				aria-expanded="false"
+				aria-controls="growth-stage-popover"
+			>
+				<span class="filter-trigger-label" data-role="label">All Growth Stages</span>
+				<Icon name="heroicons:chevron-down" size={16} class="filter-chevron" />
+			</button>
+			<div
+				class="filter-panel"
+				id="growth-stage-popover"
+				role="listbox"
+				aria-label="Growth Stage"
+				hidden
+			>
+				<button
+					class="filter-option filter-option-clear"
+					type="button"
+					role="option"
+					data-value=""
+					aria-selected="true"
+				>
+					<span class="filter-check" aria-hidden="true"></span>
+					<span class="filter-option-label">All Growth Stages</span>
+				</button>
+				{
+					GROWTH_STAGES.map((stage) => (
+						<button
+							class="filter-option"
+							type="button"
+							role="option"
+							data-value={stage.value}
+							aria-selected="false"
+						>
+							<span class="filter-check" aria-hidden="true" />
+							<span class="filter-option-label">{stage.label}</span>
+							<span class="filter-count" data-role="count">
+								0
+							</span>
+						</button>
+					))
+				}
+			</div>
 		</div>
-		<div class="select-wrapper">
-			<select id="types-select" aria-label="Types">
-				<option value="">All Types</option>
-				<option value="essay">Essays</option>
-				<option value="note">Notes</option>
-				<option value="pattern">Patterns</option>
-				<option value="talk">Talks</option>
-				<option value="podcast">Podcasts</option>
-				<option value="now">Now Updates</option>
-				<option value="smidgeon">Smidgeons</option>
-			</select>
-			<Icon name="heroicons:chevron-down" size={16} />
+
+		<div class="filter-popover" data-filter-group="type" data-select-mode="multi">
+			<button
+				class="filter-trigger"
+				type="button"
+				aria-haspopup="listbox"
+				aria-expanded="false"
+				aria-controls="type-popover"
+			>
+				<span class="filter-trigger-label" data-role="label">All Types</span>
+				<Icon name="heroicons:chevron-down" size={16} class="filter-chevron" />
+			</button>
+			<div class="filter-panel" id="type-popover" role="listbox" aria-multiselectable="true" aria-label="Type" hidden>
+				<button
+					class="filter-option filter-option-clear"
+					type="button"
+					role="option"
+					data-value=""
+					aria-selected="true"
+				>
+					<span class="filter-check" aria-hidden="true"></span>
+					<span class="filter-option-label">All Types</span>
+				</button>
+				{
+					TYPES.map((type) => (
+						<button
+							class="filter-option"
+							type="button"
+							role="option"
+							data-value={type.value}
+							aria-selected="false"
+						>
+							<span class="filter-check" aria-hidden="true" />
+							<span class="filter-option-label">{type.label}</span>
+							<span class="filter-count" data-role="count">
+								0
+							</span>
+						</button>
+					))
+				}
+			</div>
 		</div>
 	</div>
 </div>
 
 <style>
-	.mobile-topics {
+	.mobile-topics.filter-popover {
 		display: none;
 	}
 	@media (max-width: 768px) {
-		.mobile-topics {
-			display: block;
+		.mobile-topics.filter-popover {
+			display: inline-block;
+		}
+	}
+	@media (max-width: 500px) {
+		.mobile-topics.filter-popover {
+			width: 100%;
 		}
 	}
 
@@ -103,47 +228,204 @@ const initialTopicsCount = 6;
 		}
 	}
 
-	.select-wrapper {
+	.filter-popover {
 		position: relative;
 		display: inline-block;
-		width: auto;
-		max-height: 32px;
+	}
+	@media (max-width: 500px) {
+		.filter-popover {
+			width: 100%;
+		}
 	}
 
-	.select-wrapper [data-icon] {
-		position: absolute;
-		right: 8px;
-		top: 50%;
-		transform: translateY(-50%);
-		color: var(--color-gray-700);
-		pointer-events: none;
-	}
-
-	.right-menus select {
+	.filter-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2xs);
+		min-width: 180px;
+		height: 32px;
 		padding: 0.4rem var(--space-2xs);
-		padding-right: var(--space-l);
+		padding-right: var(--space-xs);
 		border-radius: var(--border-radius-base);
 		border: 1px solid var(--color-gray-300);
 		color: var(--color-gray-700);
 		background-color: var(--color-cream);
-		transition: all 0.3s ease-in-out;
-		appearance: none;
-		width: auto;
-		min-width: 180px;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
 		line-height: 1.2;
-		height: 32px;
-	}
-	@media (max-width: 768px) {
-		.select-wrapper {
-			width: 100%;
-		}
-		.right-menus select {
-			width: 100%;
-		}
-	}
-	.right-menus select:hover {
-		background: white;
+		text-align: left;
 		cursor: pointer;
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease,
+			color 0.2s ease;
+	}
+	@media (max-width: 500px) {
+		.filter-trigger {
+			width: 100%;
+		}
+	}
+	.filter-trigger:hover {
+		background: white;
+	}
+	.filter-trigger:focus-visible {
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 2px;
+	}
+	.filter-popover[data-active="true"] > .filter-trigger {
+		color: var(--color-black);
+	}
+
+	.filter-trigger-label {
+		flex: 1 1 auto;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.filter-chevron {
+		flex-shrink: 0;
+		color: var(--color-gray-700);
+		transition: transform 180ms ease-out;
+	}
+	.filter-popover[data-open="true"] .filter-chevron {
+		transform: rotate(180deg);
+	}
+
+	.filter-panel {
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		z-index: 20;
+		display: flex;
+		flex-direction: column;
+		min-width: 100%;
+		max-height: 360px;
+		overflow-y: auto;
+		padding: var(--space-3xs);
+		background: var(--color-white);
+		border: 1px solid var(--color-gray-200);
+		border-radius: var(--border-radius-base);
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+		opacity: 0;
+		transform: translateY(-4px);
+		transition:
+			opacity 160ms ease-out,
+			transform 160ms ease-out;
+	}
+	.filter-panel[hidden] {
+		display: none;
+	}
+	.filter-popover[data-open="true"] .filter-panel {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.filter-panel {
+			transform: none;
+			transition: opacity 120ms ease-out;
+		}
+		.filter-chevron {
+			transition: none;
+		}
+	}
+	@media (max-width: 500px) {
+		.filter-panel {
+			min-width: 100%;
+			width: 100%;
+		}
+	}
+
+	.filter-option {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2xs);
+		width: 100%;
+		padding: var(--space-3xs) var(--space-2xs);
+		border: none;
+		background: transparent;
+		border-radius: var(--border-radius-sm);
+		color: var(--color-gray-800);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		line-height: 1.2;
+		text-align: left;
+		cursor: pointer;
+		transition: background-color 120ms ease;
+	}
+	.filter-option:hover {
+		background-color: var(--color-cream);
+	}
+	.filter-option:focus-visible {
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: -2px;
+	}
+	.filter-option[data-disabled="true"] {
+		opacity: 0.35;
+		pointer-events: none;
+	}
+	.filter-option[aria-selected="true"] {
+		color: var(--color-black);
+	}
+
+	.filter-option-label {
+		flex: 1 1 auto;
+	}
+
+	.filter-count {
+		color: var(--color-gray-500);
+		font-variant-numeric: tabular-nums;
+		font-size: calc(var(--font-size-xs) / 1.05);
+		transition: opacity 140ms ease;
+	}
+
+	.filter-check {
+		flex-shrink: 0;
+		width: 14px;
+		height: 14px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.filter-popover[data-select-mode="multi"] .filter-check {
+		border: 1px solid var(--color-gray-300);
+		border-radius: 3px;
+		background: var(--color-white);
+		transition:
+			background-color 140ms ease,
+			border-color 140ms ease;
+	}
+	.filter-popover[data-select-mode="multi"] .filter-option[aria-selected="true"] .filter-check {
+		background: var(--color-sea-blue);
+		border-color: var(--color-sea-blue);
+	}
+	.filter-popover[data-select-mode="multi"] .filter-option[aria-selected="true"] .filter-check::after {
+		content: "";
+		width: 8px;
+		height: 4px;
+		border-left: 1.5px solid var(--color-white);
+		border-bottom: 1.5px solid var(--color-white);
+		transform: rotate(-45deg) translate(1px, -1px);
+	}
+
+	.filter-popover[data-select-mode="single"] .filter-check {
+		display: none;
+	}
+	.filter-popover[data-select-mode="single"] .filter-option[aria-selected="true"] {
+		color: var(--color-black);
+	}
+
+	.filter-option-clear {
+		color: var(--color-gray-600);
+		border-bottom: 1px solid var(--color-gray-100);
+		border-radius: 0;
+		margin-bottom: calc(var(--space-3xs) + 2px);
+		padding-bottom: calc(var(--space-3xs) + 4px);
+	}
+	.filter-option-clear .filter-check {
+		display: none;
 	}
 
 	.container {
@@ -258,14 +540,266 @@ const initialTopicsCount = 6;
 	interface FilterState {
 		topic: string;
 		growthStage: string;
-		type: string;
+		types: string[];
 	}
+
+	const TYPE_LABELS: Record<string, string> = {
+		essay: "Essays",
+		note: "Notes",
+		pattern: "Patterns",
+		talk: "Talks",
+		podcast: "Podcasts",
+		now: "Now Updates",
+		smidgeon: "Smidgeons",
+	};
+
+	const STAGE_LABELS: Record<string, string> = {
+		seedling: "Seedling",
+		budding: "Budding",
+		evergreen: "Evergreen",
+	};
 
 	const filterState: FilterState = {
 		topic: "",
 		growthStage: "",
-		type: "",
+		types: [],
 	};
+
+	function normalizeItemType(el: HTMLElement): string {
+		// Podcast items don't set data.type in frontmatter.
+		return el.dataset.type || "podcast";
+	}
+
+	function dispatchFilterChange() {
+		document.dispatchEvent(
+			new CustomEvent("filter-change", {
+				detail: { ...filterState, types: [...filterState.types] },
+			}),
+		);
+	}
+
+	function getTriggerLabel(group: string): string {
+		if (group === "topic") {
+			return filterState.topic || "All Topics";
+		}
+		if (group === "growth-stage") {
+			return filterState.growthStage
+				? STAGE_LABELS[filterState.growthStage] || filterState.growthStage
+				: "All Growth Stages";
+		}
+		const n = filterState.types.length;
+		if (n === 0) return "All Types";
+		if (n === 1) return TYPE_LABELS[filterState.types[0]] || filterState.types[0];
+		if (n === 2) return `${TYPE_LABELS[filterState.types[0]]} +1`;
+		return `${n} types`;
+	}
+
+	function updateTriggerLabels() {
+		document.querySelectorAll<HTMLElement>(".filter-popover").forEach((pop) => {
+			const group = pop.dataset.filterGroup || "";
+			const labelEl = pop.querySelector<HTMLElement>('[data-role="label"]');
+			if (!labelEl) return;
+			labelEl.textContent = getTriggerLabel(group);
+
+			const isActive =
+				group === "topic"
+					? Boolean(filterState.topic)
+					: group === "growth-stage"
+						? Boolean(filterState.growthStage)
+						: filterState.types.length > 0;
+			pop.dataset.active = isActive ? "true" : "false";
+		});
+	}
+
+	function updateOptionSelectedStates() {
+		const topicPop = document.querySelector<HTMLElement>(
+			'.filter-popover[data-filter-group="topic"]',
+		);
+		topicPop?.querySelectorAll<HTMLButtonElement>(".filter-option").forEach((opt) => {
+			const value = opt.dataset.value || "";
+			const selected = value === "" ? filterState.topic === "" : filterState.topic === value;
+			opt.setAttribute("aria-selected", selected ? "true" : "false");
+		});
+
+		const stagePop = document.querySelector<HTMLElement>(
+			'.filter-popover[data-filter-group="growth-stage"]',
+		);
+		stagePop?.querySelectorAll<HTMLButtonElement>(".filter-option").forEach((opt) => {
+			const value = opt.dataset.value || "";
+			const selected =
+				value === ""
+					? filterState.growthStage === ""
+					: filterState.growthStage === value;
+			opt.setAttribute("aria-selected", selected ? "true" : "false");
+		});
+
+		const typePop = document.querySelector<HTMLElement>(
+			'.filter-popover[data-filter-group="type"]',
+		);
+		typePop?.querySelectorAll<HTMLButtonElement>(".filter-option").forEach((opt) => {
+			const value = opt.dataset.value || "";
+			const selected =
+				value === ""
+					? filterState.types.length === 0
+					: filterState.types.includes(value);
+			opt.setAttribute("aria-selected", selected ? "true" : "false");
+		});
+	}
+
+	function updateCounts() {
+		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item"));
+
+		const matchesTopic = (el: HTMLElement) => {
+			if (!filterState.topic) return true;
+			const topics = el.dataset.topics?.split(",") || [];
+			return topics.includes(filterState.topic);
+		};
+
+		document
+			.querySelectorAll<HTMLElement>(
+				'.filter-popover[data-filter-group="growth-stage"] .filter-option',
+			)
+			.forEach((opt) => {
+				const value = opt.dataset.value || "";
+				const countEl = opt.querySelector<HTMLElement>('[data-role="count"]');
+				if (!countEl) return;
+				const count = items.filter((it) => {
+					if (!matchesTopic(it)) return false;
+					const typeOk =
+						filterState.types.length === 0 ||
+						filterState.types.includes(normalizeItemType(it));
+					if (!typeOk) return false;
+					return value === "" ? true : it.dataset.growthStage === value;
+				}).length;
+				if (countEl.textContent !== String(count)) {
+					countEl.textContent = String(count);
+				}
+				opt.dataset.disabled = count === 0 && value !== "" ? "true" : "false";
+			});
+
+		document
+			.querySelectorAll<HTMLElement>(
+				'.filter-popover[data-filter-group="type"] .filter-option',
+			)
+			.forEach((opt) => {
+				const value = opt.dataset.value || "";
+				const countEl = opt.querySelector<HTMLElement>('[data-role="count"]');
+				if (!countEl) return;
+				const count = items.filter((it) => {
+					if (!matchesTopic(it)) return false;
+					if (filterState.growthStage && it.dataset.growthStage !== filterState.growthStage)
+						return false;
+					return value === "" ? true : normalizeItemType(it) === value;
+				}).length;
+				if (countEl.textContent !== String(count)) {
+					countEl.textContent = String(count);
+				}
+				opt.dataset.disabled = count === 0 && value !== "" ? "true" : "false";
+			});
+
+		document
+			.querySelectorAll<HTMLElement>(
+				'.filter-popover[data-filter-group="topic"] .filter-option',
+			)
+			.forEach((opt) => {
+				const value = opt.dataset.value || "";
+				const countEl = opt.querySelector<HTMLElement>('[data-role="count"]');
+				if (!countEl) return;
+				const count = items.filter((it) => {
+					if (filterState.growthStage && it.dataset.growthStage !== filterState.growthStage)
+						return false;
+					const typeOk =
+						filterState.types.length === 0 ||
+						filterState.types.includes(normalizeItemType(it));
+					if (!typeOk) return false;
+					if (value === "") return true;
+					const itemTopics = it.dataset.topics?.split(",") || [];
+					return itemTopics.includes(value);
+				}).length;
+				if (countEl.textContent !== String(count)) {
+					countEl.textContent = String(count);
+				}
+				opt.dataset.disabled = count === 0 && value !== "" ? "true" : "false";
+			});
+	}
+
+	function syncUI() {
+		updateTriggerLabels();
+		updateOptionSelectedStates();
+		updateCounts();
+	}
+
+	function closeAllPopovers(except?: HTMLElement) {
+		document.querySelectorAll<HTMLElement>(".filter-popover").forEach((pop) => {
+			if (pop === except) return;
+			if (pop.dataset.open === "true") {
+				pop.dataset.open = "false";
+				const trigger = pop.querySelector<HTMLButtonElement>(".filter-trigger");
+				const panel = pop.querySelector<HTMLElement>(".filter-panel");
+				trigger?.setAttribute("aria-expanded", "false");
+				// Delay the `hidden` toggle so the close transition can play.
+				if (panel) {
+					setTimeout(() => {
+						if (pop.dataset.open !== "true") panel.setAttribute("hidden", "");
+					}, 120);
+				}
+			}
+		});
+	}
+
+	function togglePopover(pop: HTMLElement, open?: boolean) {
+		const currentlyOpen = pop.dataset.open === "true";
+		const shouldOpen = open ?? !currentlyOpen;
+		const panel = pop.querySelector<HTMLElement>(".filter-panel");
+		const trigger = pop.querySelector<HTMLButtonElement>(".filter-trigger");
+		if (!panel || !trigger) return;
+
+		if (shouldOpen) {
+			closeAllPopovers(pop);
+			panel.removeAttribute("hidden");
+			// Allow browser to apply `display` before animating in.
+			requestAnimationFrame(() => {
+				pop.dataset.open = "true";
+			});
+			trigger.setAttribute("aria-expanded", "true");
+		} else {
+			pop.dataset.open = "false";
+			trigger.setAttribute("aria-expanded", "false");
+			setTimeout(() => {
+				if (pop.dataset.open !== "true") panel.setAttribute("hidden", "");
+			}, 120);
+		}
+	}
+
+	function handleOptionClick(pop: HTMLElement, option: HTMLButtonElement) {
+		const group = pop.dataset.filterGroup;
+		const mode = pop.dataset.selectMode;
+		const value = option.dataset.value || "";
+
+		if (group === "topic") {
+			filterState.topic = value;
+			document.querySelectorAll<HTMLButtonElement>(".topic-button").forEach((btn) => {
+				btn.classList.toggle("selected", btn.getAttribute("data-topic") === value && value !== "");
+			});
+			togglePopover(pop, false);
+		} else if (group === "growth-stage") {
+			filterState.growthStage = value;
+			togglePopover(pop, false);
+		} else if (group === "type") {
+			if (mode === "multi") {
+				if (value === "") {
+					filterState.types = [];
+				} else {
+					const idx = filterState.types.indexOf(value);
+					if (idx >= 0) filterState.types.splice(idx, 1);
+					else filterState.types.push(value);
+				}
+			}
+		}
+
+		syncUI();
+		dispatchFilterChange();
+	}
 
 	function handleToggleClick(e: Event) {
 		const toggleButton = e.currentTarget as HTMLButtonElement;
@@ -287,13 +821,10 @@ const initialTopicsCount = 6;
 		if (!button) return;
 
 		const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
-		const topicsSelect = document.getElementById("topics-select") as HTMLSelectElement;
 		const wasSelected = button.classList.contains("selected");
 
-		// Remove selected class from all buttons
 		topicButtons.forEach((btn) => btn.classList.remove("selected"));
 
-		// If the button wasn't previously selected, select it
 		if (!wasSelected) {
 			button.classList.add("selected");
 			filterState.topic = button.getAttribute("data-topic") || "";
@@ -301,62 +832,79 @@ const initialTopicsCount = 6;
 			filterState.topic = "";
 		}
 
-		// Update mobile select to match
-		if (topicsSelect) {
-			topicsSelect.value = filterState.topic;
-		}
-
-		// Dispatch filter change event
-		document.dispatchEvent(
-			new CustomEvent("filter-change", {
-				detail: { ...filterState },
-			}),
-		);
+		syncUI();
+		dispatchFilterChange();
 	}
 
-	function handleSelectChange(e: Event) {
-		const select = e.target as HTMLSelectElement;
-		if (!select || !select.id) return;
+	function handleDocumentClick(e: Event) {
+		const target = e.target as HTMLElement;
+		if (target.closest(".filter-popover")) return;
+		closeAllPopovers();
+	}
 
-		// Update filter state based on which select changed
-		switch (select.id) {
-			case "topics-select":
-				filterState.topic = select.value;
-				// Update topic buttons to match
-				const topicButtons = document.querySelectorAll<HTMLButtonElement>(".topic-button");
-				topicButtons.forEach((btn) => {
-					btn.classList.toggle("selected", btn.getAttribute("data-topic") === select.value);
-				});
-				break;
-			case "growth-stages-select":
-				filterState.growthStage = select.value;
-				break;
-			case "types-select":
-				filterState.type = select.value;
-				break;
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === "Escape") {
+			closeAllPopovers();
+			return;
+		}
+		if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+		const activePop = document.querySelector<HTMLElement>('.filter-popover[data-open="true"]');
+		if (!activePop) return;
+		const options = Array.from(
+			activePop.querySelectorAll<HTMLButtonElement>(
+				'.filter-option:not([data-disabled="true"])',
+			),
+		);
+		if (options.length === 0) return;
+		const currentIdx = options.findIndex((o) => o === document.activeElement);
+		let nextIdx = currentIdx;
+		if (e.key === "ArrowDown") nextIdx = currentIdx < 0 ? 0 : (currentIdx + 1) % options.length;
+		if (e.key === "ArrowUp")
+			nextIdx = currentIdx <= 0 ? options.length - 1 : currentIdx - 1;
+		e.preventDefault();
+		options[nextIdx].focus();
+	}
+
+	function handlePopoverClick(e: Event) {
+		const target = e.target as HTMLElement;
+		const pop = target.closest<HTMLElement>(".filter-popover");
+		if (!pop) return;
+
+		const trigger = target.closest<HTMLElement>(".filter-trigger");
+		if (trigger) {
+			togglePopover(pop);
+			return;
 		}
 
-		// Dispatch filter change event
-		document.dispatchEvent(
-			new CustomEvent("filter-change", {
-				detail: { ...filterState },
-			}),
-		);
+		const option = target.closest<HTMLButtonElement>(".filter-option");
+		if (option) {
+			handleOptionClick(pop, option);
+		}
 	}
 
 	onPageLifecycle(() => {
+		filterState.topic = "";
+		filterState.growthStage = "";
+		filterState.types = [];
+
 		const toggleButton = document.querySelector(".toggle-topics");
 		const topicsList = document.querySelector(".topics-list");
-		const rightMenus = document.querySelector(".right-menus");
+		const filterPopovers = document.querySelector(".right-menus");
 
 		toggleButton?.addEventListener("click", handleToggleClick);
 		topicsList?.addEventListener("click", handleTopicClick);
-		rightMenus?.addEventListener("change", handleSelectChange);
+		filterPopovers?.addEventListener("click", handlePopoverClick);
+		document.addEventListener("click", handleDocumentClick);
+		document.addEventListener("keydown", handleKeydown);
+
+		syncUI();
 
 		return () => {
 			toggleButton?.removeEventListener("click", handleToggleClick);
 			topicsList?.removeEventListener("click", handleTopicClick);
-			rightMenus?.removeEventListener("change", handleSelectChange);
+			filterPopovers?.removeEventListener("click", handlePopoverClick);
+			document.removeEventListener("click", handleDocumentClick);
+			document.removeEventListener("keydown", handleKeydown);
 		};
 	});
 </script>
