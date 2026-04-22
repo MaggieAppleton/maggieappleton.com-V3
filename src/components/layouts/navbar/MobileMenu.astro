@@ -27,6 +27,7 @@ import { Icon } from "astro-icon/components";
 		background: var(--color-cream);
 		z-index: 1000;
 		transition: right 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	--close-duration: 0.3s;
 		padding: var(--space-xl) var(--space-m);
 	}
 
@@ -61,40 +62,51 @@ import { Icon } from "astro-icon/components";
 </style>
 
 <script>
-	function initializeMobileMenu() {
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
+	import { navigate } from "astro:transitions/client";
+
+	onPageLifecycle(() => {
 		const mobileMenu = document.getElementById("mobile-menu") as HTMLElement;
 		const links = mobileMenu?.querySelectorAll("a");
 
 		if (!mobileMenu || !links) return;
 
-		// Clean up existing listeners
-		links.forEach((link) => {
-			const existingHandler = (link as any)._mobileMenuHandler;
-			if (existingHandler) {
-				link.removeEventListener("click", existingHandler);
-			}
-		});
-
-		// Function to close mobile menu
+		// Instant close for non-click navigation (back button, etc.)
 		const closeMobileMenu = () => {
 			mobileMenu.classList.remove("open");
 			document.body.style.overflow = "auto";
 		};
 
-		// Create and attach new handlers
+		const handleLinkClick = (e: Event) => {
+			const link = e.currentTarget as HTMLAnchorElement;
+			e.preventDefault();
+
+			// Fast ease-in for closing (open keeps its spring feel)
+			mobileMenu.style.transition = `right var(--close-duration, 0.3s) ease-in`;
+			mobileMenu.classList.remove("open");
+			document.body.style.overflow = "auto";
+
+			mobileMenu.addEventListener(
+				"transitionend",
+				() => {
+					mobileMenu.style.transition = "";
+					navigate(link.href);
+				},
+				{ once: true }
+			);
+		};
+
 		links.forEach((link) => {
-			// Store handler for cleanup
-			(link as any)._mobileMenuHandler = closeMobileMenu;
-			link.addEventListener("click", closeMobileMenu);
+			link.addEventListener("click", handleLinkClick);
 		});
 
-		// Close menu on view transition start
 		document.addEventListener("astro:before-preparation", closeMobileMenu);
-	}
 
-	// Initialize on page load
-	initializeMobileMenu();
-
-	// Re-initialize after view transitions
-	document.addEventListener("astro:page-load", initializeMobileMenu);
+		return () => {
+			links.forEach((link) => {
+				link.removeEventListener("click", handleLinkClick);
+			});
+			document.removeEventListener("astro:before-preparation", closeMobileMenu);
+		};
+	});
 </script>
