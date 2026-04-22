@@ -37,13 +37,6 @@ if (!type) {
 	if (coverImage) ogImageURL.searchParams.set("coverImage", coverImage);
 }
 
-// Google Analytics type declarations
-declare global {
-	interface Window {
-		dataLayer: any[];
-		gtag: (...args: any[]) => void;
-	}
-}
 ---
 
 <!doctype html>
@@ -70,15 +63,6 @@ declare global {
 		<link rel="preconnect" href="https://media.maggieappleton.com" />
 		<link rel="canonical" href={canonicalURL} />
 		<ClientRouter />
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-PT3NSRSMLT"></script>
-		<script is:inline>
-			window.dataLayer = window.dataLayer || [];
-			function gtag() {
-				dataLayer.push(arguments);
-			}
-			gtag("js", new Date());
-			gtag("config", "G-PT3NSRSMLT");
-		</script>
 		<SEO
 			title={title}
 			description={desc || DEFAULT_DESCRIPTION}
