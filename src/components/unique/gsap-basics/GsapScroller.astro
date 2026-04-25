@@ -35,12 +35,13 @@
 
 <script>
 	import scrollama from "scrollama";
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
 
-	let scroller: any;
-	let fadeImages: NodeListOf<Element>;
-	let currentStep = -1;
+	onPageLifecycle(() => {
+		let scroller: any;
+		let fadeImages: NodeListOf<Element>;
+		let currentStep = -1;
 
-	function initScrollama() {
 		scroller = scrollama();
 		fadeImages = document.querySelectorAll(".fade-image");
 
@@ -66,26 +67,15 @@
 					});
 				}
 			});
-	}
 
-	// Initial setup
-	initScrollama();
+		const handleResize = () => scroller?.resize();
+		window.addEventListener("resize", handleResize);
 
-	// Handle resize
-	const handleResize = () => scroller?.resize();
-	window.addEventListener("resize", handleResize);
-
-	// Reinit on view transitions
-	document.addEventListener("astro:page-load", initScrollama);
-
-	// Cleanup
-	const cleanup = () => {
-		scroller?.destroy();
-		window.removeEventListener("resize", handleResize);
-	};
-
-	document.addEventListener("astro:before-swap", cleanup);
-	document.addEventListener("astro:unmount", cleanup);
+		return () => {
+			scroller?.destroy();
+			window.removeEventListener("resize", handleResize);
+		};
+	});
 </script>
 
 <style>

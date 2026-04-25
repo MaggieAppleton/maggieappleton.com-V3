@@ -7,19 +7,13 @@
 </div>
 
 <script>
-	let currentObserver: IntersectionObserver | null = null;
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
 
-	function initializeObserver() {
-		// Clean up existing observer
-		if (currentObserver) {
-			currentObserver.disconnect();
-			currentObserver = null;
-		}
-
+	onPageLifecycle(() => {
 		const boxes = document.querySelectorAll(".animated-box");
 		if (boxes.length === 0) return;
 
-		currentObserver = new IntersectionObserver(
+		const observer = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
 					if (entry.isIntersecting) {
@@ -29,30 +23,12 @@
 					}
 				});
 			},
-			{
-				threshold: 0.6,
-				rootMargin: "0px",
-			},
+			{ threshold: 0.6, rootMargin: "0px" },
 		);
 
-		boxes.forEach((box) => currentObserver?.observe(box));
-	}
-
-	function cleanup() {
-		if (currentObserver) {
-			currentObserver.disconnect();
-			currentObserver = null;
-		}
-	}
-
-	// Initialize on first load
-	initializeObserver();
-
-	// Reinitialize after view transitions
-	document.addEventListener("astro:page-load", initializeObserver);
-
-	// Cleanup on page leave
-	document.addEventListener("astro:before-swap", cleanup);
+		boxes.forEach((box) => observer.observe(box));
+		return () => observer.disconnect();
+	});
 </script>
 
 <style>
