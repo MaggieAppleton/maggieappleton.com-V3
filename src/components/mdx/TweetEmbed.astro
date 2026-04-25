@@ -16,30 +16,19 @@ const { tweetId } = Astro.props;
 	}
 
 	function loadTwitterWidget() {
-		// Remove any existing Twitter script to prevent duplicates
-		const existingScript = document.querySelector(
-			'script[src="https://platform.twitter.com/widgets.js"]',
-		);
-		if (existingScript) {
-			existingScript.remove();
-		}
-
-		// Create and append new Twitter script
-		const script = document.createElement("script");
-		script.src = "https://platform.twitter.com/widgets.js";
-		script.async = true;
-		document.body.appendChild(script);
-
-		// Force widget load if window.twttr exists
 		if (window.twttr) {
+			// Script already loaded — just re-process any new tweet embeds on the page
 			window.twttr.widgets.load();
+		} else if (!document.querySelector('script[src="https://platform.twitter.com/widgets.js"]')) {
+			// First time on a tweet-containing page — inject the script once
+			const script = document.createElement("script");
+			script.src = "https://platform.twitter.com/widgets.js";
+			script.async = true;
+			document.body.appendChild(script);
 		}
 	}
 
-	// Initialize on first load
-	loadTwitterWidget();
-
-	// Re-initialize after view transitions
+	// Initialize on first load and after each SPA navigation
 	document.addEventListener("astro:page-load", loadTwitterWidget);
 </script>
 
