@@ -56,9 +56,13 @@ const {
 				if (activeImage.complete) {
 					stack.style.height = `${activeImage.offsetHeight}px`;
 				} else {
-					activeImage.addEventListener("load", () => {
-						stack.style.height = `${activeImage.offsetHeight}px`;
-					});
+					activeImage.addEventListener(
+						"load",
+						() => {
+							stack.style.height = `${activeImage.offsetHeight}px`;
+						},
+						{ once: true },
+					);
 				}
 			}
 		}
