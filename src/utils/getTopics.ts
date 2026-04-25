@@ -1,27 +1,31 @@
 import { getCollection } from "astro:content";
 import { slugifyTopic } from "./slugifyTopic";
 
+/**
+ * Fetch all content entries that can carry topics, excluding drafts where applicable.
+ */
+async function fetchAllContent() {
+  const [essays, notes, patterns, talks, podcasts, now, smidgeons] =
+    await Promise.all([
+      getCollection("essays", ({ data }) => !data.draft),
+      getCollection("notes", ({ data }) => !data.draft),
+      getCollection("patterns", ({ data }) => !data.draft),
+      getCollection("talks", ({ data }) => !data.draft),
+      getCollection("podcasts"),
+      getCollection("now"),
+      getCollection("smidgeons", ({ data }) => !data.draft),
+    ]);
+
+  return [...essays, ...notes, ...patterns, ...talks, ...podcasts, ...now, ...smidgeons];
+}
+
+/**
+ * Return every unique topic across all content collections, with both the
+ * original display name and its URL slug.
+ */
 export async function getAllTopics() {
-  const essays = await getCollection("essays", ({ data }) => !data.draft);
-  const notes = await getCollection("notes", ({ data }) => !data.draft);
-  const patterns = await getCollection("patterns", ({ data }) => !data.draft);
-  const talks = await getCollection("talks", ({ data }) => !data.draft);
-  const podcasts = await getCollection("podcasts");
-  const now = await getCollection("now");
-  const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
+  const allContent = await fetchAllContent();
 
-  // Combine all content
-  const allContent = [
-    ...essays,
-    ...notes,
-    ...patterns,
-    ...talks,
-    ...podcasts,
-    ...now,
-    ...smidgeons,
-  ];
-
-  // Get all unique topics
   const topics = new Set<string>();
   allContent.forEach((post) => {
     if (post.data.topics) {
@@ -29,36 +33,22 @@ export async function getAllTopics() {
     }
   });
 
-  // Return array of topic objects with both original name and slug
   return Array.from(topics).map((topic) => ({
     name: topic,
     slug: slugifyTopic(topic),
   }));
 }
 
+/**
+ * Return all content entries that are tagged with the given topic slug.
+ * Slugified versions of each entry's topics are compared so the match is
+ * insensitive to spacing and capitalisation differences.
+ */
 export async function getPostsForTopic(topicSlug: string) {
-  const essays = await getCollection("essays", ({ data }) => !data.draft);
-  const notes = await getCollection("notes", ({ data }) => !data.draft);
-  const patterns = await getCollection("patterns", ({ data }) => !data.draft);
-  const talks = await getCollection("talks", ({ data }) => !data.draft);
-  const podcasts = await getCollection("podcasts");
-  const now = await getCollection("now");
-  const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
-
-  const allContent = [
-    ...essays,
-    ...notes,
-    ...patterns,
-    ...talks,
-    ...podcasts,
-    ...now,
-    ...smidgeons,
-  ];
+  const allContent = await fetchAllContent();
 
   return allContent.filter((post) => {
     if (!post.data.topics) return false;
-    // Instead of trying to perfectly reconstruct the original topic,
-    // compare slugified versions for more reliable matching
     return post.data.topics.some((t) => slugifyTopic(t) === topicSlug);
   });
 }

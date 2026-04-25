@@ -481,9 +481,6 @@ const data = [
 		stressScore: number;
 	}
 
-	let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-	let handleResize: (() => void) | null = null;
-
 	async function initChart() {
 		const { select } = await import("d3-selection");
 		const { scaleLinear } = await import("d3-scale");
@@ -880,21 +877,27 @@ const data = [
 		// Create chart on load
 		createChart();
 
-		handleResize = () => {
+		// Resize handler
+		resizeHandler = () => {
 			clearTimeout(resizeTimer);
 			resizeTimer = setTimeout(createChart, 250);
 		};
-		window.addEventListener("resize", handleResize);
+		window.addEventListener("resize", resizeHandler);
 	}
 
+	let resizeTimer: ReturnType<typeof setTimeout>;
+	let resizeHandler: (() => void) | null = null;
+
 	onPageLifecycle(() => {
-		initChart();
+		const container = document.querySelector(".chart-container");
+		if (container) initChart();
+
 		return () => {
-			if (handleResize) {
-				window.removeEventListener("resize", handleResize);
-				handleResize = null;
+			clearTimeout(resizeTimer);
+			if (resizeHandler) {
+				window.removeEventListener("resize", resizeHandler);
+				resizeHandler = null;
 			}
-			if (resizeTimer) clearTimeout(resizeTimer);
 		};
 	});
 </script>

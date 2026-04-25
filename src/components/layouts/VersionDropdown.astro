@@ -321,8 +321,8 @@ const getVersionUrl = (version: VersionedContent) => {
 
 	onPageLifecycle(() => {
 		const dropdown = document.querySelector(".version-dropdown");
-		const trigger = dropdown?.querySelector(".version-trigger");
-		const menu = dropdown?.querySelector(".version-menu");
+		const trigger = dropdown?.querySelector(".version-trigger") as HTMLElement | null;
+		const menu = dropdown?.querySelector(".version-menu") as HTMLElement | null;
 		const options = dropdown?.querySelectorAll('[role="option"]');
 
 		if (!dropdown || !trigger || !menu) return;
@@ -333,19 +333,19 @@ const getVersionUrl = (version: VersionedContent) => {
 
 		function openDropdown() {
 			isOpen = true;
-			menu.classList.add("open");
-			trigger.setAttribute("aria-expanded", "true");
+			menu!.classList.add("open");
+			trigger!.setAttribute("aria-expanded", "true");
 		}
 
 		function closeDropdown() {
 			isOpen = false;
-			menu.classList.remove("open");
-			trigger.setAttribute("aria-expanded", "false");
+			menu!.classList.remove("open");
+			trigger!.setAttribute("aria-expanded", "false");
 			currentIndex = -1;
-			trigger.focus();
+			trigger!.focus();
 		}
 
-		function navigateOptions(direction) {
+		function navigateOptions(direction: "up" | "down") {
 			if (!isOpen || optionsArray.length === 0) return;
 
 			if (direction === "down") {
@@ -355,11 +355,11 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 
 			if (currentIndex >= 0 && currentIndex < optionsArray.length) {
-				optionsArray[currentIndex].focus();
+				(optionsArray[currentIndex] as HTMLElement).focus();
 			}
 		}
 
-		const handleTriggerClick = (e: Event) => {
+		const triggerClickHandler = (e: Event) => {
 			e.preventDefault();
 			e.stopPropagation();
 			if (isOpen) {
@@ -369,17 +369,18 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 		};
 
-		const handleTriggerKeydown = (e: Event) => {
-			switch (e.key) {
+		const triggerKeydownHandler = (e: Event) => {
+			const ke = e as KeyboardEvent;
+			switch (ke.key) {
 				case "Enter":
 				case " ":
-					e.preventDefault();
+					ke.preventDefault();
 					if (!isOpen) {
 						openDropdown();
 					}
 					break;
 				case "ArrowDown":
-					e.preventDefault();
+					ke.preventDefault();
 					if (!isOpen) {
 						openDropdown();
 					} else {
@@ -387,7 +388,7 @@ const getVersionUrl = (version: VersionedContent) => {
 					}
 					break;
 				case "ArrowUp":
-					e.preventDefault();
+					ke.preventDefault();
 					if (isOpen) {
 						navigateOptions("up");
 					}
@@ -400,18 +401,19 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 		};
 
-		const handleMenuKeydown = (e: Event) => {
-			switch (e.key) {
+		const menuKeydownHandler = (e: Event) => {
+			const ke = e as KeyboardEvent;
+			switch (ke.key) {
 				case "ArrowDown":
-					e.preventDefault();
+					ke.preventDefault();
 					navigateOptions("down");
 					break;
 				case "ArrowUp":
-					e.preventDefault();
+					ke.preventDefault();
 					navigateOptions("up");
 					break;
 				case "Escape":
-					e.preventDefault();
+					ke.preventDefault();
 					closeDropdown();
 					break;
 				case "Tab":
@@ -420,30 +422,30 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 		};
 
-		const handleDocumentClick = (e: Event) => {
-			if (!dropdown.contains(e.target)) {
+		const outsideClickHandler = (e: Event) => {
+			if (!dropdown.contains(e.target as Node)) {
 				closeDropdown();
 			}
 		};
 
-		const handleDocumentFocusin = (e: Event) => {
-			if (!dropdown.contains(e.target)) {
+		const outsideFocusHandler = (e: Event) => {
+			if (!dropdown.contains(e.target as Node)) {
 				closeDropdown();
 			}
 		};
 
-		trigger.addEventListener("click", handleTriggerClick);
-		trigger.addEventListener("keydown", handleTriggerKeydown);
-		menu.addEventListener("keydown", handleMenuKeydown);
-		document.addEventListener("click", handleDocumentClick);
-		document.addEventListener("focusin", handleDocumentFocusin);
+		trigger.addEventListener("click", triggerClickHandler);
+		trigger.addEventListener("keydown", triggerKeydownHandler);
+		menu.addEventListener("keydown", menuKeydownHandler);
+		document.addEventListener("click", outsideClickHandler);
+		document.addEventListener("focusin", outsideFocusHandler);
 
 		return () => {
-			trigger.removeEventListener("click", handleTriggerClick);
-			trigger.removeEventListener("keydown", handleTriggerKeydown);
-			menu.removeEventListener("keydown", handleMenuKeydown);
-			document.removeEventListener("click", handleDocumentClick);
-			document.removeEventListener("focusin", handleDocumentFocusin);
+			trigger.removeEventListener("click", triggerClickHandler);
+			trigger.removeEventListener("keydown", triggerKeydownHandler);
+			menu.removeEventListener("keydown", menuKeydownHandler);
+			document.removeEventListener("click", outsideClickHandler);
+			document.removeEventListener("focusin", outsideFocusHandler);
 		};
 	});
 </script>

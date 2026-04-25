@@ -1,0 +1,326 @@
+---
+import { Picture } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+	images: string[];
+}
+
+const { images } = Astro.props;
+
+// Generate unique ID
+const sectionId = `scrolly-${Math.random().toString(36).slice(2, 9)}`;
+
+// Detect video URLs by file extension
+const isVideo = (src: string) => /\.(mp4|webm|mov)(\?.*)?$/i.test(src);
+
+// Derive poster URL from video URL (convention: video.mp4 → video-poster.jpg)
+const getPosterUrl = (src: string) =>
+	src.replace(/\.(mp4|webm|mov)(\?.*)?$/i, "-poster.jpg");
+
+// Reuse TalkSlide's glob-based image resolution
+const imageGlobs = import.meta.glob<{ default: ImageMetadata }>(
+	"/src/images/**/*",
+);
+
+const resolvedImages = await Promise.all(
+	images.map(async (src) => {
+		if (isVideo(src)) {
+			return { src, isRemote: true, resolved: null, isVideo: true };
+		}
+		const isRemote = src.startsWith("http://") || src.startsWith("https://");
+		if (isRemote) {
+			return { src, isRemote: true, resolved: null, isVideo: false };
+		}
+		const globKey = "/src" + src;
+		if (!imageGlobs[globKey]) {
+			console.warn(`ScrollyTalkSection: Image not found: ${src}`);
+			return { src, isRemote: true, resolved: null, isVideo: false };
+		}
+		const resolved = (await imageGlobs[globKey]()).default;
+		return { src, isRemote: false, resolved, isVideo: false };
+	}),
+);
+
+const widths = [600, 900, 1200];
+---
+
+<div class="scrolly-section" data-scrolly-id={sectionId}>
+	<!-- Desktop: sticky image panel -->
+	<div class="scrolly-images">
+		<div class="image-stack">
+			{
+				resolvedImages.map((img, i) =>
+					img.isVideo ? (
+						<video
+							class={`scrolly-img scrolly-video ${i === 0 ? "active" : ""}`}
+							data-img-index={i}
+							src={img.src}
+							poster={getPosterUrl(img.src)}
+							muted
+							loop
+							playsinline
+							controls
+							preload="none"
+						/>
+					) : img.isRemote || !img.resolved ? (
+						<img
+							class={`scrolly-img ${i === 0 ? "active" : ""}`}
+							data-img-index={i}
+							src={img.src}
+							alt=""
+							loading="lazy"
+						/>
+					) : (
+						<Picture
+							class={`scrolly-img ${i === 0 ? "active" : ""}`}
+							data-img-index={i}
+							src={img.resolved}
+							alt=""
+							widths={widths}
+							formats={["avif", "webp", "jpg"]}
+						/>
+					),
+				)
+			}
+		</div>
+	</div>
+
+	<!-- Scrolling text with mobile images interleaved -->
+	<div class="scrolly-text">
+		{
+			resolvedImages.map((img, i) => (
+				<div class="mobile-image" data-for-slide={i} style={`order: ${i * 2}`}>
+					{img.isVideo ? (
+						<video
+							src={img.src}
+							poster={getPosterUrl(img.src)}
+							muted
+							loop
+							playsinline
+							controls
+							preload="none"
+						/>
+					) : img.isRemote || !img.resolved ? (
+						<img src={img.src} alt="" loading="lazy" />
+					) : (
+						<Picture
+							src={img.resolved}
+							alt=""
+							widths={widths}
+							formats={["avif", "webp", "jpg"]}
+						/>
+					)}
+				</div>
+			))
+		}
+		<slot />
+	</div>
+</div>
+
+<!-- Dynamic mobile ordering rules scoped to this section -->
+<style is:inline set:html={`
+@media (max-width: 1200px) {
+${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-slide="${i}"] { order: ${i * 2 + 1}; }`).join('\n')}
+}
+`} />
+
+<script>
+	import scrollama from "scrollama";
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
+
+	onPageLifecycle(() => {
+		const scrollers: any[] = [];
+
+		document.querySelectorAll("[data-scrolly-id]").forEach((section) => {
+			const images = section.querySelectorAll(".scrolly-img");
+			const steps = section.querySelectorAll("[data-slide]");
+			if (steps.length === 0 || images.length === 0) return;
+
+			const scroller = scrollama();
+			scroller
+				.setup({
+					step: steps as unknown as string,
+					offset: 0.5,
+				})
+				.onStepEnter((response: any) => {
+					const slideIndex = parseInt(
+						response.element.getAttribute("data-slide"),
+						10,
+					);
+					images.forEach((img, i) => {
+						const isActive = i === slideIndex;
+						img.classList.toggle("active", isActive);
+						// Auto-play/pause videos on slide transition
+						if (img.tagName === "VIDEO") {
+							const video = img as HTMLVideoElement;
+							if (isActive) {
+								video.play().catch(() => {});
+							} else {
+								video.pause();
+							}
+						}
+					});
+				});
+
+			scrollers.push(scroller);
+		});
+
+		const handleResize = () => scrollers.forEach((s) => s.resize());
+		window.addEventListener("resize", handleResize);
+		// Note: per-image load listeners are tracked separately in issue #46 item 2
+		document.querySelectorAll(".scrolly-img").forEach((img) => {
+			img.addEventListener("load", handleResize, { once: true });
+		});
+
+		return () => {
+			scrollers.forEach((s) => s.destroy());
+			window.removeEventListener("resize", handleResize);
+		};
+	});
+</script>
+
+<style>
+	.scrolly-section {
+		grid-column: 1 / 4 !important;
+		display: grid;
+		grid-template-columns: 3fr 2fr;
+		gap: var(--space-l);
+		max-width: 1400px;
+		margin: var(--space-xl) auto;
+		padding: 0 var(--space-xs);
+	}
+
+	/* --- Left: sticky image panel --- */
+	.scrolly-images {
+		position: sticky;
+		top: 48px;
+		height: calc(100vh - 96px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.image-stack {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 16 / 9;
+	}
+
+	.scrolly-img,
+	.image-stack :global(picture) {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.scrolly-img {
+		object-fit: contain;
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--color-gray-100);
+		box-shadow: var(--box-shadow-sm);
+		opacity: 0;
+		transition: opacity 0.6s ease-out;
+	}
+
+	.scrolly-img.active {
+		opacity: 1;
+	}
+
+	/* Make img inside <picture> fill the container */
+	.image-stack :global(picture img) {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--color-gray-100);
+		box-shadow: var(--box-shadow-sm);
+	}
+
+	/* --- Right: scrolling text --- */
+	.scrolly-text :global([data-slide]) {
+		min-height: 75vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: var(--space-xl) var(--space-m);
+	}
+
+	.scrolly-text :global([data-slide="0"]) {
+		justify-content: flex-start;
+		padding-top: calc(50vh - 200px);
+	}
+
+	.scrolly-text :global([data-slide] p) {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-looser);
+		margin-bottom: 1rem;
+	}
+
+	.scrolly-text :global([data-slide] p:last-child) {
+		margin-bottom: 0;
+	}
+
+	.scrolly-text :global([data-slide]:last-child) {
+		padding-bottom: 50vh;
+	}
+
+	/* Mobile images hidden on desktop */
+	.mobile-image {
+		display: none;
+	}
+
+	.mobile-image :global(img),
+	.mobile-image :global(video) {
+		width: 100%;
+		height: auto;
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--color-gray-100);
+		box-shadow: var(--box-shadow-sm);
+	}
+
+	/* === Mobile: stacked layout === */
+	@media (max-width: 1200px) {
+		.scrolly-section {
+			grid-template-columns: 1fr;
+			gap: var(--space-s);
+			max-width: 900px;
+		}
+
+		.scrolly-images {
+			display: none;
+		}
+
+		.scrolly-text {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.mobile-image {
+			display: block;
+			margin-bottom: var(--space-s);
+		}
+
+		.scrolly-text :global([data-slide]) {
+			min-height: auto;
+			padding: var(--space-m) 0;
+		}
+
+		.scrolly-text :global([data-slide]:last-child) {
+			padding-bottom: var(--space-m);
+		}
+
+		/* Override first-slide desktop offset */
+		.scrolly-text :global([data-slide="0"]) {
+			justify-content: flex-start;
+			padding-top: var(--space-m);
+		}
+	}
+    
+	@media (max-width: 768px) {
+		.scrolly-section {
+			padding: 0;
+		}
+	}
+</style>

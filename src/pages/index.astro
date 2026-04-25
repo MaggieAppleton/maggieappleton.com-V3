@@ -19,16 +19,16 @@ const patterns = await getCollection("patterns", ({ data }) => !data.draft);
 const books = await getCollection("books");
 
 const sortedEssays = essays
-	.slice(0, 4)
-	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime());
+	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime())
+	.slice(0, 4);
 
 const sortedNotes = notes.sort(
 	(a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime(),
 );
 
 const sortedPatterns = patterns
-	.slice(0, 8)
-	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime());
+	.sort((a, b) => new Date(b.data.updated).getTime() - new Date(a.data.updated).getTime())
+	.slice(0, 8);
 ---
 
 <Layout title="Maggie Appleton">
