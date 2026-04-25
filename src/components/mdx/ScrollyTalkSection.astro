@@ -127,12 +127,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 <script>
 	import scrollama from "scrollama";
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
 
-	const scrollers: any[] = [];
-
-	function initAllScrollySections() {
-		scrollers.forEach((s) => s.destroy());
-		scrollers.length = 0;
+	onPageLifecycle(() => {
+		const scrollers: any[] = [];
 
 		document.querySelectorAll("[data-scrolly-id]").forEach((section) => {
 			const images = section.querySelectorAll(".scrolly-img");
@@ -167,29 +165,19 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 			scrollers.push(scroller);
 		});
-	}
 
-	const handleResize = () => scrollers.forEach((s) => s.resize());
-
-	function initAndAttachListeners() {
-		initAllScrollySections();
+		const handleResize = () => scrollers.forEach((s) => s.resize());
 		window.addEventListener("resize", handleResize);
+		// Note: per-image load listeners are tracked separately in issue #46 item 2
 		document.querySelectorAll(".scrolly-img").forEach((img) => {
 			img.addEventListener("load", handleResize, { once: true });
 		});
-	}
 
-	initAndAttachListeners();
-
-	document.addEventListener("astro:page-load", initAndAttachListeners);
-
-	const cleanup = () => {
-		scrollers.forEach((s) => s.destroy());
-		scrollers.length = 0;
-		window.removeEventListener("resize", handleResize);
-	};
-	document.addEventListener("astro:before-swap", cleanup);
-	document.addEventListener("astro:unmount", cleanup);
+		return () => {
+			scrollers.forEach((s) => s.destroy());
+			window.removeEventListener("resize", handleResize);
+		};
+	});
 </script>
 
 <style>
