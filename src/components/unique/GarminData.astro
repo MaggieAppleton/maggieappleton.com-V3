@@ -472,6 +472,8 @@ const data = [
 </style>
 
 <script>
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
+
 	interface GarminDataPoint {
 		date: string;
 		restingHR: number;
@@ -876,17 +878,26 @@ const data = [
 		createChart();
 
 		// Resize handler
-		let resizeTimer: ReturnType<typeof setTimeout>;
-		window.addEventListener("resize", () => {
+		resizeHandler = () => {
 			clearTimeout(resizeTimer);
 			resizeTimer = setTimeout(createChart, 250);
-		});
+		};
+		window.addEventListener("resize", resizeHandler);
 	}
 
-	// Initialize the chart when the DOM is ready
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initChart);
-	} else {
-		initChart();
-	}
+	let resizeTimer: ReturnType<typeof setTimeout>;
+	let resizeHandler: (() => void) | null = null;
+
+	onPageLifecycle(() => {
+		const container = document.querySelector(".chart-container");
+		if (container) initChart();
+
+		return () => {
+			clearTimeout(resizeTimer);
+			if (resizeHandler) {
+				window.removeEventListener("resize", resizeHandler);
+				resizeHandler = null;
+			}
+		};
+	});
 </script>

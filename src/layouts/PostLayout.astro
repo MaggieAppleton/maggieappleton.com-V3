@@ -14,9 +14,6 @@ import VersionDropdown from "../components/layouts/VersionDropdown.astro";
 import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 
-// You'll need to find Astro alternatives for these React components:
-// - BackToTop
-
 type Props = {
 	frontmatter:
 		| CollectionEntry<"essays">["data"]
@@ -42,33 +39,23 @@ const canonicalURL = entry
 	: undefined;
 
 // Get canonical dates for versioned content (consistent across all versions)
-let canonicalDates = {
+let canonicalDates: { startDate: Date; updated?: Date } = {
 	startDate: frontmatter.startDate,
 	updated: frontmatter.updated,
 };
 if (entry) {
-	// Get all entries of the same collection type to find canonical dates
-	let allEntries: (typeof entry)[] = [];
-	switch (entry.collection) {
-		case "essays":
-			allEntries = (await getCollection("essays")) as (typeof entry)[];
-			break;
-		case "notes":
-			allEntries = (await getCollection("notes")) as (typeof entry)[];
-			break;
-		case "patterns":
-			allEntries = (await getCollection("patterns")) as (typeof entry)[];
-			break;
-		case "talks":
-			allEntries = (await getCollection("talks")) as (typeof entry)[];
-			break;
-	}
+	// Fetch all entries from the same collection to resolve canonical dates across versions
+	const allEntries = (await getCollection(entry.collection)) as (typeof entry)[];
 	const versionedDates = getCanonicalDates(entry, allEntries);
 	canonicalDates = {
-		startDate: versionedDates.startDate,
-		updated: versionedDates.updated,
+		startDate: new Date(versionedDates.startDate),
+		updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
 	};
 }
+
+// Capitalise the content type for the back-link label (e.g. "essay" → "Essay")
+const contentTypeLabel =
+	frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1);
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -79,6 +66,15 @@ const backlinks = currentPost?.inboundLinks || [];
 // Only essays and talks have cover images
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
+
+const startDateISO =
+	canonicalDates.startDate instanceof Date
+		? canonicalDates.startDate.toISOString()
+		: canonicalDates.startDate;
+const updatedISO =
+	canonicalDates.updated instanceof Date
+		? canonicalDates.updated.toISOString()
+		: (canonicalDates.updated ?? "");
 ---
 
 <Layout
@@ -94,7 +90,7 @@ const coverImage =
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
 					<span>
-						{frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1)}s
+						{contentTypeLabel}s
 					</span>
 				</a>
 			</div>
@@ -115,14 +111,8 @@ const coverImage =
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={canonicalDates.startDate instanceof Date
-						? canonicalDates.startDate.toISOString()
-						: canonicalDates.startDate}
-					updated={canonicalDates.updated
-						? canonicalDates.updated instanceof Date
-							? canonicalDates.updated.toISOString()
-							: canonicalDates.updated
-						: ""}
+					startDate={startDateISO}
+					updated={updatedISO}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>

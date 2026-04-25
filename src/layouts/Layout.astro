@@ -15,6 +15,9 @@ export interface Props {
 
 const { title, desc, type, coverImage, canonicalURL: overrideCanonicalURL } = Astro.props;
 
+const DEFAULT_DESCRIPTION =
+	"Maggie's digital garden filled with visual essays on programming, design, and anthropology";
+
 const canonicalURL = overrideCanonicalURL || new URL(Astro.url.pathname, Astro.site).toString();
 
 // Generate OG image URL based on canonical path so all versions share the same image
@@ -34,13 +37,6 @@ if (!type) {
 	if (coverImage) ogImageURL.searchParams.set("coverImage", coverImage);
 }
 
-// Google Analytics type declarations
-declare global {
-	interface Window {
-		dataLayer: any[];
-		gtag: (...args: any[]) => void;
-	}
-}
 ---
 
 <!doctype html>
@@ -64,24 +60,12 @@ declare global {
 
 		<link rel="pingback" href="https://webmention.io/maggieappleton.com/xmlrpc" />
 		<link rel="me" href="https://bsky.app/profile/maggieappleton.com" />
+		<link rel="preconnect" href="https://media.maggieappleton.com" />
 		<link rel="canonical" href={canonicalURL} />
 		<ClientRouter />
-		<script
-			type="text/partytown"
-			async
-			src="https://www.googletagmanager.com/gtag/js?id=G-PT3NSRSMLT"></script>
-		<script type="text/partytown">
-			window.dataLayer = window.dataLayer || [];
-			function gtag() {
-				dataLayer.push(arguments);
-			}
-			gtag("js", new Date());
-			gtag("config", "G-PT3NSRSMLT");
-		</script>
 		<SEO
 			title={title}
-			description={desc ||
-				"Maggie's digital garden filled with visual essays on programming, design, and anthropology"}
+			description={desc || DEFAULT_DESCRIPTION}
 			canonical={canonicalURL}
 			openGraph={{
 				basic: {
@@ -92,9 +76,7 @@ declare global {
 				},
 				optional: {
 					locale: "en_GB",
-					description:
-						desc ||
-						"Maggie's digital garden filled with visual essays on programming, design, and anthropology",
+					description: desc || DEFAULT_DESCRIPTION,
 				},
 				image: {
 					alt: title || "Maggie Appleton's digital garden",
@@ -123,6 +105,5 @@ declare global {
 				content-visibility: auto;
 			}
 		</style>
-		<script async src="https://platform.twitter.com/widgets.js"></script>
 	</body>
 </html>

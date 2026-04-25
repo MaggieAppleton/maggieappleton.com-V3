@@ -317,10 +317,12 @@ const getVersionUrl = (version: VersionedContent) => {
 </style>
 
 <script>
-	document.addEventListener("DOMContentLoaded", function () {
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
+
+	onPageLifecycle(() => {
 		const dropdown = document.querySelector(".version-dropdown");
-		const trigger = dropdown?.querySelector(".version-trigger");
-		const menu = dropdown?.querySelector(".version-menu");
+		const trigger = dropdown?.querySelector(".version-trigger") as HTMLElement | null;
+		const menu = dropdown?.querySelector(".version-menu") as HTMLElement | null;
 		const options = dropdown?.querySelectorAll('[role="option"]');
 
 		if (!dropdown || !trigger || !menu) return;
@@ -331,20 +333,19 @@ const getVersionUrl = (version: VersionedContent) => {
 
 		function openDropdown() {
 			isOpen = true;
-			menu.classList.add("open");
-			trigger.setAttribute("aria-expanded", "true");
+			menu!.classList.add("open");
+			trigger!.setAttribute("aria-expanded", "true");
 		}
 
 		function closeDropdown() {
 			isOpen = false;
-			menu.classList.remove("open");
-			trigger.setAttribute("aria-expanded", "false");
+			menu!.classList.remove("open");
+			trigger!.setAttribute("aria-expanded", "false");
 			currentIndex = -1;
-			// Return focus to trigger
-			trigger.focus();
+			trigger!.focus();
 		}
 
-		function navigateOptions(direction) {
+		function navigateOptions(direction: "up" | "down") {
 			if (!isOpen || optionsArray.length === 0) return;
 
 			if (direction === "down") {
@@ -354,12 +355,11 @@ const getVersionUrl = (version: VersionedContent) => {
 			}
 
 			if (currentIndex >= 0 && currentIndex < optionsArray.length) {
-				optionsArray[currentIndex].focus();
+				(optionsArray[currentIndex] as HTMLElement).focus();
 			}
 		}
 
-		// Click/tap to toggle
-		trigger.addEventListener("click", function (e) {
+		const triggerClickHandler = (e: Event) => {
 			e.preventDefault();
 			e.stopPropagation();
 			if (isOpen) {
@@ -367,20 +367,20 @@ const getVersionUrl = (version: VersionedContent) => {
 			} else {
 				openDropdown();
 			}
-		});
+		};
 
-		// Keyboard navigation
-		trigger.addEventListener("keydown", function (e) {
-			switch (e.key) {
+		const triggerKeydownHandler = (e: Event) => {
+			const ke = e as KeyboardEvent;
+			switch (ke.key) {
 				case "Enter":
 				case " ":
-					e.preventDefault();
+					ke.preventDefault();
 					if (!isOpen) {
 						openDropdown();
 					}
 					break;
 				case "ArrowDown":
-					e.preventDefault();
+					ke.preventDefault();
 					if (!isOpen) {
 						openDropdown();
 					} else {
@@ -388,7 +388,7 @@ const getVersionUrl = (version: VersionedContent) => {
 					}
 					break;
 				case "ArrowUp":
-					e.preventDefault();
+					ke.preventDefault();
 					if (isOpen) {
 						navigateOptions("up");
 					}
@@ -399,43 +399,53 @@ const getVersionUrl = (version: VersionedContent) => {
 					}
 					break;
 			}
-		});
+		};
 
-		// Handle keyboard navigation within menu
-		menu.addEventListener("keydown", function (e) {
-			switch (e.key) {
+		const menuKeydownHandler = (e: Event) => {
+			const ke = e as KeyboardEvent;
+			switch (ke.key) {
 				case "ArrowDown":
-					e.preventDefault();
+					ke.preventDefault();
 					navigateOptions("down");
 					break;
 				case "ArrowUp":
-					e.preventDefault();
+					ke.preventDefault();
 					navigateOptions("up");
 					break;
 				case "Escape":
-					e.preventDefault();
+					ke.preventDefault();
 					closeDropdown();
 					break;
 				case "Tab":
-					// Close dropdown and let tab continue naturally
 					closeDropdown();
-					// Don't prevent default to allow normal tab navigation
 					break;
 			}
-		});
+		};
 
-		// Close on outside click
-		document.addEventListener("click", function (e) {
-			if (!dropdown.contains(e.target)) {
+		const outsideClickHandler = (e: Event) => {
+			if (!dropdown.contains(e.target as Node)) {
 				closeDropdown();
 			}
-		});
+		};
 
-		// Close on outside focus (for keyboard users)
-		document.addEventListener("focusin", function (e) {
-			if (!dropdown.contains(e.target)) {
+		const outsideFocusHandler = (e: Event) => {
+			if (!dropdown.contains(e.target as Node)) {
 				closeDropdown();
 			}
-		});
+		};
+
+		trigger.addEventListener("click", triggerClickHandler);
+		trigger.addEventListener("keydown", triggerKeydownHandler);
+		menu.addEventListener("keydown", menuKeydownHandler);
+		document.addEventListener("click", outsideClickHandler);
+		document.addEventListener("focusin", outsideFocusHandler);
+
+		return () => {
+			trigger.removeEventListener("click", triggerClickHandler);
+			trigger.removeEventListener("keydown", triggerKeydownHandler);
+			menu.removeEventListener("keydown", menuKeydownHandler);
+			document.removeEventListener("click", outsideClickHandler);
+			document.removeEventListener("focusin", outsideFocusHandler);
+		};
 	});
 </script>

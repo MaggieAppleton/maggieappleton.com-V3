@@ -37,7 +37,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 			}
 			<div class="metadata-container">
 				<span>Talk</span>
-				<svg width="4px" height="10px">
+				<svg width="4px" height="4px">
 					<circle r="2" cx="2" cy="2" fill="var(--color-gray-400)"></circle>
 				</svg>
 				<RelativeDate postDate={date} />
@@ -123,6 +123,8 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 
 	.metadata-container svg {
 		margin: 0 0.4rem;
+		position: relative;
+		top: 1px;
 	}
 
 	h3 {

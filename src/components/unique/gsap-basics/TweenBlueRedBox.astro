@@ -1,19 +1,13 @@
 <div class="box" id="color-box"></div>
 
 <script>
-	let currentObserver: IntersectionObserver | null = null;
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
 
-	function initializeObserver() {
-		// Clean up existing observer
-		if (currentObserver) {
-			currentObserver.disconnect();
-			currentObserver = null;
-		}
-
+	onPageLifecycle(() => {
 		const box = document.getElementById("color-box");
 		if (!box) return;
 
-		currentObserver = new IntersectionObserver(
+		const observer = new IntersectionObserver(
 			([entry]) => {
 				if (entry.isIntersecting) {
 					box.classList.add("animate");
@@ -21,30 +15,12 @@
 					box.classList.remove("animate");
 				}
 			},
-			{
-				threshold: 0.5,
-				rootMargin: "-30% 0px",
-			},
+			{ threshold: 0.5, rootMargin: "-30% 0px" },
 		);
 
-		currentObserver.observe(box);
-	}
-
-	function cleanup() {
-		if (currentObserver) {
-			currentObserver.disconnect();
-			currentObserver = null;
-		}
-	}
-
-	// Initialize on first load
-	initializeObserver();
-
-	// Reinitialize after view transitions
-	document.addEventListener("astro:page-load", initializeObserver);
-
-	// Cleanup on page leave
-	document.addEventListener("astro:before-swap", cleanup);
+		observer.observe(box);
+		return () => observer.disconnect();
+	});
 </script>
 
 <style>

@@ -16,6 +16,12 @@ const { class: className } = Astro.props;
 		margin: var(--space-l) auto var(--space-128);
 		padding: 0 var(--space-l);
 	}
+	/* 14" and 13" MacBook Pro screens (1280–1512px logical width) need extra side breathing room */
+	@media (min-width: 769px) and (max-width: 1512px) {
+		main {
+			padding: 0 calc(var(--space-l) + 2rem);
+		}
+	}
 	@media (max-width: 768px) {
 		main {
 			margin: var(--space-s) auto var(--space-2xl);
