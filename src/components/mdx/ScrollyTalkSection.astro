@@ -175,7 +175,7 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		initAllScrollySections();
 		window.addEventListener("resize", handleResize);
 		document.querySelectorAll(".scrolly-img").forEach((img) => {
-			img.addEventListener("load", handleResize);
+			img.addEventListener("load", handleResize, { once: true });
 		});
 	}
 
