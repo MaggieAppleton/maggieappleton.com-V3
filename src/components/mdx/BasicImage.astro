@@ -122,6 +122,10 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 
+    .image-wrapper.loaded::before {
+        animation: none;
+    }
+
     @keyframes pulse {
         0%,
         100% {
@@ -168,3 +172,16 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
         }
     }
 </style>
+
+<script>
+    document.querySelectorAll<HTMLElement>(".image-wrapper").forEach((wrapper) => {
+        const img = wrapper.querySelector("img");
+        if (!img) return;
+        const stopPulse = () => wrapper.classList.add("loaded");
+        if (img.complete) {
+            stopPulse();
+        } else {
+            img.addEventListener("load", stopPulse, { once: true });
+        }
+    });
+</script>
