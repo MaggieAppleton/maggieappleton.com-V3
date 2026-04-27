@@ -4,8 +4,6 @@ on:
   issues:
     types: [opened, labeled]
     names: [plan]
-  # Don't re-plan an issue we've already processed.
-  skip-if-match: 'label:plan-processed'
   stop-after: "+30d"
 permissions:
   contents: read
