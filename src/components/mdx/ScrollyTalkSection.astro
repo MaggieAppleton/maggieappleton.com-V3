@@ -205,6 +205,11 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		position: relative;
 		width: 100%;
 		aspect-ratio: 16 / 9;
+		transition: margin-top 0.6s ease-out;
+	}
+
+	.image-stack:has(.scrolly-img.active[data-img-index="0"]) {
+		margin-top: -160px;
 	}
 
 	.scrolly-img,
@@ -304,7 +309,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 		.scrolly-text :global([data-slide]) {
 			min-height: auto;
-			padding: var(--space-m) 0;
+			padding-top: 0;
+			padding-right: 0;
+			padding-bottom: var(--space-xl);
+			padding-left: 0;
 		}
 
 		.scrolly-text :global([data-slide]:last-child) {
@@ -314,7 +322,7 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		/* Override first-slide desktop offset */
 		.scrolly-text :global([data-slide="0"]) {
 			justify-content: flex-start;
-			padding-top: var(--space-m);
+			padding-top: 0;
 		}
 	}
     
