@@ -237,11 +237,16 @@ const blockList = [
 	"deboramontoli.it",
 ];
 
-// remove mentions where mention[wm-source] matches blockList
+// blocklist of spam/abusive author URLs (e.g. specific Bluesky/Twitter accounts)
+const blockedAuthors = ["https://bsky.app/profile/alxfed.bsky.social"];
+
+// remove mentions where domain matches blockList or author matches blockedAuthors
 const filteredMentions = mentionWithContent.filter((mention: WebMention) => {
 	const domain = mention.url.split("/")[2];
-	const isBlocked = blockList.includes(domain);
-	return !isBlocked;
+	if (blockList.includes(domain)) return false;
+	if (mention.author?.url && blockedAuthors.includes(mention.author.url))
+		return false;
+	return true;
 });
 
 function mentionType(mention: WebMention) {
