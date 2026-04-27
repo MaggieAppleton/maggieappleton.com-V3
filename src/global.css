@@ -70,19 +70,7 @@
   /* Color scheme for browser UI */
   color-scheme: light dark;
 
-  /* Spacing */
-  --space-4: 0.25rem;
-  --space-8: 0.5rem;
-  --space-12: 0.75rem;
-  --space-16: 1rem;
-  --space-24: 1.5rem;
-  --space-32: 2rem;
-  --space-48: 3rem;
-  --space-64: 4rem;
-  --space-80: 5rem;
-  --space-96: 6rem;
-  --space-128: 8rem;
-  --space-160: 10rem;
+  /* Spacing — use fluid t-shirt sizes (--space-3xs through --space-3xl) defined below */
 
   /* Colors */
   --color-white: #ffffff;
@@ -115,10 +103,10 @@
   --color-crimson-50: color-mix(in srgb, var(--color-bright-crimson) 50%, transparent);
 
   /* Sea blue variants */
-  --color-sea-blue-5: color-mix(in srgb, var(--color-sea-blue) 20%, transparent);
-  --color-sea-blue-10: color-mix(in srgb, var(--color-sea-blue) 30%, transparent);
-  --color-sea-blue-20: color-mix(in srgb, var(--color-sea-blue) 40%, transparent);
-  --color-sea-blue-50: color-mix(in srgb, var(--color-sea-blue) 70%, transparent);
+  --color-sea-blue-20: color-mix(in srgb, var(--color-sea-blue) 20%, transparent);
+  --color-sea-blue-30: color-mix(in srgb, var(--color-sea-blue) 30%, transparent);
+  --color-sea-blue-40: color-mix(in srgb, var(--color-sea-blue) 40%, transparent);
+  --color-sea-blue-70: color-mix(in srgb, var(--color-sea-blue) 70%, transparent);
 
 
   /* Fonts */
@@ -440,7 +428,7 @@ iframe {
 
 body {
   background: var(--color-cream);
-  padding: var(--space-base);
+  padding: var(--space-s);
   color: var(--color-black);
 }
 
@@ -505,7 +493,7 @@ a {
 
 code {
   background: var(--color-cream);
-  padding: var(--space-8) var(--space-12);
+  padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-base);
   line-height: var(--leading-base);
@@ -520,7 +508,7 @@ code {
 pre {
   width: 100%;
   overflow: scroll;
-  padding: var(--space-24) var(--space-32);
+  padding: var(--space-s) var(--space-m);
   border-radius: 0.3em;
   font-size: calc(var(--font-size-sm) * 1.1);
   line-height: var(--leading-loose);
@@ -558,10 +546,10 @@ span.metadata {
 }
 
 button {
-  background-color: var(---color-salmon);
+  background-color: var(--color-salmon);
   border: none;
-  border-radius: var(---border-radius-sm);
-  padding: var(--space-12) var(--space-24);
+  border-radius: var(--border-radius-sm);
+  padding: var(--space-xs) var(--space-s);
 }
 
 mark {
