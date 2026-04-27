@@ -3,6 +3,7 @@ import Footer from "../components/layouts/Footer.astro";
 import Navbar from "../components/layouts/navbar/Navbar.astro";
 import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
+import { Agentation } from "agentation";
 import "../global.css";
 
 export interface Props {
@@ -98,6 +99,7 @@ if (!type) {
 			<slot />
 		</main>
 		<Footer />
+		{import.meta.env.DEV && <Agentation client:only="react" />}
 		<style is:global>
 			/* Improve Page speed */
 			/* https://css-tricks.com/almanac/properties/c/content-visibility/ */

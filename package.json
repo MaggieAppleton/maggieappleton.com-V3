@@ -59,6 +59,7 @@
     "@types/d3-time-format": "^4.0.3",
     "@types/lodash": "^4.17.13",
     "@types/masonry-layout": "^4.2.8",
+    "agentation": "^3.0.2",
     "globby": "^14.0.2",
     "gray-matter": "^4.0.3",
     "tsx": "^4.7.1",
