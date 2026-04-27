@@ -474,7 +474,6 @@ h2 {
   font-weight: 100;
   line-height: var(--leading-snug);
   margin: var(--space-xs) 0 var(--space-2xs);
-  transition: all 0.3s ease-in-out;
 }
 
 @media screen and (max-width: 768px) {
