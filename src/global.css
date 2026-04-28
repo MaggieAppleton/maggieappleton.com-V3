@@ -428,7 +428,6 @@ iframe {
 
 body {
   background: var(--color-cream);
-  padding: var(--space-s);
   color: var(--color-black);
 }
 
@@ -546,7 +545,6 @@ span.metadata {
 }
 
 button {
-  background-color: var(--color-salmon);
   border: none;
   border-radius: var(--border-radius-sm);
   padding: var(--space-xs) var(--space-s);
