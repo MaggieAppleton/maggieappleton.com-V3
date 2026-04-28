@@ -2,15 +2,14 @@
 import FullWidthBackground from "../mdx/FullWidthBackground.astro";
 ---
 
-<div class="grid-container">
-	<img
-		class="styled-image top-image"
-		src="https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:good,w_1200/v1614174727/maggieappleton.com/notes/learnable-programming/learnprog_2_ieudi6.png"
-		alt="The interface of VS Code – one of the most popular apps for professional programming. If you're writing front-end code, you check the results in a separate browser window."
-	/>
+<img
+	class="mvoid-top-image"
+	src="https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:good,w_1200/v1614174727/maggieappleton.com/notes/learnable-programming/learnprog_2_ieudi6.png"
+	alt="The interface of VS Code – one of the most popular apps for professional programming. If you're writing front-end code, you check the results in a separate browser window."
+/>
 
-	<FullWidthBackground background="#1A1D2F">
-		<div>
+<FullWidthBackground background="#1A1D2F">
+		<div style="padding: var(--space-2xl) 0;">
 			<svg
 				style="max-width: 100%; margin-left: -1rem; z-index: -10;"
 				width="1000px"
@@ -168,38 +167,25 @@ import FullWidthBackground from "../mdx/FullWidthBackground.astro";
 		</div>
 	</FullWidthBackground>
 
-	<img
-		class="styled-image"
-		src="https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:good,w_1200/v1614174727/maggieappleton.com/notes/learnable-programming/learnprog_3_jxgm4k.png"
-		alt="The output of your code appears in a browser window, completely disconnected from the environment where you wrote it"
-	/>
-</div>
+<img
+	class="mvoid-bottom-image"
+	src="https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:good,w_1200/v1614174727/maggieappleton.com/notes/learnable-programming/learnprog_3_jxgm4k.png"
+	alt="The output of your code appears in a browser window, completely disconnected from the environment where you wrote it"
+/>
 
 <style>
-	.grid-container {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--space-24);
-		align-items: center;
-		margin: var(--space-16) 0;
-	}
-
-	.styled-image {
+	.mvoid-top-image {
 		width: 100%;
 		height: auto;
 		border-radius: var(--border-radius-base);
-		margin: 0 auto;
 		display: block;
-	}
-
-	.top-image {
 		margin-bottom: -4rem;
 	}
 
-	@media (min-width: 850px) {
-		.grid-container {
-			gap: var(--space-64);
-			margin: var(--space-32) 0;
-		}
+	.mvoid-bottom-image {
+		width: 100%;
+		height: auto;
+		border-radius: var(--border-radius-base);
+		display: block;
 	}
 </style>
