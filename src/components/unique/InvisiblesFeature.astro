@@ -63,8 +63,16 @@ if (typeof imageURL === "string" && imageURL.startsWith("/images")) {
 		margin-top: 0;
 	}
 
-	.invisibles-feature-container img {
+	.invisibles-feature-container :global(img) {
 		border-radius: 5px;
+		width: 100%;
+		height: auto;
+		align-self: start;
+		object-fit: contain;
+	}
+
+	.invisibles-feature-container :global(picture) {
+		align-self: start;
 	}
 
 	@media (max-width: 768px) {
