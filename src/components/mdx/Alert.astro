@@ -28,7 +28,7 @@ const { title } = Astro.props;
 		display: inline-flex;
 		width: 100%;
 		max-width: 780px;
-		padding: var(--space-s) var(--space-xs);
+		padding: var(--space-s) var(--space-xl);
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
@@ -44,10 +44,11 @@ const { title } = Astro.props;
 	}
 
 	:global(.inner-container p) {
+		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		color: var(--color-gray-800);
 		line-height: var(--leading-loose);
-		max-width: 44ch;
+		max-width: 80ch;
 		margin-bottom: var(--space-m);
 	}
 
@@ -58,9 +59,10 @@ const { title } = Astro.props;
 	}
 
 	.alert-title {
+		font-family: var(--font-sans);
 		color: var(--color-black);
 		text-align: center;
-		font-size: var(--font-size-xl);
+		font-size: var(--font-size-md);
 		font-weight: 600;
 		line-height: var(--leading-tight);
 		margin: 0 auto var(--space-2xs);
