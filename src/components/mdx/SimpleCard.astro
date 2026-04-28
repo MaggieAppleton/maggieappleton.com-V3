@@ -70,6 +70,12 @@ const { alignLeft, subtle, padding, margin, ...props } = Astro.props;
 		margin-bottom: var(--space-m);
 	}
 
+	.styled-card :global(.subtext),
+	.styled-card :global(.subtext p) {
+		font-size: var(--font-size-sm);
+		font-family: var(--font-sans);
+	}
+
 	.subtle-card {
 		margin: 0 auto var(--space-s);
 		box-shadow: var(--box-shadow-sm);
