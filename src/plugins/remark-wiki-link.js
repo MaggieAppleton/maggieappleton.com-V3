@@ -23,15 +23,16 @@ export function remarkWikiLink() {
 					});
 				}
 
-				// Find the matching post in linkMaps
+				// Normalize curly quotes added by remark-smartypants before matching
+				const normalizedText = linkText.replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
 				const matchedPost = linkMaps.find((post) =>
-					post.ids.some((id) => id.toLowerCase() === linkText.toLowerCase())
+					post.ids.some((id) => id.toLowerCase() === normalizedText.toLowerCase())
 				);
 
 				if (matchedPost) {
 					// Create the InternalTooltipLink component
 					children.push({
-						type: "mdxJsxFlowElement",
+						type: "mdxJsxTextElement",
 						name: "InternalTooltipLink",
 						attributes: [
 							{
