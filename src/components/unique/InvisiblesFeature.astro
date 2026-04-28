@@ -1,5 +1,18 @@
 ---
+import { Picture } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
 const { illustrator, imageURL, sourceURL, sourceTitle } = Astro.props;
+
+const images = import.meta.glob<{ default: ImageMetadata }>("/src/images/**/*");
+
+let resolved: ImageMetadata | null = null;
+if (typeof imageURL === "string" && imageURL.startsWith("/images")) {
+	const loader = images["/src" + imageURL];
+	if (typeof loader === "function") {
+		resolved = (await loader()).default;
+	}
+}
 ---
 
 <div class="invisibles-feature-container">
@@ -10,7 +23,21 @@ const { illustrator, imageURL, sourceURL, sourceTitle } = Astro.props;
 		</a>
 		<p><slot /></p>
 	</div>
-	<img alt={sourceTitle} src={imageURL} />
+	{
+		resolved ? (
+			<Picture
+				src={resolved}
+				alt={sourceTitle}
+				formats={["avif", "webp", "jpg"]}
+				widths={[500, 1000]}
+				sizes="(max-width: 768px) 100vw, 500px"
+				loading="lazy"
+				decoding="async"
+			/>
+		) : (
+			<img alt={sourceTitle} src={imageURL} loading="lazy" />
+		)
+	}
 </div>
 
 <style>
