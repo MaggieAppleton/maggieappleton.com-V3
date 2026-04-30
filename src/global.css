@@ -232,6 +232,19 @@
     ((var(--fc-3xl-min) / 16) * 1rem) + (var(--fc-4xl-max) - var(--fc-3xl-min)) * var(--fluid-bp)
   );
 
+  /* Motion tokens */
+  --duration-instant: 100ms;
+  --duration-fast:    150ms;
+  --duration-base:    200ms;
+  --duration-slow:    300ms;
+  --duration-slower:  500ms;
+
+  --ease-out:        cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-strong: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:     cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-hover:      ease;
+  --ease-spring:     cubic-bezier(0.2, 1, 0.8, 1);
+
   /* Fluid type scale */
   /* @link https://utopia.fyi/type/calculator?c=320,20,1.25,1200,22,1.333,6,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l */
 
@@ -408,9 +421,8 @@ select {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none;
+    transition: none;
     scroll-behavior: auto !important;
   }
 }
