@@ -2,8 +2,10 @@
 name: Plan issue → sub-issues
 on:
   issues:
-    types: [opened, labeled]
+    types: [labeled]
     names: [plan]
+  # Don't re-plan an issue we've already processed.
+  skip-if-match: 'label:plan-processed'
   stop-after: "+30d"
 permissions:
   contents: read
@@ -22,9 +24,10 @@ tools:
 safe-outputs:
   create-issue:
     max: 10
-    # Labels the agent is allowed to put on sub-issues.
-    # The agent chooses one of `ready-to-implement` or `needs-human-answer`
-    # per sub-issue.
+    # Auto-applied to every sub-issue so downstream automation can
+    # recognise machine-authored content. The agent additionally chooses
+    # one of `ready-to-implement` or `needs-human-answer` per sub-issue.
+    labels: [ai-generated]
   link-sub-issue:
     max: 10
   add-labels:
@@ -101,6 +104,8 @@ Each `create-issue` must use this body format:
 ```
 
 ## Labels
+
+Every sub-issue is automatically tagged `ai-generated` by the workflow — you don't need to add that yourself.
 
 Apply exactly **one** of these labels to each sub-issue via the `labels` field on `create-issue`:
 - `ready-to-implement`
