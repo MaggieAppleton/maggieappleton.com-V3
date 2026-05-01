@@ -2,7 +2,7 @@
 title: "Epistemic Rubber Ducking with Large Language Models"
 description: "Using large language models for reflective thinking and metacognition, rather than generating facts or trustworthy outputs"
 startDate: "2023-03-01"
-updated: "2023-03-01"
+updated: "2026-04-30"
 type: "essay"
 topics:
   ["Machine Learning", "Design", "Artificial Intelligence", "Tools for Thought"]
@@ -15,6 +15,7 @@ draft: true
 
 import Accordion from "../../components/mdx/Accordion.astro";
 import AssumedAudience from "../../components/mdx/AssumedAudience.astro";
+import Disclaimer from "../../components/mdx/Disclaimer.astro";
 import Center from "../../components/mdx/Center.astro";
 import Subtext from "../../components/mdx/typography/Subtext.astro";
 import TweetEmbed from "../../components/mdx/TweetEmbed.astro";
@@ -26,6 +27,10 @@ import NewBreed from "../../images/books/newbreed.webp";
 	and ChatGPT, but don't know the technical details of how they work, what
 	they're capable of, or what to do with the text they produce.
 </AssumedAudience>
+
+<Disclaimer>
+	I wrote this at the start of 2023 while I was product designer at [Elicit](https://elicit.org), an AI research assistant for scientific research. The gap between model capabilites back then and now (as I update this in 2026) is slightly wild and all seems quaint in hindsight. It's a good historical artefact though. I had a clearer view than most people on what was coming for us, and believe the core argument holds up. Even though this was pre-ChatGPT and the state-of-the-art was getting GPT-3 to complete sentences for you.
+</Disclaimer>
 
 <Spacer size="small" />
 
@@ -51,10 +56,7 @@ It regularly fails at basic maths questions:
 	alt="Asking GPT-3 this maths question: 'If a toy train costs three times as much as a rocket. The total cost of the train and rocket is £52. How much does the train cost?' It incorrectly answers £36"
 />
 
-<Subtext>
-	The correct answer here is £39. We first divide 52 by 4 = 13, and then times
-	13 by 3 = 39.
-</Subtext>
+<Subtext>The correct answer here is £39. We first divide 52 by 4 = 13, and then times 13 by 3 = 39.</Subtext>
 
 <Spacer size="xs" />
 
@@ -96,7 +98,7 @@ GPT-3 is not the only large language model plagued by incorrect facts and strong
 
 My biased questions above weren't a particularly comprehensive or fair evaluation of how factually accurate and trustworthy GPT-3 is. At most, we've determined that it sometimes answers current affairs and grade-school maths questions wrong. And happily parrots conspiracy theories if you ask a leading question.
 
-But how does it fair on general knowledge and common sense reasoning? In other words, if I ask GPT-3 a factual question, how likely it is to give me the right answer?
+But how does it fare on general knowledge and common sense reasoning? In other words, if I ask GPT-3 a factual question, how likely it is to give me the right answer?
 
 The best way to answer this question is to look at how well GPT-3 performs on a series of industry benchmarks related to broad factual knowledge.
 
@@ -177,7 +179,7 @@ Here's a breakdown of what percentage of questions GPT-3 answered correctly on e
 		</td>
 	</tr>
 	<tr>
-		<td>Web Questions</td>
+		<td><p>Web Questions</p></td>
 		<td>
 			<p style={{ fontFamily: "var(--font-sans)" }}>14%</p>
 		</td>
@@ -191,7 +193,7 @@ Here's a breakdown of what percentage of questions GPT-3 answered correctly on e
 		</td>
 	</tr>
 	<tr>
-		<td>TriviaQA</td>
+		<td><p>TriviaQA</p></td>
 		<td>
 			<p style={{ fontFamily: "var(--font-sans)" }}>64%</p>
 		</td>
@@ -203,7 +205,7 @@ Here's a breakdown of what percentage of questions GPT-3 answered correctly on e
 		</td>
 	</tr>
 	<tr>
-		<td>CommonsenseQA</td>
+		<td><p>CommonsenseQA</p></td>
 		<td>
 			<p role="img" style={{ fontSize: "2.25rem" }}>
 				🤷‍♀️
@@ -217,7 +219,7 @@ Here's a breakdown of what percentage of questions GPT-3 answered correctly on e
 		</td>
 	</tr>
 	<tr>
-		<td>TruthfulQA</td>
+		<td><p>TruthfulQA</p></td>
 		<td>
 			<p style={{ fontFamily: "var(--font-sans)" }}>20%</p>
 		</td>
@@ -232,24 +234,21 @@ Here's a breakdown of what percentage of questions GPT-3 answered correctly on e
 	</tr>
 </table>
 
-<Subtext>
-	<span role="img" style={{ fontSize: "1.5rem" }}>
-		🤷‍♀️
-	</span>
-	= these numbers weren't reported in the study
-</Subtext>
+<Spacer size="xs" />
+
+<Subtext><span role="img" style={{ fontSize: "1.25rem", verticalAlign: "middle" }}>🤷‍♀️</span> = these numbers weren't reported in the study</Subtext>
 
 <Spacer size="xs" />
 
 Sorry for the wall of numbers. Here's the long and short of it:
 
 - It performs worst on the most common questions people ask online, getting **only 14-15% correct** in a zero-shot prompt.
-- On questions known to elicit false beliefs or misconceptions from people, **it got only 20% right**.<Footnote idName={5}>With additional prompt engineering, such as telling the model to be helpful and truthful, they got this number up to 58%.</Footnote> For comparison, people usually get 94% of these correct.
+- On questions known to elicit false beliefs or misconceptions from people, **it got only 20% right**.<Footnote idName={6}>With additional prompt engineering, such as telling the model to be helpful and truthful, they got this number up to 58%.</Footnote> For comparison, people usually get 94% of these correct.
 - It performs best on trivia questions. But only **gets 64 ~ 71% of these correct**.
 
-While GPT-3 scored “well” on these benchmarks by machine learning standards, the results as still _way_ below what most people expect.
+While GPT-3 scored “well” on these benchmarks by machine learning standards, the results are still _way_ below what most people expect.
 
-This wouldn't be a problem if people fully understood GPT-3 limited abilities. And yet we're already seeing people turn to GPT-3 for reliable answers and guidance. People are using it instead of Google and Wikipedia. Or as legal counsel. Or for writing educational essays. <Footnote idName={6}>To be fair to the tweeters I've highlighted here, most heeded the outpouring of concern in replies and caveat they (now) double-check its answers.</Footnote>
+This wouldn't be a problem if people fully understood GPT-3 limited abilities. And yet we're already seeing people turn to GPT-3 for reliable answers and guidance. People are using it instead of Google and Wikipedia. Or as legal counsel. Or for writing educational essays. <Footnote idName={7}>To be fair to the tweeters I've highlighted here, most heeded the outpouring of concern in replies and caveat they (now) double-check its answers.</Footnote>
 
 <TweetEmbed tweetId="1583341896666996738" />
 
@@ -299,7 +298,7 @@ Riff is doing some prompt engineering behind the scenes and fetching extra infor
 
 At first, this seems pretty good! The "Hockings" it's telling me about is [Paul Hockings](https://en.wikipedia.org/wiki/Paul_Hockings), a real British anthropologist and professor emeritus at the University of Illinois. **But** he hasn't done any work in digital anthropology, and certainly hasn't written a book called “Digital Anthropology.” This blend of truth and fiction might be more dangerous than fiction alone. I might check one or two facts, find they're right, and assume the rest is also valid.
 
-Framing the model as a character in an informative conversation does help mitigate this though. It feels more like talking to a person – one you can easily talk back to, question, and challenge. When _other people_ recite a fact or make a claim, we don't automatically accept it as true. We question them. “How are you so sure?” “Where did you read that?” “Really?? Let me google it.”<Footnote idName={7}>It is of course similarly problematic that the top ~3 results on Google are the arbiter of truth in our society, but we can't pretend that's not the current situation</Footnote>
+Framing the model as a character in an informative conversation does help mitigate this though. It feels more like talking to a person – one you can easily talk back to, question, and challenge. When _other people_ recite a fact or make a claim, we don't automatically accept it as true. We question them. “How are you so sure?” “Where did you read that?” “Really?? Let me google it.”<Footnote idName={8}>It is of course similarly problematic that the top ~3 results on Google are the arbiter of truth in our society, but we can't pretend that's not the current situation</Footnote>
 
 Our model of humans is that they're flawed pattern-matching machines that pick up impressions of the world from a wide variety of questionable and contradictory sources. We should assume the same about language models trained on questionable and contradictory text humans have published on the web.
 
@@ -342,10 +341,9 @@ Here's me putting the same level of input into [Copy.ai](https://app.copy.ai/), 
 
 Again, the output seems sensible and coherent. But with no sources or references to back these statements up, what value do they have? _Who_ believes these things about China's economy? What information do they have access to? **How do we know any of this is valid?**
 
-## Disappointing oracles
+## Disappointing Oracles
 
-4. **Our cultural narratives frame AIs as all-knowing oracles**  
-   The core problem is less that these models return outright falsehoods or misleading answers, but that we expect anything else from them. The decades-long [cultural](https://en.wikipedia.org/wiki/Superintelligence:_Paths,_Dangers,_Strategies) [narrative](https://en.wikipedia.org/wiki/Life_3.0) [we've been](https://www.theverge.com/2021/10/20/22734215/ai-ask-delphi-moral-ethical-judgement-demo) [weaving](https://www.wired.com/story/lamda-sentient-ai-bias-google-blake-lemoine/) about the all-knowing, dangerously super-intelligent machine that can absorb and resurface the collective wisdom of humanity has come back to bite us in the epistemic butt. Well-known figures in the industry speak about language models as [oracles](https://www.youtube.com/watch?v=cdiD-9MMpb0&t=3770s) and journalists present them as [magic](https://www.theguardian.com/technology/2022/sep/21/ais-dark-arts-come-into-their-own#:~:text=rogramming%20a%20computer,illusion%20of%20sentience.). We're currently in the awkward middle phase where we're unsure how to calibrate future premonitions against current realities. We've come to expect omniscience from them too soon.
+Our cultural narratives frame AIs as all-knowing oracles. The core problem is less that these models return outright falsehoods or misleading answers, but that we expect anything else from them. The decades-long [cultural](https://en.wikipedia.org/wiki/Superintelligence:_Paths,_Dangers,_Strategies) [narrative](https://en.wikipedia.org/wiki/Life_3.0) [we've been](https://www.theverge.com/2021/10/20/22734215/ai-ask-delphi-moral-ethical-judgement-demo) [weaving](https://www.wired.com/story/lamda-sentient-ai-bias-google-blake-lemoine/) about the all-knowing, dangerously super-intelligent machine that can absorb and resurface the collective wisdom of humanity has come back to bite us in the epistemic butt. Well-known figures in the industry speak about language models as [oracles](https://www.youtube.com/watch?v=cdiD-9MMpb0&t=3770s) and journalists present them as [magic](https://www.theguardian.com/technology/2022/sep/21/ais-dark-arts-come-into-their-own#:~:text=rogramming%20a%20computer,illusion%20of%20sentience.). We're currently in the awkward middle phase where we're unsure how to calibrate future premonitions against current realities. We've come to expect omniscience from them too soon.
 
 <BasicImage
 	src="/images/posts/epistemic-ducks/oracle3.png"
@@ -369,33 +367,13 @@ There are three major problems with language models that shatter our vision of t
 3. **Our interfaces are black boxes**  
    The people trying to use these models as sources of truth are not the ones at fault. They arrived at an interface that told them they could ask any questions they liked into the little text box, and it would respond with answers that _sounded_ convincing and true. Plenty of them probably _were_ true. But the interface presented few or no disclaimers, accuracy stats, or ways to investigate their answer. It didn't explain how it arrived at that answer, or what data it used to get there. This is primarily because the creators of these interfaces and models _don't know_ how it arrives at an answer. Most language models are [black boxes](https://hdsr.mitpress.mit.edu/pub/f9kuryi8/release/8?from=1893&to=2341). It's a bit complex to explain why but Grant Sanderson's video series on how [neural networks](https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi) learn will help.
 
-<div style={{color:"salmon"}}>
-[The problem isn't the current state of GPTs. These models are developing at an alarming rate. But we're in the very early days of generative transformers and large language models. GPT-3 came out in 2020. We're 2 years into this experiment.
+The problem isn't the current state of GPTs. These models are developing at an alarming rate. But we're in the very early days of generative transformers and large language models. GPT-3 came out in 2020. We're 2 years into this experiment.
 
 The lesson here is simply that until language models get a _lot_ better, we have to exercise a _lot_ of discernment and critical thinking. We need to stop using them to generate original thoughts, rather than help us reflect on our own thoughts.
 
-Until we develop more robust language models and interfaces that are transparent about their reasoning and confidence level, we need to change our framing of them. We should not be thinking and talking about these systems as superintelligent, trustworthy oracles. At least, not right now.]
-
-</div>
-
-We should instead think of them as [[epistemic rubber ducks]].
-
-## Random shit I don't know whether to include
-
-<div style={{color:"salmon"}}>
-[Now is the moment to disclose I have a *lot* of skin in this game. I'm the product designer for [Elicit](https://elicit.org), a research assistant that uses language models to analyse academic papers and speed up the literature review process.
-
-Frame language models as helpful tools, but ones we should question. Tools to validate their answers.
-
-But it means I also understand the key difference between a tool like Elicit and plain, vanilla GPT-3. This is to say, the difference between asking zero-shot questions on the GPT-3 playground, and using a tool designed to achieve high accuracy scores on specific tasks by fine-tuning multiple language models.]
-
-</div>
-
 Until we develop more robust language models and interfaces that are transparent about their reasoning and confidence level, we need to change our framing of them. We should not be thinking and talking about these systems as superintelligent, trustworthy oracles. At least, not right now.
 
-Several interesting metaphorical frames could lead us down very different pathways for how these models develop. We could think of them as a giant, searchable databases, as research assistants, as xxx.
-
-We should instead think of them as rubber ducks.
+We should instead think of them as **epistemic rubber ducks**.
 
 <BasicImage
 	src="/images/posts/epistemic-ducks/duck1.jpg"
@@ -416,7 +394,7 @@ And not just any rubber ducking...
 [decorate the text with floating rubber ducks and sparkles]
 
 <Center>
-	<span style={{ fontSize: "3rem", color: "goldenrod", marginBottom: "3rem" }}>
+	<span style={{ fontSize: "4.5rem", fontFamily: "var(--font-sans)", color: "goldenrod", marginBottom: "3rem" }}>
 		Epistemic rubber ducking
 	</span>
 </Center>
@@ -489,8 +467,6 @@ An alternate analogy I've heard floating around is “aliens.” [Many AI](https
 
 </GridColumns>
 
-<Subtext>
-	A few friendly, helpful thinking partners – Made with Midjourney
-</Subtext>
+<Subtext>A few friendly, helpful thinking partners – Made with Midjourney</Subtext>
 
 I think there's a lot more to explore here around the metaphors we use to talk about language models and AI systems, but I'll save it for another post.
