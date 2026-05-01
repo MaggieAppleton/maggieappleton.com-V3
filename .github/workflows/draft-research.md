@@ -50,19 +50,19 @@ The following is a guide to *what kinds of evidence and framings* Maggie tends t
 
 Optional `target` input: `${{ github.event.inputs.target }}`
 
-If `target` is set, scan only that single file. Otherwise, scan all draft MDX files in the repo.
+If `target` is set, scan only that single file (regardless of draft status — the user has explicitly opted in). Otherwise, scan all `draft: true` MDX files in the repo.
 
 ## Process
 
-### 1. Find draft files
+### 1. Find files to scan
 
-Use bash to locate MDX files where frontmatter contains `draft: true`:
+**If `target` is provided:** scan that single path. Verify the file exists and is an `.mdx` file under `src/content/`. Do **not** require `draft: true` — the user can target published posts to surface gaps in older work.
+
+**If `target` is empty:** locate all MDX files where frontmatter contains `draft: true`:
 
 ```
 grep -rl "^draft: true" src/content --include="*.mdx"
 ```
-
-If `target` is provided, restrict to that single path (and verify it has `draft: true` — if it doesn't, emit `noop` and stop).
 
 ### 2. For each draft, scan for gaps
 
