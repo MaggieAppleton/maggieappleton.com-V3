@@ -19,6 +19,7 @@ import Center from "../../components/mdx/Center.astro";
 import Subtext from "../../components/mdx/typography/Subtext.astro";
 import TweetEmbed from "../../components/mdx/TweetEmbed.astro";
 import GridColumns from "../../components/mdx/GridColumns.astro";
+import Video from "../../components/mdx/Video.astro";
 import NewBreed from "../../images/books/newbreed.webp";
 
 <AssumedAudience>
@@ -429,25 +430,63 @@ A useful epistemic duck would need to be supportive and helpful. It would need t
 
 ## A collection of speculative prototypes
 
-What would this look like in practice?
+What might an epistemic duck actually look like in practice? Here are a few rough sketches I've been playing with – none of them polished products, just probes into the design space. Each one explores a different angle on how language models could support critical thinking and reflection rather than just spitting out answers.
 
-[Placeholder images for now - will make these video demos. Likely going to explore more tiny ideas to include]
-
-### Branches
-
-<BasicImage width="800px" src="/images/posts/epistemic-ducks/demo2.jpg" />
-
-### Argument maps
-
-<BasicImage width="800px" src="/images/posts/epistemic-ducks/demo2.jpg" />
+You can find the longer write-ups, more screenshots, and additional half-baked ideas over in my [[Language Model Sketchbook, or Why I Hate Chatbots]].
 
 ### Daemons
 
-<BasicImage width="800px" src="/images/posts/epistemic-ducks/demo1.jpg" />
+Imagine the environment you're writing in has a few characters who hang out in the background and suggest ideas every now and then. These [daemons](https://en.wikipedia.org/wiki/Daimon) have particular personalities – one plays devil's advocate, one fetches evidence and research, one synthesises your ideas into more concise statements, one elaborates on points you haven't fully explained.
+
+As you write, one might highlight a sentence and suggest a revision, or ask you to defend a claim. You can always ignore them and the suggestion fades. Rather than one all-knowing chatbot, it's a small chorus of ducks – each prodding at a different epistemic weak spot.
+
+<Video src="https://www.youtube.com/embed/oDuVAczLqTk?vq=hd720" />
+
+<Spacer size="small" />
+
+<BasicImage
+	framed
+	margin="var(--space-xs) auto"
+	width="950px"
+	src="/images/posts/lm-sketchbook/daemon_3.jpg"
+	alt="Screenshot of the daemons prototype"
+/>
+
+### Branches
+
+A lot of what we think of as "understanding an issue" comes down to "What caused this?" and "What are the consequences of this?" Language models have plenty of latent knowledge and turn out to be quite good at suggesting reasonable cause-and-effect chains – as long as you double-check their suggestions and don't take them as gospel.
+
+Branches is centred around exploring those cause/consequence chains visually, so you can use the model to help map out the shape of an argument rather than just generate a paragraph about it.
+
+<Video src="https://www.youtube.com/embed/otxgVcyQNdU?vq=hd720" />
+
+<Spacer size="small" />
+
+<BasicImage
+	framed
+	margin="var(--space-xs) auto"
+	width="950px"
+	src="/images/posts/lm-sketchbook/branches_2.jpg"
+	alt="Screenshot of the branches prototype"
+/>
 
 ### Epi
 
-<BasicImage width="800px" src="/images/posts/epistemic-ducks/demo3.jpg" />
+While I love interfaces with a tightly-scoped purpose, there's clearly room for a more general-purpose reasoning assistant – particularly for folks doing research and non-fiction writing.
+
+Models can help in lots of small ways: rephrasing sentences, offering critiques of ideas, helping to find evidence for claims, generating possible research questions, and pointing out hidden assumptions. Epi tucks these moves into the familiar right-click context menu of a simple writing environment, so you can summon a duck on a specific sentence whenever you need one.
+
+<Video src="https://www.youtube.com/embed/8XpIPbhgq0M?vq=hd720" />
+
+<Spacer size="small" />
+
+<BasicImage
+	framed
+	margin="var(--space-xs) auto"
+	width="950px"
+	src="/images/posts/lm-sketchbook/epi_2.jpg"
+	alt="Screenshot of the epi prototype"
+/>
 
 ---
 
