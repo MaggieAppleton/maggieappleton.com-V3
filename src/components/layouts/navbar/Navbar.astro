@@ -45,6 +45,11 @@ import { Icon } from "astro-icon/components";
 
 	.mobile-menu-toggle {
 		display: none;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		width: 2rem;
+		height: 2rem;
 		background: none;
 		border: none;
 		padding: 0;
@@ -53,16 +58,26 @@ import { Icon } from "astro-icon/components";
 		color: var(--color-gray-800);
 	}
 
+	.mobile-menu-toggle [data-icon] {
+		position: absolute;
+		transition:
+			opacity 160ms ease,
+			transform 160ms ease;
+	}
+
 	.mobile-menu-toggle .close-icon {
-		display: none;
+		opacity: 0;
+		transform: rotate(-90deg) scale(0.9);
 	}
 
 	.mobile-menu-toggle.open .menu-icon {
-		display: none;
+		opacity: 0;
+		transform: rotate(90deg) scale(0.9);
 	}
 
 	.mobile-menu-toggle.open .close-icon {
-		display: block;
+		opacity: 1;
+		transform: rotate(0deg) scale(1);
 	}
 
 	@media screen and (max-width: 550px) {
@@ -72,7 +87,13 @@ import { Icon } from "astro-icon/components";
 		}
 
 		.mobile-menu-toggle {
-			display: block;
+			display: flex;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mobile-menu-toggle [data-icon] {
+			transition: none;
 		}
 	}
 
