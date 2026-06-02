@@ -13,7 +13,7 @@ const notes = await getCollection("notes", ({ data }) => !data.draft);
 const patterns = await getCollection("patterns", ({ data }) => !data.draft);
 const talks = await getCollection("talks", ({ data }) => !data.draft);
 const podcasts = await getCollection("podcasts");
-const nowPosts = await getCollection("now");
+const nowPosts = await getCollection("now", ({ data }) => !data.draft);
 const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
 
 // Pre-process Now posts to extract body content for preview
