@@ -15,12 +15,26 @@ Pull requests don't fit the shape of agentic development. A PR is a request with
 
 ## Shape of the solution
 
-New primitives that capture the context, conversation, and commits of an agent session.
+New primitives that capture the context, conversation, and commits of an agent session. Different information. Lighter weight and smaller than PRs. Continuous approval and merge. Better context and review tools.
 
-Session - conversation with an agent that let to outputs: code commits, documents.
+Sessions are the unit of work.
+Vonversation with an agent that let to outputs: code commits, documents.
+We need to see the process. Like a scientific lab notebook.
+Still need sign-off, multiple eyes on work, audit log, historical context for the future.
 
 Checkpoints - light weight review and approval gates
 
 Trails - audit trails of exactly what happened, archived as historical context for future work
 
-Chronicles – natural language summaries, explainers, and contextualised overviews of an agent session
+Chronicles – natural language summaries, explainers, and contextualised overviews of an agent session. Made to orient yourself and others.
+
+LLMs are great information compressors and expanders.
+
+## Design challenges
+
+- LLM are unreliable narrators problem
+- How does async and sync work work?
+- Who constructs the chronicle and when
+- What are the boundaries of a session - when does it start and end
+- Session forking
+- cross-session review
