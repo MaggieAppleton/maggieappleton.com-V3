@@ -9,7 +9,7 @@ const { header } = Astro.props;
 ---
 
 <div class="accordion-container">
-	<button class="accordion-button" aria-label="open disclosure">
+	<button class="accordion-button" aria-expanded="false">
 		<div class="header">
 			<Icon name="heroicons:plus-circle" size={22} />
 			<span>{header}</span>
@@ -177,6 +177,7 @@ const { header } = Astro.props;
 				button.classList.toggle("open");
 
 				if (button.classList.contains("open")) {
+					button.setAttribute("aria-expanded", "true");
 					// Opening animation
 					if (panel instanceof HTMLElement) {
 						panel.style.display = "block"; // Ensure panel is visible for animation
@@ -203,6 +204,7 @@ const { header } = Astro.props;
 						chevronIcon.setAttribute("name", "heroicons:chevron-up");
 					}
 				} else {
+					button.setAttribute("aria-expanded", "false");
 					// Closing animation
 					if (panel instanceof HTMLElement) {
 						panel.style.height = `${panel.scrollHeight}px`; // Set current height before animating
