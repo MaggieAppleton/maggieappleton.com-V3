@@ -2324,6 +2324,16 @@
   },
   {
     "ids": [
+      "New Words"
+    ],
+    "slug": "new-words",
+    "growthStage": "seedling",
+    "description": "A collection of words I've come across that I didn't know before",
+    "outboundLinks": [],
+    "inboundLinks": []
+  },
+  {
+    "ids": [
       "New Harvest & Illustrating the Cultivated Meat Podcast"
     ],
     "slug": "newharvest-podcast",

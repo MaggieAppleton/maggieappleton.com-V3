@@ -1,0 +1,129 @@
+---
+interface Props {
+  word: string;
+  sourceTitle: string;
+  sourceAuthor?: string;
+  sourceLink?: string;
+  sentence?: string;
+}
+
+const { word, sourceTitle, sourceAuthor, sourceLink, sentence } = Astro.props;
+---
+
+<div class="word-entry">
+  <div class="word">{word}</div>
+  <div class="definition">
+    <slot />
+  </div>
+  <div class="source">
+    {sourceLink ? (
+      <a href={sourceLink} target="_blank" rel="noopener noreferrer">
+        <span>{sourceTitle}</span>
+      </a>
+    ) : (
+      <span>{sourceTitle}</span>
+    )}
+    {sourceAuthor && (
+      <>
+        <div class="dot"></div>
+        <span class="author">{sourceAuthor}</span>
+      </>
+    )}
+  </div>
+  {sentence && (
+    <q class="sentence">{sentence}</q>
+  )}
+</div>
+
+<style>
+  .word-entry {
+    background-color: var(--color-light-cream);
+    border: 1px solid var(--color-tinted-cream);
+    border-radius: var(--border-radius-base);
+    box-shadow: var(--box-shadow-sm);
+    padding: var(--space-m) var(--space-l);
+    transition: box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .word-entry:hover {
+    box-shadow: var(--box-shadow-md);
+  }
+
+  .word {
+    font-family: var(--font-body);
+    font-size: var(--font-size-md);
+    color: var(--color-gray-800);
+    font-weight: 500;
+    line-height: var(--leading-tight);
+  }
+
+  .definition {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-700);
+    line-height: var(--leading-normal);
+  }
+
+  .definition :global(p) {
+    margin: 0;
+  }
+
+  .source {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-tinted-cream);
+    margin-top: var(--space-2xs);
+  }
+
+  .source span {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    font-style: normal;
+  }
+
+  .source a {
+    text-decoration: none;
+  }
+
+  .source a span {
+    color: var(--color-bright-crimson);
+    transition: color 0.2s ease-in;
+  }
+
+  .source a:hover span {
+    color: var(--color-crimson);
+  }
+
+  .source .author {
+    color: var(--color-gray-500);
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    margin: 3px 2px 0 2px;
+    background-color: var(--color-gray-300);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .sentence {
+    display: block;
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-600);
+    line-height: var(--leading-normal);
+    font-style: italic;
+    margin-top: var(--space-2xs);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-tinted-cream);
+    quotes: '"' '"';
+  }
+</style>
