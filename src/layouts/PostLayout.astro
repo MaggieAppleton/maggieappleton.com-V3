@@ -7,6 +7,7 @@ import Backlinks from "../components/layouts/Backlinks.astro";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import linkMaps from "../links.json";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
+import GrowthStage from "../components/layouts/GrowthStage.astro";
 import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionWarning from "../components/layouts/VersionWarning.astro";
@@ -98,7 +99,7 @@ const updatedISO =
 				size="16"
 				growthStage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"}
 			/>
-			<p>{frontmatter.growthStage}</p>
+			<GrowthStage stage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"} />
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
 		</div>
 		<div class="title-container">

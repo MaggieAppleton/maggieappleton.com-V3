@@ -18,13 +18,17 @@ const tooltipContent = {
 ---
 
 <Tooltip maxWidth={300}>
-	<p class="growth-stage">{stage}</p>
+	<button type="button" class="growth-stage">{stage}</button>
 	<p slot="content">{tooltipContent[stage]}</p>
 </Tooltip>
 
 <style>
 	.growth-stage {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		appearance: none;
+		border: 0;
+		background: transparent;
 		cursor: pointer;
 		font-family: var(--font-sans);
 		font-size: var(--font-size-xs);
@@ -32,6 +36,13 @@ const tooltipContent = {
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		font-weight: bold;
-		padding-right: var(--space-xs);
+		margin: 0;
+		padding: 0;
+	}
+
+	.growth-stage:focus-visible {
+		outline: 2px solid var(--color-medium-sea-blue);
+		outline-offset: 3px;
+		border-radius: 2px;
 	}
 </style>
