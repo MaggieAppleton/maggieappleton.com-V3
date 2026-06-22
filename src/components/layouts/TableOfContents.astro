@@ -10,13 +10,13 @@ const { headings } = Astro.props;
 ---
 
 <div class="desktop-container">
-	<div class="title" id="desktop-toc-header">
-		<svg width="8" height="8">
+	<button class="title" id="desktop-toc-header" aria-expanded="true" aria-controls="desktop-toc-content">
+		<svg width="8" height="8" aria-hidden="true">
 			<circle r="4" cx="4" cy="4" fill="var(--color-sea-blue)"></circle>
 		</svg>
 		<h4>Table of Contents</h4>
 		<Icon name="heroicons:chevron-up" size={18} class="arrow-icon" />
-	</div>
+	</button>
 
 	<nav class="toc" id="desktop-toc-content">
 		<ul>
@@ -36,11 +36,11 @@ const { headings } = Astro.props;
 </div>
 
 <div class="mobile-container">
-	<div class="collapse-header">
-		<Icon name="heroicons:chevron-right" size={18} class="arrow-icon" />
+	<button class="collapse-header" aria-expanded="false" aria-controls="mobile-toc-content">
+		<Icon name="heroicons:chevron-right" size={18} class="arrow-icon" aria-hidden="true" />
 		<h4>Table of Contents</h4>
-	</div>
-	<div class="collapse-content">
+	</button>
+	<div class="collapse-content" id="mobile-toc-content">
 		<nav class="toc">
 			<ul>
 				{
@@ -87,6 +87,10 @@ const { headings } = Astro.props;
 		margin-top: 0.5rem;
 		cursor: pointer;
 		padding: var(--space-s);
+		background: none;
+		border: none;
+		width: 100%;
+		text-align: left;
 	}
 
 	.desktop-container .title h4 {
@@ -131,6 +135,12 @@ const { headings } = Astro.props;
 		gap: 0.5rem;
 		border-bottom: 1px solid var(--color-gray-100);
 		padding-bottom: var(--space-xs);
+		background: none;
+		border-top: none;
+		border-left: none;
+		border-right: none;
+		width: 100%;
+		text-align: left;
 	}
 
 	.collapse-header .arrow-icon {
@@ -246,12 +256,15 @@ const { headings } = Astro.props;
 			disableAutoCollapse = false;
 			desktopContainer?.classList.toggle("collapsed", isCollapsed);
 			arrowIcon?.classList.toggle("collapsed", isCollapsed);
+			(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", String(!isCollapsed));
 		};
 
 		// Mobile toggle handler
 		const mobileClickHandler = () => {
 			content?.classList.toggle("expanded");
 			mobileArrow?.classList.toggle("expanded");
+			const isExpanded = content?.classList.contains("expanded") ?? false;
+			(header as HTMLButtonElement)?.setAttribute("aria-expanded", String(isExpanded));
 		};
 
 		// Scroll handler for desktop auto-collapse
@@ -266,11 +279,13 @@ const { headings } = Astro.props;
 				isAutoCollapsed = false;
 				desktopContainer.classList.remove("collapsed");
 				arrowIcon?.classList.remove("collapsed");
+				(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", "true");
 			} else if (!isAutoCollapsed && !isCollapsed) {
 				isAutoCollapsed = true;
 				isCollapsed = true;
 				desktopContainer.classList.add("collapsed");
 				arrowIcon?.classList.add("collapsed");
+				(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", "false");
 			}
 		};
 
