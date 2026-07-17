@@ -95,6 +95,15 @@
   --color-gold: #ffd09c;
   --color-dark-salmon: #e1624f;
 
+  /* Poppy palette — single OKLCH source of truth, mirrored by the 3D blooms in
+     poppy-field/params.ts (combat = bright, disease = deep) so the legend swatches
+     and the rendered flowers stay in sync. Theme-independent: the poppies read the
+     same OKLCH in light and dark, so their accents do too. */
+  --color-poppy: oklch(0.58 0.21 28);
+  --color-poppy-bright: oklch(0.66 0.22 29); /* killed in action */
+  --color-poppy-deep: oklch(0.5 0.195 26); /* disease / flu / other */
+  --color-poppy-centre: oklch(0.2 0.06 30); /* dark seed centre */
+
   /* Opacity variants for colors */
   /* Crimson variants */
   --color-crimson-5: color-mix(in srgb, var(--color-bright-crimson) 5%, transparent);
@@ -280,6 +289,8 @@
     --color-salmon: #ff9a8a;
     --color-dark-salmon: #fd8370;
     --color-gold: #e5b876;
+
+    /* Poppy palette is theme-independent — defined once in :root as OKLCH. */
 
     /* Box shadows - stronger for dark mode */
     --box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);

@@ -1,0 +1,84 @@
+---
+// Decorative opening: three large canonical poppies plus two small accent blooms
+// nestled in the gaps, all baked once from the locked-in poses in intro-poppies.ts.
+---
+
+<div class="intro-poppies-wrap">
+	<figure class="intro-poppies" aria-hidden="true">
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower intro-poppies__flower--accent intro-poppies__flower--left"></canvas>
+		<canvas class="intro-poppies__flower intro-poppies__flower--accent intro-poppies__flower--right"></canvas>
+	</figure>
+</div>
+
+<script>
+	import { initIntroPoppies } from "./intro-poppies";
+	document.querySelectorAll<HTMLElement>(".intro-poppies-wrap").forEach((el) => initIntroPoppies(el));
+</script>
+
+<style>
+	.intro-poppies-wrap {
+		grid-column: 1 / 4 !important;
+		width: 100%;
+		max-width: 900px;
+		margin-inline: auto;
+	}
+
+	.intro-poppies {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-s);
+		width: 100%;
+		/* Top padding reserves room for the two accent blooms that sit above the
+		   row so they stay within the figure's bounds. Percentage padding is
+		   relative to this figure's width (the wrap carries the 900px cap), so it
+		   scales with the poppies. */
+		padding-top: 9%;
+		margin: var(--space-m) 0 var(--space-l);
+		align-items: center;
+	}
+
+	.intro-poppies__flower {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		display: block;
+	}
+
+	/* subtle hand-placed stagger so the row isn't mechanical */
+	.intro-poppies__flower:nth-child(1) {
+		transform: translateY(10px) rotate(-3deg);
+	}
+	.intro-poppies__flower:nth-child(2) {
+		transform: translateY(-14px);
+	}
+	.intro-poppies__flower:nth-child(3) {
+		transform: translateY(4px) rotate(2deg);
+	}
+
+	/* two small accent blooms nestled in the gaps at the top of the row, held
+	   inside the figure by its top padding (top is measured from the padded box) */
+	.intro-poppies__flower--accent {
+		position: absolute;
+		width: 15%;
+		z-index: 2;
+	}
+	.intro-poppies__flower--left {
+		left: 31%;
+		top: 2.5%;
+		transform: translateX(-50%) rotate(-4deg);
+	}
+	.intro-poppies__flower--right {
+		left: 70%;
+		top: 2.5%;
+		transform: translateX(-50%) rotate(5deg);
+	}
+
+	@media (max-width: 640px) {
+		.intro-poppies {
+			gap: var(--space-2xs);
+		}
+	}
+</style>

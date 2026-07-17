@@ -1,0 +1,273 @@
+---
+import { MONTHLY, BATTLES, SOURCES } from "./wwi-monthly-deaths";
+import { EDGE_INSET } from "./constants";
+import { DEFAULTS } from "./params";
+import { totalHeight, yForMonthIndex } from "./layout";
+
+// Initial geometry uses DEFAULTS so labels are placed correctly before the client
+// script runs; the client repositions them live from data-mindex on any change.
+const initH = totalHeight(DEFAULTS);
+const yAt = (i: number) => yForMonthIndex(i, DEFAULTS);
+
+// Mini poppies for the legend (same petal geometry as the canvas sprites).
+const petalD = "M0,0 C6,-6 6,-10 0,-9.2 C-6,-10 -6,-6 0,0 Z";
+const degs = (n: number) => Array.from({ length: n }, (_, i) => (360 / n) * i);
+const legend = [
+	{ petals: 5, color: "var(--color-poppy-bright)", label: "Killed in action" },
+	{ petals: 4, color: "var(--color-poppy-deep)", label: "Disease, flu & other" },
+];
+
+const years = [1914, 1915, 1916, 1917, 1918].map((y) => {
+	const idx = MONTHLY.findIndex((m) => m.year === y);
+	return { y, idx, top: yAt(idx) };
+});
+const battleLabels = BATTLES.map((b) => {
+	const mid = (b.startIndex + b.endIndex) / 2;
+	return { ...b, mid, top: yAt(mid) };
+});
+---
+
+<figure class="poppy-field" style={`--total-h:${initH}px; --edge:${EDGE_INSET}px;`}>
+	<p class="poppy-field__sr">
+		A field of roughly 9,500 poppies, one for every 1,000 military dead in the First
+		World War, arranged as a timeline running from August 1914 at the top to the
+		Armistice of November 1918 at the bottom. The field is narrow at the start, widens
+		into its greatest swell across the summer of 1916 (Verdun and the Somme), swells
+		again through 1918, and stops abruptly at the war's end. Brighter five-petal
+		poppies mark deaths in action; darker four-petal poppies mark deaths from disease,
+		influenza, and other causes — roughly a third of the total.
+	</p>
+
+	<div class="poppy-field__stage" style={`height:${initH}px; max-width:${DEFAULTS.maxWidth}px`} aria-hidden="true">
+		<div class="poppy-field__spine"></div>
+		{years.map((t) => (
+			<span class="poppy-field__year" data-mindex={t.idx} style={`top:${t.top}px`}>{t.y}</span>
+		))}
+		{battleLabels.map((b) => (
+			<button class="poppy-field__battle" data-battle={b.id} data-mindex={b.mid} tabindex="-1" style={`top:${b.top}px`}>
+				<b>{b.label}</b>
+				<i>{b.note}</i>
+			</button>
+		))}
+		<canvas class="poppy-field__canvas"></canvas>
+		<div class="poppy-field__tip" data-show="0"></div>
+	</div>
+
+	<figcaption>
+		<span class="poppy-field__legend" aria-hidden="true">
+			{legend.map((it) => (
+				<span class="poppy-field__legend-item">
+					<svg width="18" height="18" viewBox="-11 -11 22 22" aria-hidden="true">
+						{degs(it.petals).map((d) => (
+							<path d={petalD} fill={it.color} transform={`rotate(${d})`} />
+						))}
+						<circle r="2.4" fill="var(--color-poppy-centre)" />
+					</svg>
+					{it.label}
+				</span>
+			))}
+		</span>
+		<span class="poppy-field__caption-text">
+			A modelled estimate — roughly one poppy per 1,000 military dead, ~9.5&nbsp;million
+			across all nations, 1914–1918.
+		</span>
+		<span class="poppy-field__sources">{SOURCES}</span>
+	</figcaption>
+</figure>
+
+<script>
+	import { initPoppyField } from "./poppy-field";
+	document
+		.querySelectorAll<HTMLElement>(".poppy-field")
+		.forEach((el) => initPoppyField(el));
+</script>
+
+<style>
+	.poppy-field {
+		grid-column: 1 / 4 !important;
+		width: 100%;
+		margin: var(--space-xl) 0;
+		padding-inline: var(--edge);
+		box-sizing: border-box;
+	}
+
+	.poppy-field__stage {
+		position: relative;
+		width: 100%;
+		margin-inline: auto;
+	}
+
+	.poppy-field__canvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	.poppy-field__spine {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 50%;
+		width: 1.5px;
+		transform: translateX(-50%);
+		background: linear-gradient(
+			to bottom,
+			transparent,
+			var(--color-gray-300) 4%,
+			var(--color-gray-300) 96%,
+			transparent
+		);
+		pointer-events: none;
+	}
+
+	.poppy-field__year {
+		position: absolute;
+		left: calc(50% - 12px);
+		transform: translate(-100%, -50%);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		color: var(--color-gray-500);
+		background: var(--color-cream);
+		padding: 0 6px;
+		pointer-events: none;
+		z-index: 2;
+	}
+
+	.poppy-field__battle {
+		position: absolute;
+		left: calc(50% + 16px);
+		transform: translateY(-50%);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1px;
+		max-width: 40%;
+		text-align: left;
+		background: color-mix(in srgb, var(--color-cream) 82%, transparent);
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+		border: none;
+		padding: 5px 10px;
+		cursor: default;
+		color: var(--color-gray-800);
+		z-index: 3;
+		border-radius: 7px;
+		box-shadow: 0 1px 4px color-mix(in srgb, var(--color-black) 14%, transparent);
+		transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.poppy-field__battle:hover,
+	.poppy-field__battle:focus-visible {
+		color: var(--color-poppy-deep);
+		background: color-mix(in srgb, var(--color-cream) 94%, transparent);
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--color-poppy) 22%, transparent);
+		outline: none;
+	}
+
+	.poppy-field__battle b {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		line-height: 1.15;
+		color: var(--color-gray-800);
+	}
+
+	.poppy-field__battle:hover b,
+	.poppy-field__battle:focus-visible b {
+		color: var(--color-poppy-deep);
+	}
+
+	.poppy-field__battle i {
+		font-style: normal;
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+	}
+
+	.poppy-field__tip {
+		position: absolute;
+		top: 0;
+		left: 0;
+		margin: 12px 0 0 14px;
+		padding: 4px 9px;
+		background: var(--color-black);
+		color: var(--color-cream);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		white-space: nowrap;
+		border-radius: 5px;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+		z-index: 4;
+	}
+
+	.poppy-field__tip[data-show="1"] {
+		opacity: 1;
+	}
+
+	.poppy-field figcaption {
+		max-width: 60ch;
+		margin: var(--space-s) auto 0;
+		text-align: center;
+		font-size: var(--font-size-sm);
+		line-height: var(--leading-base);
+		color: var(--color-gray-600);
+	}
+
+	.poppy-field__legend {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 6px 20px;
+		margin-bottom: var(--space-2xs);
+	}
+
+	.poppy-field__legend-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		color: var(--color-gray-700, var(--color-gray-800));
+	}
+
+	.poppy-field__legend-item svg {
+		flex: none;
+	}
+
+	.poppy-field__caption-text {
+		display: block;
+	}
+
+	.poppy-field__sources {
+		display: block;
+		margin-top: 4px;
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-500);
+	}
+
+	.poppy-field__sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	@media (max-width: 767px) {
+		.poppy-field__battle b {
+			font-size: var(--font-size-xs);
+		}
+		.poppy-field__battle i {
+			display: none;
+		}
+	}
+</style>
