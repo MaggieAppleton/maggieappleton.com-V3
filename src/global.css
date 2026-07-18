@@ -288,8 +288,6 @@
     --color-dark-salmon: #fd8370;
     --color-gold: #e5b876;
 
-    /* Poppy palette is theme-independent — defined once in :root as OKLCH. */
-
     /* Box shadows - stronger for dark mode */
     --box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --box-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);

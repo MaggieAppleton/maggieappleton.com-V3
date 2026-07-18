@@ -1,7 +1,6 @@
-// Bakes the canonical 3D poppy into flat sprites for the
-// field. Renders the flower once per (cause colour × yaw angle) into offscreen
-// canvases at init; the field then stamps those with drawImage. All lighting and
-// 3D cost is paid here, once — the ~9,500 field instances are just bitmaps.
+// Bakes the canonical 3D poppy into flat sprites once per (cause × yaw angle);
+// the field then stamps those with drawImage, so the ~9,500 field instances
+// are just bitmaps.
 
 import * as THREE from "three";
 import { buildPoppy, POPPY_DEFAULTS, POPPY_LIGHTING, oklchToHex, type Poppy3DParams } from "./poppy3d";
@@ -17,11 +16,8 @@ export interface AngleSprites {
 	angles: number[]; // yaw (radians) baked at each index, ascending
 }
 
-// Read a CSS custom property holding an oklch() (our poppy palette) or hex colour
-// and return a hex string. THREE.Color and canvas mixing below both need hex, and
-// custom properties resolve to their raw text (not rgb), so we convert oklch here
-// with the same maths as oklchToHex. `fallback` is itself oklch() to keep the
-// palette hex-free end to end.
+// Reads a CSS custom property holding an oklch() or hex colour and returns hex —
+// custom properties resolve to raw text, and THREE/canvas both need hex.
 export function cssColorHex(name: string, fallback: string): string {
 	const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 	const src = raw || fallback;
@@ -34,8 +30,7 @@ function toRgb(hex: string): [number, number, number] {
 	return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
 }
 const toHex = (c: number) => Math.round(Math.max(0, Math.min(255, c))).toString(16).padStart(2, "0");
-// In-hue underside/shadow tone: scale each sRGB channel toward black. Shared with
-// the trio so its "killed in action" bloom derives its deep colour identically.
+// In-hue underside/shadow tone: scale each sRGB channel toward black.
 export function darken(hex: string, f: number): string {
 	return `#${toRgb(hex).map((c) => toHex(c * f)).join("")}`;
 }
@@ -103,17 +98,13 @@ export function bakePoppyAngleSprites(
 		return out;
 	};
 
-	// underside/shadow tone derived from each petal colour so it stays in-hue
 	const combat = bakeCause(combatPetal, darken(combatPetal, 0.62));
-	// Disease / flu / other: 4-petal — a shape encoding that stays legible even
-	// when colour alone doesn't distinguish it from the bright combat blooms.
+	// 4-petal: a shape encoding that stays legible even when colour alone doesn't
+	// distinguish disease deaths from the bright combat blooms.
 	const disease = bakeCause(diseasePetal, darken(diseasePetal, 0.6), 4);
 
-	// dispose() frees Three's JS-side resources but leaves the underlying WebGL
-	// context alive until GC, which can breach the browser's context cap (~16, lowest
-	// in Safari) and silently blank the page's other live poppy renderers. We bake
-	// into plain 2D canvases above and never reuse this renderer, so force-release
-	// the GL context eagerly here.
+	// forceContextLoss() releases the GL context eagerly (dispose() alone waits for
+	// GC), so repeated bakes don't breach the browser's ~16-context cap.
 	renderer.forceContextLoss();
 	renderer.dispose();
 	return { combat, disease, angles };

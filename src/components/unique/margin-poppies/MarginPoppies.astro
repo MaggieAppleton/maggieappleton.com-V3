@@ -1,12 +1,8 @@
 ---
 // Decorative 3D poppies scattered down the page margins on desktop only. The
-// layer is an absolute overlay sized to the whole article (via .styled-main being
-// positioned — see global.css), so each bloom's `top:%` tracks a spot on the page
-// and its horizontal calc anchors it just outside the text column, out in the
-// gutter. Purely decorative, so aria-hidden and pointer-events:none.
-//
-// Positions/poses come from config.ts (shared with the client renderer). Below
-// MARGIN_BREAKPOINT the gutters are too slim, so the whole layer hides.
+// layer is an absolute overlay sized to the whole article (.styled-main is
+// positioned — see global.css), so each bloom's top:% tracks a spot on the page.
+// Positions/poses come from config.ts, shared with the client renderer.
 import { MARGIN_POPPIES } from "./config";
 ---
 
@@ -47,19 +43,13 @@ import { MARGIN_POPPIES } from "./config";
 	.margin-poppies {
 		position: absolute;
 		inset: 0;
-		/* Purely decorative and non-interactive — never eat clicks or overlap text
-		   (blooms live in the gutters; z-index 0 keeps them under the prose if the
-		   layout ever shifts). */
 		pointer-events: none;
-		z-index: 0;
-		/* Half the text column's width, so the calc() below lands each bloom right
-		   at the column's edge. Mirrors ProseWrapper's min(72ch, 100%) column. ch
-		   is font-relative, so pin the font-size to match the prose column. */
+		z-index: 0; /* stay under the prose if the layout ever shifts */
+		/* Half the text column's width — mirrors ProseWrapper's min(72ch, 100%).
+		   ch is font-relative, so pin font-size to match. */
 		--mp-col-half: 36ch;
 		font-size: var(--font-size-base);
-		/* Hidden by default; shown only on wide desktop (see below). Keep this
-		   breakpoint in sync with MARGIN_BREAKPOINT in config.ts. */
-		display: none;
+		display: none; /* shown only on wide desktop — keep in sync with MARGIN_BREAKPOINT */
 	}
 
 	@media (min-width: 1200px) {
@@ -73,9 +63,8 @@ import { MARGIN_POPPIES } from "./config";
 		display: block;
 	}
 
-	/* At-rest placement before/while JS isn't driving the transform. Left blooms
-	   are anchored by their right edge, right blooms by their left edge — the
-	   client renderer folds the same base into its per-frame transform. */
+	/* At-rest placement — the client renderer folds the same base into its
+	   per-frame transform. */
 	.margin-poppy--left {
 		transform: translateX(-100%);
 	}
@@ -83,9 +72,8 @@ import { MARGIN_POPPIES } from "./config";
 		transform: translateX(0);
 	}
 
-	/* Scoped to while the rAF loop is actually driving this bloom (toggled from
-	   margin-poppies.ts), not held permanently — otherwise every canvas would keep
-	   a promoted layer alive even off-screen. */
+	/* Scoped to while the rAF loop drives this bloom, not held permanently —
+	   else every canvas keeps a promoted layer alive even off-screen. */
 	.margin-poppy.is-animating {
 		will-change: transform;
 	}

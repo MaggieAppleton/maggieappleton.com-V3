@@ -1,6 +1,6 @@
 ---
-// Decorative opening: three large canonical poppies plus two small accent blooms
-// nestled in the gaps, all baked once from the locked-in poses in intro-poppies.ts.
+// Decorative opening: three large poppies plus two small accent blooms, posed
+// from intro-poppies.ts.
 ---
 
 <div class="intro-poppies-wrap">
@@ -45,10 +45,8 @@
 		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-s);
 		width: 100%;
-		/* Top padding reserves room for the two accent blooms that sit above the
-		   row so they stay within the figure's bounds. Percentage padding is
-		   relative to this figure's width (the wrap carries the 900px cap), so it
-		   scales with the poppies. */
+		/* Reserves room above the row for the two accent blooms. % is relative to
+		   this figure's width, so it scales with the poppies. */
 		padding-top: 9%;
 		margin: 0 0 var(--space-xl);
 		align-items: center;
@@ -60,18 +58,14 @@
 		display: block;
 	}
 
-	/* will-change is scoped to while intro-poppies.ts's rAF loop is actually
-	   running (toggled via this class from its IntersectionObserver), not set
-	   permanently — a permanent declaration here would hold 5 promoted layers
-	   alive even while off-screen or idle. */
+	/* Scoped to while the rAF loop runs (toggled from intro-poppies.ts), not
+	   permanent — else all 5 canvases would hold a promoted layer while idle. */
 	.intro-poppies.is-animating .intro-poppies__flower {
 		will-change: transform;
 	}
 
-	/* Subtle hand-placed stagger so the row isn't mechanical. This is the
-	   at-rest pose only — while running, intro-poppies.ts overwrites this via
-	   inline style.transform each frame (see BASE_TRANSFORM, which mirrors
-	   these values) with the breeze sway + cursor tilt layered on top. */
+	/* At-rest pose only — intro-poppies.ts overwrites this via inline
+	   style.transform each frame (see BASE_TRANSFORM, which mirrors these values). */
 	.intro-poppies__flower:nth-child(1) {
 		transform: translateY(10px) rotate(-3deg);
 	}
@@ -82,8 +76,6 @@
 		transform: translateY(4px) rotate(2deg);
 	}
 
-	/* two small accent blooms nestled in the gaps at the top of the row, held
-	   inside the figure by its top padding (top is measured from the padded box) */
 	.intro-poppies__flower--accent {
 		position: absolute;
 		width: 15%;

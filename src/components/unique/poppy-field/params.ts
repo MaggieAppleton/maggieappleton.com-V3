@@ -1,7 +1,4 @@
 // Locked-in parameters for the poppy field, read by the layout and renderer.
-// Geometry params (heightScale, maxWidth, smoothness) drive poppy positions;
-// appearance params (baseSize, sizeVariance, opacityVariance) and the combat/
-// disease OKLCH are read when baking sprites / in the draw loop.
 
 export interface FieldParams {
 	heightScale: number; // row-height multiplier — taller = less overlap + taller field
@@ -29,12 +26,10 @@ export const DEFAULTS: FieldParams = {
 	baseSize: 0.9,
 	sizeVariance: 1,
 	opacityVariance: 0,
-	// These were originally tuned as L 0.845 / C 0.305 / H 28 (combat) and
-	// L 0.45 / C 0.2 / H 22 (disease) — both out of the sRGB gamut, so
-	// oklchToHex was silently clipping them to #ff5148 / #a9001a per-channel
-	// (see poppy3d.ts). Recorded here as the *actual* in-gamut OKLCH of those
-	// exact pixels, so the look is preserved byte-for-byte through the fixed,
-	// properly gamut-mapped conversion instead of relying on clipping.
+	// Originally tuned as L 0.845/C 0.305/H 28 (combat) and L 0.45/C 0.2/H 22
+	// (disease), both out-of-gamut and silently clipped by oklchToHex to
+	// #ff5148/#a9001a. Recorded here as the actual in-gamut OKLCH of those
+	// pixels so the look survives the fixed, properly gamut-mapped conversion.
 	combatL: 0.6763,
 	combatC: 0.2117,
 	combatH: 27.29,

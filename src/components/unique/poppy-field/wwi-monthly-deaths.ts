@@ -1,16 +1,12 @@
-// Reconstructed monthly military-death series for WWI (all combatant nations,
-// all-cause: combat + disease + died-as-POW). Values are in THOUSANDS of dead,
-// which — since 1 poppy = 1,000 dead — is also the poppy count for that month.
+// Reconstructed monthly military-death series for WWI (all nations, all-cause).
+// Values are in THOUSANDS of dead, which is also the poppy count for that month.
 //
-// This is a modelled estimate, not a measured dataset: no monthly all-nations
-// record exists (checked — see below). National totals (~9.5M) sit within the
-// scholarly cluster of 9.16M–10.06M (Urlanis, Winter, Overmans, and Prost's own
-// 1914-1918-Online evaluation, which is itself the higher end at 10.06M). The
-// series is shaped around dated battle/campaign periods with a continuous
-// disease baseline and a 1918 influenza bulge — it is NOT built by summing
-// individual battle death tolls into their months, so a month's number is not
-// a claim about any one battle's specific toll. Deaths ≠ casualties: POW-heavy
-// operations (e.g. Caporetto) are deliberately NOT spikes.
+// Modelled, not measured — no monthly all-nations record exists. National
+// totals (~9.5M) sit within the scholarly cluster of 9.16M–10.06M (Urlanis,
+// Winter, Overmans, Prost). Shaped around dated battle/campaign periods with a
+// disease baseline and a 1918 influenza bulge, NOT summed from individual
+// battle tolls — a month's number isn't a claim about any one battle. Deaths ≠
+// casualties: POW-heavy operations (e.g. Caporetto) are deliberately not spikes.
 
 export interface MonthDeaths {
 	year: number;
@@ -42,7 +38,7 @@ export const MONTHLY: MonthDeaths[] = [
 	{ year: 1916, month: 4, deaths: 200 },
 	{ year: 1916, month: 5, deaths: 210 },
 	{ year: 1916, month: 6, deaths: 260 },
-	{ year: 1916, month: 7, deaths: 290 }, // crest — elevated for three concurrent 1916 offensives (Verdun, the Somme, Brusilov); not a sum of their tolls, which aren't all well-constrained as deaths in the literature (Brusilov's especially — sources give 500k–1.44M, mostly casualties not deaths)
+	{ year: 1916, month: 7, deaths: 290 }, // crest — three concurrent offensives (Verdun, Somme, Brusilov)
 	{ year: 1916, month: 8, deaths: 280 },
 	{ year: 1916, month: 9, deaths: 270 },
 	{ year: 1916, month: 10, deaths: 230 },
@@ -57,7 +53,7 @@ export const MONTHLY: MonthDeaths[] = [
 	{ year: 1917, month: 7, deaths: 180 },
 	{ year: 1917, month: 8, deaths: 190 },
 	{ year: 1917, month: 9, deaths: 180 },
-	{ year: 1917, month: 10, deaths: 210 }, // Passchendaele + Caporetto (deaths, not the POW headline)
+	{ year: 1917, month: 10, deaths: 210 }, // Passchendaele + Caporetto
 	{ year: 1917, month: 11, deaths: 180 },
 	{ year: 1917, month: 12, deaths: 130 },
 	{ year: 1918, month: 1, deaths: 120 },
@@ -95,11 +91,9 @@ export const BATTLES: Battle[] = [
 const MONTH_NAMES = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const monthLabel = (m: MonthDeaths) => `${MONTH_NAMES[m.month]} ${m.year}`;
 
-// Rough share of each month's dead from disease / flu / other non-combat causes
-// (the rest are combat deaths). Cause of death was NOT recorded month-by-month,
-// so this is a modelled layer: ~30% overall, weighted up on disease-heavy fronts
-// (Gallipoli & the East in 1915, Serbian typhus) and spiking hard in the autumn
-// 1918 influenza pandemic. Tune the numbers to taste.
+// Modelled share of each month's dead from disease/flu/other (cause of death
+// wasn't recorded month-by-month): ~30% overall, weighted up on disease-heavy
+// fronts (Gallipoli, Serbian typhus) and the autumn 1918 flu pandemic.
 function diseaseShareFor(m: MonthDeaths): number {
 	if (m.year === 1918 && m.month >= 9) {
 		return m.month === 10 ? 0.52 : m.month === 11 ? 0.48 : 0.4; // Sep · Oct · Nov flu bulge

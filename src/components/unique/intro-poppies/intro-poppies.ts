@@ -1,11 +1,7 @@
-// Five poppies for the top of the essay: three big canonical blooms in a row plus
-// two small accent blooms nestled in the gaps, each rendered at its own tilt/scale.
-// Coloured with the field's "killed in action" (combat) OKLCH so they match the
-// field exactly. On-page positions come from the .astro CSS.
-//
-// Unlike the field's sprites, these stay live: the renderer keeps running so each
-// flower can be gently re-rotated (yaw/pitch) every frame for an ambient sway plus
-// a turn toward the cursor when it's nearby — a real 3D tilt, not a flat rotate.
+// Five poppies for the top of the essay: three big blooms plus two small accent
+// blooms, coloured with the field's combat OKLCH so they match it exactly. Unlike
+// the field's baked sprites, these stay live — re-rotated every frame for an
+// ambient sway plus a turn toward the cursor when it's nearby.
 
 import * as THREE from "three";
 import { buildPoppy, POPPY_DEFAULTS } from "../poppy-field/poppy3d";
@@ -14,8 +10,8 @@ import { DEFAULTS as FIELD } from "../poppy-field/params";
 
 const DEG = Math.PI / 180;
 
-// Geometry + lighting for these blooms only — POPPY_DEFAULTS / POPPY_LIGHTING drive
-// the field's canonical poppy and stay untouched. Tuned and locked in.
+// Geometry + lighting for these blooms only — POPPY_DEFAULTS/POPPY_LIGHTING (the
+// field's poppy) stay untouched.
 const INTRO_SHAPE = {
 	petals: 5,
 	whorls: 1,
@@ -31,8 +27,7 @@ const INTRO_SHAPE = {
 };
 const INTRO_LIGHTING = { elev: 36, strength: 2, ambient: 1.2 };
 
-// Per-canvas pose. Indices 0–2 are the big row; 3/4 are the accent blooms in the
-// gaps, tipped back (negative pitch) to angle upward.
+// Per-canvas pose: 0-2 are the big row; 3/4 are the accent blooms, tipped back.
 interface Pose {
 	yaw: number;
 	pitch: number;
@@ -46,12 +41,9 @@ const POSES: Pose[] = [
 	{ yaw: 5, pitch: -50, scale: 1.24 },
 ];
 
-// Each canvas's at-rest transform (hand-placed stagger, mirrors the base
-// translate/rotate baked into IntroPoppies.astro's nth-child/accent rules —
-// keep the two in sync). Read here so animate() can write a fully-resolved
-// `transform` string straight to each canvas every frame instead of animating
-// CSS custom properties, which forces a style recalc the browser can't
-// short-circuit to a compositor-only update.
+// Mirrors the base transform baked into IntroPoppies.astro's nth-child/accent
+// rules — keep the two in sync. Written as a resolved transform string each
+// frame (not animated custom properties) to stay compositor-only.
 interface BaseTransform {
 	x: string;
 	y: number;
@@ -96,8 +88,7 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 	pivot.add(orient);
 	scene.add(pivot);
 
-	// Match the field's "killed in action" (combat) poppies exactly: same combat
-	// OKLCH petal, same darken(0.62) underside, same centre.
+	// Matches the field's combat (killed-in-action) poppies exactly.
 	const battle = oklchToHex(FIELD.combatL, FIELD.combatC, FIELD.combatH);
 	const poppy = buildPoppy({
 		...POPPY_DEFAULTS,
@@ -110,18 +101,12 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 
 	const ctxs = canvases.map((cv) => cv.getContext("2d")!);
 
-	// Guard against redundant setSize calls. Assigning canvas width/height
-	// reallocates + clears the GL drawing buffer even when the size is
-	// unchanged, and renderPose runs once per canvas per frame (5x/frame). The
-	// poses render in a fixed order — indices 0,1,2 share one size and 3,4 share
-	// another — so skipping when the size matches the last one collapses this to
-	// ~2 setSize calls/frame.
+	// Guards against redundant setSize calls — reallocates the GL buffer even
+	// when unchanged, and renderPose runs 5x/frame.
 	let lastRenderSize = 0;
 
-	// Each canvas's device-pixel render size, read from clientWidth once (and
-	// again on resize) rather than inside renderPose() — that runs every rAF
-	// tick for all 5 canvases, so polling layout there was 5x/frame of forced
-	// layout reads for a value that only ever changes on resize.
+	// Read from clientWidth once (and on resize), not inside renderPose() — that
+	// runs every rAF tick and would force a layout read 5x/frame.
 	const sizes: number[] = canvases.map(() => 0);
 	function measureSize(i: number) {
 		const cv = canvases[i];
@@ -134,8 +119,6 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 	}
 	canvases.forEach((_, i) => measureSize(i));
 
-	// Render one canvas at its base pose plus a live yaw/pitch offset (deg) —
-	// this is a real 3D turn of the mesh, not a flat rotate of a baked image.
 	function renderPose(_cv: HTMLCanvasElement, ctx2d: CanvasRenderingContext2D, i: number, yawOff: number, pitchOff: number) {
 		const pose = POSES[i % POSES.length];
 		const size = sizes[i];
@@ -153,11 +136,9 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 
 	if (reduce) {
 		canvases.forEach((cv, i) => renderPose(cv, ctxs[i], i, 0, 0));
-		// Static — free the GPU context, nothing will re-render it.
 		poppy.dispose();
-		// dispose() alone leaves the underlying WebGL context alive until GC;
-		// forceContextLoss() releases it eagerly so astro:page-load re-inits
-		// don't pile up contexts and hit the browser cap (~16, lowest in Safari).
+		// forceContextLoss() releases the GL context eagerly (dispose() alone waits
+		// for GC), so page revisits don't hit the ~16-context browser cap.
 		renderer.forceContextLoss();
 		renderer.dispose();
 		return;
@@ -172,13 +153,7 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 	return () => {
 		stopAnimation();
 		resizeObserver.disconnect();
-		// Mirror the reduced-motion path: free the GPU context once nothing
-		// will re-render it. A fresh renderer/scene is built on the next
-		// astro:page-load re-init, so disposing here is safe.
 		poppy.dispose();
-		// dispose() alone leaves the underlying WebGL context alive until GC;
-		// forceContextLoss() releases it eagerly so astro:page-load re-inits
-		// don't pile up contexts and hit the browser cap (~16, lowest in Safari).
 		renderer.forceContextLoss();
 		renderer.dispose();
 	};
@@ -191,16 +166,10 @@ function distToRect(px: number, py: number, rect: DOMRect) {
 	return Math.hypot(dx, dy);
 }
 
-// Gentle live motion: each flower gets a slow ambient yaw/pitch sway (matching
-// the poppy field's wind treatment), re-rendered every frame. On top of that,
-// hovering in or near the whole figure tips *all* the flowers toward the
-// cursor together — one shared yaw/pitch pull driven by where the cursor sits
-// relative to the figure as a whole, not each flower's own distance to it.
-// Floating position (X/Y) and a light roll still ride on top, written each
-// frame as a fully-resolved `transform` string (see BASE_TRANSFORM) rather
-// than as animated CSS custom properties — a custom property change forces a
-// style recalc before the browser can resolve it into the transform, where a
-// direct `el.style.transform` write goes straight to the compositor.
+// Each flower gets a slow ambient sway, plus a shared yaw/pitch pull toward the
+// cursor driven by where it sits relative to the whole figure (not each
+// flower's own distance). Written each frame as a resolved transform string
+// (see BASE_TRANSFORM), not animated custom properties, to stay compositor-only.
 function animate(
 	figure: HTMLElement,
 	canvases: HTMLCanvasElement[],
@@ -224,9 +193,8 @@ function animate(
 	};
 	window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-	// Figure's viewport rect, cached from scroll/resize instead of read fresh
-	// inside frame() every tick — the cursor-pull math only needs it to stay
-	// roughly current, not per-pixel-accurate mid-scroll.
+	// Cached from scroll/resize instead of read fresh every frame — only needs
+	// to stay roughly current, not per-pixel-accurate mid-scroll.
 	let figureRect = figure.getBoundingClientRect();
 	const measureFigureRect = () => {
 		figureRect = figure.getBoundingClientRect();
@@ -234,13 +202,8 @@ function animate(
 	window.addEventListener("scroll", measureFigureRect, { passive: true });
 	window.addEventListener("resize", measureFigureRect);
 
-	// Only pay the render cost while the figure is actually on screen — it
-	// sits once at the top of the essay, so this fully stops the rAF loop
-	// (and the WebGL render + drawImage per flower inside it) for the rest
-	// of the page. rootMargin starts it a little early so there's no
-	// first-frame pop as it scrolls into view. will-change is toggled here
-	// too, alongside the loop, rather than left permanently set in CSS —
-	// otherwise all 5 canvases would hold promoted layers even while idle.
+	// Stops the rAF loop entirely once scrolled past the figure. rootMargin
+	// starts it a little early to avoid a first-frame pop.
 	let raf = 0;
 	const observer = new IntersectionObserver(
 		([entry]) => {
@@ -258,9 +221,8 @@ function animate(
 	observer.observe(figure);
 
 	function frame(t: number) {
-		// Shared pull: where the cursor sits relative to the figure's centre
-		// (normalised to its half-size, clamped to ±1), scaled by how close the
-		// cursor is to the figure at all (0 once it's PULL_MARGIN past the edge).
+		// Cursor position relative to the figure's centre, normalised to ±1 and
+		// scaled to 0 once PULL_MARGIN past the edge.
 		const rect = figureRect;
 		const cx = rect.left + rect.width / 2;
 		const cy = rect.top + rect.height / 2;

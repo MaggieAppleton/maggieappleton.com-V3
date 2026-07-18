@@ -1,8 +1,7 @@
-// Deterministic, seeded, PARAMETERISED layout. Each poppy gets an immutable
-// "home" computed from the data + a fixed seed + the current FieldParams. The
-// renderer animates offsets on top of these homes. Same seed + same params →
-// identical field. Each poppy also carries its raw randomness (rScale) so that
-// changing size/opacity variance never reshuffles the field.
+// Deterministic, seeded layout. Each poppy gets an immutable "home" from the
+// data + a fixed seed + FieldParams; the renderer animates offsets on top.
+// rScale carries each poppy's raw randomness so size/opacity variance never
+// reshuffles the field.
 
 import { MONTHLY, diseaseCount } from "./wwi-monthly-deaths";
 import { MONTH_H as BASE_MONTH_H, DENSITY, SEED, PAD_Y as PAD_BASE } from "./constants";
@@ -30,18 +29,12 @@ export function mulberry32(seed: number): () => number {
 	};
 }
 
-// Effective row height grows with the height multiplier — taller rows spread the
-// same poppies over more pixels, which is the real lever for less overlap.
+// Taller rows spread the same poppies over more pixels — the real lever for less overlap.
 export const effMonthH = (p: FieldParams) => BASE_MONTH_H * p.heightScale;
 
-// A dozen-ish stray poppies fade in/out at each end of the field (see
-// computePoppyHomes) — tucked into the existing padY margin, not a new band.
-const LEAD_COUNT = 48;
+const LEAD_COUNT = 48; // stray poppies fading in/out at each end (see computePoppyHomes)
 
-// Max fraction of a row height a poppy strays vertically from its month centre
-// (actual jitter tops out around 0.78 — this leaves a small buffer above that).
-const VBLEED = 1;
-// Top/bottom breathing room scales with row height so edge poppies never crop.
+const VBLEED = 1; // max fraction of row height a poppy strays from its month centre
 export const padY = (p: FieldParams) => Math.max(PAD_BASE, effMonthH(p) * VBLEED + 30);
 
 export const totalHeight = (p: FieldParams) => MONTHLY.length * effMonthH(p) + padY(p) * 2;
@@ -49,12 +42,12 @@ export const yForMonthIndex = (i: number, p: FieldParams) => padY(p) + i * effMo
 export const monthIndexForY = (y: number, p: FieldParams) =>
 	Math.max(0, Math.min(MONTHLY.length - 1, Math.floor((y - padY(p)) / effMonthH(p))));
 
-// Logical half-width so horizontal extent ∝ deaths (the envelope IS the curve).
-// Kept in BASE units; the renderer's xScale maps it to the container.
+// Logical half-width so horizontal extent ∝ deaths; the renderer's xScale maps
+// this BASE-unit value to the container.
 const baseHalf = (deaths: number) => deaths / (DENSITY * BASE_MONTH_H) / 2;
 
-// Per-month half-widths, smoothed by a weighted moving average whose window
-// grows with `smoothness` (0 = raw month bumps, 1 = broadly smoothed).
+// Weighted moving average whose window grows with `smoothness` (0 = raw
+// month bumps, 1 = broadly smoothed).
 function smoothedHalves(p: FieldParams): number[] {
 	const raw = MONTHLY.map((m) => baseHalf(m.deaths));
 	const win = Math.round(p.smoothness * 6);
@@ -82,8 +75,7 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 
 	const pad = padY(p);
 
-	// Continuous half-width at any y (smoothstep between month centres) → the
-	// envelope follows a smooth curve instead of hard per-month steps.
+	// Smoothstep between month centres so the envelope is a curve, not steps.
 	const halfAt = (y: number) => {
 		const f = (y - pad) / mH - 0.5;
 		const i0 = Math.floor(f);
@@ -94,10 +86,8 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		return a + (b - a) * s;
 	};
 
-	// Fraction of poppies to actually place. Thinning scales the per-month count
-	// (and the disease share with it) without touching the envelope half-width, so
-	// the field's SHAPE is unchanged — it just fills more sparsely. Only affects
-	// mobile; on desktop thin === 1 leaves the field byte-identical.
+	// Thinning scales per-month count without touching the envelope half-width, so
+	// the field's shape is unchanged — it just fills more sparsely (mobile only).
 	const thin = p.thin ?? 1;
 
 	const homes: Poppy[] = [];
@@ -106,8 +96,7 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		const count = Math.max(1, Math.round(m.deaths * thin));
 		const dCount = Math.round(diseaseCount(m) * thin); // first dCount poppies this month are disease/other
 		for (let k = 0; k < count; k++) {
-			// Uniform fill of the full row (gapless at any spacing) + a soft gaussian
-			// tail for organic blending/feathering between months.
+			// Uniform fill of the row + a soft gaussian tail for blending between months.
 			const y = cy + (rand() - 0.5) * mH + (rand() + rand() - 1) * mH * 0.28;
 			const half = halfAt(y);
 			const x = (rand() * 2 - 1) * half;
@@ -123,12 +112,9 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		}
 	});
 
-	// Lead-in / lead-out: a dozen stray poppies tucked into the existing top/
-	// bottom breathing room (padY) — no extra height, no shift to the real
-	// months above. Tapers to a single point at the outer edge rather than
-	// fanning out, so it reads as a few blooms drifting off rather than a new band.
-	// Only spans a fraction of padY (not the whole margin) so the fade-in reads
-	// as a tight scatter near the data rather than stretching the full pad.
+	// Lead-in/out: stray poppies tucked into the existing padY margin (no extra
+	// height), tapering to a point at the outer edge so it reads as blooms
+	// drifting off rather than a new band.
 	const LEAD_SPAN = 0.55;
 	const H = totalHeight(p);
 	const addLead = (edgeIndex: number, direction: 1 | -1) => {
