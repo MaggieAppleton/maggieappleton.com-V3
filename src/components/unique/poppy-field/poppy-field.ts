@@ -252,7 +252,11 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	const onResize = () => {
 		window.clearTimeout(resizeTimer);
 		resizeTimer = window.setTimeout(() => {
-			buildSprites();
+			// Rebaking sprites means spinning up two full Three.js scenes — only
+			// worth it if the device pixel ratio actually changed (e.g. dragging
+			// the window to a different-DPR display); a plain width change just
+			// needs new geometry.
+			if (Math.min(window.devicePixelRatio || 1, 2) !== dpr) buildSprites();
 			geometry();
 			if (reduce) renderStatic();
 		}, 150);

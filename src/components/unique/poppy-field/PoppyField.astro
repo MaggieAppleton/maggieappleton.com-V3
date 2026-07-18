@@ -166,8 +166,11 @@ const battleLabels = BATTLES.map((b) => {
 		transition: color 0.2s ease;
 	}
 
-	.poppy-field__battle:hover,
-	.poppy-field__battle:focus-visible {
+	/* tabindex="-1" (below) keeps these out of the tab order — the highlight
+	   is a mouse-hover enhancement layered on always-visible text, not
+	   information keyboard users would otherwise miss — so :focus-visible
+	   can never actually match here and isn't included. */
+	.poppy-field__battle:hover {
 		color: var(--battle-hover);
 		outline: none;
 	}
