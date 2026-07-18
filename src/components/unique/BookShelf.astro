@@ -1,0 +1,600 @@
+---
+// An interactive shelf of WWI books. Three books sit in a fixed left-to-right
+// order. Exactly one shows its front cover (wide, facing the viewer) while the
+// others show their spine (narrow, standing on the shelf). Clicking a spine
+// rotates that book to face out and turns the previously-open book back to a
+// spine. Each book is a genuine CSS 3D cuboid (a cover face + spine face at a
+// 90° dihedral angle) that physically rotates between the two states.
+
+import { getImage } from "astro:assets";
+import goodbyeToAllThatCover from "../../images/posts/in-memoriam/goodbye-all-that.jpg";
+import birdsongCover from "../../images/posts/in-memoriam/birdsong.jpg";
+import allQuietCover from "../../images/posts/in-memoriam/allquiet.webp";
+
+// Rendered as CSS background-images (below), not <img>/<Image>. An <img>
+// gets its own compositor layer, and re-uploading its texture while it's
+// mid-rotation inside a 3D transform occasionally missed a frame in testing —
+// the cover would flash fully blank for a frame. A background-image paints
+// as part of the face's own box (same layer as its border/background-color),
+// which doesn't have that separate-texture-upload path.
+const [goodbyeToAllThatOptimized, birdsongOptimized, allQuietOptimized] =
+	await Promise.all(
+		[goodbyeToAllThatCover, birdsongCover, allQuietCover].map((src) =>
+			getImage({ src, format: "webp", width: 640 }),
+		),
+	);
+
+interface Book {
+	title: string;
+	author: string;
+	/** Spine background colour. Defaults to a cream/crimson tint. */
+	spineColor?: string;
+	/** Spine text colour. Defaults to near-black — override for dark spines. */
+	spineTextColor?: string;
+	/** Real cover artwork URL. Falls back to the typographic cover when omitted. */
+	coverImageSrc?: string;
+}
+
+interface Props {
+	books?: Book[];
+	/** Index of the book that shows its cover on load. Defaults to 0. */
+	defaultOpen?: number;
+}
+
+const {
+	books = [
+		{
+			title: "Goodbye to All That",
+			author: "Robert Graves",
+			spineColor: "#937b67",
+			spineTextColor: "#fcfbf7",
+			coverImageSrc: goodbyeToAllThatOptimized.src,
+		},
+		{
+			title: "Birdsong",
+			author: "Sebastian Faulks",
+			spineColor: "#18160b",
+			spineTextColor: "#fcfbf7",
+			coverImageSrc: birdsongOptimized.src,
+		},
+		{
+			title: "All Quiet on the Western Front",
+			author: "Erich Maria Remarque",
+			spineColor: "#5f492f",
+			spineTextColor: "#fcfbf7",
+			coverImageSrc: allQuietOptimized.src,
+		},
+	],
+	defaultOpen = 0,
+}: Props = Astro.props;
+---
+
+<div class="bookshelf" role="group" aria-label="Interactive shelf of First World War books">
+	<div class="bookshelf__row">
+		{
+			books.map((book, i) => {
+				const isOpen = i === defaultOpen;
+				return (
+					<button
+						class="book"
+						class:list={{ "is-open": isOpen }}
+						type="button"
+						data-index={i}
+						aria-pressed={isOpen ? "true" : "false"}
+						aria-label={`Show cover of ${book.title} by ${book.author}`}
+						style={`${
+							book.spineColor ? `--spine-color: ${book.spineColor};` : ""
+						}${
+							book.spineTextColor
+								? ` --spine-text-color: ${book.spineTextColor};`
+								: ""
+						}${
+							book.coverImageSrc
+								? ` --spine-image: url(${book.coverImageSrc});`
+								: ""
+						}`}
+					>
+						<span class="book__3d">
+							<span class="book__tilt">
+								<span
+									class="book__face book__cover"
+									class:list={{ "book__cover--image": !!book.coverImageSrc }}
+								>
+									{book.coverImageSrc ? (
+										<span
+											class="book__cover-image"
+											style={`background-image: url(${book.coverImageSrc});`}
+											aria-hidden="true"
+										/>
+									) : (
+										<span class="book__cover-inner">
+											<span class="book__title">{book.title}</span>
+											<span class="book__rule" />
+											<span class="book__author">{book.author}</span>
+										</span>
+									)}
+								</span>
+								<span
+									class="book__face book__spine"
+									class:list={{ "book__spine--image": !!book.coverImageSrc }}
+								>
+									<span class="book__spine-text">{book.title}</span>
+								</span>
+								<span class="book__face book__pages" aria-hidden="true" />
+							</span>
+						</span>
+					</button>
+				);
+			})
+		}
+	</div>
+</div>
+
+<script>
+	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
+
+	onPageLifecycle(() => {
+		const shelves = document.querySelectorAll<HTMLElement>(".bookshelf");
+		if (shelves.length === 0) return;
+
+		const cleanups: Array<() => void> = [];
+
+		shelves.forEach((shelf) => {
+			const books = Array.from(
+				shelf.querySelectorAll<HTMLButtonElement>(".book"),
+			);
+			if (books.length === 0) return;
+
+			function open(index: number) {
+				books.forEach((book, i) => {
+					const isOpen = i === index;
+					book.classList.toggle("is-open", isOpen);
+					book.setAttribute("aria-pressed", isOpen ? "true" : "false");
+				});
+			}
+
+			const handlers: Array<() => void> = [];
+			books.forEach((book, i) => {
+				const onClick = () => {
+					// Clicking the already-open book is a no-op — there is always
+					// exactly one cover on show.
+					if (book.classList.contains("is-open")) return;
+					open(i);
+				};
+				book.addEventListener("click", onClick);
+				handlers.push(() => book.removeEventListener("click", onClick));
+			});
+
+			cleanups.push(() => handlers.forEach((off) => off()));
+		});
+
+		return () => cleanups.forEach((off) => off());
+	});
+</script>
+
+<style>
+	.bookshelf {
+		/* Break out of the narrow text column into the wider media track,
+		   same as BasicImage — there's room for a bigger illustration here. */
+		grid-column: 1 / 4 !important;
+
+		/*
+		 * Sized off the container's own inline size (cqi), not the viewport
+		 * (vw) — this component's max-width is capped well below the
+		 * viewport, so vw-based sizing under-filled it on wide screens.
+		 */
+		container-type: inline-size;
+
+		--book-height: clamp(220px, 46cqi, 480px);
+		--cover-width: clamp(140px, 30cqi, 310px);
+		--spine-width: calc(clamp(44px, 8cqi, 84px) - 20px);
+		/* How much of the cover's own left edge gets used (then stretched)
+		   as the spine's background — see .book__spine below. */
+		--spine-slice-width: 20px;
+		--book-gap: calc(var(--space-s) + 48px);
+		--turn-duration: 0.7s;
+		--turn-ease: cubic-bezier(0.65, 0.05, 0.36, 1);
+		/*
+		 * Closed books rest at a permanent partial turn (not a full 90°) so a
+		 * sliver of the cover is always visible at an angle — after Stripe
+		 * Press's book stack (press.stripe.com), which keeps a peek of each
+		 * cover in view rather than showing pure flat spines. --peek-reserve
+		 * is extra flex space reserved after each closed book (see .book's
+		 * margin-right below) so that sliver — which paints outside the
+		 * book's own box since nothing here uses overflow:hidden (breaks the
+		 * preserve-3d turn, see .book__cover-image below) — has room to show
+		 * without overlapping the next book.
+		 */
+		--peek-rotate: 84deg;
+		--peek-reserve: clamp(12px, 4cqi, 20px);
+		--paper-texture: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0;
+		width: min(1100px, 100%);
+		margin: var(--space-l) auto;
+		margin-bottom: calc(var(--space-l) + var(--space-m));
+		perspective: 8000px;
+	}
+
+	.bookshelf__row {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		gap: var(--book-gap);
+	}
+
+	/*
+	 * The button is the interactive hit-target and the layout box that
+	 * reflows the row. Its width animates between the spine width (closed)
+	 * and cover width (open) so flexbox slides the neighbouring books over in
+	 * lockstep — the browser's own reflow, so it's never out of sync with
+	 * this book's own size, unlike a hand-rolled position computed
+	 * separately (which briefly overlapped neighbours: this book's width
+	 * would already be at its new size while its computed x-offset was still
+	 * easing toward its target).
+	 */
+	.book {
+		--rotate: var(--peek-rotate); /* closed: mostly-spine, with a cover peek */
+		--width: var(--spine-width);
+		--spine-color: color-mix(in srgb, var(--color-light-cream) 82%, var(--color-crimson));
+		/* Dark literal, not a theme variable — the spine's own background is
+		   a fixed literal colour regardless of theme (see spineColor above),
+		   so its contrasting text needs to stay fixed too. */
+		--spine-text-color: #1a1a1a;
+
+		position: relative;
+		width: var(--width);
+		height: var(--book-height);
+		/* Reserves room for this book's own cover-peek (see --peek-reserve
+		   above) so it doesn't overlap the next book in the row. Zeroed on
+		   .is-open below since the open book doesn't turn/peek. */
+		margin-right: var(--peek-reserve);
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
+		/*
+		 * A large perspective distance keeps the "camera" far from the book.
+		 * Necessary because the two resting faces sit at very different
+		 * depths from the rotation axis — the spine (a narrow face at the
+		 * far edge of the wide cover) ends up ~cover-width/2 toward the
+		 * viewer when closed, while the cover only ends up ~spine-width/2
+		 * toward the viewer when open. A close perspective (was 1400px)
+		 * exaggerated that gap into a real size difference — closed books
+		 * measured ~12% taller than the open one. A far perspective shrinks
+		 * that to ~1.5%, imperceptible, while still giving the turn some
+		 * visible 3D depth mid-rotation.
+		 */
+		perspective: 8000px;
+		transition:
+			width var(--turn-duration) var(--turn-ease),
+			margin-right var(--turn-duration) var(--turn-ease);
+	}
+
+	.book.is-open {
+		--rotate: 0deg; /* open: cover faces the viewer */
+		--width: var(--cover-width);
+		margin-right: 0;
+		cursor: default;
+	}
+
+	.book:focus-visible {
+		outline: 2px solid var(--color-bright-crimson);
+		outline-offset: 6px;
+		border-radius: var(--border-radius-sm);
+	}
+
+	/*
+	 * The rotating cuboid. `left` is pinned to this book's own pivot point —
+	 * spine-centre when closed, cover-centre when open — using only the
+	 * fixed --cover-width/--spine-width tokens, NOT a percentage of the
+	 * parent's (animating) width. That's the fix for the original bug: with
+	 * `left: 50%`, this position was a live re-derivation of .book's
+	 * mid-transition width on every layout pass — recalculated on the layout
+	 * thread while `rotateY` animated on the compositor thread, and the two
+	 * occasionally desynced for a frame right at the backface-visibility
+	 * crossover, flashing a garbled composite of both faces. Here `left` is
+	 * its own ordinary, independent transition between two fixed endpoints —
+	 * same mechanism as `--rotate` — so it can't be knocked out of step by
+	 * .book's width transition happening alongside it.
+	 */
+	.book__3d {
+		position: absolute;
+		top: 0;
+		left: calc(var(--spine-width) / 2);
+		width: var(--cover-width);
+		height: 100%;
+		transform-style: preserve-3d;
+		transform: translateX(-50%) rotateY(var(--rotate));
+		transition:
+			left var(--turn-duration) var(--turn-ease),
+			transform var(--turn-duration) var(--turn-ease);
+	}
+
+	.book.is-open .book__3d {
+		left: calc(var(--cover-width) / 2);
+	}
+
+	/*
+	 * The hover "lift and tilt" affordance lives on its own wrapper, separate
+	 * from .book__3d's open/close turn, and its transition is unconditional
+	 * (not scoped to :hover) so entering AND leaving hover animate at the
+	 * same fast speed. Previously the lift/tilt was applied directly to
+	 * .book__3d with a transition-duration override that only applied while
+	 * :hover matched — leaving hover fell back to .book__3d's own slow
+	 * turn-duration (0.7s) transition. If you re-hovered before that slow
+	 * release finished, the box was already most of the way back to the
+	 * hover position, so the next hover had almost nothing left to animate
+	 * and looked like it silently did nothing.
+	 */
+	.book__tilt {
+		position: absolute;
+		inset: 0;
+		transform-style: preserve-3d;
+		transition: transform 0.15s ease-out;
+	}
+
+	.book:not(.is-open):hover .book__tilt,
+	.book:not(.is-open):focus-visible .book__tilt {
+		transform: translateY(-6px) rotateY(-4deg);
+	}
+
+	.book__face {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		height: var(--book-height);
+		backface-visibility: hidden;
+		box-sizing: border-box;
+	}
+
+	/* Front cover: the wide face, pushed forward by half the spine depth. */
+	.book__cover {
+		width: var(--cover-width);
+		transform: translate(-50%, -50%) translateZ(calc(var(--spine-width) / 2));
+		background: var(--color-light-cream);
+		border: 1px solid var(--color-tinted-cream);
+		border-radius: var(--border-radius-sm);
+		box-shadow: var(--box-shadow-md);
+		border-left: 4px solid var(--color-crimson);
+	}
+
+	.book__cover--image {
+		/*
+		 * The typographic fallback's light card border reads as a bright
+		 * seam edge-on at the permanent cover peek — a real photographic
+		 * cover doesn't need that "card" framing, so drop the border
+		 * entirely rather than just its accent-coloured left edge.
+		 */
+		border: none;
+	}
+
+	/*
+	 * A background-image, not an <img> — see the comment above
+	 * goodbyeToAllThatOptimized in the frontmatter for why. Rounded via
+	 * `border-radius: inherit` rather than `overflow: hidden` on the face:
+	 * `overflow` other than `visible` forces a browser to flatten the element
+	 * out of the `preserve-3d` hierarchy, which broke the turning animation
+	 * (the cover would vanish instead of rotating like the other faces).
+	 */
+	.book__cover-image {
+		position: absolute;
+		inset: 0;
+		/* background-image itself is set inline per-book (see template). */
+		background-size: cover;
+		background-position: center;
+		border-radius: inherit;
+	}
+
+	.book__cover-inner {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2xs);
+		padding: var(--space-s) var(--space-xs);
+		text-align: center;
+	}
+
+	.book__title {
+		font-family: var(--font-serif);
+		font-size: clamp(1rem, 3.4vw, 1.4rem);
+		line-height: var(--leading-tight, 1.1);
+		color: var(--color-crimson);
+	}
+
+	.book__rule {
+		width: 32px;
+		height: 1px;
+		background: var(--color-crimson);
+		opacity: 0.6;
+	}
+
+	.book__author {
+		font-family: var(--font-sans);
+		font-size: clamp(0.68rem, 2vw, 0.8rem);
+		letter-spacing: 0.02em;
+		color: var(--color-gray-800);
+	}
+
+	/*
+	 * Spine: the narrow left face. Rotated -90° about Y and pushed out by half
+	 * the cover width so it meets the cover's left edge at a 90° dihedral angle.
+	 */
+	.book__spine {
+		width: var(--spine-width);
+		transform: translate(-50%, -50%) rotateY(-90deg)
+			translateZ(calc(var(--cover-width) / 2));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-s) 0;
+		position: relative;
+		/*
+		 * Edge lighting, after Stripe Press's book stack: a bright rim on the
+		 * side the cover peeks from (this book turns toward its right, see
+		 * --peek-rotate), fading to a dark rim on the trailing side, like the
+		 * spine curving away from the light rather than a flat card. Layered
+		 * over a slice of the cover artwork itself (--spine-image, set inline
+		 * per book) rather than a flat colour, so the cover design appears to
+		 * wrap around onto the spine. Only --spine-slice-width worth of the
+		 * cover's own left edge is used, then stretched to fill the spine —
+		 * not a 1:1 crop of a whole spine-width's worth of the cover, which
+		 * at native scale was wide enough to catch legible (and distractingly
+		 * upside-down-looking) fragments of the cover's own title text. A
+		 * thin stretched sliver reads as texture/colour instead. The scrim
+		 * beneath the edge lighting keeps our own spine title legible
+		 * regardless of what's in that slice. Falls back to the flat
+		 * --spine-color for books with no cover image.
+		 */
+		background:
+			linear-gradient(
+				to right,
+				rgba(0, 0, 0, 0.4) 0%,
+				rgba(0, 0, 0, 0.12) 10%,
+				transparent 25%,
+				transparent 60%,
+				rgba(255, 255, 255, 0.14) 92%,
+				rgba(255, 255, 255, 0.24) 100%
+			),
+			linear-gradient(rgba(10, 8, 6, 0.4), rgba(10, 8, 6, 0.4)),
+			var(--spine-image, none) left center /
+				calc(var(--cover-width) * var(--spine-width) / var(--spine-slice-width))
+				var(--book-height) no-repeat,
+			var(--spine-color);
+		/*
+		 * Border colour matches the spine's own fill, not a fixed light
+		 * tint — at the permanent cover peek, the spine's right edge is
+		 * viewed almost edge-on, so a light border there projects into a
+		 * visible bright seam rather than a subtle 1px line.
+		 */
+		border: 1px solid var(--spine-color);
+		border-radius: var(--border-radius-sm);
+		box-shadow: var(--box-shadow-sm);
+		transition: box-shadow 0.25s ease;
+	}
+
+	/*
+	 * The hover "brighten" is a plain white overlay whose opacity fades in,
+	 * not an animated `filter: brightness()` — profiling (Playwright + CDP,
+	 * both Chromium and WebKit) traced real hover jank on this component to
+	 * that filter transition: it forces WebKit to re-rasterize this face's
+	 * whole background (a large upscaled cover-art slice, see --spine-image
+	 * above) through an offscreen filter pass every frame, inside an already
+	 * costly 3D transform. Disabling just that filter dropped WebKit's
+	 * dropped-frame count from 6/300 (up to 46ms) to 1/300 (27ms) in testing.
+	 * `opacity` is compositor-only — no repaint — so it gets the same visual
+	 * brighten with none of the cost.
+	 */
+	.book__spine::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: #fff;
+		opacity: 0;
+		transition: opacity 0.15s ease-out;
+		pointer-events: none;
+	}
+
+	.book:not(.is-open):hover .book__spine::before,
+	.book:not(.is-open):focus-visible .book__spine::before {
+		opacity: 0.12;
+	}
+
+	/*
+	 * A fine grain overlay so the solid-colour spines (and the typographic
+	 * cover fallback) read as cloth/board rather than flat digital colour.
+	 * Skipped on .book__cover--image and .book__spine--image — they already
+	 * show real cover photography, which has its own texture.
+	 */
+	.book__spine:not(.book__spine--image)::after,
+	.book__pages::after,
+	.book__cover:not(.book__cover--image)::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background-image: var(--paper-texture);
+		background-size: 120px 120px;
+		mix-blend-mode: overlay;
+		opacity: 0.35;
+		pointer-events: none;
+	}
+
+	/*
+	 * Hover/focus affordance for closed books: a small lift plus a slight
+	 * extra tilt (a few degrees past the resting --peek-rotate, see
+	 * .book__tilt above) and a brighter spine — the "you can click this" cue
+	 * a real bookshelf gives when you're about to pick a book out. Kept
+	 * small (4deg) since a bigger tilt needs more --peek-reserve (reserved
+	 * space so the deeper peek doesn't overlap the next book) than is worth
+	 * permanently widening the row for a transient hover state. Scoped to
+	 * :not(.is-open) since the open book isn't something you'd hover to
+	 * "pick".
+	 */
+	.book:not(.is-open):hover .book__spine,
+	.book:not(.is-open):focus-visible .book__spine {
+		box-shadow: var(--box-shadow-md);
+	}
+
+	.book__spine-text {
+		font-family: var(--font-sans);
+		font-size: clamp(0.78rem, 2.2vw, 0.95rem);
+		/*
+		 * Not 1 — with text-orientation:mixed rotating these Latin glyphs
+		 * 90°, line-height becomes the text's horizontal thickness rather
+		 * than its vertical spacing. At exactly 1 that box was too tight to
+		 * contain descenders (the bottom of "Birdsong"'s g was clipped by
+		 * the overflow:hidden below).
+		 */
+		line-height: 1.2;
+		color: var(--spine-text-color);
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+		white-space: nowrap;
+		max-height: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* The page block on the right (+X) face — a sliver of paper edges. */
+	.book__pages {
+		width: var(--spine-width);
+		transform: translate(-50%, -50%) rotateY(90deg)
+			translateZ(calc(var(--cover-width) / 2));
+		background: repeating-linear-gradient(
+			to right,
+			var(--color-cream),
+			var(--color-cream) 1px,
+			var(--color-tinted-cream) 2px,
+			var(--color-cream) 3px
+		);
+		border-radius: var(--border-radius-sm);
+	}
+
+	/*
+	 * Tighten the row on small screens. The +48px spacing that gives the books
+	 * room to breathe on desktop leaves too much dead air between narrow spines
+	 * on a phone, so pull them slightly closer with a smaller additive gap.
+	 */
+	@media (max-width: 768px) {
+		.bookshelf {
+			--book-gap: calc(var(--space-s) + 16px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.book,
+		.book__3d {
+			transition-duration: 0.001s;
+		}
+	}
+</style>

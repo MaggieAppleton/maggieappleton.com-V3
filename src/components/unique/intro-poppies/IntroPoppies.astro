@@ -1,0 +1,100 @@
+---
+// Decorative opening: three large poppies plus two small accent blooms, posed
+// from intro-poppies.ts.
+---
+
+<div class="intro-poppies-wrap">
+	<figure class="intro-poppies" aria-hidden="true">
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower"></canvas>
+		<canvas class="intro-poppies__flower intro-poppies__flower--accent intro-poppies__flower--left"></canvas>
+		<canvas class="intro-poppies__flower intro-poppies__flower--accent intro-poppies__flower--right"></canvas>
+	</figure>
+</div>
+
+<script>
+	import { initIntroPoppies } from "./intro-poppies";
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
+
+	onPageLifecycle(() => {
+		const wraps = document.querySelectorAll<HTMLElement>(".intro-poppies-wrap");
+		if (wraps.length === 0) return;
+
+		const cleanups: Array<() => void> = [];
+		wraps.forEach((el) => {
+			const cleanup = initIntroPoppies(el);
+			if (typeof cleanup === "function") cleanups.push(cleanup);
+		});
+
+		return () => cleanups.forEach((off) => off());
+	});
+</script>
+
+<style>
+	.intro-poppies-wrap {
+		grid-column: 1 / 4 !important;
+		width: 100%;
+		max-width: 900px;
+		margin-inline: auto;
+	}
+
+	.intro-poppies {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-s);
+		width: 100%;
+		/* Reserves room above the row for the two accent blooms. % is relative to
+		   this figure's width, so it scales with the poppies. */
+		padding-top: 9%;
+		margin: 0 0 var(--space-xl);
+		align-items: center;
+	}
+
+	.intro-poppies__flower {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		display: block;
+	}
+
+	/* Scoped to while the rAF loop runs (toggled from intro-poppies.ts), not
+	   permanent — else all 5 canvases would hold a promoted layer while idle. */
+	.intro-poppies.is-animating .intro-poppies__flower {
+		will-change: transform;
+	}
+
+	/* At-rest pose only — intro-poppies.ts overwrites this via inline
+	   style.transform each frame (see BASE_TRANSFORM, which mirrors these values). */
+	.intro-poppies__flower:nth-child(1) {
+		transform: translateY(10px) rotate(-3deg);
+	}
+	.intro-poppies__flower:nth-child(2) {
+		transform: translateY(-2px);
+	}
+	.intro-poppies__flower:nth-child(3) {
+		transform: translateY(4px) rotate(2deg);
+	}
+
+	.intro-poppies__flower--accent {
+		position: absolute;
+		width: 15%;
+		z-index: 2;
+	}
+	.intro-poppies__flower--left {
+		left: 31%;
+		top: 2.5%;
+		transform: translate(-50%, 0) rotate(-4deg);
+	}
+	.intro-poppies__flower--right {
+		left: 70%;
+		top: 2.5%;
+		transform: translate(-50%, 0) rotate(5deg);
+	}
+
+	@media (max-width: 640px) {
+		.intro-poppies {
+			gap: var(--space-2xs);
+		}
+	}
+</style>

@@ -1,0 +1,80 @@
+---
+// Decorative 3D poppies scattered down the page margins on desktop only. The
+// layer is an absolute overlay sized to the whole article (.styled-main is
+// positioned — see global.css), so each bloom's top:% tracks a spot on the page.
+// Positions/poses come from config.ts, shared with the client renderer.
+import { MARGIN_POPPIES } from "./config";
+---
+
+<div class="margin-poppies" aria-hidden="true">
+	{
+		MARGIN_POPPIES.map((p) => (
+			<canvas
+				class:list={["margin-poppy", `margin-poppy--${p.side}`]}
+				style={`top:${p.top}%; ${
+					p.side === "left"
+						? `left: calc(50% - var(--mp-col-half) - ${p.inset}px);`
+						: `left: calc(50% + var(--mp-col-half) + ${p.inset}px);`
+				} width:${p.size}px; height:${p.size}px;`}
+			/>
+		))
+	}
+</div>
+
+<script>
+	import { initMarginPoppies } from "./margin-poppies";
+	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
+
+	onPageLifecycle(() => {
+		const layers = document.querySelectorAll<HTMLElement>(".margin-poppies");
+		if (layers.length === 0) return;
+
+		const cleanups: Array<() => void> = [];
+		layers.forEach((el) => {
+			const cleanup = initMarginPoppies(el);
+			if (typeof cleanup === "function") cleanups.push(cleanup);
+		});
+
+		return () => cleanups.forEach((off) => off());
+	});
+</script>
+
+<style>
+	.margin-poppies {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0; /* stay under the prose if the layout ever shifts */
+		/* Half the text column's width — mirrors ProseWrapper's min(72ch, 100%).
+		   ch is font-relative, so pin font-size to match. */
+		--mp-col-half: 36ch;
+		font-size: var(--font-size-base);
+		display: none; /* shown only on wide desktop — keep in sync with MARGIN_BREAKPOINT */
+	}
+
+	@media (min-width: 1200px) {
+		.margin-poppies {
+			display: block;
+		}
+	}
+
+	.margin-poppy {
+		position: absolute;
+		display: block;
+	}
+
+	/* At-rest placement — the client renderer folds the same base into its
+	   per-frame transform. */
+	.margin-poppy--left {
+		transform: translateX(-100%);
+	}
+	.margin-poppy--right {
+		transform: translateX(0);
+	}
+
+	/* Scoped to while the rAF loop drives this bloom, not held permanently —
+	   else every canvas keeps a promoted layer alive even off-screen. */
+	.margin-poppy.is-animating {
+		will-change: transform;
+	}
+</style>
