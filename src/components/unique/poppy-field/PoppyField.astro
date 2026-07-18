@@ -9,11 +9,14 @@ import { totalHeight, yForMonthIndex } from "./layout";
 const initH = totalHeight(DEFAULTS);
 const yAt = (i: number) => yForMonthIndex(i, DEFAULTS);
 
-// Reuses params.ts's disease OKLCH directly rather than a hand-duplicated CSS var.
+// Battle-label hover colour reuses the disease/"deep" OKLCH straight from
+// params.ts — the field's single colour source of truth — rather than a
+// hand-duplicated CSS custom property that can drift out of sync with it.
 const battleHoverColor = `oklch(${DEFAULTS.diseaseL} ${DEFAULTS.diseaseC} ${DEFAULTS.diseaseH})`;
 
-// Painted client-side with the real baked 3D sprites (see renderLegend in
-// poppy-field.ts) so they match the field exactly rather than approximating in SVG.
+// Legend poppies are painted client-side with the real baked 3D sprites (see
+// renderLegend in poppy-field.ts), so they match the field's shape, colour and
+// lighting exactly rather than approximating it with flat SVG.
 const legend = [
 	{ cause: "combat", label: "Killed in action" },
 	{ cause: "disease", label: "Disease & non-combat deaths" },
@@ -173,7 +176,6 @@ const battleLabels = BATTLES.map((b) => {
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		color: var(--color-gray-600);
-		/* Solid ground so the text reads regardless of any poppy behind it. */
 		background: var(--color-white);
 		border-radius: var(--border-radius-sm);
 		padding: 2px 6px;
@@ -191,7 +193,7 @@ const battleLabels = BATTLES.map((b) => {
 		gap: 1px;
 		max-width: 40%;
 		text-align: left;
-		appearance: none; /* strip native <button> chrome first */
+		appearance: none;
 		background: var(--color-white);
 		border-radius: var(--border-radius-sm);
 		border: none;
@@ -202,8 +204,6 @@ const battleLabels = BATTLES.map((b) => {
 		transition: color 0.2s ease;
 	}
 
-	/* tabindex="-1" keeps these out of the tab order — the hover highlight is a
-	   mouse-only enhancement over always-visible text, so no :focus-visible. */
 	.poppy-field__battle:hover {
 		color: var(--battle-hover);
 		outline: none;
@@ -322,10 +322,14 @@ const battleLabels = BATTLES.map((b) => {
 		}
 	}
 
-	/* Phone layout: break out to ~106vw so the widest months bleed off the edges
-	   instead of leaving dead margin. Relies on .styled-main being centred in the
-	   viewport; clipped by .styled-main:has(.poppy-field) in global.css. Breakpoint
-	   mirrors MOBILE_BREAKPOINT. */
+	/* Phone layout: break the figure out past the content column to ~106vw so the
+	   field is a touch wider than the screen — the widest months (Verdun/the
+	   Somme) then bleed off the edges instead of leaving dead margin. The 53vw =
+	   half of 106vw full-bleed trick relies on .styled-main being centred in the
+	   viewport; the JS side (poppy-field.ts) drops the edge margin, thins the
+	   poppies and heightens the field to match. Breakpoint mirrors MOBILE_BREAKPOINT.
+	   The overflow past the screen is clipped by .styled-main:has(.poppy-field) in
+	   global.css so it never adds a horizontal scrollbar. */
 	@media (max-width: 640px) {
 		.poppy-field {
 			width: 106vw;
