@@ -28,10 +28,16 @@ export const DEFAULTS: FieldParams = {
 	baseSize: 0.9,
 	sizeVariance: 1,
 	opacityVariance: 0,
-	combatL: 0.66,
-	combatC: 0.22,
-	combatH: 29,
-	diseaseL: 0.5,
-	diseaseC: 0.195,
-	diseaseH: 26,
+	// These were originally tuned as L 0.845 / C 0.305 / H 28 (combat) and
+	// L 0.45 / C 0.2 / H 22 (disease) — both out of the sRGB gamut, so
+	// oklchToHex was silently clipping them to #ff5148 / #a9001a per-channel
+	// (see poppy3d.ts). Recorded here as the *actual* in-gamut OKLCH of those
+	// exact pixels, so the look is preserved byte-for-byte through the fixed,
+	// properly gamut-mapped conversion instead of relying on clipping.
+	combatL: 0.6763,
+	combatC: 0.2117,
+	combatH: 27.29,
+	diseaseL: 0.463,
+	diseaseC: 0.1876,
+	diseaseH: 24.75,
 };

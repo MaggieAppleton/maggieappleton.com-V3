@@ -34,11 +34,6 @@ function toRgb(hex: string): [number, number, number] {
 	return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
 }
 const toHex = (c: number) => Math.round(Math.max(0, Math.min(255, c))).toString(16).padStart(2, "0");
-function mix(a: string, b: string, t: number): string {
-	const x = toRgb(a);
-	const y = toRgb(b);
-	return `#${x.map((c, i) => toHex(c + (y[i] - c) * t)).join("")}`;
-}
 // In-hue underside/shadow tone: scale each sRGB channel toward black. Shared with
 // the trio so its "killed in action" bloom derives its deep colour identically.
 export function darken(hex: string, f: number): string {
@@ -47,19 +42,19 @@ export function darken(hex: string, f: number): string {
 
 export function bakePoppyAngleSprites(
 	dpr: number,
-	opts?: {
+	opts: {
 		angleCount?: number;
 		leanMax?: number;
 		cell?: number;
 		frustum?: number;
-		combat?: string; // combat petal colour (hex); defaults to the CSS var
-		disease?: string; // disease petal colour (hex); defaults to the dull CSS blend
+		combat: string; // combat petal colour (hex) — from poppy-field/params.ts, the single source of truth
+		disease: string; // disease petal colour (hex) — from poppy-field/params.ts, the single source of truth
 	},
 ): AngleSprites {
-	const angleCount = opts?.angleCount ?? 15;
-	const leanMax = (opts?.leanMax ?? 78) * DEG;
-	const frustum = opts?.frustum ?? 1.35; // half-extent; smaller → flower fills more of the cell
-	const cell = Math.round((opts?.cell ?? 120) * Math.min(dpr, 2));
+	const angleCount = opts.angleCount ?? 15;
+	const leanMax = (opts.leanMax ?? 78) * DEG;
+	const frustum = opts.frustum ?? 1.35; // half-extent; smaller → flower fills more of the cell
+	const cell = Math.round((opts.cell ?? 120) * Math.min(dpr, 2));
 
 	const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
 	renderer.setClearColor(0x000000, 0);
@@ -85,9 +80,8 @@ export function bakePoppyAngleSprites(
 	scene.add(pivot);
 
 	const centre = cssColorHex("--color-poppy-centre", "oklch(0.2 0.06 30)");
-	const combatPetal = opts?.combat ?? cssColorHex("--color-poppy-bright", "oklch(0.66 0.22 29)");
-	const diseasePetal =
-		opts?.disease ?? mix(cssColorHex("--color-poppy-deep", "oklch(0.5 0.195 26)"), centre, 0.32);
+	const combatPetal = opts.combat;
+	const diseasePetal = opts.disease;
 
 	const angles = Array.from({ length: angleCount }, (_, a) => -leanMax + (2 * leanMax * a) / (angleCount - 1));
 

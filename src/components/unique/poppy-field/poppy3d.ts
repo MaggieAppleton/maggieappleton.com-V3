@@ -6,10 +6,8 @@
 
 import * as THREE from "three";
 
-// OKLCH → sRGB hex (Björn Ottosson's oklab matrices). THREE.Color can't parse
-// oklch(), so every poppy colour is converted to hex through here. This is the
-// base colour util the field/trio/palette all funnel through — no hex literals.
-export function oklchToHex(L: number, C: number, H: number): string {
+// OKLab → linear sRGB for a given L/C/H, before gamma encoding.
+function oklchToLinearSrgb(L: number, C: number, H: number): [number, number, number] {
 	const hr = (H * Math.PI) / 180;
 	const a = C * Math.cos(hr);
 	const b = C * Math.sin(hr);
@@ -19,17 +17,42 @@ export function oklchToHex(L: number, C: number, H: number): string {
 	const l = l_ ** 3;
 	const m = m_ ** 3;
 	const s = s_ ** 3;
-	const lin = [
+	return [
 		4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
 		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
 		-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
 	];
-	const toHex = (c: number) => Math.round(Math.max(0, Math.min(255, c))).toString(16).padStart(2, "0");
-	const gamma = (c: number) => {
-		const v = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-		return Math.round(Math.max(0, Math.min(1, v)) * 255);
+}
+const inGamut = (lin: readonly number[]) => lin.every((v) => v >= -1e-4 && v <= 1 + 1e-4);
+
+// OKLCH → sRGB hex (Björn Ottosson's oklab matrices). THREE.Color can't parse
+// oklch(), so every poppy colour is converted to hex through here. This is the
+// base colour util the field/trio/palette all funnel through — no hex literals.
+//
+// Out-of-gamut inputs are gamut-mapped by reducing chroma (holding L and H
+// fixed) until the colour lands inside sRGB, rather than clipping each RGB
+// channel independently — independent-channel clipping shifts hue and
+// lightness away from what was actually tuned, since it doesn't move along
+// the OKLCH chroma axis at all.
+export function oklchToHex(L: number, C: number, H: number): string {
+	let c = C;
+	if (!inGamut(oklchToLinearSrgb(L, c, H))) {
+		let lo = 0;
+		let hi = C;
+		for (let i = 0; i < 20; i++) {
+			const mid = (lo + hi) / 2;
+			if (inGamut(oklchToLinearSrgb(L, mid, H))) lo = mid;
+			else hi = mid;
+		}
+		c = lo;
+	}
+	const lin = oklchToLinearSrgb(L, c, H);
+	const gamma = (v: number) => {
+		const clamped = Math.max(0, Math.min(1, v));
+		return clamped <= 0.0031308 ? 12.92 * clamped : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
 	};
-	return `#${lin.map((c) => toHex(gamma(c))).join("")}`;
+	const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+	return `#${lin.map((v) => toHex(gamma(v))).join("")}`;
 }
 
 export interface Poppy3DParams {

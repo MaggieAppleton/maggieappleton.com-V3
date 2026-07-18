@@ -1927,6 +1927,16 @@
   },
   {
     "ids": [
+      "In Memoriam, Encountering World War I, and Thinkable Horrors"
+    ],
+    "slug": "in-memoriam",
+    "growthStage": "budding",
+    "description": "A delayed education on the trenches and scales of suffering",
+    "outboundLinks": [],
+    "inboundLinks": []
+  },
+  {
+    "ids": [
       "Interoperable Personal Libraries and Ad Hoc Reading Groups"
     ],
     "slug": "interoperable-libraries",

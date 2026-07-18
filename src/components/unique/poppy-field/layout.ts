@@ -34,8 +34,12 @@ export function mulberry32(seed: number): () => number {
 // same poppies over more pixels, which is the real lever for less overlap.
 export const effMonthH = (p: FieldParams) => BASE_MONTH_H * p.heightScale;
 
+// A dozen-ish stray poppies fade in/out at each end of the field (see
+// computePoppyHomes) — tucked into the existing padY margin, not a new band.
+const LEAD_COUNT = 48;
+
 // Max fraction of a row height a poppy strays vertically from its month centre.
-const VBLEED = 0.8;
+const VBLEED = 2;
 // Top/bottom breathing room scales with row height so edge poppies never crop.
 export const padY = (p: FieldParams) => Math.max(PAD_BASE, effMonthH(p) * VBLEED + 30);
 
@@ -110,5 +114,37 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 			});
 		}
 	});
+
+	// Lead-in / lead-out: a dozen stray poppies tucked into the existing top/
+	// bottom breathing room (padY) — no extra height, no shift to the real
+	// months above. Tapers to a single point at the outer edge rather than
+	// fanning out, so it reads as a few blooms drifting off rather than a new band.
+	// Only spans a fraction of padY (not the whole margin) so the fade-in reads
+	// as a tight scatter near the data rather than stretching the full pad.
+	const LEAD_SPAN = 0.55;
+	const H = totalHeight(p);
+	const addLead = (edgeIndex: number, direction: 1 | -1) => {
+		const m = MONTHLY[edgeIndex];
+		const half = halves[edgeIndex];
+		const diseaseShare = diseaseCount(m) / m.deaths;
+		const edgeY = direction < 0 ? pad : H - pad; // the field's actual top/bottom boundary
+		for (let k = 0; k < LEAD_COUNT; k++) {
+			const d = rand() * rand(); // biased toward 0 → sparser further from the data
+			const y = edgeY + direction * d * pad * LEAD_SPAN;
+			const x = (rand() * 2 - 1) * half * (1 - d);
+			homes.push({
+				x,
+				y,
+				cause: rand() < diseaseShare ? 1 : 0,
+				variant: (rand() * variants) | 0,
+				rot: (rand() * 2 - 1) * 0.5,
+				phase: rand() * Math.PI * 2,
+				rScale: rand(),
+			});
+		}
+	};
+	addLead(0, -1);
+	addLead(MONTHLY.length - 1, 1);
+
 	return homes;
 }
