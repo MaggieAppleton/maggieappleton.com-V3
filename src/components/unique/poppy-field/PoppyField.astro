@@ -1,5 +1,5 @@
 ---
-import { MONTHLY, BATTLES, SOURCES } from "./wwi-monthly-deaths";
+import { MONTHLY, BATTLES, SOURCES_PREFIX, SOURCES_SUFFIX, SOURCE_CITATIONS } from "./wwi-monthly-deaths";
 import { EDGE_INSET } from "./constants";
 import { DEFAULTS } from "./params";
 import { totalHeight, yForMonthIndex } from "./layout";
@@ -19,13 +19,14 @@ const battleHoverColor = `oklch(${DEFAULTS.diseaseL} ${DEFAULTS.diseaseC} ${DEFA
 // lighting exactly rather than approximating it with flat SVG.
 const legend = [
 	{ cause: "combat", label: "Killed in action" },
-	{ cause: "disease", label: "Disease, flu & other" },
+	{ cause: "disease", label: "Disease & non-combat deaths" },
 ];
 
 const years = [1914, 1915, 1916, 1917, 1918].map((y) => {
 	const idx = MONTHLY.findIndex((m) => m.year === y);
 	return { y, idx, top: yAt(idx) };
 });
+const months = MONTHLY.map((_, idx) => ({ idx, top: yAt(idx) }));
 const battleLabels = BATTLES.map((b) => {
 	const mid = (b.startIndex + b.endIndex) / 2;
 	return { ...b, mid, top: yAt(mid) };
@@ -43,8 +44,23 @@ const battleLabels = BATTLES.map((b) => {
 		influenza, and other causes — roughly a third of the total.
 	</p>
 
+	<span class="poppy-field__legend poppy-field__legend--top" aria-hidden="true">
+		{legend.map((it) => (
+			<span class="poppy-field__legend-item">
+				<canvas class="poppy-field__legend-poppy" data-cause={it.cause} aria-hidden="true"></canvas>
+				{it.label}
+			</span>
+		))}
+	</span>
+
 	<div class="poppy-field__stage" style={`height:${initH}px; max-width:${DEFAULTS.maxWidth}px`} aria-hidden="true">
 		<div class="poppy-field__spine"></div>
+		{months.map((m) => (
+			<span class="poppy-field__month-tick" data-mindex={m.idx} style={`top:${m.top}px`}></span>
+		))}
+		{years.map((t) => (
+			<span class="poppy-field__year-tick" data-mindex={t.idx} style={`top:${t.top}px`}></span>
+		))}
 		{years.map((t) => (
 			<span class="poppy-field__year" data-mindex={t.idx} style={`top:${t.top}px`}>{t.y}</span>
 		))}
@@ -55,23 +71,21 @@ const battleLabels = BATTLES.map((b) => {
 			</button>
 		))}
 		<canvas class="poppy-field__canvas"></canvas>
-		<div class="poppy-field__tip" data-show="0"></div>
+		<div class="poppy-field__tip" data-show="0">
+			<span class="poppy-field__tip-month"></span> · <span class="poppy-field__tip-count"></span>
+		</div>
 	</div>
 
 	<figcaption>
-		<span class="poppy-field__legend" aria-hidden="true">
-			{legend.map((it) => (
-				<span class="poppy-field__legend-item">
-					<canvas class="poppy-field__legend-poppy" data-cause={it.cause} aria-hidden="true"></canvas>
-					{it.label}
-				</span>
-			))}
-		</span>
 		<span class="poppy-field__caption-text">
-			A modelled estimate — roughly one poppy per 1,000 military dead, ~9.5&nbsp;million
-			across all nations, 1914–1918.
+			{SOURCES_PREFIX}
+			{SOURCE_CITATIONS.map((c, i) => (
+				<>
+					<a href={c.url} target="_blank" rel="noopener noreferrer">{c.name}</a>{i < SOURCE_CITATIONS.length - 1 ? ", " : ""}
+				</>
+			))}
+			{SOURCES_SUFFIX}
 		</span>
-		<span class="poppy-field__sources">{SOURCES}</span>
 	</figcaption>
 </figure>
 
@@ -97,7 +111,7 @@ const battleLabels = BATTLES.map((b) => {
 	.poppy-field {
 		grid-column: 1 / 4 !important;
 		width: 100%;
-		margin: var(--space-xl) 0;
+		margin: 0 0 var(--space-xl);
 		padding-inline: var(--edge);
 		box-sizing: border-box;
 	}
@@ -133,16 +147,41 @@ const battleLabels = BATTLES.map((b) => {
 		pointer-events: none;
 	}
 
+	.poppy-field__year-tick,
+	.poppy-field__month-tick {
+		position: absolute;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+	}
+
+	.poppy-field__year-tick {
+		width: 15px;
+		height: 2px;
+		background: var(--color-gray-600);
+		z-index: 1;
+	}
+
+	.poppy-field__month-tick {
+		width: 5px;
+		height: 1px;
+		background: var(--color-gray-300);
+	}
+
 	.poppy-field__year {
 		position: absolute;
 		left: calc(50% - 12px);
 		transform: translate(-100%, -50%);
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
-		font-weight: 700;
-		color: var(--color-gray-500);
-		background: var(--color-cream);
-		padding: 0 6px;
+		font-weight: 600;
+		color: var(--color-gray-600);
+		/* A little box in the page background colour (tracks light/dark via
+		   --color-white) so the text always reads on solid ground, knocking out
+		   any poppy that strays inside the clearing. */
+		background: var(--color-white);
+		border-radius: var(--border-radius-sm);
+		padding: 2px 6px;
 		pointer-events: none;
 		z-index: 2;
 	}
@@ -157,11 +196,16 @@ const battleLabels = BATTLES.map((b) => {
 		gap: 1px;
 		max-width: 40%;
 		text-align: left;
-		background: var(--color-cream);
+		appearance: none;
+		/* Same page-background box as the years (see .poppy-field__year) — solid
+		   ground for the label, in the page colour so it reads as a clearing, not
+		   a chip. appearance:none first strips the native <button> chrome. */
+		background: var(--color-white);
+		border-radius: var(--border-radius-sm);
 		border: none;
 		padding: 3px 6px;
 		cursor: default;
-		color: var(--color-gray-500);
+		color: var(--color-gray-600);
 		z-index: 3;
 		transition: color 0.2s ease;
 	}
@@ -178,7 +222,7 @@ const battleLabels = BATTLES.map((b) => {
 	.poppy-field__battle b {
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1.15;
 		color: inherit;
 	}
@@ -186,7 +230,8 @@ const battleLabels = BATTLES.map((b) => {
 	.poppy-field__battle i {
 		font-style: normal;
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
 		color: var(--color-gray-600);
 	}
 
@@ -197,10 +242,10 @@ const battleLabels = BATTLES.map((b) => {
 		margin: 12px 0 0 14px;
 		padding: 0 6px;
 		background: var(--color-cream);
-		color: var(--color-gray-500);
+		color: var(--color-gray-600);
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
-		font-weight: 700;
+		font-weight: 600;
 		white-space: nowrap;
 		pointer-events: none;
 		opacity: 0;
@@ -210,6 +255,10 @@ const battleLabels = BATTLES.map((b) => {
 
 	.poppy-field__tip[data-show="1"] {
 		opacity: 1;
+	}
+
+	.poppy-field__tip-count {
+		font-weight: 500;
 	}
 
 	.poppy-field figcaption {
@@ -230,14 +279,18 @@ const battleLabels = BATTLES.map((b) => {
 		margin-bottom: var(--space-2xs);
 	}
 
+	.poppy-field__legend--top {
+		margin-bottom: var(--space-s);
+	}
+
 	.poppy-field__legend-item {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--font-size-sm);
 		font-weight: 600;
-		color: var(--color-gray-700, var(--color-gray-800));
+		color: var(--color-gray-600);
 	}
 
 	.poppy-field__legend-poppy {
@@ -250,11 +303,14 @@ const battleLabels = BATTLES.map((b) => {
 		display: block;
 	}
 
-	.poppy-field__sources {
-		display: block;
-		margin-top: 4px;
-		font-size: var(--font-size-xs);
-		color: var(--color-gray-500);
+	.poppy-field__caption-text a {
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.poppy-field__caption-text a:hover {
+		color: var(--color-gray-800, var(--color-black));
 	}
 
 	.poppy-field__sr {
@@ -274,8 +330,21 @@ const battleLabels = BATTLES.map((b) => {
 		.poppy-field__battle b {
 			font-size: var(--font-size-xs);
 		}
-		.poppy-field__battle i {
-			display: none;
+	}
+
+	/* Phone layout: break the figure out past the content column to ~106vw so the
+	   field is a touch wider than the screen — the widest months (Verdun/the
+	   Somme) then bleed off the edges instead of leaving dead margin. The 53vw =
+	   half of 106vw full-bleed trick relies on .styled-main being centred in the
+	   viewport; the JS side (poppy-field.ts) drops the edge margin, thins the
+	   poppies and heightens the field to match. Breakpoint mirrors MOBILE_BREAKPOINT.
+	   The overflow past the screen is clipped by .styled-main:has(.poppy-field) in
+	   global.css so it never adds a horizontal scrollbar. */
+	@media (max-width: 640px) {
+		.poppy-field {
+			width: 106vw;
+			margin-left: calc(50% - 53vw);
+			padding-inline: 0;
 		}
 	}
 </style>

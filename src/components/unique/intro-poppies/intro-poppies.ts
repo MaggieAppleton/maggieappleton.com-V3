@@ -46,6 +46,25 @@ const POSES: Pose[] = [
 	{ yaw: 5, pitch: -50, scale: 1.24 },
 ];
 
+// Each canvas's at-rest transform (hand-placed stagger, mirrors the base
+// translate/rotate baked into IntroPoppies.astro's nth-child/accent rules —
+// keep the two in sync). Read here so animate() can write a fully-resolved
+// `transform` string straight to each canvas every frame instead of animating
+// CSS custom properties, which forces a style recalc the browser can't
+// short-circuit to a compositor-only update.
+interface BaseTransform {
+	x: string;
+	y: number;
+	deg: number;
+}
+const BASE_TRANSFORM: BaseTransform[] = [
+	{ x: "0px", y: 10, deg: -3 },
+	{ x: "0px", y: -2, deg: 0 },
+	{ x: "0px", y: 4, deg: 2 },
+	{ x: "-50%", y: 0, deg: -4 },
+	{ x: "-50%", y: 0, deg: 5 },
+];
+
 export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 	const canvases = Array.from(root.querySelectorAll<HTMLCanvasElement>("canvas.intro-poppies__flower"));
 	if (!canvases.length) return;
@@ -91,16 +110,39 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 
 	const ctxs = canvases.map((cv) => cv.getContext("2d")!);
 
-	// Render one canvas at its base pose plus a live yaw/pitch offset (deg) —
-	// this is a real 3D turn of the mesh, not a flat rotate of a baked image.
-	function renderPose(cv: HTMLCanvasElement, ctx2d: CanvasRenderingContext2D, i: number, yawOff: number, pitchOff: number) {
-		const pose = POSES[i % POSES.length];
+	// Guard against redundant setSize calls. Assigning canvas width/height
+	// reallocates + clears the GL drawing buffer even when the size is
+	// unchanged, and renderPose runs once per canvas per frame (5x/frame). The
+	// poses render in a fixed order — indices 0,1,2 share one size and 3,4 share
+	// another — so skipping when the size matches the last one collapses this to
+	// ~2 setSize calls/frame.
+	let lastRenderSize = 0;
+
+	// Each canvas's device-pixel render size, read from clientWidth once (and
+	// again on resize) rather than inside renderPose() — that runs every rAF
+	// tick for all 5 canvases, so polling layout there was 5x/frame of forced
+	// layout reads for a value that only ever changes on resize.
+	const sizes: number[] = canvases.map(() => 0);
+	function measureSize(i: number) {
+		const cv = canvases[i];
 		const size = Math.max(1, Math.round((cv.clientWidth || 280) * dpr));
+		sizes[i] = size;
 		if (cv.width !== size) {
 			cv.width = size;
 			cv.height = size;
 		}
-		renderer.setSize(size, size, false);
+	}
+	canvases.forEach((_, i) => measureSize(i));
+
+	// Render one canvas at its base pose plus a live yaw/pitch offset (deg) —
+	// this is a real 3D turn of the mesh, not a flat rotate of a baked image.
+	function renderPose(_cv: HTMLCanvasElement, ctx2d: CanvasRenderingContext2D, i: number, yawOff: number, pitchOff: number) {
+		const pose = POSES[i % POSES.length];
+		const size = sizes[i];
+		if (size !== lastRenderSize) {
+			renderer.setSize(size, size, false);
+			lastRenderSize = size;
+		}
 		cam.zoom = pose.scale;
 		cam.updateProjectionMatrix();
 		pivot.rotation.set((pose.pitch + pitchOff) * DEG, (pose.yaw + yawOff) * DEG, 0);
@@ -113,17 +155,31 @@ export function initIntroPoppies(root: HTMLElement): (() => void) | void {
 		canvases.forEach((cv, i) => renderPose(cv, ctxs[i], i, 0, 0));
 		// Static — free the GPU context, nothing will re-render it.
 		poppy.dispose();
+		// dispose() alone leaves the underlying WebGL context alive until GC;
+		// forceContextLoss() releases it eagerly so astro:page-load re-inits
+		// don't pile up contexts and hit the browser cap (~16, lowest in Safari).
+		renderer.forceContextLoss();
 		renderer.dispose();
 		return;
 	}
 
+	const resizeObserver = new ResizeObserver(() => {
+		canvases.forEach((_, i) => measureSize(i));
+	});
+	canvases.forEach((cv) => resizeObserver.observe(cv));
+
 	const stopAnimation = animate(figure, canvases, ctxs, renderPose);
 	return () => {
 		stopAnimation();
+		resizeObserver.disconnect();
 		// Mirror the reduced-motion path: free the GPU context once nothing
 		// will re-render it. A fresh renderer/scene is built on the next
 		// astro:page-load re-init, so disposing here is safe.
 		poppy.dispose();
+		// dispose() alone leaves the underlying WebGL context alive until GC;
+		// forceContextLoss() releases it eagerly so astro:page-load re-inits
+		// don't pile up contexts and hit the browser cap (~16, lowest in Safari).
+		renderer.forceContextLoss();
 		renderer.dispose();
 	};
 }
@@ -140,9 +196,11 @@ function distToRect(px: number, py: number, rect: DOMRect) {
 // hovering in or near the whole figure tips *all* the flowers toward the
 // cursor together — one shared yaw/pitch pull driven by where the cursor sits
 // relative to the figure as a whole, not each flower's own distance to it.
-// Floating position (X/Y) and a light roll still ride on top via the
-// --wx/--wy/--wr custom properties consumed by IntroPoppies.astro's CSS,
-// layered on each canvas's hand-placed base transform.
+// Floating position (X/Y) and a light roll still ride on top, written each
+// frame as a fully-resolved `transform` string (see BASE_TRANSFORM) rather
+// than as animated CSS custom properties — a custom property change forces a
+// style recalc before the browser can resolve it into the transform, where a
+// direct `el.style.transform` write goes straight to the compositor.
 function animate(
 	figure: HTMLElement,
 	canvases: HTMLCanvasElement[],
@@ -166,19 +224,33 @@ function animate(
 	};
 	window.addEventListener("pointermove", onPointerMove, { passive: true });
 
+	// Figure's viewport rect, cached from scroll/resize instead of read fresh
+	// inside frame() every tick — the cursor-pull math only needs it to stay
+	// roughly current, not per-pixel-accurate mid-scroll.
+	let figureRect = figure.getBoundingClientRect();
+	const measureFigureRect = () => {
+		figureRect = figure.getBoundingClientRect();
+	};
+	window.addEventListener("scroll", measureFigureRect, { passive: true });
+	window.addEventListener("resize", measureFigureRect);
+
 	// Only pay the render cost while the figure is actually on screen — it
 	// sits once at the top of the essay, so this fully stops the rAF loop
 	// (and the WebGL render + drawImage per flower inside it) for the rest
 	// of the page. rootMargin starts it a little early so there's no
-	// first-frame pop as it scrolls into view.
+	// first-frame pop as it scrolls into view. will-change is toggled here
+	// too, alongside the loop, rather than left permanently set in CSS —
+	// otherwise all 5 canvases would hold promoted layers even while idle.
 	let raf = 0;
 	const observer = new IntersectionObserver(
 		([entry]) => {
 			if (entry.isIntersecting) {
 				if (!raf) raf = requestAnimationFrame(frame);
+				figure.classList.add("is-animating");
 			} else if (raf) {
 				cancelAnimationFrame(raf);
 				raf = 0;
+				figure.classList.remove("is-animating");
 			}
 		},
 		{ rootMargin: "200px 0px" },
@@ -189,7 +261,7 @@ function animate(
 		// Shared pull: where the cursor sits relative to the figure's centre
 		// (normalised to its half-size, clamped to ±1), scaled by how close the
 		// cursor is to the figure at all (0 once it's PULL_MARGIN past the edge).
-		const rect = figure.getBoundingClientRect();
+		const rect = figureRect;
 		const cx = rect.left + rect.width / 2;
 		const cy = rect.top + rect.height / 2;
 		const nx = Math.max(-1, Math.min(1, (pointerX - cx) / (rect.width / 2 + PULL_MARGIN)));
@@ -208,9 +280,8 @@ function animate(
 			const windX = Math.sin(t * 0.0007 + phase * 0.8) * BREEZE_X;
 			const windY = Math.sin(t * 0.0011 + phase * 1.2) * BREEZE_Y;
 			const roll = Math.sin(t * 0.0009 + phase) * ROLL_SWAY;
-			cv.style.setProperty("--wx", `${windX.toFixed(2)}px`);
-			cv.style.setProperty("--wy", `${windY.toFixed(2)}px`);
-			cv.style.setProperty("--wr", `${roll.toFixed(2)}deg`);
+			const base = BASE_TRANSFORM[i] ?? BASE_TRANSFORM[0];
+			cv.style.transform = `translate(calc(${base.x} + ${windX.toFixed(2)}px), calc(${base.y}px + ${windY.toFixed(2)}px)) rotate(calc(${base.deg}deg + ${roll.toFixed(2)}deg))`;
 		});
 		raf = requestAnimationFrame(frame);
 	}
@@ -218,6 +289,9 @@ function animate(
 	return () => {
 		if (raf) cancelAnimationFrame(raf);
 		observer.disconnect();
+		figure.classList.remove("is-animating");
 		window.removeEventListener("pointermove", onPointerMove);
+		window.removeEventListener("scroll", measureFigureRect);
+		window.removeEventListener("resize", measureFigureRect);
 	};
 }

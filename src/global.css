@@ -585,3 +585,23 @@ mark {
 .blue {
   color: var(--color-medium-sea-blue);
 }
+
+/* The poppy field figure (see PoppyField.astro) breaks out to ~106vw on phones
+   so its widest rows bleed past the screen edges. Clip that horizontal overflow
+   at the article container so it never turns into a page-wide horizontal
+   scrollbar. Scoped with :has() to pages that actually contain the field, and to
+   phone widths only (matches MOBILE_BREAKPOINT). overflow-x: clip (not hidden)
+   leaves vertical flow and any sticky descendants untouched. */
+@media (max-width: 640px) {
+  .styled-main:has(.poppy-field) {
+    overflow-x: clip;
+  }
+}
+
+/* The margin poppies (see MarginPoppies.astro) are an absolute overlay sized to
+   the whole article, so their containing block must be the article itself.
+   Scoped with :has() to pages that actually use them; position: relative is
+   layout-neutral. */
+.styled-main:has(.margin-poppies) {
+  position: relative;
+}

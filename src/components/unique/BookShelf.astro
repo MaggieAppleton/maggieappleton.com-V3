@@ -104,31 +104,33 @@ const {
 						}`}
 					>
 						<span class="book__3d">
-							<span
-								class="book__face book__cover"
-								class:list={{ "book__cover--image": !!book.coverImageSrc }}
-							>
-								{book.coverImageSrc ? (
-									<span
-										class="book__cover-image"
-										style={`background-image: url(${book.coverImageSrc});`}
-										aria-hidden="true"
-									/>
-								) : (
-									<span class="book__cover-inner">
-										<span class="book__title">{book.title}</span>
-										<span class="book__rule" />
-										<span class="book__author">{book.author}</span>
-									</span>
-								)}
+							<span class="book__tilt">
+								<span
+									class="book__face book__cover"
+									class:list={{ "book__cover--image": !!book.coverImageSrc }}
+								>
+									{book.coverImageSrc ? (
+										<span
+											class="book__cover-image"
+											style={`background-image: url(${book.coverImageSrc});`}
+											aria-hidden="true"
+										/>
+									) : (
+										<span class="book__cover-inner">
+											<span class="book__title">{book.title}</span>
+											<span class="book__rule" />
+											<span class="book__author">{book.author}</span>
+										</span>
+									)}
+								</span>
+								<span
+									class="book__face book__spine"
+									class:list={{ "book__spine--image": !!book.coverImageSrc }}
+								>
+									<span class="book__spine-text">{book.title}</span>
+								</span>
+								<span class="book__face book__pages" aria-hidden="true" />
 							</span>
-							<span
-								class="book__face book__spine"
-								class:list={{ "book__spine--image": !!book.coverImageSrc }}
-							>
-								<span class="book__spine-text">{book.title}</span>
-							</span>
-							<span class="book__face book__pages" aria-hidden="true" />
 						</span>
 					</button>
 				);
@@ -327,6 +329,30 @@ const {
 		left: calc(var(--cover-width) / 2);
 	}
 
+	/*
+	 * The hover "lift and tilt" affordance lives on its own wrapper, separate
+	 * from .book__3d's open/close turn, and its transition is unconditional
+	 * (not scoped to :hover) so entering AND leaving hover animate at the
+	 * same fast speed. Previously the lift/tilt was applied directly to
+	 * .book__3d with a transition-duration override that only applied while
+	 * :hover matched — leaving hover fell back to .book__3d's own slow
+	 * turn-duration (0.7s) transition. If you re-hovered before that slow
+	 * release finished, the box was already most of the way back to the
+	 * hover position, so the next hover had almost nothing left to animate
+	 * and looked like it silently did nothing.
+	 */
+	.book__tilt {
+		position: absolute;
+		inset: 0;
+		transform-style: preserve-3d;
+		transition: transform 0.15s ease-out;
+	}
+
+	.book:not(.is-open):hover .book__tilt,
+	.book:not(.is-open):focus-visible .book__tilt {
+		transform: translateY(-6px) rotateY(-4deg);
+	}
+
 	.book__face {
 		position: absolute;
 		top: 50%;
@@ -461,7 +487,35 @@ const {
 		border: 1px solid var(--spine-color);
 		border-radius: var(--border-radius-sm);
 		box-shadow: var(--box-shadow-sm);
-		transition: box-shadow 0.25s ease, filter 0.25s ease;
+		transition: box-shadow 0.25s ease;
+	}
+
+	/*
+	 * The hover "brighten" is a plain white overlay whose opacity fades in,
+	 * not an animated `filter: brightness()` — profiling (Playwright + CDP,
+	 * both Chromium and WebKit) traced real hover jank on this component to
+	 * that filter transition: it forces WebKit to re-rasterize this face's
+	 * whole background (a large upscaled cover-art slice, see --spine-image
+	 * above) through an offscreen filter pass every frame, inside an already
+	 * costly 3D transform. Disabling just that filter dropped WebKit's
+	 * dropped-frame count from 6/300 (up to 46ms) to 1/300 (27ms) in testing.
+	 * `opacity` is compositor-only — no repaint — so it gets the same visual
+	 * brighten with none of the cost.
+	 */
+	.book__spine::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: #fff;
+		opacity: 0;
+		transition: opacity 0.15s ease-out;
+		pointer-events: none;
+	}
+
+	.book:not(.is-open):hover .book__spine::before,
+	.book:not(.is-open):focus-visible .book__spine::before {
+		opacity: 0.12;
 	}
 
 	/*
@@ -486,31 +540,31 @@ const {
 
 	/*
 	 * Hover/focus affordance for closed books: a small lift plus a slight
-	 * extra tilt (a few degrees past the resting --peek-rotate) and a
-	 * brighter spine — the "you can click this" cue a real bookshelf gives
-	 * when you're about to pick a book out. Kept small (4deg) since a bigger
-	 * tilt needs more --peek-reserve (reserved space so the deeper peek
-	 * doesn't overlap the next book) than is worth permanently widening the
-	 * row for a transient hover state. Scoped to :not(.is-open) since the
-	 * open book isn't something you'd hover to "pick".
+	 * extra tilt (a few degrees past the resting --peek-rotate, see
+	 * .book__tilt above) and a brighter spine — the "you can click this" cue
+	 * a real bookshelf gives when you're about to pick a book out. Kept
+	 * small (4deg) since a bigger tilt needs more --peek-reserve (reserved
+	 * space so the deeper peek doesn't overlap the next book) than is worth
+	 * permanently widening the row for a transient hover state. Scoped to
+	 * :not(.is-open) since the open book isn't something you'd hover to
+	 * "pick".
 	 */
-	.book:not(.is-open):hover .book__3d,
-	.book:not(.is-open):focus-visible .book__3d {
-		transform: translateX(-50%) translateY(-6px)
-			rotateY(calc(var(--rotate) - 4deg));
-		transition-duration: 0.25s;
-	}
-
 	.book:not(.is-open):hover .book__spine,
 	.book:not(.is-open):focus-visible .book__spine {
-		filter: brightness(1.08);
 		box-shadow: var(--box-shadow-md);
 	}
 
 	.book__spine-text {
 		font-family: var(--font-sans);
 		font-size: clamp(0.78rem, 2.2vw, 0.95rem);
-		line-height: 1;
+		/*
+		 * Not 1 — with text-orientation:mixed rotating these Latin glyphs
+		 * 90°, line-height becomes the text's horizontal thickness rather
+		 * than its vertical spacing. At exactly 1 that box was too tight to
+		 * contain descenders (the bottom of "Birdsong"'s g was clipped by
+		 * the overflow:hidden below).
+		 */
+		line-height: 1.2;
 		color: var(--spine-text-color);
 		writing-mode: vertical-rl;
 		text-orientation: mixed;
@@ -533,6 +587,17 @@ const {
 			var(--color-cream) 3px
 		);
 		border-radius: var(--border-radius-sm);
+	}
+
+	/*
+	 * Tighten the row on small screens. The +48px spacing that gives the books
+	 * room to breathe on desktop leaves too much dead air between narrow spines
+	 * on a phone, so pull them slightly closer with a smaller additive gap.
+	 */
+	@media (max-width: 768px) {
+		.bookshelf {
+			--book-gap: calc(var(--space-s) + 16px);
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

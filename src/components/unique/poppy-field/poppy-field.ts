@@ -1,7 +1,13 @@
 // Canvas controller for the poppy field. One rAF loop stamps pre-rendered
 // sprites at each poppy's home + a wind offset (ambient breeze + decaying scroll
-// gust). Layout and colours come from the locked-in DEFAULTS in params.ts.
-// Honours prefers-reduced-motion; interaction is math (pointer y → month).
+// gust) plus a scroll-driven lift that follows scroll direction — scrolling down
+// pushes poppies up (as if caught by the page rushing past), scrolling up settles
+// them back down. Year/battle labels also carve an organic elliptical "clearing"
+// out of the poppies around them (see computeClearZones/inClearZone), giving
+// their little boxes breathing room instead of poppies pressed right up
+// against the edges. Layout and colours come from the locked-in DEFAULTS in
+// params.ts. Honours prefers-reduced-motion; interaction is math (pointer y →
+// month).
 
 import {
 	computePoppyHomes,
@@ -14,7 +20,18 @@ import {
 } from "./layout";
 import { bakePoppyAngleSprites, oklchToHex, type AngleSprites } from "./poppy-3d-sprites";
 import { MONTHLY, BATTLES, monthLabel } from "./wwi-monthly-deaths";
-import { SPRITE_BASE, HOVER_SPINE_PX, POPPY_UNIT, EDGE_MARGIN, POPPY_LEAN, POPPY_LEAN_VAR } from "./constants";
+import {
+	SPRITE_BASE,
+	HOVER_SPINE_PX,
+	POPPY_UNIT,
+	EDGE_MARGIN,
+	EDGE_MARGIN_MOBILE,
+	MOBILE_BREAKPOINT,
+	MOBILE_THIN,
+	MOBILE_HEIGHT_SCALE,
+	POPPY_LEAN,
+	POPPY_LEAN_VAR,
+} from "./constants";
 import { DEFAULTS, type FieldParams } from "./params";
 
 // The baked poppy doesn't fill its whole sprite cell (there's transparent
@@ -22,16 +39,46 @@ import { DEFAULTS, type FieldParams } from "./params";
 // to match the intended on-page size.
 const SPRITE_DRAW_SCALE = 1.7;
 
+// Max rise/fall (px) at full scroll speed — scaled per-poppy by rScale so
+// closer/larger poppies catch more of the "wind" than distant small ones.
+const LIFT_PX = 42;
+
+// Year/battle labels get an organic "clearing" carved out of the poppies
+// around them (an ellipse, not their literal rectangle) instead of sitting on
+// an opaque box — see computeClearZones/inClearZone. It's a hard cutoff (no
+// partial-opacity poppies at the edge) — the ellipse's own size and padding do
+// the softening work instead of a feather band.
+
+interface ClearZone {
+	zx: number;
+	zy: number;
+	rx: number;
+	ry: number;
+	yTop: number;
+	yBot: number;
+}
+
 export function initPoppyField(root: HTMLElement): (() => void) | void {
 	const canvas = root.querySelector<HTMLCanvasElement>("canvas.poppy-field__canvas");
 	const stage = root.querySelector<HTMLElement>(".poppy-field__stage");
 	const tip = root.querySelector<HTMLElement>(".poppy-field__tip");
-	if (!canvas || !stage || !tip) return;
+	const tipMonth = tip?.querySelector<HTMLElement>(".poppy-field__tip-month");
+	const tipCount = tip?.querySelector<HTMLElement>(".poppy-field__tip-count");
+	if (!canvas || !stage || !tip || !tipMonth || !tipCount) return;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 
 	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	const params: FieldParams = { ...DEFAULTS };
+	// Phones get a de-cluttered variant: fewer poppies (thin) spread over taller
+	// rows (heightScale), and no width cap so the field can fill the full breakout
+	// width from PoppyField.astro. Recomputed in geometry() so a rotate/resize
+	// across the breakpoint re-lays-out the field. Desktop uses DEFAULTS untouched.
+	const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT;
+	const currentParams = (): FieldParams =>
+		isMobile()
+			? { ...DEFAULTS, heightScale: MOBILE_HEIGHT_SCALE, thin: MOBILE_THIN }
+			: { ...DEFAULTS };
+	let params: FieldParams = currentParams();
 
 	let W = 0;
 	let dpr = 1;
@@ -44,9 +91,27 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	let mutedSprites: AngleSprites = { combat: [], disease: [], angles: [] };
 	let homes: Poppy[] = [];
 	let angleIdx: Int16Array = new Int16Array(0); // baked-sprite index per poppy (its facing)
+	let clearZones: ClearZone[] = [];
 	let gust = 0;
+	// gust lags behind via this eased value rather than driving sway
+	// directly, so a scroll's extra motion ramps in and settles out softly
+	// instead of snapping the instant scroll events fire.
+	let gustEase = 0;
+	// Signed scroll speed (+ scrolling down, − scrolling up) driving directional
+	// lift — kept separate from `gust`'s unsigned energy, which only ever adds
+	// to sway amplitude regardless of which way the page is moving.
+	let scrollLift = 0;
+	let scrollLiftEase = 0;
 	let hoverBattle: string | null = null;
 	let hoverT = 0; // eases 0→1 toward hoverBattle so grow/mute settle in rather than snap
+	// Canvas's viewport-relative top, cached from scroll/resize rather than
+	// re-read via getBoundingClientRect() on every animation frame — that call
+	// forces a layout read, and frame() runs continuously at 60fps regardless
+	// of whether the page is actually scrolling.
+	let canvasTop = 0;
+	function measureCanvasTop() {
+		canvasTop = canvas!.getBoundingClientRect().top;
+	}
 
 	function buildSprites() {
 		dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -83,19 +148,25 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 
 	// Recompute everything that depends on geometry params or container size.
 	function geometry() {
+		params = currentParams();
+		const mobile = isMobile();
 		H = totalHeight(params);
 		homes = computePoppyHomes(params, 3).sort((a, b) => a.rScale - b.rScale);
 		stage!.style.height = `${H}px`;
-		stage!.style.maxWidth = `${params.maxWidth}px`; // cap canvas width (centred)
+		// On mobile the figure already breaks out past the screen edges, so let the
+		// stage fill that full breakout width; on desktop keep the centred cap.
+		stage!.style.maxWidth = mobile ? "none" : `${params.maxWidth}px`;
 		W = canvas!.clientWidth; // reflects the capped stage width
 		canvas!.width = Math.round(W * dpr);
 		canvas!.height = Math.round(H * dpr);
 		ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 		// No min(1) clamp → the widest month scales UP to fill wide canvases too,
-		// so the field always spans (canvas width − edge margins).
-		xScale = (W / 2 - EDGE_MARGIN) / maxHalfWidth(params);
+		// so the field always spans (canvas width − edge margins). On mobile the
+		// smaller edge margin lets the widest months bleed off the screen edges.
+		xScale = (W / 2 - (mobile ? EDGE_MARGIN_MOBILE : EDGE_MARGIN)) / maxHalfWidth(params);
 		assignFacings();
 		positionLabels();
+		computeClearZones();
 	}
 
 	// Pick each poppy's baked yaw sprite from its offset from the spine → the field
@@ -123,16 +194,74 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		});
 	}
 
+	// Builds the elliptical "clearing" zone for each year/battle label from its
+	// real laid-out box (offsetLeft/Top/Width/Height — stable and stage-relative,
+	// unlike getBoundingClientRect which is viewport/scroll-relative and would
+	// need the stage's own rect subtracted out). This only needs to happen when
+	// the labels' own layout can change — geometry()'s resize pass, plus once
+	// more on font load in case the fallback font sized them differently.
+	function computeClearZones() {
+		// Slightly taller clearings on mobile — the rows read denser on a narrow
+		// screen. Kept modest now that the labels sit in a solid page-colour box
+		// (see .poppy-field__year/__battle), which already knocks out any stray
+		// poppy behind the text, so the clearing only needs to add a little air.
+		const mobile = isMobile();
+		const ryMul = mobile ? 2.0 : 1.8;
+		const ryPad = mobile ? 16 : 16;
+		const zones: ClearZone[] = [];
+		root.querySelectorAll<HTMLElement>(".poppy-field__year, .poppy-field__battle").forEach((el) => {
+			const w = el.offsetWidth;
+			const h = el.offsetHeight;
+			const top = el.offsetTop;
+			const left = el.offsetLeft;
+			// Reproduces each label's own CSS transform to find its visual centre:
+			// years are right-anchored + fully centred (translate(-100%,-50%)),
+			// battles are left-anchored + only vertically centred (translateY(-50%)).
+			const zx = el.classList.contains("poppy-field__year") ? left - w / 2 : left + w / 2;
+			const zy = top;
+			// Extra generous vs. the label's own box — with a hard cutoff (no
+			// feather) the padding alone is what keeps the edge from looking
+			// cramped against the text.
+			const rx = (w / 2) * 1.3 + 16;
+			const ry = (h / 2) * ryMul + ryPad;
+			zones.push({ zx, zy, rx, ry, yTop: zy - ry, yBot: zy + ry });
+		});
+		clearZones = zones;
+	}
+
+	// Hard in/out test against each poppy's stable home position (not its
+	// wind/lift-perturbed draw position), so boundary poppies don't flicker in
+	// and out of the clearing as they sway.
+	function inClearZone(x: number, y: number): boolean {
+		for (let i = 0; i < clearZones.length; i++) {
+			const z = clearZones[i];
+			if (y < z.yTop || y > z.yBot) continue; // cheap reject before the ellipse math
+			const nx = (x - z.zx) / z.rx;
+			const ny = (y - z.zy) / z.ry;
+			if (nx * nx + ny * ny < 1) return true;
+		}
+		return false;
+	}
+
 	function inBattle(y: number, id: string) {
 		const b = BATTLES.find((x) => x.id === id);
 		if (!b) return false;
 		const half = effMonthH(params) / 2;
-		return y >= yForMonthIndex(b.startIndex, params) - half && y <= yForMonthIndex(b.endIndex, params) + half;
+		const lo = yForMonthIndex(b.startIndex, params) - half;
+		// A battle ending on the field's last month also claims the lead-out
+		// flourish poppies scattered past it (see layout.ts) — otherwise they'd
+		// read as an unexplained grey tail of deaths after the war ended.
+		const hi = b.endIndex === MONTHLY.length - 1 ? Infinity : yForMonthIndex(b.endIndex, params) + half;
+		return y >= lo && y <= hi;
 	}
 
 	function paint(vTop: number, vBot: number, t: number) {
 		const cx = W / 2;
-		const amp = (reduce ? 0 : 0.18) + gust;
+		const amp = (reduce ? 0 : 0.26) + gustEase;
+		// Scrolling down pushes poppies up (lift > 0); scrolling up settles them
+		// back down (lift < 0) — signed, so direction actually reverses the effect
+		// rather than just varying its strength.
+		const lift = reduce ? 0 : scrollLiftEase * LIFT_PX;
 		const sizeAmp = 0.4 * params.sizeVariance;
 		// Ease hoverT toward its target every painted frame so the grow/mute swap
 		// settles in smoothly instead of snapping the instant the pointer lands.
@@ -141,6 +270,11 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		for (let i = 0; i < homes.length; i++) {
 			const p = homes[i];
 			if (p.y < vTop || p.y > vBot) continue;
+			const homeX = cx + p.x * xScale;
+			// Clearing test runs against the stable home position, not the
+			// wind/lift-perturbed draw position, so a poppy's presence in a
+			// label's clearing never flickers as it sways.
+			if (clearZones.length && inClearZone(homeX, p.y)) continue;
 			const wind = reduce
 				? 0
 				: Math.sin(p.y * 0.015 + t * 0.0012 + p.phase) * amp +
@@ -157,10 +291,15 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			const group = p.cause ? sprites.disease : sprites.combat;
 			const spr = group[angleIdx[i]] ?? group[0];
 			if (!spr) continue;
+			// Bigger/closer poppies (higher rScale) catch more of the scroll gust,
+			// so the lift reads as depth rather than a uniform shove; a touch of
+			// per-poppy sideways drift keeps them from rising in a flat line.
+			const poppyLift = lift * (0.5 + p.rScale * 0.9);
+			const driftX = Math.sin(p.phase * 1.6) * lift * 0.3;
 			ctx!.save();
-			ctx!.translate(cx + p.x * xScale + wind * 6, p.y);
+			ctx!.translate(homeX + wind * 7 + driftX, p.y - poppyLift);
 			// gentle stem sway only — a full rotation would spin the baked top-light
-			ctx!.rotate(wind * 0.35);
+			ctx!.rotate(wind * 0.4);
 			if (!hl && hoverT > 0.001) {
 				// Crossfade the rest of the field toward the muted, low-chroma twin as
 				// a battle comes into focus (size/opacity stay put, only colour shifts).
@@ -187,22 +326,36 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	}
 
 	function frame(t: number) {
-		const rectTop = canvas!.getBoundingClientRect().top;
 		const vh = window.innerHeight;
-		const pad = SPRITE_BASE * 2;
-		const vTop = Math.max(0, -rectTop - pad);
-		const vBot = Math.min(H, -rectTop + vh + pad);
+		// Padding covers both the sprite's own overhang past its home y (2×
+		// SPRITE_BASE) and the max scroll-lift in either direction, so a poppy
+		// near the culled viewport's edge never draws into a region the
+		// clearRect below skipped.
+		const pad = SPRITE_BASE * 2 + LIFT_PX;
+		const vTop = Math.max(0, -canvasTop - pad);
+		const vBot = Math.min(H, -canvasTop + vh + pad);
+		// Ease toward gust/scrollLift rather than reading them directly — this is
+		// what gives the scroll-driven sway/lift its lag, so it ramps in and
+		// settles out softly instead of snapping frame-to-frame with the raw
+		// scroll signal.
+		gustEase += (gust - gustEase) * 0.05;
+		scrollLiftEase += (scrollLift - scrollLiftEase) * 0.05;
 		if (vBot > vTop) paint(vTop, vBot, t);
-		gust *= 0.92;
+		gust *= 0.95;
+		scrollLift *= 0.95;
 		raf = requestAnimationFrame(frame);
 	}
 
 	// --- interaction ---
 	let lastY = window.scrollY;
 	const onScroll = () => {
-		const d = Math.abs(window.scrollY - lastY);
+		const dy = window.scrollY - lastY; // + scrolling down, − scrolling up
 		lastY = window.scrollY;
-		if (!reduce) gust = Math.min(0.9, gust + d * 0.002);
+		if (!reduce) {
+			gust = Math.min(0.9, gust + Math.abs(dy) * 0.002);
+			scrollLift = Math.max(-0.9, Math.min(0.9, scrollLift + dy * 0.002));
+		}
+		measureCanvasTop();
 	};
 	window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -212,7 +365,8 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		const y = e.clientY - r.top;
 		if (Math.abs(x - W / 2) < HOVER_SPINE_PX) {
 			const m = MONTHLY[monthIndexForY(y, params)];
-			tip.textContent = `${monthLabel(m)} · ~${(m.deaths * POPPY_UNIT).toLocaleString()} dead`;
+			tipMonth.textContent = monthLabel(m);
+			tipCount.textContent = `${(m.deaths * POPPY_UNIT).toLocaleString()} dead`;
 			tip.style.transform = `translate(${x}px, ${y}px)`;
 			tip.dataset.show = "1";
 		} else {
@@ -258,13 +412,35 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			// needs new geometry.
 			if (Math.min(window.devicePixelRatio || 1, 2) !== dpr) buildSprites();
 			geometry();
+			measureCanvasTop();
 			if (reduce) renderStatic();
 		}, 150);
 	};
 	window.addEventListener("resize", onResize);
 
-	buildSprites();
+	// The sprite bake (~60 sprites × 2 palettes) is tens of ms of main-thread
+	// jank, but the field sits far down a long essay and is off-screen at load —
+	// so defer it until the field approaches the viewport (see the observer
+	// below, which gates it in both the reduced and non-reduced paths).
+	let baked = false;
+	let disposed = false;
+	function ensureBaked() {
+		if (baked || disposed) return;
+		baked = true; // set BEFORE bake so a re-entrant intersection can't double-bake
+		buildSprites(); // bakes sprites + mutedSprites, and calls renderLegend()
+		assignFacings(); // replace the placeholder all-zero angleIdx with real facings now sprites exist
+	}
+
+	// Needed eagerly for canvas sizing in geometry() (was set inside buildSprites,
+	// which we now defer) — else the canvas sizes at dpr=1 and looks blurry until
+	// the bake finally runs.
+	dpr = Math.min(window.devicePixelRatio || 1, 2);
 	geometry();
+	measureCanvasTop();
+	// Clearing zones are sized from the labels' actual text metrics — if the
+	// custom font swaps in after this first layout, refresh just the zones
+	// (not the whole geometry) rather than leaving them sized to the fallback.
+	document.fonts?.ready?.then(computeClearZones);
 
 	// Only pay the rAF cost while the field is actually on screen — paint()
 	// already culls per-poppy work outside the viewport, but on long-scroll
@@ -274,11 +450,27 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// intro-poppies.ts's animate()).
 	let observer: IntersectionObserver | null = null;
 	if (reduce) {
-		renderStatic();
+		// No rAF loop — bake + paint once the first time the field/legend approach
+		// the viewport, then disconnect. rootMargin bakes 200px early so neither the
+		// field nor its top-of-figure legend ever flashes blank.
+		observer = new IntersectionObserver(
+			([entry]) => {
+				if (!entry.isIntersecting) return;
+				ensureBaked();
+				renderStatic();
+				observer?.disconnect();
+				observer = null;
+			},
+			{ rootMargin: "200px 0px" },
+		);
+		observer.observe(root);
 	} else {
 		observer = new IntersectionObserver(
 			([entry]) => {
 				if (entry.isIntersecting) {
+					// Bake synchronously before the first scheduled frame so it already
+					// has real sprites + facings (no first-frame pop).
+					ensureBaked();
 					if (!raf) raf = requestAnimationFrame(frame);
 				} else if (raf) {
 					cancelAnimationFrame(raf);
@@ -291,6 +483,7 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	}
 
 	return () => {
+		disposed = true; // block any stray bake after teardown (e.g. an old instance's observer callback across astro:page-load)
 		if (raf) cancelAnimationFrame(raf);
 		observer?.disconnect();
 		window.clearTimeout(resizeTimer);

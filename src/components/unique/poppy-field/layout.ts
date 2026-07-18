@@ -38,8 +38,9 @@ export const effMonthH = (p: FieldParams) => BASE_MONTH_H * p.heightScale;
 // computePoppyHomes) — tucked into the existing padY margin, not a new band.
 const LEAD_COUNT = 48;
 
-// Max fraction of a row height a poppy strays vertically from its month centre.
-const VBLEED = 2;
+// Max fraction of a row height a poppy strays vertically from its month centre
+// (actual jitter tops out around 0.78 — this leaves a small buffer above that).
+const VBLEED = 1;
 // Top/bottom breathing room scales with row height so edge poppies never crop.
 export const padY = (p: FieldParams) => Math.max(PAD_BASE, effMonthH(p) * VBLEED + 30);
 
@@ -93,11 +94,18 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		return a + (b - a) * s;
 	};
 
+	// Fraction of poppies to actually place. Thinning scales the per-month count
+	// (and the disease share with it) without touching the envelope half-width, so
+	// the field's SHAPE is unchanged — it just fills more sparsely. Only affects
+	// mobile; on desktop thin === 1 leaves the field byte-identical.
+	const thin = p.thin ?? 1;
+
 	const homes: Poppy[] = [];
 	MONTHLY.forEach((m, i) => {
 		const cy = yForMonthIndex(i, p);
-		const dCount = diseaseCount(m); // first dCount poppies this month are disease/other
-		for (let k = 0; k < m.deaths; k++) {
+		const count = Math.max(1, Math.round(m.deaths * thin));
+		const dCount = Math.round(diseaseCount(m) * thin); // first dCount poppies this month are disease/other
+		for (let k = 0; k < count; k++) {
 			// Uniform fill of the full row (gapless at any spacing) + a soft gaussian
 			// tail for organic blending/feathering between months.
 			const y = cy + (rand() - 0.5) * mH + (rand() + rand() - 1) * mH * 0.28;
@@ -128,7 +136,8 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		const half = halves[edgeIndex];
 		const diseaseShare = diseaseCount(m) / m.deaths;
 		const edgeY = direction < 0 ? pad : H - pad; // the field's actual top/bottom boundary
-		for (let k = 0; k < LEAD_COUNT; k++) {
+		const leadCount = Math.max(1, Math.round(LEAD_COUNT * thin));
+		for (let k = 0; k < leadCount; k++) {
 			const d = rand() * rand(); // biased toward 0 → sparser further from the data
 			const y = edgeY + direction * d * pad * LEAD_SPAN;
 			const x = (rand() * 2 - 1) * half * (1 - d);

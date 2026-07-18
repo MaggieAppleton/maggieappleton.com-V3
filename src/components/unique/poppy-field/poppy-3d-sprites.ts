@@ -109,6 +109,12 @@ export function bakePoppyAngleSprites(
 	// when colour alone doesn't distinguish it from the bright combat blooms.
 	const disease = bakeCause(diseasePetal, darken(diseasePetal, 0.6), 4);
 
+	// dispose() frees Three's JS-side resources but leaves the underlying WebGL
+	// context alive until GC, which can breach the browser's context cap (~16, lowest
+	// in Safari) and silently blank the page's other live poppy renderers. We bake
+	// into plain 2D canvases above and never reuse this renderer, so force-release
+	// the GL context eagerly here.
+	renderer.forceContextLoss();
 	renderer.dispose();
 	return { combat, disease, angles };
 }

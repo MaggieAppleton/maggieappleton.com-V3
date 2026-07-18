@@ -58,21 +58,28 @@
 		width: 100%;
 		aspect-ratio: 1 / 1;
 		display: block;
+	}
+
+	/* will-change is scoped to while intro-poppies.ts's rAF loop is actually
+	   running (toggled via this class from its IntersectionObserver), not set
+	   permanently — a permanent declaration here would hold 5 promoted layers
+	   alive even while off-screen or idle. */
+	.intro-poppies.is-animating .intro-poppies__flower {
 		will-change: transform;
 	}
 
-	/* subtle hand-placed stagger so the row isn't mechanical. --wx/--wy/--wr are
-	   the animated breeze sway + cursor tilt, written by intro-poppies.ts each
-	   frame; they default to 0 so the static pose is unchanged before JS runs
-	   and for prefers-reduced-motion (which never sets them). */
+	/* Subtle hand-placed stagger so the row isn't mechanical. This is the
+	   at-rest pose only — while running, intro-poppies.ts overwrites this via
+	   inline style.transform each frame (see BASE_TRANSFORM, which mirrors
+	   these values) with the breeze sway + cursor tilt layered on top. */
 	.intro-poppies__flower:nth-child(1) {
-		transform: translate(var(--wx, 0px), calc(10px + var(--wy, 0px))) rotate(calc(-3deg + var(--wr, 0deg)));
+		transform: translateY(10px) rotate(-3deg);
 	}
 	.intro-poppies__flower:nth-child(2) {
-		transform: translate(var(--wx, 0px), calc(-2px + var(--wy, 0px))) rotate(var(--wr, 0deg));
+		transform: translateY(-2px);
 	}
 	.intro-poppies__flower:nth-child(3) {
-		transform: translate(var(--wx, 0px), calc(4px + var(--wy, 0px))) rotate(calc(2deg + var(--wr, 0deg)));
+		transform: translateY(4px) rotate(2deg);
 	}
 
 	/* two small accent blooms nestled in the gaps at the top of the row, held
@@ -85,12 +92,12 @@
 	.intro-poppies__flower--left {
 		left: 31%;
 		top: 2.5%;
-		transform: translate(calc(-50% + var(--wx, 0px)), var(--wy, 0px)) rotate(calc(-4deg + var(--wr, 0deg)));
+		transform: translate(-50%, 0) rotate(-4deg);
 	}
 	.intro-poppies__flower--right {
 		left: 70%;
 		top: 2.5%;
-		transform: translate(calc(-50% + var(--wx, 0px)), var(--wy, 0px)) rotate(calc(5deg + var(--wr, 0deg)));
+		transform: translate(-50%, 0) rotate(5deg);
 	}
 
 	@media (max-width: 640px) {

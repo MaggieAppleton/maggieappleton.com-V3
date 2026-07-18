@@ -15,7 +15,24 @@ export const PAD_Y = 80;
 // max size) just reaches the canvas edge — combined with the figure's 24px inset
 // this gives ~24px of visible margin at the widest point.
 export const EDGE_MARGIN = 26;
+// On phones the field breaks out past the screen edges (see PoppyField.astro's
+// mobile breakout) and we let the widest months bleed off-screen, so the centre
+// inset shrinks — the sprite overhang alone is enough margin there.
+export const EDGE_MARGIN_MOBILE = 14;
 export const EDGE_INSET = 24; // px inset from page edges (spec)
+
+// Below this viewport width the field switches to its phone layout: fewer,
+// wider-spread poppies that bleed past the screen edges (see MOBILE_* below and
+// the matching @media rules). Kept in sync between the CSS breakout and the JS
+// geometry so the canvas width and the poppy math agree at the boundary.
+export const MOBILE_BREAKPOINT = 640;
+// Keep this fraction of the poppies on mobile — a slight thinning so the field
+// reads less clustered on a narrow screen. Shape is preserved (the envelope
+// half-width is count-independent); only the fill density drops.
+export const MOBILE_THIN = 0.8;
+// Taller rows on mobile (vs DEFAULTS.heightScale) spread the same months over
+// more vertical pixels, so poppies overlap less — at the cost of a longer field.
+export const MOBILE_HEIGHT_SCALE = 2.2;
 export const HOVER_SPINE_PX = 90; // pointer within this of the spine → show month readout
 // Unison facing: a poppy's yaw is set by how far it sits from the central spine —
 // poppies on the left face left, the middle face forward, the right face right —
