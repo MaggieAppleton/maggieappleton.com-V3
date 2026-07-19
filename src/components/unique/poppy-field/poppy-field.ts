@@ -3,6 +3,13 @@
 // (scrolling down pushes poppies up, scrolling up settles them back). Year/
 // battle labels carve an elliptical "clearing" out of the poppies around them
 // (see computeClearZones/inClearZone).
+//
+// The canvas is a viewport-sized *window* onto the field, not the full field:
+// the stage is ~6,500 CSS px tall, and a canvas that size blows straight past
+// mobile canvas limits (iOS Safari blanks canvases taller than ~8,192 device
+// px) and costs ~40MB of backing store. Instead the canvas is only a bit
+// taller than the viewport, gets repositioned within the stage via a transform
+// each frame, and paints in stage coordinates offset by the window position.
 
 import {
 	computePoppyHomes,
@@ -13,7 +20,7 @@ import {
 	effMonthH,
 	type Poppy,
 } from "./layout";
-import { bakePoppyAngleSprites, oklchToHex, type AngleSprites } from "./poppy-3d-sprites";
+import { bakePoppyAngleSpriteSets, oklchToHex, type AngleSprites } from "./poppy-3d-sprites";
 import { MONTHLY, BATTLES, monthLabel } from "./wwi-monthly-deaths";
 import {
 	SPRITE_BASE,
@@ -24,6 +31,7 @@ import {
 	MOBILE_BREAKPOINT,
 	MOBILE_THIN,
 	MOBILE_HEIGHT_SCALE,
+	SPRITE_CELL_MOBILE,
 	POPPY_LEAN,
 	POPPY_LEAN_VAR,
 } from "./constants";
@@ -35,6 +43,17 @@ import { DEFAULTS, type FieldParams } from "./params";
 const SPRITE_DRAW_SCALE = 1.7;
 
 const LIFT_PX = 42; // max rise/fall (px) at full scroll speed, scaled per-poppy by rScale
+
+// The painted band extends this far past the viewport top/bottom so sprite
+// overhang and scroll-lift never draw outside it…
+const WINDOW_PAD = SPRITE_BASE * 2 + LIFT_PX;
+// …and the window is this much taller still. The slack means the window only
+// has to jump to a new position every few hundred scrolled px — between jumps
+// its transform is constant, so scrolling never invalidates the canvas layer
+// and per-frame painting stays limited to the small viewport band. It also
+// absorbs mobile URL-bar show/hide (which changes innerHeight without an
+// immediate resize event).
+const WINDOW_SLACK = 600;
 
 interface ClearZone {
 	zx: number;
@@ -56,6 +75,9 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	if (!ctx) return;
 
 	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	// The muted sprite set only exists for the desktop battle-label hover
+	// crossfade — touch devices skip baking it, halving their bake cost.
+	const hoverCapable = window.matchMedia("(hover: hover)").matches;
 	// Phones get a de-cluttered variant: fewer poppies over taller rows, no width
 	// cap. Recomputed in geometry() so a resize across the breakpoint re-lays-out.
 	const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT;
@@ -84,22 +106,31 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	let scrollLiftEase = 0;
 	let hoverBattle: string | null = null;
 	let hoverT = 0; // eases 0→1 toward hoverBattle so grow/mute settle in rather than snap
-	// Cached from scroll/resize rather than re-read every rAF frame (forces layout).
-	let canvasTop = 0;
-	function measureCanvasTop() {
-		canvasTop = canvas!.getBoundingClientRect().top;
+	let winH = 0; // CSS px height of the windowed canvas
+	let winY = 0; // window's current offset from the top of the stage (CSS px)
+	// Stage's document-space top, cached so per-frame/per-scroll positioning is
+	// pure arithmetic off scrollY instead of a layout-forcing getBoundingClientRect.
+	// Re-measured on resize, font load, and any body-height change (content above
+	// the field loading in shifts it).
+	let stageTopDoc = 0;
+	function measureStageTop() {
+		stageTopDoc = stage!.getBoundingClientRect().top + window.scrollY;
 	}
 
 	function buildSprites() {
 		dpr = Math.min(window.devicePixelRatio || 1, 2);
-		sprites = bakePoppyAngleSprites(dpr, {
+		const cell = isMobile() ? SPRITE_CELL_MOBILE : undefined;
+		const full = {
 			combat: oklchToHex(params.combatL, params.combatC, params.combatH),
 			disease: oklchToHex(params.diseaseL, params.diseaseC, params.diseaseH),
-		});
-		mutedSprites = bakePoppyAngleSprites(dpr, {
+		};
+		const muted = {
 			combat: oklchToHex(Math.min(1, params.combatL + 0.2), params.combatC * 0.15, params.combatH),
 			disease: oklchToHex(Math.min(1, params.diseaseL + 0.2), params.diseaseC * 0.15, params.diseaseH),
-		});
+		};
+		const sets = bakePoppyAngleSpriteSets(dpr, { cell }, hoverCapable ? [full, muted] : [full]);
+		sprites = sets[0];
+		mutedSprites = sets[1] ?? { combat: [], disease: [], angles: sprites.angles };
 		renderLegend();
 	}
 
@@ -134,15 +165,17 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		// stage fill that full breakout width; on desktop keep the centred cap.
 		stage!.style.maxWidth = mobile ? "none" : `${params.maxWidth}px`;
 		W = canvas!.clientWidth; // reflects the capped stage width
+		winH = Math.min(H, window.innerHeight + WINDOW_PAD * 2 + WINDOW_SLACK);
+		canvas!.style.height = `${winH}px`;
 		canvas!.width = Math.round(W * dpr);
-		canvas!.height = Math.round(H * dpr);
-		ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+		canvas!.height = Math.round(winH * dpr);
 		// No min(1) clamp → widest month scales up to fill wide canvases too, so the
 		// field always spans (canvas width − edge margins).
 		xScale = (W / 2 - (mobile ? EDGE_MARGIN_MOBILE : EDGE_MARGIN)) / maxHalfWidth(params);
 		assignFacings();
 		positionLabels();
 		computeClearZones();
+		measureStageTop();
 	}
 
 	// Picks each poppy's baked yaw sprite from its offset from the spine, so the
@@ -215,12 +248,17 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		return y >= lo && y <= hi;
 	}
 
+	// Paints the stage band [vTop, vBot] into the canvas window (which must
+	// already be positioned at winY, and must cover the band). All coordinates
+	// are stage-space; the per-poppy setTransform folds in both dpr and the
+	// -winY window offset.
 	function paint(vTop: number, vBot: number, t: number) {
 		const cx = W / 2;
 		const amp = (reduce ? 0 : 0.26) + gustEase;
 		const lift = reduce ? 0 : scrollLiftEase * LIFT_PX; // signed: down lifts, up settles
 		const sizeAmp = 0.4 * params.sizeVariance;
 		if (!reduce) hoverT += ((hoverBattle ? 1 : 0) - hoverT) * 0.12; // ease toward target, no snap
+		ctx!.setTransform(dpr, 0, 0, dpr, 0, -winY * dpr);
 		ctx!.clearRect(0, vTop, W, vBot - vTop);
 		for (let i = 0; i < homes.length; i++) {
 			const p = homes[i];
@@ -247,65 +285,146 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			// uniform shove.
 			const poppyLift = lift * (0.5 + p.rScale * 0.9);
 			const driftX = Math.sin(p.phase * 1.6) * lift * 0.3;
-			ctx!.save();
-			ctx!.translate(homeX + wind * 7 + driftX, p.y - poppyLift);
-			// gentle stem sway only — a full rotation would spin the baked top-light
-			ctx!.rotate(wind * 0.4);
-			if (!hl && hoverT > 0.001) {
+			// gentle stem sway only — a full rotation would spin the baked top-light.
+			// Quality level ≥1 drops the tilt entirely: an axis-aligned drawImage
+			// takes a fast blit path that a rotated one can't, and it's the single
+			// biggest per-frame raster cost (3-4x in profiling). The translation
+			// part of the sway remains, so the field still moves.
+			const rot = quality >= 1 ? 0 : wind * 0.4;
+			const cos = rot === 0 ? dpr : Math.cos(rot) * dpr;
+			const sin = rot === 0 ? 0 : Math.sin(rot) * dpr;
+			const tx = (homeX + wind * 7 + driftX) * dpr;
+			const ty = (p.y - poppyLift - winY) * dpr;
+			// One setTransform per poppy instead of save/translate/rotate/restore —
+			// the same matrix, without the state-stack churn.
+			ctx!.setTransform(cos, sin, -sin, cos, tx, ty);
+			const mutedGroup = p.cause ? mutedSprites.disease : mutedSprites.combat;
+			const mutedSpr = !hl && hoverT > 0.001 ? (mutedGroup[angleIdx[i]] ?? mutedGroup[0]) : undefined;
+			if (mutedSpr) {
 				// Crossfade toward the muted, low-chroma twin as a battle comes into focus.
-				const mutedGroup = p.cause ? mutedSprites.disease : mutedSprites.combat;
-				const mutedSpr = mutedGroup[angleIdx[i]] ?? mutedGroup[0];
 				if (hoverT < 0.999) {
 					ctx!.globalAlpha = alpha;
 					ctx!.drawImage(spr, -size / 2, -size / 2, size, size);
 				}
-				if (mutedSpr) {
-					ctx!.globalAlpha = alpha * hoverT;
-					ctx!.drawImage(mutedSpr, -size / 2, -size / 2, size, size);
-				}
+				ctx!.globalAlpha = alpha * hoverT;
+				ctx!.drawImage(mutedSpr, -size / 2, -size / 2, size, size);
 			} else {
 				ctx!.globalAlpha = alpha;
 				ctx!.drawImage(spr, -size / 2, -size / 2, size, size);
 			}
-			ctx!.restore();
 		}
+		ctx!.setTransform(1, 0, 0, 1, 0, 0);
+		ctx!.globalAlpha = 1;
+	}
+
+	// Moves the window only when the viewport's paint band has drifted outside
+	// it — re-centred on the viewport, so the slack gives a few hundred px of
+	// scroll before the next jump. Between jumps the transform is untouched
+	// (changing it invalidates the whole canvas layer's raster, which is
+	// exactly what made the old full-height canvas expensive to scroll).
+	// Returns true when it jumped, meaning the whole window needs repainting.
+	function ensureWindow(): boolean {
+		const canvasTop = stageTopDoc - window.scrollY; // stage top relative to viewport
+		const vh = window.innerHeight;
+		const bandTop = Math.max(0, -canvasTop - WINDOW_PAD);
+		const bandBot = Math.min(H, -canvasTop + vh + WINDOW_PAD);
+		if (bandTop >= winY && bandBot <= winY + winH) return false;
+		winY = Math.round(Math.max(0, Math.min(H - winH, -canvasTop - (winH - vh) / 2)));
+		// Positioned with `top`, not a transform: a transform would push the canvas
+		// onto the composited-layer path, where some rasterisers stop tracking
+		// canvas dirty rects and re-upload the full window on every painted frame.
+		// A `top` write is a layout pass, but only once per few hundred scrolled px.
+		canvas!.style.top = `${winY}px`;
+		return true;
+	}
+
+	// Paint pass for one frame: reposition the window if needed, then repaint —
+	// the whole window after a jump (its old contents map to the wrong place),
+	// otherwise just the viewport band, mirroring the pre-window renderer's
+	// dirty region.
+	function renderWindow(t: number) {
+		const jumped = ensureWindow();
+		if (jumped) {
+			paint(winY, Math.min(H, winY + winH), t);
+			return;
+		}
+		const canvasTop = stageTopDoc - window.scrollY;
+		const vTop = Math.max(winY, -canvasTop - WINDOW_PAD);
+		const vBot = Math.min(winY + winH, H, -canvasTop + window.innerHeight + WINDOW_PAD);
+		if (vBot > vTop) paint(vTop, vBot, t);
 	}
 
 	function renderStatic() {
-		paint(0, H, 0);
+		ensureWindow();
+		paint(winY, Math.min(H, winY + winH), 0);
 	}
 
+	// Adaptive degradation for weak devices, keyed off real frame cadence (which
+	// includes raster/compositing cost — JS-side paint timing alone misses the
+	// dominant native work). Levels: 0 = full effect; 1 = no sway tilt (rotated
+	// drawImage defeats the rasteriser's fast blit path and is the single
+	// biggest frame cost); 2/3 = also paint every 2nd/3rd frame. Poppies are
+	// painted at stage coordinates, so skipped frames only slow the wind —
+	// scroll motion stays native-smooth via the browser's compositor.
+	let quality = 0;
+	let deltaEMA = 1000 / 60;
+	let lastFrameT = 0;
+	let frameCount = 0;
+	const PAINT_EVERY = [1, 1, 2, 3];
+
 	function frame(t: number) {
-		const vh = window.innerHeight;
-		// Covers the sprite's own overhang past its home y plus max scroll-lift, so
-		// a poppy near the culled edge never draws into a region clearRect skipped.
-		const pad = SPRITE_BASE * 2 + LIFT_PX;
-		const vTop = Math.max(0, -canvasTop - pad);
-		const vBot = Math.min(H, -canvasTop + vh + pad);
+		if (lastFrameT) {
+			const delta = Math.min(t - lastFrameT, 250); // clamp tab-switch gaps
+			deltaEMA += (delta - deltaEMA) * 0.08;
+			// Demote fast (a janky field is worse than a becalmed one), promote
+			// slowly and only from a comfortable cadence, so it doesn't oscillate.
+			if (deltaEMA > 40 && quality < 3) {
+				quality++;
+				deltaEMA = 1000 / 60; // re-settle at the new level before judging again
+			} else if (deltaEMA < 20 && quality > 0 && frameCount % 240 === 0) {
+				quality--;
+			}
+		}
+		lastFrameT = t;
 		// Eased rather than read directly, giving the scroll-driven sway/lift its lag.
 		gustEase += (gust - gustEase) * 0.05;
 		scrollLiftEase += (scrollLift - scrollLiftEase) * 0.05;
-		if (vBot > vTop) paint(vTop, vBot, t);
+		frameCount++;
+		if (frameCount % PAINT_EVERY[quality] === 0) renderWindow(t);
 		gust *= 0.95;
 		scrollLift *= 0.95;
 		raf = requestAnimationFrame(frame);
 	}
 
 	// --- interaction ---
+	// Reduced-motion mode has no rAF loop, but the windowed canvas still needs
+	// repainting as it tracks the scroll position — coalesced to one per frame.
+	let staticRaf = 0;
+	const scheduleStatic = () => {
+		if (staticRaf || !baked) return;
+		staticRaf = requestAnimationFrame(() => {
+			staticRaf = 0;
+			renderStatic();
+		});
+	};
+
 	let lastY = window.scrollY;
 	const onScroll = () => {
 		const dy = window.scrollY - lastY; // + scrolling down, − scrolling up
 		lastY = window.scrollY;
-		if (!reduce) {
+		if (reduce) {
+			scheduleStatic();
+		} else {
 			gust = Math.min(0.9, gust + Math.abs(dy) * 0.002);
 			scrollLift = Math.max(-0.9, Math.min(0.9, scrollLift + dy * 0.002));
 		}
-		measureCanvasTop();
 	};
 	window.addEventListener("scroll", onScroll, { passive: true });
 
-	const onCanvasPointerMove = (e: PointerEvent) => {
-		const r = canvas.getBoundingClientRect();
+	// On the stage rather than the canvas: the windowed canvas only covers part
+	// of the stage, and the stage's box is what the tip is positioned within.
+	const onStagePointerMove = (e: PointerEvent) => {
+		const r = stage.getBoundingClientRect();
 		const x = e.clientX - r.left;
 		const y = e.clientY - r.top;
 		if (Math.abs(x - W / 2) < HOVER_SPINE_PX) {
@@ -318,11 +437,11 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			tip.dataset.show = "0";
 		}
 	};
-	const onCanvasPointerLeave = () => {
+	const onStagePointerLeave = () => {
 		tip.dataset.show = "0";
 	};
-	canvas.addEventListener("pointermove", onCanvasPointerMove);
-	canvas.addEventListener("pointerleave", onCanvasPointerLeave);
+	stage.addEventListener("pointermove", onStagePointerMove);
+	stage.addEventListener("pointerleave", onStagePointerLeave);
 
 	function setHoverBattle(id: string | null) {
 		hoverBattle = id;
@@ -351,45 +470,60 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	const onResize = () => {
 		window.clearTimeout(resizeTimer);
 		resizeTimer = window.setTimeout(() => {
-			// Rebaking sprites means spinning up two full Three.js scenes — only
+			// Rebaking sprites means spinning up a full Three.js scene — only
 			// worth it if the device pixel ratio actually changed (e.g. dragging
 			// the window to a different-DPR display); a plain width change just
 			// needs new geometry.
 			if (Math.min(window.devicePixelRatio || 1, 2) !== dpr) buildSprites();
 			geometry();
-			measureCanvasTop();
-			if (reduce) renderStatic();
+			if (reduce) scheduleStatic();
 		}, 150);
 	};
 	window.addEventListener("resize", onResize);
 
-	// The sprite bake is tens of ms of main-thread jank, so defer it until the
-	// field approaches the viewport (see the observer below).
+	// The sprite bake is tens of ms of main-thread jank, so it runs off the
+	// critical path: ideally during idle time shortly after init (long before
+	// the reader scrolls this far down), else synchronously when the field
+	// approaches the viewport (see the observer below).
 	let baked = false;
 	let disposed = false;
 	function ensureBaked() {
 		if (baked || disposed) return;
 		baked = true; // set BEFORE bake so a re-entrant intersection can't double-bake
-		buildSprites(); // bakes sprites + mutedSprites, and calls renderLegend()
+		buildSprites(); // bakes sprites (+ mutedSprites on hover devices), and calls renderLegend()
 		assignFacings(); // replace the placeholder all-zero angleIdx with real facings now sprites exist
 	}
+	const idleId = window.requestIdleCallback
+		? window.requestIdleCallback(() => ensureBaked(), { timeout: 4000 })
+		: window.setTimeout(ensureBaked, 2000);
 
 	// Needed eagerly for canvas sizing in geometry() (was set inside buildSprites,
 	// which we now defer) — else the canvas sizes at dpr=1 and looks blurry until
 	// the bake finally runs.
 	dpr = Math.min(window.devicePixelRatio || 1, 2);
 	geometry();
-	measureCanvasTop();
 	// Clearing zones are sized from the labels' actual text metrics — if the
-	// custom font swaps in after this first layout, refresh just the zones
-	// (not the whole geometry) rather than leaving them sized to the fallback.
-	document.fonts?.ready?.then(computeClearZones);
+	// custom font swaps in after this first layout, refresh the zones and the
+	// cached stage offset (the swap can reflow everything above the field too)
+	// rather than leaving them sized to the fallback.
+	document.fonts?.ready?.then(() => {
+		computeClearZones();
+		measureStageTop();
+	});
+	// Content above the field loading in (images, embeds) shifts the stage's
+	// document offset — any body-height change re-measures the cached value.
+	const bodyObserver = new ResizeObserver(() => {
+		measureStageTop();
+		if (reduce) scheduleStatic();
+	});
+	bodyObserver.observe(document.body);
 
 	// Stops scheduling frames entirely once the field is far out of view (mirrors
 	// intro-poppies.ts's animate()).
 	let observer: IntersectionObserver | null = null;
 	if (reduce) {
-		// No rAF loop — bake + paint once the first time it approaches the viewport.
+		// No rAF loop — just make sure sprites exist by the time it approaches, and
+		// paint the current window (scroll/resize repaints are handled above).
 		observer = new IntersectionObserver(
 			([entry]) => {
 				if (!entry.isIntersecting) return;
@@ -408,7 +542,10 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 					// Bake synchronously before the first scheduled frame so it already
 					// has real sprites + facings (no first-frame pop).
 					ensureBaked();
-					if (!raf) raf = requestAnimationFrame(frame);
+					if (!raf) {
+						lastFrameT = 0; // don't let the stopped gap pollute the cadence EMA
+						raf = requestAnimationFrame(frame);
+					}
 				} else if (raf) {
 					cancelAnimationFrame(raf);
 					raf = 0;
@@ -422,12 +559,16 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	return () => {
 		disposed = true; // block any stray bake after teardown (e.g. an old instance's observer callback across astro:page-load)
 		if (raf) cancelAnimationFrame(raf);
+		if (staticRaf) cancelAnimationFrame(staticRaf);
+		if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
+		else window.clearTimeout(idleId);
 		observer?.disconnect();
+		bodyObserver.disconnect();
 		window.clearTimeout(resizeTimer);
 		window.removeEventListener("scroll", onScroll);
 		window.removeEventListener("resize", onResize);
-		canvas.removeEventListener("pointermove", onCanvasPointerMove);
-		canvas.removeEventListener("pointerleave", onCanvasPointerLeave);
+		stage.removeEventListener("pointermove", onStagePointerMove);
+		stage.removeEventListener("pointerleave", onStagePointerLeave);
 		battleLabelHandlers.forEach(({ el, onEnter, onLeave }) => {
 			el.removeEventListener("pointerenter", onEnter);
 			el.removeEventListener("pointerleave", onLeave);

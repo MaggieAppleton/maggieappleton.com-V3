@@ -17,6 +17,10 @@ export const EDGE_INSET = 24; // px inset from page edges (spec)
 // and the matching @media rules — keep this in sync with those).
 export const MOBILE_BREAKPOINT = 640;
 export const MOBILE_THIN = 0.8; // fraction of poppies kept on mobile, for a less clustered read
+// Sprite bake cell (CSS px) on phones. Poppies draw at ~40 CSS px there, so a
+// 72px cell still downsamples ~1.8x for smooth edges while making every
+// drawImage sample ~3x fewer pixels than the desktop 120px cell.
+export const SPRITE_CELL_MOBILE = 72;
 export const MOBILE_HEIGHT_SCALE = 2.2; // taller rows on mobile so poppies overlap less
 export const HOVER_SPINE_PX = 90; // pointer within this of the spine → show month readout
 // A poppy's yaw is set by its distance from the spine (left faces left, right faces
