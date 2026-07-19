@@ -122,9 +122,15 @@ const battleLabels = BATTLES.map((b) => {
 		margin-inline: auto;
 	}
 
+	/* A viewport-sized window onto the stage, not the full stage: the script
+	   sets an inline height (~viewport + padding) and slides it along the stage
+	   with a translateY each frame. A canvas the stage's full ~6,500px height
+	   exceeds mobile canvas limits (iOS Safari renders it blank) and wastes
+	   ~40MB of backing store. height:100% is only the pre-JS fallback. */
 	.poppy-field__canvas {
 		position: absolute;
-		inset: 0;
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
 		display: block;

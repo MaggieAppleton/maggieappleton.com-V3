@@ -35,17 +35,27 @@ export function darken(hex: string, f: number): string {
 	return `#${toRgb(hex).map((c) => toHex(c * f)).join("")}`;
 }
 
-export function bakePoppyAngleSprites(
+// One full/muted (etc.) palette pair for a baked sprite set. Colours are hex,
+// sourced from poppy-field/params.ts — the single source of truth.
+export interface PoppyPalette {
+	combat: string;
+	disease: string;
+}
+
+// Bakes one sprite set per palette in a single renderer/scene/GL-context
+// session — creating the WebGL context and compiling shaders dominates the
+// bake cost, so callers wanting both the full and muted sets should pass both
+// palettes here rather than calling twice.
+export function bakePoppyAngleSpriteSets(
 	dpr: number,
 	opts: {
 		angleCount?: number;
 		leanMax?: number;
 		cell?: number;
 		frustum?: number;
-		combat: string; // combat petal colour (hex) — from poppy-field/params.ts, the single source of truth
-		disease: string; // disease petal colour (hex) — from poppy-field/params.ts, the single source of truth
 	},
-): AngleSprites {
+	palettes: PoppyPalette[],
+): AngleSprites[] {
 	const angleCount = opts.angleCount ?? 15;
 	const leanMax = (opts.leanMax ?? 78) * DEG;
 	const frustum = opts.frustum ?? 1.35; // half-extent; smaller → flower fills more of the cell
@@ -75,8 +85,6 @@ export function bakePoppyAngleSprites(
 	scene.add(pivot);
 
 	const centre = cssColorHex("--color-poppy-centre", "oklch(0.2 0.06 30)");
-	const combatPetal = opts.combat;
-	const diseasePetal = opts.disease;
 
 	const angles = Array.from({ length: angleCount }, (_, a) => -leanMax + (2 * leanMax * a) / (angleCount - 1));
 
@@ -98,14 +106,17 @@ export function bakePoppyAngleSprites(
 		return out;
 	};
 
-	const combat = bakeCause(combatPetal, darken(combatPetal, 0.62));
-	// 4-petal: a shape encoding that stays legible even when colour alone doesn't
-	// distinguish disease deaths from the bright combat blooms.
-	const disease = bakeCause(diseasePetal, darken(diseasePetal, 0.6), 4);
+	const sets = palettes.map((pal) => ({
+		combat: bakeCause(pal.combat, darken(pal.combat, 0.62)),
+		// 4-petal: a shape encoding that stays legible even when colour alone doesn't
+		// distinguish disease deaths from the bright combat blooms.
+		disease: bakeCause(pal.disease, darken(pal.disease, 0.6), 4),
+		angles,
+	}));
 
 	// forceContextLoss() releases the GL context eagerly (dispose() alone waits for
 	// GC), so repeated bakes don't breach the browser's ~16-context cap.
 	renderer.forceContextLoss();
 	renderer.dispose();
-	return { combat, disease, angles };
+	return sets;
 }
