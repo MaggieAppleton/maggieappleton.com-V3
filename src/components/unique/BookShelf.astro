@@ -145,11 +145,64 @@ const {
 			);
 			if (books.length === 0) return;
 
+			/*
+			 * .book's own width/margin-right (see CSS) reserve flex-layout
+			 * space for the row's reflow but paint nothing themselves — .book
+			 * has no border/background, only its absolutely-positioned child
+			 * .book__3d is visible, and .book__3d's own geometry is driven by
+			 * fixed --spine-width/--cover-width tokens, not by .book's actual
+			 * width. So animating that reflow continuously (a CSS transition
+			 * on width/margin-right) bought nothing visually but cost a full
+			 * layout pass on every frame for the whole row — measured on a
+			 * throttled CPU, that was the largest single contributor to
+			 * dropped frames during a turn, well above the 3D rotation itself.
+			 *
+			 * Instead: snap width/margin-right instantly (one layout pass,
+			 * not smeared across --turn-duration), then FLIP each book's
+			 * resulting on-screen shift back in via `transform`, which is
+			 * compositor-only. Measuring real post-layout positions (rather
+			 * than hand-computing each book's offset) is what keeps this
+			 * desync-immune — a hand-rolled offset transitioning in parallel
+			 * with a width transition is exactly the bug documented in the
+			 * CSS comments above .book and .book__3d.
+			 */
 			function open(index: number) {
+				const prefersReducedMotion = window.matchMedia(
+					"(prefers-reduced-motion: reduce)",
+				).matches;
+
+				if (prefersReducedMotion) {
+					books.forEach((book, i) => {
+						const isOpen = i === index;
+						book.classList.toggle("is-open", isOpen);
+						book.setAttribute("aria-pressed", isOpen ? "true" : "false");
+					});
+					return;
+				}
+
+				// First: measure. `offsetLeft` (layout-only) rather than
+				// getBoundingClientRect (visual) — the latter would read a
+				// stale in-flight FLIP transform if a book is clicked again
+				// before the previous turn's transform has settled.
+				const before = books.map((book) => book.offsetLeft);
+
 				books.forEach((book, i) => {
 					const isOpen = i === index;
 					book.classList.toggle("is-open", isOpen);
 					book.setAttribute("aria-pressed", isOpen ? "true" : "false");
+				});
+
+				// Last, then Invert + Play: snap each book's transform to
+				// erase its jump, then release it back to identity so only
+				// the transform (not layout) animates.
+				books.forEach((book, i) => {
+					const delta = before[i] - book.offsetLeft;
+					if (Math.abs(delta) < 0.5) return;
+					book.style.transition = "none";
+					book.style.transform = `translateX(${delta}px)`;
+					void book.offsetWidth; // flush, so the jump above actually paints
+					book.style.transition = "";
+					book.style.transform = "";
 				});
 			}
 
@@ -230,13 +283,18 @@ const {
 
 	/*
 	 * The button is the interactive hit-target and the layout box that
-	 * reflows the row. Its width animates between the spine width (closed)
-	 * and cover width (open) so flexbox slides the neighbouring books over in
-	 * lockstep — the browser's own reflow, so it's never out of sync with
-	 * this book's own size, unlike a hand-rolled position computed
-	 * separately (which briefly overlapped neighbours: this book's width
-	 * would already be at its new size while its computed x-offset was still
-	 * easing toward its target).
+	 * reflows the row. Its width and margin-right snap instantly between the
+	 * spine/cover values (see .book.is-open below) rather than transitioning —
+	 * .book paints nothing itself (no border/background: only its
+	 * absolutely-positioned child .book__3d is visible), so animating this
+	 * reflow continuously bought no visual benefit while costing a full
+	 * layout pass on every frame across the whole row. The JS click handler
+	 * (see the <script> block) FLIPs each book's resulting on-screen shift
+	 * back in via this element's own `transform`, which is what actually
+	 * transitions here — compositor-only, and driven by real measured
+	 * positions rather than a hand-computed offset (a hand-rolled offset
+	 * transitioning in parallel with a width transition previously desynced
+	 * for a frame, briefly overlapping neighbours).
 	 */
 	.book {
 		--rotate: var(--peek-rotate); /* closed: mostly-spine, with a cover peek */
@@ -271,9 +329,9 @@ const {
 		 * visible 3D depth mid-rotation.
 		 */
 		perspective: 8000px;
-		transition:
-			width var(--turn-duration) var(--turn-ease),
-			margin-right var(--turn-duration) var(--turn-ease);
+		/* Only `transform` transitions (the JS-applied FLIP, see above) —
+		   width/margin-right snap instantly on class toggle. */
+		transition: transform var(--turn-duration) var(--turn-ease);
 	}
 
 	.book.is-open {
@@ -290,34 +348,51 @@ const {
 	}
 
 	/*
-	 * The rotating cuboid. `left` is pinned to this book's own pivot point —
-	 * spine-centre when closed, cover-centre when open — using only the
-	 * fixed --cover-width/--spine-width tokens, NOT a percentage of the
-	 * parent's (animating) width. That's the fix for the original bug: with
-	 * `left: 50%`, this position was a live re-derivation of .book's
-	 * mid-transition width on every layout pass — recalculated on the layout
-	 * thread while `rotateY` animated on the compositor thread, and the two
-	 * occasionally desynced for a frame right at the backface-visibility
-	 * crossover, flashing a garbled composite of both faces. Here `left` is
-	 * its own ordinary, independent transition between two fixed endpoints —
-	 * same mechanism as `--rotate` — so it can't be knocked out of step by
-	 * .book's width transition happening alongside it.
+	 * The rotating cuboid. Pivots between spine-centre (closed) and
+	 * cover-centre (open) using only the fixed --cover-width/--spine-width
+	 * tokens, NOT a percentage of the parent's (animating) width — that's
+	 * the fix for the original bug: with `left: 50%`, this position was a
+	 * live re-derivation of .book's mid-transition width on every layout
+	 * pass, recalculated on the layout thread while `rotateY` animated on
+	 * the compositor thread, and the two occasionally desynced for a frame
+	 * right at the backface-visibility crossover, flashing a garbled
+	 * composite of both faces.
+	 *
+	 * `left` itself is now a static token (never transitions) and the
+	 * pivot's motion is expressed entirely as `--x-shift` inside the
+	 * `transform` below, between the same two fixed endpoints as before.
+	 * That keeps the desync-immune "fixed tokens, not live re-derivation"
+	 * property of the original fix, while moving the animated work from a
+	 * layout-thread `left` transition to a compositor-only `transform`
+	 * transition — `left` triggered layout + repaint every frame it was
+	 * animating, which is a much heavier per-frame cost than `transform` on
+	 * mobile CPUs/GPUs, and it's independent of .book's width transition
+	 * happening alongside it either way.
 	 */
 	.book__3d {
+		/*
+		 * Closed-to-open horizontal shift, added on top of the -50% centring
+		 * translate below. `left` itself never changes — it's a fixed token
+		 * (spine-centre), same as before — so the whole reposition is one
+		 * compositor-only `transform` animation instead of a `left` transition
+		 * racing `transform` on the layout thread. Equivalent geometry: with
+		 * `left` fixed at spine-width/2, `--x-shift` covers the remaining
+		 * distance to cover-width/2 when open.
+		 */
+		--x-shift: 0px;
 		position: absolute;
 		top: 0;
 		left: calc(var(--spine-width) / 2);
 		width: var(--cover-width);
 		height: 100%;
 		transform-style: preserve-3d;
-		transform: translateX(-50%) rotateY(var(--rotate));
-		transition:
-			left var(--turn-duration) var(--turn-ease),
-			transform var(--turn-duration) var(--turn-ease);
+		will-change: transform;
+		transform: translateX(calc(-50% + var(--x-shift))) rotateY(var(--rotate));
+		transition: transform var(--turn-duration) var(--turn-ease);
 	}
 
 	.book.is-open .book__3d {
-		left: calc(var(--cover-width) / 2);
+		--x-shift: calc((var(--cover-width) - var(--spine-width)) / 2);
 	}
 
 	/*
@@ -336,10 +411,24 @@ const {
 		position: absolute;
 		inset: 0;
 		transform-style: preserve-3d;
+		will-change: transform;
 		transition: transform 0.15s ease-out;
 	}
 
-	.book:not(.is-open):hover .book__tilt,
+	/*
+	 * Hover lift/tilt is scoped to devices with a true pointer. Without this
+	 * guard, mobile Safari/Chrome's sticky-hover-on-tap applies this rule on
+	 * touch too — a tap could trigger the lift/tilt transition alongside (or
+	 * instead of) the open/close turn, and the book could stay visually
+	 * "lifted" until some unrelated later tap clears :hover. Keyboard focus
+	 * (via :focus-visible) still gets the affordance on any device.
+	 */
+	@media (hover: hover) {
+		.book:not(.is-open):hover .book__tilt {
+			transform: translateY(-6px) rotateY(-4deg);
+		}
+	}
+
 	.book:not(.is-open):focus-visible .book__tilt {
 		transform: translateY(-6px) rotateY(-4deg);
 	}
@@ -504,7 +593,12 @@ const {
 		pointer-events: none;
 	}
 
-	.book:not(.is-open):hover .book__spine::before,
+	@media (hover: hover) {
+		.book:not(.is-open):hover .book__spine::before {
+			opacity: 0.12;
+		}
+	}
+
 	.book:not(.is-open):focus-visible .book__spine::before {
 		opacity: 0.12;
 	}
@@ -540,7 +634,12 @@ const {
 	 * :not(.is-open) since the open book isn't something you'd hover to
 	 * "pick".
 	 */
-	.book:not(.is-open):hover .book__spine,
+	@media (hover: hover) {
+		.book:not(.is-open):hover .book__spine {
+			box-shadow: var(--box-shadow-md);
+		}
+	}
+
 	.book:not(.is-open):focus-visible .book__spine {
 		box-shadow: var(--box-shadow-md);
 	}
@@ -588,6 +687,10 @@ const {
 	@media (max-width: 768px) {
 		.bookshelf {
 			--book-gap: calc(var(--space-s) + 16px);
+			/* Shorter turn on mobile: less window for the width/margin-right
+			   reflow (see .book above) to accumulate dropped frames on
+			   weaker mobile CPUs, and reads as snappier under touch. */
+			--turn-duration: 0.45s;
 		}
 	}
 
