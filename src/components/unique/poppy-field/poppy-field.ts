@@ -108,14 +108,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	let hoverT = 0; // eases 0→1 toward hoverBattle so grow/mute settle in rather than snap
 	let winH = 0; // CSS px height of the windowed canvas
 	let winY = 0; // window's current offset from the top of the stage (CSS px)
-	// Stage's document-space top, cached so per-frame/per-scroll positioning is
-	// pure arithmetic off scrollY instead of a layout-forcing getBoundingClientRect.
-	// Re-measured on resize, font load, and any body-height change (content above
-	// the field loading in shifts it).
-	let stageTopDoc = 0;
-	function measureStageTop() {
-		stageTopDoc = stage!.getBoundingClientRect().top + window.scrollY;
-	}
 
 	function buildSprites() {
 		dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -175,7 +167,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		assignFacings();
 		positionLabels();
 		computeClearZones();
-		measureStageTop();
 	}
 
 	// Picks each poppy's baked yaw sprite from its offset from the spine, so the
@@ -323,8 +314,7 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// (changing it invalidates the whole canvas layer's raster, which is
 	// exactly what made the old full-height canvas expensive to scroll).
 	// Returns true when it jumped, meaning the whole window needs repainting.
-	function ensureWindow(): boolean {
-		const canvasTop = stageTopDoc - window.scrollY; // stage top relative to viewport
+	function ensureWindow(canvasTop: number): boolean {
 		const vh = window.innerHeight;
 		const bandTop = Math.max(0, -canvasTop - WINDOW_PAD);
 		const bandBot = Math.min(H, -canvasTop + vh + WINDOW_PAD);
@@ -342,20 +332,28 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// the whole window after a jump (its old contents map to the wrong place),
 	// otherwise just the viewport band, mirroring the pre-window renderer's
 	// dirty region.
+	//
+	// The stage's viewport offset is measured fresh every pass, NOT cached and
+	// derived from scrollY: anything that shifts the page without a scroll event
+	// (view-transition swaps, scroll anchoring while images above load in, font
+	// reflow) silently invalidates a cached offset and strands the window in
+	// the wrong place — which shows up as a blank band chasing the viewport.
+	// One getBoundingClientRect per painted frame is the same read the
+	// pre-windowed renderer did on every scroll event.
 	function renderWindow(t: number) {
-		const jumped = ensureWindow();
+		const canvasTop = stage!.getBoundingClientRect().top;
+		const jumped = ensureWindow(canvasTop);
 		if (jumped) {
 			paint(winY, Math.min(H, winY + winH), t);
 			return;
 		}
-		const canvasTop = stageTopDoc - window.scrollY;
 		const vTop = Math.max(winY, -canvasTop - WINDOW_PAD);
 		const vBot = Math.min(winY + winH, H, -canvasTop + window.innerHeight + WINDOW_PAD);
 		if (vBot > vTop) paint(vTop, vBot, t);
 	}
 
 	function renderStatic() {
-		ensureWindow();
+		ensureWindow(stage!.getBoundingClientRect().top);
 		paint(winY, Math.min(H, winY + winH), 0);
 	}
 
@@ -534,20 +532,9 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	dpr = Math.min(window.devicePixelRatio || 1, 2);
 	geometry();
 	// Clearing zones are sized from the labels' actual text metrics — if the
-	// custom font swaps in after this first layout, refresh the zones and the
-	// cached stage offset (the swap can reflow everything above the field too)
-	// rather than leaving them sized to the fallback.
-	document.fonts?.ready?.then(() => {
-		computeClearZones();
-		measureStageTop();
-	});
-	// Content above the field loading in (images, embeds) shifts the stage's
-	// document offset — any body-height change re-measures the cached value.
-	const bodyObserver = new ResizeObserver(() => {
-		measureStageTop();
-		if (reduce) scheduleStatic();
-	});
-	bodyObserver.observe(document.body);
+	// custom font swaps in after this first layout, refresh just the zones
+	// (not the whole geometry) rather than leaving them sized to the fallback.
+	document.fonts?.ready?.then(computeClearZones);
 
 	// Stops scheduling frames entirely once the field is far out of view (mirrors
 	// intro-poppies.ts's animate()).
@@ -594,7 +581,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
 		else window.clearTimeout(idleId);
 		observer?.disconnect();
-		bodyObserver.disconnect();
 		window.clearTimeout(resizeTimer);
 		window.removeEventListener("scroll", onScroll);
 		window.removeEventListener("resize", onResize);
