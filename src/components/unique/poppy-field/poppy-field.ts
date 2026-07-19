@@ -390,7 +390,10 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			const delta = Math.min(t - lastFrameT, 250); // clamp tab-switch gaps
 			k = Math.max(0.25, Math.min(4, delta / (1000 / 60)));
 			deltaEMA += (delta - deltaEMA) * 0.08;
-			slowFrames = delta > 40 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
+			// Catastrophic frames count 4x so a device that can't manage even a few
+			// fps escapes to a cheaper level in a handful of frames, while ordinary
+			// jank still needs to be sustained before it demotes anything.
+			slowFrames = delta > 40 ? slowFrames + (delta > 150 ? 4 : 1) : Math.max(0, slowFrames - 2);
 			if (slowFrames > 12 && quality < 3 && t - lastChangeT > 1500) {
 				quality++;
 				slowFrames = 0;
