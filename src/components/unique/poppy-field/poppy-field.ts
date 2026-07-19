@@ -172,7 +172,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		});
 	}
 
-	// Recompute everything that depends on geometry params or container size.
 	function geometry() {
 		params = currentParams();
 		const mobile = isMobile();
@@ -478,7 +477,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		raf = requestAnimationFrame(frame);
 	}
 
-	// --- interaction ---
 	// Reduced-motion mode has no rAF loop, but the windowed canvas still needs
 	// repainting as it tracks the scroll position — coalesced to one per frame.
 	let staticRaf = 0;

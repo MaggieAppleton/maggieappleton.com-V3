@@ -342,5 +342,21 @@ const battleLabels = BATTLES.map((b) => {
 			margin-left: calc(50% - 53vw);
 			padding-inline: 0;
 		}
+
+		/* The figure's own padding is zeroed above so the canvas can bleed past
+		   the content column, but the legend and caption text aren't part of that
+		   bleed — without their own inset they'd render edge-to-edge on the 106vw
+		   box and get clipped by .styled-main's overflow-hidden. */
+		.poppy-field__legend,
+		.poppy-field figcaption {
+			padding-inline: var(--edge);
+		}
+
+		/* Side by side the two legend items are wider than the phone viewport;
+		   stack them instead of relying on wrap. */
+		.poppy-field__legend {
+			flex-direction: column;
+			align-items: center;
+		}
 	}
 </style>

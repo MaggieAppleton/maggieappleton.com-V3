@@ -2,16 +2,15 @@
 // client renderer, so the two never drift apart.
 
 export const SEED = 19141918; // fixed → identical field every load, art-directable
-export const POPPY_UNIT = 1000; // military dead represented by one poppy
-export const MONTH_H = 54; // CSS px of vertical band per month
+export const POPPY_UNIT = 1000;
+export const MONTH_H = 54;
 export const DENSITY = 0.0055; // poppies per px² — sets field thickness & makes width ∝ count
-export const SPRITE_BASE = 26; // base sprite draw size (CSS px)
+export const SPRITE_BASE = 26;
 export const PAD_Y = 80; // top/bottom breathing room so edge poppies never crop; also the horizontal fit margin
-// px kept clear at left/right for poppy centres so the sprite just reaches the canvas edge.
-export const EDGE_MARGIN = 26;
+export const EDGE_MARGIN = 26; // px kept clear at left/right so the sprite just reaches the canvas edge
 // Smaller on phones — the field bleeds off-screen there anyway (see PoppyField.astro).
 export const EDGE_MARGIN_MOBILE = 14;
-export const EDGE_INSET = 24; // px inset from page edges (spec)
+export const EDGE_INSET = 24;
 
 // Below this width the field switches to its phone layout (see MOBILE_* below
 // and the matching @media rules — keep this in sync with those).
@@ -26,4 +25,4 @@ export const HOVER_SPINE_PX = 90; // pointer within this of the spine → show m
 // A poppy's yaw is set by its distance from the spine (left faces left, right faces
 // right) plus per-poppy jitter so it doesn't read mechanical. (radians)
 export const POPPY_LEAN = 64 * (Math.PI / 180); // yaw at the widest edge
-export const POPPY_LEAN_VAR = 3 * (Math.PI / 180); // ± per-poppy jitter
+export const POPPY_LEAN_VAR = 3 * (Math.PI / 180);

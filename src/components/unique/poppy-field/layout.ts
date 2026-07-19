@@ -9,15 +9,14 @@ import type { FieldParams } from "./params";
 
 export interface Poppy {
 	x: number; // logical px offset from the spine (renderer applies a responsive xScale)
-	y: number; // px from the top of the field
+	y: number;
 	cause: 0 | 1; // 0 = combat (bright, 5-petal) · 1 = disease/other (darker, 4-petal)
-	variant: number; // sprite variant within the cause group
-	rot: number; // base rotation (radians)
-	phase: number; // wind phase offset
+	variant: number;
+	rot: number;
+	phase: number;
 	rScale: number; // raw 0..1 randomness → size & opacity resolved live at draw time
 }
 
-// Small, fast, seedable PRNG (mulberry32).
 export function mulberry32(seed: number): () => number {
 	let a = seed >>> 0;
 	return () => {
@@ -121,7 +120,7 @@ export function computePoppyHomes(p: FieldParams, variants = 3): Poppy[] {
 		const m = MONTHLY[edgeIndex];
 		const half = halves[edgeIndex];
 		const diseaseShare = diseaseCount(m) / m.deaths;
-		const edgeY = direction < 0 ? pad : H - pad; // the field's actual top/bottom boundary
+		const edgeY = direction < 0 ? pad : H - pad;
 		const leadCount = Math.max(1, Math.round(LEAD_COUNT * thin));
 		for (let k = 0; k < leadCount; k++) {
 			const d = rand() * rand(); // biased toward 0 → sparser further from the data

@@ -5,7 +5,7 @@ export interface FieldParams {
 	maxWidth: number; // max canvas width in px (centred within the full-bleed figure)
 	smoothness: number; // 0 = rough/stepped edges … 1 = smooth envelope
 	thin?: number; // fraction of poppies to render (1 = all) — mobile drops this to de-clutter
-	baseSize: number; // overall poppy draw-size multiplier
+	baseSize: number;
 	sizeVariance: number; // 0 = every poppy the same size … 1 = full size spread
 	opacityVariance: number; // 0 = every poppy fully opaque … 1 = full depth fade
 	// Petal colours in OKLCH (perceptually-even). Combat = killed in action (bright);

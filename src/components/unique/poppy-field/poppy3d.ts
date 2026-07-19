@@ -56,9 +56,9 @@ export function oklchToHex(L: number, C: number, H: number): string {
 }
 
 export interface Poppy3DParams {
-	petals: number; // petals per whorl
+	petals: number;
 	whorls: number; // 1 or 2 (2 = interleaved for a fuller, gapless bloom)
-	petalLength: number; // petal length in world units
+	petalLength: number;
 	petalWidth: number; // 0.4 slim … 1.6 broad/overlapping
 	cupLong: number; // longitudinal curl — tip lifts (bowl depth front-to-back)
 	cupTrans: number; // transverse fold — petal edges lift (the "taco" that makes a cup)
@@ -186,7 +186,7 @@ export function buildPoppy(p: Poppy3DParams): PoppyMeshes {
 			const slot = new THREE.Group();
 			slot.rotation.y = offset + k * ((Math.PI * 2) / p.petals);
 			const mesh = new THREE.Mesh(petalGeo, petalMat);
-			mesh.rotation.x = open; // lean the petal outward from the axis
+			mesh.rotation.x = open;
 			mesh.scale.setScalar(scale);
 			slot.add(mesh);
 			group.add(slot);
@@ -196,7 +196,7 @@ export function buildPoppy(p: Poppy3DParams): PoppyMeshes {
 	const centreGeo = makeCentreGeometry(p);
 	disposables.push(centreGeo);
 	const centre = new THREE.Mesh(centreGeo, centreMat);
-	centre.position.y = p.centreDepth * p.petalLength; // + toward viewer, − sunk
+	centre.position.y = p.centreDepth * p.petalLength;
 	group.add(centre);
 
 	return {
