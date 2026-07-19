@@ -22,4 +22,9 @@ export default defineConfig({
 react(),
     icon(),
   ],
+  vite: {
+    optimizeDeps: {
+      include: ["three"],
+    },
+  },
 });

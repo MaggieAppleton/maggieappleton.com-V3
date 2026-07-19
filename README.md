@@ -45,7 +45,7 @@ To run locally: `npm run dev`
 To deploy: `./deploy.sh`
 
 - Runs `git push`
-- Runs `npm run build`
-- Runs `vercel --prod`
+- Runs `vercel build --prod` (builds and processes all images locally)
+- Runs `vercel deploy --prebuilt --prod` (uploads the prebuilt output — no build or image processing happens on Vercel)
 
-Building locally for speed and Astro's image caching.
+Automatic deploys on push to `main` are disabled in `vercel.json` (`git.deploymentEnabled.main: false`), so this script is the only way production gets deployed. This avoids Vercel re-processing all images remotely, which previously caused builds to exceed the 45-minute limit after a long gap between deploys.
