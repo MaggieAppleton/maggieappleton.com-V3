@@ -7,9 +7,10 @@
 // The canvas is a viewport-sized *window* onto the field, not the full field:
 // the stage is ~6,500 CSS px tall, and a canvas that size blows straight past
 // mobile canvas limits (iOS Safari blanks canvases taller than ~8,192 device
-// px) and costs ~40MB of backing store. Instead the canvas is only a bit
-// taller than the viewport, gets repositioned within the stage via a transform
-// each frame, and paints in stage coordinates offset by the window position.
+// px) and costs ~40MB of backing store. Instead a pair of window-sized
+// canvases alternate along the stage as you scroll — see jumpTo for why jumps
+// are double-buffered — each painting in stage coordinates offset by its own
+// window position.
 
 import {
 	computePoppyHomes,
@@ -74,6 +75,21 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 
+	// Second window buffer for jumps (see jumpTo): WebKit commits a canvas's
+	// style position and its freshly painted bitmap in different frames, so
+	// moving+repainting one canvas flashes the old bitmap at the new position
+	// on iOS. Jumps paint the hidden spare instead and reveal it once the
+	// bitmap has certainly committed. cloneNode carries the class and Astro's
+	// scoping attribute, so the stylesheet applies identically.
+	const canvasB = canvas.cloneNode() as HTMLCanvasElement;
+	canvasB.style.visibility = "hidden";
+	canvas.after(canvasB);
+	const ctxB = canvasB.getContext("2d");
+	if (!ctxB) {
+		canvasB.remove();
+		return;
+	}
+
 	const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	// The muted sprite set only exists for the desktop battle-label hover
 	// crossfade — touch devices skip baking it, halving their bake cost.
@@ -107,7 +123,17 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	let hoverBattle: string | null = null;
 	let hoverT = 0; // eases 0→1 toward hoverBattle so grow/mute settle in rather than snap
 	let winH = 0; // CSS px height of the windowed canvas
-	let winY = 0; // window's current offset from the top of the stage (CSS px)
+	let winY = 0; // the visible window's offset from the top of the stage (CSS px)
+	// Which buffer is on screen (owns winY) vs. waiting for the next jump.
+	let front = { canvas, ctx };
+	let back = { canvas: canvasB, ctx: ctxB };
+	// A jump in flight: the back buffer has been painted and positioned, and is
+	// waiting out the reveal delay. The token ties each deferred reveal to the
+	// jump that scheduled it, so a stale chain can't complete a newer jump.
+	let pending: { target: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }; winY: number; token: number } | null =
+		null;
+	let swapToken = 0;
+	let swapRaf = 0;
 
 	function buildSprites() {
 		dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -158,9 +184,17 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		stage!.style.maxWidth = mobile ? "none" : `${params.maxWidth}px`;
 		W = canvas!.clientWidth; // reflects the capped stage width
 		winH = Math.min(H, window.innerHeight + WINDOW_PAD * 2 + WINDOW_SLACK);
-		canvas!.style.height = `${winH}px`;
-		canvas!.width = Math.round(W * dpr);
-		canvas!.height = Math.round(winH * dpr);
+		for (const cv of [canvas!, canvasB]) {
+			cv.style.height = `${winH}px`;
+			cv.width = Math.round(W * dpr);
+			cv.height = Math.round(winH * dpr);
+		}
+		// Resizing wiped both backings — abandon any half-done jump and make sure
+		// the front buffer is the one showing (a pending reveal would swap to a
+		// now-blank canvas).
+		pending = null;
+		front.canvas.style.visibility = "visible";
+		back.canvas.style.visibility = "hidden";
 		// No min(1) clamp → widest month scales up to fill wide canvases too, so the
 		// field always spans (canvas width − edge margins).
 		xScale = (W / 2 - (mobile ? EDGE_MARGIN_MOBILE : EDGE_MARGIN)) / maxHalfWidth(params);
@@ -239,17 +273,17 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		return y >= lo && y <= hi;
 	}
 
-	// Paints the stage band [vTop, vBot] into the canvas window (which must
-	// already be positioned at winY, and must cover the band). All coordinates
+	// Paints the stage band [vTop, vBot] into buffer `g`, which is (or will be)
+	// positioned at stage offset wY and must cover the band. All coordinates
 	// are stage-space; the per-poppy setTransform folds in both dpr and the
-	// -winY window offset.
-	function paint(vTop: number, vBot: number, t: number) {
+	// -wY window offset.
+	function paint(g: CanvasRenderingContext2D, wY: number, vTop: number, vBot: number, t: number) {
 		const cx = W / 2;
 		const amp = (reduce ? 0 : 0.26) + gustEase;
 		const lift = reduce ? 0 : scrollLiftEase * LIFT_PX; // signed: down lifts, up settles
 		const sizeAmp = 0.4 * params.sizeVariance;
-		ctx!.setTransform(dpr, 0, 0, dpr, 0, -winY * dpr);
-		ctx!.clearRect(0, vTop, W, vBot - vTop);
+		g.setTransform(dpr, 0, 0, dpr, 0, -wY * dpr);
+		g.clearRect(0, vTop, W, vBot - vTop);
 		for (let i = 0; i < homes.length; i++) {
 			const p = homes[i];
 			if (p.y < vTop || p.y > vBot) continue;
@@ -285,53 +319,67 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			const cos = rot === 0 ? dpr : Math.cos(rot) * dpr;
 			const sin = rot === 0 ? 0 : Math.sin(rot) * dpr;
 			const tx = (homeX + wind * 7 + driftX) * dpr;
-			const ty = (p.y - poppyLift - winY) * dpr;
+			const ty = (p.y - poppyLift - wY) * dpr;
 			// One setTransform per poppy instead of save/translate/rotate/restore —
 			// the same matrix, without the state-stack churn.
-			ctx!.setTransform(cos, sin, -sin, cos, tx, ty);
+			g.setTransform(cos, sin, -sin, cos, tx, ty);
 			const mutedGroup = p.cause ? mutedSprites.disease : mutedSprites.combat;
 			const mutedSpr = !hl && hoverT > 0.001 ? (mutedGroup[angleIdx[i]] ?? mutedGroup[0]) : undefined;
 			if (mutedSpr) {
 				// Crossfade toward the muted, low-chroma twin as a battle comes into focus.
 				if (hoverT < 0.999) {
-					ctx!.globalAlpha = alpha;
-					ctx!.drawImage(spr, -size / 2, -size / 2, size, size);
+					g.globalAlpha = alpha;
+					g.drawImage(spr, -size / 2, -size / 2, size, size);
 				}
-				ctx!.globalAlpha = alpha * hoverT;
-				ctx!.drawImage(mutedSpr, -size / 2, -size / 2, size, size);
+				g.globalAlpha = alpha * hoverT;
+				g.drawImage(mutedSpr, -size / 2, -size / 2, size, size);
 			} else {
-				ctx!.globalAlpha = alpha;
-				ctx!.drawImage(spr, -size / 2, -size / 2, size, size);
+				g.globalAlpha = alpha;
+				g.drawImage(spr, -size / 2, -size / 2, size, size);
 			}
 		}
-		ctx!.setTransform(1, 0, 0, 1, 0, 0);
-		ctx!.globalAlpha = 1;
+		g.setTransform(1, 0, 0, 1, 0, 0);
+		g.globalAlpha = 1;
 	}
 
-	// Moves the window only when the viewport's paint band has drifted outside
-	// it — re-centred on the viewport, so the slack gives a few hundred px of
-	// scroll before the next jump. Between jumps the transform is untouched
-	// (changing it invalidates the whole canvas layer's raster, which is
-	// exactly what made the old full-height canvas expensive to scroll).
-	// Returns true when it jumped, meaning the whole window needs repainting.
-	function ensureWindow(canvasTop: number): boolean {
-		const vh = window.innerHeight;
-		const bandTop = Math.max(0, -canvasTop - WINDOW_PAD);
-		const bandBot = Math.min(H, -canvasTop + vh + WINDOW_PAD);
-		if (bandTop >= winY && bandBot <= winY + winH) return false;
-		winY = Math.round(Math.max(0, Math.min(H - winH, -canvasTop - (winH - vh) / 2)));
-		// Positioned with `top`, not a transform: a transform would push the canvas
-		// onto the composited-layer path, where some rasterisers stop tracking
-		// canvas dirty rects and re-upload the full window on every painted frame.
-		// A `top` write is a layout pass, but only once per few hundred scrolled px.
-		canvas!.style.top = `${winY}px`;
-		return true;
+	// Moves the window to a new position re-centred on the viewport, by way of
+	// the hidden back buffer: paint it fully at the new offset, position it
+	// (`top`, not a transform — a transform would push the canvas onto the
+	// composited-layer path where rasterisers stop tracking canvas dirty
+	// rects), then reveal it two frames later, hiding the old buffer in the
+	// same commit. WebKit applies a canvas's style position and its freshly
+	// painted bitmap in different frames, so moving+repainting a *visible*
+	// canvas flashes its old bitmap at the new position on iOS — the whole
+	// field displaced for a frame on every jump. The front buffer stays
+	// correct and on screen throughout (everything is stage-anchored), and by
+	// reveal time the back buffer's bitmap has certainly committed.
+	function completeSwap(p: NonNullable<typeof pending>) {
+		p.target.canvas.style.visibility = "visible";
+		front.canvas.style.visibility = "hidden";
+		back = front;
+		front = p.target;
+		winY = p.winY;
+		pending = null;
 	}
 
-	// Paint pass for one frame: reposition the window if needed, then repaint —
-	// the whole window after a jump (its old contents map to the wrong place),
-	// otherwise just the viewport band, mirroring the pre-window renderer's
-	// dirty region.
+	function jumpTo(newWinY: number, t: number) {
+		const target = back;
+		paint(target.ctx, newWinY, newWinY, Math.min(H, newWinY + winH), t);
+		target.canvas.style.top = `${newWinY}px`;
+		const token = ++swapToken;
+		pending = { target, winY: newWinY, token };
+		swapRaf = requestAnimationFrame(() => {
+			swapRaf = requestAnimationFrame(() => {
+				if (disposed || !pending || pending.token !== token) return;
+				completeSwap(pending);
+			});
+		});
+	}
+
+	// Paint pass for one frame: start a window jump if the viewport's band has
+	// drifted outside the current window (the slack gives a few hundred px of
+	// scroll between jumps), then repaint the viewport band of the front
+	// buffer, mirroring the pre-window renderer's dirty region.
 	//
 	// The stage's viewport offset is measured fresh every pass, NOT cached and
 	// derived from scrollY: anything that shifts the page without a scroll event
@@ -342,19 +390,33 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// pre-windowed renderer did on every scroll event.
 	function renderWindow(t: number) {
 		const canvasTop = stage!.getBoundingClientRect().top;
-		const jumped = ensureWindow(canvasTop);
-		if (jumped) {
-			paint(winY, Math.min(H, winY + winH), t);
-			return;
+		const vh = window.innerHeight;
+		const bandTop = Math.max(0, -canvasTop - WINDOW_PAD);
+		const bandBot = Math.min(H, -canvasTop + vh + WINDOW_PAD);
+		// If scrolling has fully outrun the front window it's showing nothing —
+		// the reveal delay is pointless (blank beats a maybe-flash), so promote
+		// the in-flight jump immediately; its bitmap is at least a frame old.
+		if (pending && Math.min(winY + winH, bandBot) <= Math.max(winY, bandTop)) completeSwap(pending);
+		if (!pending && !(bandTop >= winY && bandBot <= winY + winH)) {
+			// Bias the new window centre in the scroll direction (scrollLift is the
+			// signed scroll-speed signal, ±0.9 at full speed) so it lands where the
+			// viewport is heading — by the time the swap completes, a fast scroll
+			// has moved on from where the jump was computed. Capped below the
+			// window's slack margin minus WINDOW_PAD (394−94) so the biased window
+			// still covers the viewport band it was jumped for.
+			const lead = Math.max(-250, Math.min(250, scrollLift * 400));
+			jumpTo(Math.round(Math.max(0, Math.min(H - winH, -canvasTop - (winH - vh) / 2 + lead))), t);
 		}
-		const vTop = Math.max(winY, -canvasTop - WINDOW_PAD);
-		const vBot = Math.min(winY + winH, H, -canvasTop + window.innerHeight + WINDOW_PAD);
-		if (vBot > vTop) paint(vTop, vBot, t);
+		// Keep animating the on-screen buffer while any jump is still in flight —
+		// clamped to its window, which still covers the viewport (jumps trigger
+		// with WINDOW_PAD of margin to spare).
+		const vTop = Math.max(winY, bandTop);
+		const vBot = Math.min(winY + winH, bandBot);
+		if (vBot > vTop) paint(front.ctx, winY, vTop, vBot, t);
 	}
 
 	function renderStatic() {
-		ensureWindow(stage!.getBoundingClientRect().top);
-		paint(winY, Math.min(H, winY + winH), 0);
+		renderWindow(0);
 	}
 
 	// Adaptive degradation for weak devices, keyed off real frame cadence (which
@@ -578,6 +640,8 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		disposed = true; // block any stray bake after teardown (e.g. an old instance's observer callback across astro:page-load)
 		if (raf) cancelAnimationFrame(raf);
 		if (staticRaf) cancelAnimationFrame(staticRaf);
+		if (swapRaf) cancelAnimationFrame(swapRaf);
+		canvasB.remove();
 		if (window.cancelIdleCallback) window.cancelIdleCallback(idleId);
 		else window.clearTimeout(idleId);
 		observer?.disconnect();
