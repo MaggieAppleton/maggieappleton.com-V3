@@ -16,7 +16,7 @@ export const EDGE_INSET = 24; // px inset from page edges (spec)
 // Below this width the field switches to its phone layout (see MOBILE_* below
 // and the matching @media rules — keep this in sync with those).
 export const MOBILE_BREAKPOINT = 640;
-export const MOBILE_THIN = 0.8; // fraction of poppies kept on mobile, for a less clustered read
+export const MOBILE_THIN = 0.6; // fraction of poppies kept on mobile, for a less clustered read
 // Sprite bake cell (CSS px) on phones. Poppies draw at ~40 CSS px there, so a
 // 72px cell still downsamples ~1.8x for smooth edges while making every
 // drawImage sample ~3x fewer pixels than the desktop 120px cell.
