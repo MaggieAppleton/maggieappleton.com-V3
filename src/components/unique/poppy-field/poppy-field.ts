@@ -257,7 +257,6 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		const amp = (reduce ? 0 : 0.26) + gustEase;
 		const lift = reduce ? 0 : scrollLiftEase * LIFT_PX; // signed: down lifts, up settles
 		const sizeAmp = 0.4 * params.sizeVariance;
-		if (!reduce) hoverT += ((hoverBattle ? 1 : 0) - hoverT) * 0.12; // ease toward target, no snap
 		ctx!.setTransform(dpr, 0, 0, dpr, 0, -winY * dpr);
 		ctx!.clearRect(0, vTop, W, vBot - vTop);
 		for (let i = 0; i < homes.length; i++) {
@@ -286,11 +285,12 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 			const poppyLift = lift * (0.5 + p.rScale * 0.9);
 			const driftX = Math.sin(p.phase * 1.6) * lift * 0.3;
 			// gentle stem sway only — a full rotation would spin the baked top-light.
-			// Quality level ≥1 drops the tilt entirely: an axis-aligned drawImage
-			// takes a fast blit path that a rotated one can't, and it's the single
-			// biggest per-frame raster cost (3-4x in profiling). The translation
-			// part of the sway remains, so the field still moves.
-			const rot = quality >= 1 ? 0 : wind * 0.4;
+			// tiltEase fades the tilt out at quality level ≥1 rather than snapping —
+			// an axis-aligned drawImage takes a fast blit path that a rotated one
+			// can't (the single biggest per-frame raster cost, 3-4x in profiling),
+			// but a whole-field pose snap reads as a flicker, so the transition has
+			// to be gradual. The translation part of the sway always remains.
+			const rot = tiltEase < 0.01 ? 0 : wind * 0.4 * tiltEase;
 			const cos = rot === 0 ? dpr : Math.cos(rot) * dpr;
 			const sin = rot === 0 ? 0 : Math.sin(rot) * dpr;
 			const tx = (homeX + wind * 7 + driftX) * dpr;
@@ -366,33 +366,55 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// biggest frame cost); 2/3 = also paint every 2nd/3rd frame. Poppies are
 	// painted at stage coordinates, so skipped frames only slow the wind —
 	// scroll motion stays native-smooth via the browser's compositor.
+	//
+	// Transitions must be invisible: the tilt fades via tiltEase rather than
+	// snapping (a whole-field pose snap reads as flicker), demotion needs
+	// *sustained* slow frames (a one-off spike from a window jump or GC doesn't
+	// count), and after any level change the ladder holds still for a while so
+	// scroll-burst load can't make it oscillate.
 	let quality = 0;
+	let tiltEase = 1; // 1 = full sway tilt, eases toward 0 at quality ≥ 1
 	let deltaEMA = 1000 / 60;
+	let slowFrames = 0;
+	let lastChangeT = 0;
 	let lastFrameT = 0;
 	let frameCount = 0;
 	const PAINT_EVERY = [1, 1, 2, 3];
 
 	function frame(t: number) {
+		// Frame-time factor: 1 at 60Hz, 0.5 at 120Hz. All easings/decays are
+		// exponentiated by it so wind physics behave identically on ProMotion
+		// phones and 60Hz screens instead of running twice as fast/snappy.
+		let k = 1;
 		if (lastFrameT) {
 			const delta = Math.min(t - lastFrameT, 250); // clamp tab-switch gaps
+			k = Math.max(0.25, Math.min(4, delta / (1000 / 60)));
 			deltaEMA += (delta - deltaEMA) * 0.08;
-			// Demote fast (a janky field is worse than a becalmed one), promote
-			// slowly and only from a comfortable cadence, so it doesn't oscillate.
-			if (deltaEMA > 40 && quality < 3) {
+			// Catastrophic frames count 4x so a device that can't manage even a few
+			// fps escapes to a cheaper level in a handful of frames, while ordinary
+			// jank still needs to be sustained before it demotes anything.
+			slowFrames = delta > 40 ? slowFrames + (delta > 150 ? 4 : 1) : Math.max(0, slowFrames - 2);
+			if (slowFrames > 12 && quality < 3 && t - lastChangeT > 1500) {
 				quality++;
-				deltaEMA = 1000 / 60; // re-settle at the new level before judging again
-			} else if (deltaEMA < 20 && quality > 0 && frameCount % 240 === 0) {
+				slowFrames = 0;
+				lastChangeT = t;
+			} else if (deltaEMA < 20 && quality > 0 && t - lastChangeT > 8000) {
 				quality--;
+				lastChangeT = t;
 			}
 		}
 		lastFrameT = t;
+		const decay = Math.pow(0.95, k);
+		const easeIn = 1 - decay; // == 0.05 at 60Hz, rate-matched elsewhere
 		// Eased rather than read directly, giving the scroll-driven sway/lift its lag.
-		gustEase += (gust - gustEase) * 0.05;
-		scrollLiftEase += (scrollLift - scrollLiftEase) * 0.05;
+		gustEase += (gust - gustEase) * easeIn;
+		scrollLiftEase += (scrollLift - scrollLiftEase) * easeIn;
+		hoverT += ((hoverBattle ? 1 : 0) - hoverT) * (1 - Math.pow(0.88, k));
+		tiltEase += ((quality >= 1 ? 0 : 1) - tiltEase) * (1 - Math.pow(0.96, k));
 		frameCount++;
 		if (frameCount % PAINT_EVERY[quality] === 0) renderWindow(t);
-		gust *= 0.95;
-		scrollLift *= 0.95;
+		gust *= decay;
+		scrollLift *= decay;
 		raf = requestAnimationFrame(frame);
 	}
 
@@ -424,6 +446,9 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	// On the stage rather than the canvas: the windowed canvas only covers part
 	// of the stage, and the stage's box is what the tip is positioned within.
 	const onStagePointerMove = (e: PointerEvent) => {
+		// Touch "moves" are scroll gestures — showing the month readout under a
+		// scrolling thumb just flashes a box mid-scroll.
+		if (e.pointerType === "touch") return;
 		const r = stage.getBoundingClientRect();
 		const x = e.clientX - r.left;
 		const y = e.clientY - r.top;
@@ -457,13 +482,19 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 		onEnter: () => void;
 		onLeave: () => void;
 	}> = [];
-	root.querySelectorAll<HTMLElement>("[data-battle]").forEach((el) => {
-		const onEnter = () => setHoverBattle(el.dataset.battle ?? null);
-		const onLeave = () => setHoverBattle(null);
-		el.addEventListener("pointerenter", onEnter);
-		el.addEventListener("pointerleave", onLeave);
-		battleLabelHandlers.push({ el, onEnter, onLeave });
-	});
+	// Hover-capable pointers only: on touch screens, a scroll that happens to
+	// start on a battle label fires pointerenter → the whole field pulses
+	// (battle poppies grow, the rest shrink) mid-scroll, reading as flicker.
+	// There's no meaningful hover on touch anyway (and no muted sprite set).
+	if (hoverCapable) {
+		root.querySelectorAll<HTMLElement>("[data-battle]").forEach((el) => {
+			const onEnter = () => setHoverBattle(el.dataset.battle ?? null);
+			const onLeave = () => setHoverBattle(null);
+			el.addEventListener("pointerenter", onEnter);
+			el.addEventListener("pointerleave", onLeave);
+			battleLabelHandlers.push({ el, onEnter, onLeave });
+		});
+	}
 
 	let raf = 0;
 	let resizeTimer = 0;
