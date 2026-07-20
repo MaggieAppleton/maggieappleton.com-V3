@@ -325,6 +325,12 @@ const sortedPatterns = patterns
 		margin-left: -1.4rem;
 	}
 
+	@media (max-width: 576px) {
+		.patterns-grid {
+			margin-left: calc(-1 * var(--space-xs));
+		}
+	}
+
 	.library-section {
 		grid-area: library;
 	}
@@ -332,13 +338,13 @@ const sortedPatterns = patterns
 	.essays-grid,
 	.books-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 		grid-gap: var(--space-2xs);
 	}
 
 	.books-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
 		grid-gap: var(--space-2xs);
 		margin: 0;
 	}

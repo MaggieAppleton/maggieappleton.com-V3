@@ -34,6 +34,8 @@
 <style>
 	.box-container {
 		margin: 2em;
+		container-type: inline-size;
+		overflow-x: clip;
 	}
 
 	.animated-box {
@@ -49,7 +51,7 @@
 	}
 
 	.animated-box.slide-in {
-		transform: translateX(400px);
+		transform: translateX(min(400px, calc(100cqw - 120px)));
 		opacity: 1;
 	}
 </style>

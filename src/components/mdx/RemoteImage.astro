@@ -32,7 +32,7 @@ const widthWithUnit = typeof width === "number" ? `${width}px` : width;
 >
 	<div
 		class:list={["image-wrapper", { "image-frame": framed }]}
-		style={`width: ${widthWithUnit}`}
+		style={`width: 100%; max-width: ${widthWithUnit}`}
 	>
 		<img src={src} alt={alt} loading="lazy" />
 	</div>
