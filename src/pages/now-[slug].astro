@@ -176,6 +176,12 @@ const components = {
 		transform: translate3d(3px, 0, 0);
 	}
 
+	@media (max-width: 1064px) {
+		.header-section {
+			width: calc(100% - 2 * var(--space-m));
+		}
+	}
+
 	@media (max-width: 768px) {
 		.now-layout {
 			grid-template-columns: 1fr;
@@ -190,6 +196,7 @@ const components = {
 		}
 
 		.header-section {
+			width: 100%;
 			padding: 0 var(--space-xs);
 		}
 	}
