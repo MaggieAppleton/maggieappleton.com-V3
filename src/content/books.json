@@ -1,5 +1,27 @@
 [
   {
+    "id": 66,
+    "title": "The Score",
+    "subtitle": "How to Stop Playing Somebody Else's Game",
+    "author": "C. Thi Nguyen",
+    "cover": "../images/books/thescore.webp",
+    "link": "https://www.goodreads.com/en/book/show/231363343-the-score"
+  },
+  {
+    "id": 65,
+    "title": "In Memoriam",
+    "author": "Alice Winn",
+    "cover": "../images/books/inmemoriam.webp",
+    "link": "https://www.goodreads.com/book/show/59948520-in-memoriam"
+  },
+  {
+    "id": 64,
+    "title": "Yesteryear",
+    "author": "Caro Claire Burke",
+    "cover": "../images/books/yesteryear.webp",
+    "link": "https://www.goodreads.com/book/show/238226942-yesteryear"
+  },
+  {
     "id": 63,
     "title": "Soldiers and Kings: Survival and Hope in the World of Human Smuggling",
     "author": "Jason De Leon",
