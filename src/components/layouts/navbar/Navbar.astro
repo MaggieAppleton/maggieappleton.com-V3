@@ -19,8 +19,8 @@ import { Icon } from "astro-icon/components";
 			aria-expanded="false"
 			aria-controls="mobile-menu"
 		>
-			<Icon name="heroicons:bars-3" size={28} class="menu-icon" />
-			<Icon name="heroicons:x-mark" size={28} class="close-icon" />
+			<Icon name="heroicons:bars-3" size={28} class="menu-icon" aria-hidden="true" />
+			<Icon name="heroicons:x-mark" size={28} class="close-icon" aria-hidden="true" />
 		</button>
 	</div>
 </nav>
@@ -124,6 +124,7 @@ import { Icon } from "astro-icon/components";
 			const isOpen = mobileMenu.classList.contains("open");
 			newMenuToggle.setAttribute("aria-expanded", String(isOpen));
 			mobileMenu.setAttribute("aria-hidden", String(!isOpen));
+			mobileMenu.inert = !isOpen;
 
 			if (isOpen) {
 				document.body.style.overflow = "hidden";

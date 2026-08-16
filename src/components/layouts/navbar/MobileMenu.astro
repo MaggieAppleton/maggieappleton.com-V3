@@ -2,7 +2,7 @@
 import { Icon } from "astro-icon/components";
 ---
 
-<div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+<div id="mobile-menu" class="mobile-menu" aria-hidden="true" inert>
 	<nav class="mobile-nav">
 		<a href="/garden" class="nav-link">The Garden</a>
 		<a href="/essays" class="nav-link">Essays</a>
@@ -80,6 +80,8 @@ import { Icon } from "astro-icon/components";
 		// Instant close for non-click navigation (back button, etc.)
 		const closeMobileMenu = () => {
 			mobileMenu.classList.remove("open");
+			mobileMenu.setAttribute("aria-hidden", "true");
+			mobileMenu.inert = true;
 			document.body.style.overflow = "auto";
 		};
 
@@ -87,8 +89,7 @@ import { Icon } from "astro-icon/components";
 			const link = e.currentTarget as HTMLAnchorElement;
 			e.preventDefault();
 
-			mobileMenu.classList.remove("open");
-			document.body.style.overflow = "auto";
+			closeMobileMenu();
 
 			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 				navigate(link.href);

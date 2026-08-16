@@ -10,13 +10,21 @@ const { headings } = Astro.props;
 ---
 
 <div class="desktop-container">
-	<button class="title" id="desktop-toc-header" aria-expanded="true" aria-controls="desktop-toc-content">
-		<svg width="8" height="8" aria-hidden="true">
-			<circle r="4" cx="4" cy="4" fill="var(--color-sea-blue)"></circle>
-		</svg>
-		<h4>Table of Contents</h4>
-		<Icon name="heroicons:chevron-up" size={18} class="arrow-icon" />
-	</button>
+	<h4>
+		<button
+			class="title"
+			id="desktop-toc-header"
+			type="button"
+			aria-expanded="true"
+			aria-controls="desktop-toc-content"
+		>
+			<svg width="8" height="8" aria-hidden="true">
+				<circle r="4" cx="4" cy="4" fill="var(--color-sea-blue)"></circle>
+			</svg>
+			<span class="title-text">Table of Contents</span>
+			<Icon name="heroicons:chevron-up" size={18} class="arrow-icon" aria-hidden="true" />
+		</button>
+	</h4>
 
 	<nav class="toc" id="desktop-toc-content">
 		<ul>
@@ -36,10 +44,18 @@ const { headings } = Astro.props;
 </div>
 
 <div class="mobile-container">
-	<button class="collapse-header" aria-expanded="false" aria-controls="mobile-toc-content">
-		<Icon name="heroicons:chevron-right" size={18} class="arrow-icon" aria-hidden="true" />
-		<h4>Table of Contents</h4>
-	</button>
+	<h4>
+		<button
+			class="collapse-header"
+			id="mobile-toc-header"
+			type="button"
+			aria-expanded="false"
+			aria-controls="mobile-toc-content"
+		>
+			<Icon name="heroicons:chevron-right" size={18} class="arrow-icon" aria-hidden="true" />
+			<span class="collapse-header-text">Table of Contents</span>
+		</button>
+	</h4>
 	<div class="collapse-content" id="mobile-toc-content">
 		<nav class="toc">
 			<ul>
@@ -91,9 +107,16 @@ const { headings } = Astro.props;
 		border: none;
 		width: 100%;
 		text-align: left;
+		font: inherit;
+		color: inherit;
 	}
 
-	.desktop-container .title h4 {
+	.desktop-container > h4,
+	.mobile-container > h4 {
+		margin: 0;
+	}
+
+	.desktop-container .title-text {
 		margin: 0;
 		font-size: 0.96rem;
 		color: var(--color-gray-800);
@@ -141,6 +164,8 @@ const { headings } = Astro.props;
 		border-right: none;
 		width: 100%;
 		text-align: left;
+		font: inherit;
+		color: inherit;
 	}
 
 	.collapse-header .arrow-icon {
@@ -148,7 +173,7 @@ const { headings } = Astro.props;
 		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
 	}
 
-	.collapse-header h4 {
+	.collapse-header-text {
 		display: inline-block;
 		margin: 0;
 		font-size: 0.96rem;
@@ -157,7 +182,7 @@ const { headings } = Astro.props;
 		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
 	}
 
-	.collapse-header:hover h4 {
+	.collapse-header:hover .collapse-header-text {
 		color: var(--color-medium-sea-blue);
 	}
 
