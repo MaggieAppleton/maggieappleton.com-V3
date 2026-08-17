@@ -22,6 +22,11 @@ import PatternIcon from "../icons/PatternIcon.astro";
 </a>
 
 <style>
+	a {
+		display: block;
+		border-radius: var(--border-radius-base);
+	}
+
 	.metadata-container {
 		display: flex;
 		flex-direction: row;
@@ -80,23 +85,23 @@ import PatternIcon from "../icons/PatternIcon.astro";
 		flex-shrink: 0;
 	}
 
-	.pattern-card:hover {
+	a:is(:hover, :focus) .pattern-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	.pattern-card:hover h3 {
+	a:is(:hover, :focus) .pattern-card h3 {
 		color: var(--color-crimson);
 	}
 
-	.pattern-card:hover :global(.left-leaf) {
+	a:is(:hover, :focus) .pattern-card :global(.left-leaf) {
 		transform: translateX(29px);
 		transition: transform 0.3s ease-in-out;
 	}
 
-	.pattern-card:hover :global(.right-leaf) {
+	a:is(:hover, :focus) .pattern-card :global(.right-leaf) {
 		transform: translateX(-29px);
 		transition: transform 0.3s ease-in-out;
 	}

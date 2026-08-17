@@ -263,7 +263,7 @@ const TYPES = [
 	}
 	.filter-trigger:focus-visible {
 		outline: 2px solid var(--color-sea-blue);
-		outline-offset: 2px;
+		outline-offset: 4px;
 	}
 	.filter-popover[data-active="true"] > .filter-trigger {
 		color: var(--color-black);
@@ -353,7 +353,7 @@ const TYPES = [
 	}
 	.filter-option:focus-visible {
 		outline: 2px solid var(--color-sea-blue);
-		outline-offset: -2px;
+		outline-offset: 4px;
 	}
 	.filter-option[data-disabled="true"] {
 		opacity: 0.35;
@@ -512,8 +512,7 @@ const TYPES = [
 		scrollbar-width: none;
 		-webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 		mask-image: linear-gradient(to right, black 85%, transparent 100%);
-		padding-bottom: 2px;
-		padding-right: var(--space-xl);
+		padding: 6px calc(var(--space-xl) + 6px) 6px 6px;
 	}
 
 	.topics-list.fade-left {

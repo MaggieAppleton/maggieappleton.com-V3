@@ -50,7 +50,7 @@ const sortedPatterns = patterns
 		<Spacer />
 
 		<section>
-			<a href="/garden">
+			<a href="/garden" class="garden-link">
 				<h2 class="garden-title">The Garden</h2>
 			</a>
 			<div class="subheader">
@@ -101,7 +101,7 @@ const sortedPatterns = patterns
 				</div>
 				{
 					sortedNotes.slice(0, 12).map((note) => (
-						<a href={`/${note.id}`}>
+						<a href={`/${note.id}`} class="index-note-link">
 							<div class="index-note-card">
 								{note.data.growthStage && (
 									<div class="icon">
@@ -201,6 +201,11 @@ const sortedPatterns = patterns
 		transition: all 0.3s ease-in-out;
 	}
 
+	.index-note-link {
+		display: block;
+		border-radius: var(--border-radius-base);
+	}
+
 	.index-note-card .icon {
 		position: relative;
 		top: 5px;
@@ -218,12 +223,12 @@ const sortedPatterns = patterns
 		transition: all 0.3s ease-in-out;
 	}
 
-	.index-note-card:hover {
+	.index-note-link:is(:hover, :focus) .index-note-card {
 		border-bottom: 1px solid var(--color-sea-blue);
 		transform: scale3d(1.02, 1.02, 1.02);
 	}
 
-	.index-note-card:hover h3 {
+	.index-note-link:is(:hover, :focus) .index-note-card h3 {
 		color: var(--color-crimson);
 	}
 
@@ -280,11 +285,11 @@ const sortedPatterns = patterns
 		margin-left: var(--space-3xs);
 	}
 
-	.header-link:hover .section-header {
+	.header-link:is(:hover, :focus) .section-header {
 		color: var(--color-bright-crimson);
 	}
 
-	.header-link:hover .section-header [data-icon] {
+	.header-link:is(:hover, :focus) .section-header [data-icon] {
 		margin-left: var(--space-2xs);
 		color: var(--color-sea-blue);
 	}
@@ -311,6 +316,15 @@ const sortedPatterns = patterns
 
 	.company-name {
 		margin: 0 0.6rem 0 0.3rem;
+	}
+
+	.garden-link {
+		display: inline-block;
+	}
+
+	.header-link {
+		display: inline-block;
+		border-radius: 2px;
 	}
 
 	.essays-section {

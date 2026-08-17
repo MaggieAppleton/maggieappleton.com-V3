@@ -71,7 +71,6 @@ const hoverColor = isExternal
 		cursor: pointer;
 		position: relative;
 		white-space: normal;
-		outline: none;
 		text-decoration: none;
 		word-break: break-word;
 		overflow-wrap: break-word;
@@ -80,7 +79,8 @@ const hoverColor = isExternal
 	}
 
 	.link:focus {
-		outline: 2px solid darkblue;
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 4px;
 		border-radius: 2px;
 	}
 

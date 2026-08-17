@@ -40,6 +40,11 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 </a>
 
 <style>
+	a {
+		display: block;
+		border-radius: var(--border-radius-base);
+	}
+
 	.inner-text {
 		display: flex;
 		flex-direction: column;
@@ -96,15 +101,15 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		will-change: transform, width;
 	}
 
-	.podcast-card:hover {
+	a:is(:hover, :focus) .podcast-card {
 		transform: scale3d(1.01, 1.01, 1.01);
 	}
 
-	.podcast-card:hover h3 {
+	a:is(:hover, :focus) .podcast-card h3 {
 		color: var(--color-crimson);
 	}
 
-	.podcast-card:hover img {
+	a:is(:hover, :focus) .podcast-card img {
 		opacity: 0.05;
 	}
 

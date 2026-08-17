@@ -34,6 +34,19 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 </a>
 
 <style>
+	a:focus {
+		border-radius: var(--border-radius-base);
+	}
+
+	a:focus .essay-card {
+		box-shadow: var(--box-shadow-md);
+		transform: scale3d(1.02, 1.02, 1.02);
+	}
+
+	a:focus .essay-card h3 {
+		color: var(--color-crimson);
+	}
+
 	.image-wrapper {
 		position: relative;
 		width: 100%;

@@ -212,12 +212,13 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		color: var(--color-gray-800);
 	}
 
-	.hover-link:hover span {
+	.hover-link:is(:hover, :focus) span {
 		color: var(--color-crimson);
 	}
 
 	.hover-link:focus {
-		outline: 2px solid darkblue;
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 4px;
 		border-radius: 2px;
 	}
 
@@ -248,7 +249,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		);
 	}
 
-	.hover-link:hover::before {
+	.hover-link:is(:hover, :focus)::before {
 		transform: translate3d(0, 2px, 0) scale3d(1, 2, 1);
 		clip-path: polygon(
 			0% 0%,
@@ -285,6 +286,11 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 	.popover-button:hover {
 		cursor: pointer;
 		background-color: var(--color-gray-100);
+	}
+
+	.popover-button:focus {
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 4px;
 	}
 
 	.popover-button:hover .chevron-icon {

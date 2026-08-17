@@ -28,6 +28,11 @@ function formattedDate(date: Date) {
 </a>
 
 <style>
+	a {
+		display: block;
+		border-radius: var(--border-radius-base);
+	}
+
 	.image-wrapper {
 		display: grid;
 		place-content: center;
@@ -89,15 +94,15 @@ function formattedDate(date: Date) {
 		margin-bottom: 0 !important;
 	}
 
-	.project-card:hover {
+	a:is(:hover, :focus) .project-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 	}
 
-	.project-card:hover h3 {
+	a:is(:hover, :focus) .project-card h3 {
 		color: var(--color-crimson);
 	}
 
-	.project-card:hover > div:first-child {
+	a:is(:hover, :focus) .project-card > div:first-child {
 		box-shadow: var(--box-shadow-md);
 	}
 </style>

@@ -497,6 +497,12 @@ a {
   color: var(--color-crimson);
 }
 
+/* A consistent, high-contrast focus treatment for every interactive element. */
+:focus {
+  outline: 2px solid var(--color-sea-blue);
+  outline-offset: 4px;
+}
+
 code {
   background: var(--color-cream);
   padding: var(--space-2xs) var(--space-xs);
