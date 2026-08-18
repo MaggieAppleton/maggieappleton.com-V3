@@ -4,6 +4,7 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import icon from "astro-icon";
 import { remarkWikiLink } from "./src/plugins/remark-wiki-link";
+import { remarkLongBlockquote } from "./src/plugins/remark-long-blockquote";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
   },
   integrations: [
     mdx({
-      remarkPlugins: [remarkWikiLink],
+      remarkPlugins: [remarkWikiLink, remarkLongBlockquote],
       shikiConfig: {
         theme: "night-owl",
         wrap: true,

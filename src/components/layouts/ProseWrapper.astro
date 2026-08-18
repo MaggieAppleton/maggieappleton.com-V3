@@ -135,6 +135,14 @@
 		display: inline-block;
 	}
 
+	/* Long excerpts get a smaller, wider treatment so they don't turn into
+	   a tall column of oversized text. See remarkLongBlockquote. */
+	.prose-wrapper :global(blockquote.long-quote > p) {
+		max-width: 60ch;
+		font-size: var(--font-size-md);
+		line-height: var(--leading-looser);
+	}
+
 	.prose-wrapper :global(blockquote::before),
 	.prose-wrapper :global(blockquote::after) {
 		content: "";
