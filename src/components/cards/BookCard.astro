@@ -119,21 +119,21 @@ import { Image } from "astro:assets";
 		margin: var(--space-2xs) 0 var(--space-3xs) 0;
 	}
 
-	a:is(:hover, :focus) .book-card img {
+	a:is(:hover, :focus-visible) .book-card img {
 		box-shadow: var(--box-shadow-md);
 		transform: scale3d(1.02, 1.02, 1.02);
 		opacity: 0.2;
 	}
 
-	a:is(:hover, :focus) .book-card p {
+	a:is(:hover, :focus-visible) .book-card p {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus) .book-card div {
+	a:is(:hover, :focus-visible) .book-card div {
 		transform: translateY(4px);
 	}
 
-	a:is(:hover, :focus) .book-card .external-hover-link {
+	a:is(:hover, :focus-visible) .book-card .external-hover-link {
 		opacity: 1;
 	}
 </style>

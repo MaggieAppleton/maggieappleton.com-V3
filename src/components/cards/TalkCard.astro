@@ -143,14 +143,14 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		margin-bottom: 0.5rem;
 	}
 
-	a:is(:hover, :focus) .talk-card {
+	a:is(:hover, :focus-visible) .talk-card {
 		transform: scale3d(1.01, 1.01, 1.01);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-md);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus) .talk-card h3 {
+	a:is(:hover, :focus-visible) .talk-card h3 {
 		color: var(--color-crimson);
 	}
 </style>

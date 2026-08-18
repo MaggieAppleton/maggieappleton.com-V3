@@ -519,8 +519,9 @@ a {
   color: var(--color-crimson);
 }
 
-/* A consistent, high-contrast focus treatment for every interactive element. */
-:focus {
+/* A consistent, high-contrast focus treatment for every interactive element.
+   :focus-visible so it only shows for keyboard navigation, not mouse clicks. */
+:focus-visible {
   outline: 2px solid var(--color-sea-blue);
   outline-offset: 4px;
 }

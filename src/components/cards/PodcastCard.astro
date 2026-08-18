@@ -101,15 +101,15 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		will-change: transform, width;
 	}
 
-	a:is(:hover, :focus) .podcast-card {
+	a:is(:hover, :focus-visible) .podcast-card {
 		transform: scale3d(1.01, 1.01, 1.01);
 	}
 
-	a:is(:hover, :focus) .podcast-card h3 {
+	a:is(:hover, :focus-visible) .podcast-card h3 {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus) .podcast-card img {
+	a:is(:hover, :focus-visible) .podcast-card img {
 		opacity: 0.05;
 	}
 

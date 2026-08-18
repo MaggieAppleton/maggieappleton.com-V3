@@ -24,7 +24,7 @@ const { href } = Astro.props;
 		padding-bottom: 0.25rem;
 	}
 
-	.styled-link:focus {
+	.styled-link:focus-visible {
 		outline: 2px solid var(--color-sea-blue);
 		outline-offset: 4px;
 		border-radius: 2px;
@@ -57,7 +57,7 @@ const { href } = Astro.props;
 		);
 	}
 
-	.styled-link:is(:hover, :focus)::before {
+	.styled-link:is(:hover, :focus-visible)::before {
 		transform: translate3d(0, 2px, 0) scale3d(1, 2, 1);
 		clip-path: polygon(
 			0% 0%,
@@ -79,7 +79,7 @@ const { href } = Astro.props;
 		color: var(--color-bright-crimson);
 	}
 
-	.styled-link:is(:hover, :focus) span {
+	.styled-link:is(:hover, :focus-visible) span {
 		transform: translate3d(0, -2px, 0);
 		color: var(--color-crimson);
 	}

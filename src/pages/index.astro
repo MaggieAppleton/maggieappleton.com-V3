@@ -223,12 +223,12 @@ const sortedPatterns = patterns
 		transition: all 0.3s ease-in-out;
 	}
 
-	.index-note-link:is(:hover, :focus) .index-note-card {
+	.index-note-link:is(:hover, :focus-visible) .index-note-card {
 		border-bottom: 1px solid var(--color-sea-blue);
 		transform: scale3d(1.02, 1.02, 1.02);
 	}
 
-	.index-note-link:is(:hover, :focus) .index-note-card h3 {
+	.index-note-link:is(:hover, :focus-visible) .index-note-card h3 {
 		color: var(--color-crimson);
 	}
 
@@ -285,11 +285,11 @@ const sortedPatterns = patterns
 		margin-left: var(--space-3xs);
 	}
 
-	.header-link:is(:hover, :focus) .section-header {
+	.header-link:is(:hover, :focus-visible) .section-header {
 		color: var(--color-bright-crimson);
 	}
 
-	.header-link:is(:hover, :focus) .section-header [data-icon] {
+	.header-link:is(:hover, :focus-visible) .section-header [data-icon] {
 		margin-left: var(--space-2xs);
 		color: var(--color-sea-blue);
 	}
