@@ -21,6 +21,10 @@
 		margin-bottom: var(--space-m);
 	}
 
+	.prose-wrapper :global(p:last-child:not(blockquote p)) {
+		margin-bottom: 0;
+	}
+
 	@media (max-width: 767px) {
 		.prose-wrapper > :global(p) {
 			line-height: var(--leading-loose);
@@ -138,9 +142,9 @@
 	/* Long excerpts get a smaller, wider treatment so they don't turn into
 	   a tall column of oversized text. See remarkLongBlockquote. */
 	.prose-wrapper :global(blockquote.long-quote > p) {
-		max-width: 60ch;
+		max-width: 40ch;
 		font-size: var(--font-size-md);
-		line-height: var(--leading-looser);
+		line-height: 150%;
 	}
 
 	.prose-wrapper :global(blockquote::before),
