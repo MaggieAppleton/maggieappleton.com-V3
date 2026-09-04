@@ -1,0 +1,85 @@
+---
+import { Picture } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+	image: ImageMetadata;
+	href: string;
+	label: string;
+}
+
+const { image, href, label } = Astro.props;
+---
+
+<a class="frame-link" href={href} target="_blank" rel="noreferrer" aria-label={label}>
+	<Picture
+		src={image}
+		alt=""
+		width={540}
+		formats={["avif", "webp", "jpg"]}
+		sizes="(max-width: 700px) 100vw, 50vw"
+	/>
+	<span class="play-button" aria-hidden="true">
+		<svg viewBox="0 0 24 24" role="presentation"><path d="M8 5.5v13l10-6.5z" /></svg>
+	</span>
+</a>
+
+<style>
+	:global(.instagram-frame-grid) {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-xs);
+		margin: var(--space-m) auto;
+	}
+
+	.frame-link {
+		position: relative;
+		display: block;
+		overflow: hidden;
+		border-radius: var(--border-radius-sm);
+	}
+
+	.frame-link :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.play-button {
+		position: absolute;
+		inset: 50% auto auto 50%;
+		display: grid;
+		width: 3.5rem;
+		height: 3.5rem;
+		place-items: center;
+		border-radius: 50%;
+		background: rgb(255 255 255 / 0.94);
+		color: var(--color-black);
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.88);
+		transition: opacity 160ms ease, transform 160ms ease;
+	}
+
+	.play-button svg {
+		width: 1.5rem;
+		margin-left: 0.15rem;
+		fill: currentColor;
+	}
+
+	.frame-link:hover .play-button,
+	.frame-link:focus-visible .play-button {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	.frame-link:focus-visible {
+		outline: 3px solid var(--color-bright-crimson);
+		outline-offset: 3px;
+	}
+
+	@media (max-width: 700px) {
+		:global(.instagram-frame-grid) {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
