@@ -24,5 +24,6 @@ pnpm-debug.log*
 .vercel
 .letta
 .cursor
+.claude/worktrees/
 .vscode
 .env*.local
