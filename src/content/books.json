@@ -1,11 +1,24 @@
 [
   {
+    "id": 68,
+    "title": "Rain: A Natural and Cultural History",
+    "author": "Cynthia Barnett",
+    "cover": "../images/books/rain.webp",
+    "link": "https://www.google.co.uk/books/edition/Rain/hjDTCwAAQBAJ"
+  },
+  {
+    "id": 67,
+    "title": "Age of Ambition: Chasing Fortune, Truth, and Faith in the New China",
+    "author": "Evan Osnos",
+    "cover": "../images/books/ambition.jpg",
+    "link": "https://www.google.co.uk/books/edition/Age_of_Ambition/8DPvAgAAQBAJ"
+  },
+  {
     "id": 66,
-    "title": "The Score",
-    "subtitle": "How to Stop Playing Somebody Else's Game",
-    "author": "C. Thi Nguyen",
-    "cover": "../images/books/thescore.webp",
-    "link": "https://www.goodreads.com/en/book/show/231363343-the-score"
+    "title": "Cue the Sun! The Invention of Reality TV",
+    "author": "Emily Nussbaum",
+    "cover": "../images/books/cue.jpg",
+    "link": "https://www.google.co.uk/books/edition/Cue_the_Sun/GObnEAAAQBAJ"
   },
   {
     "id": 65,
