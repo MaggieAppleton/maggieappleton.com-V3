@@ -1,0 +1,992 @@
+---
+// Highlighter effect experiments — 10 approaches to realistic highlighter marks
+// Standalone lab page, not linked from anywhere.
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Highlighter Experiments</title>
+		<style is:global>
+			@font-face {
+				font-family: "Canela Text";
+				src: url("/fonts/CanelaText-Light.woff2") format("woff2");
+				font-weight: 400;
+				font-display: swap;
+			}
+			@font-face {
+				font-family: "Canela Deck";
+				src: url("/fonts/CanelaDeck-Regular.woff2") format("woff2");
+				font-weight: 400;
+				font-display: swap;
+			}
+
+			:root {
+				--paper: #fdfcf6;
+				--ink-text: #353534;
+				--gray: #73706d;
+			}
+
+			html {
+				background: var(--paper);
+			}
+
+			body {
+				margin: 0;
+				font-family: "Canela Text", Georgia, serif;
+				color: var(--ink-text);
+				-webkit-font-smoothing: antialiased;
+			}
+
+			main {
+				position: relative; /* anchor for the ink overlay */
+				max-width: 44rem;
+				margin: 0 auto;
+				padding: 4rem 1.5rem 8rem;
+			}
+
+			h1 {
+				font-family: "Canela Deck", Georgia, serif;
+				font-weight: 400;
+				font-size: 2.4rem;
+				margin: 0 0 0.5rem;
+			}
+
+			.intro {
+				color: var(--gray);
+				font-size: 1.05rem;
+				max-width: 36rem;
+				line-height: 1.5;
+			}
+
+			.exp {
+				margin-top: 4.5rem;
+			}
+
+			.exp header {
+				display: flex;
+				align-items: baseline;
+				gap: 0.75rem;
+				border-top: 1px solid #e3e1da;
+				padding-top: 1rem;
+			}
+
+			.exp .num {
+				font-variant-numeric: tabular-nums;
+				color: #b9b5ac;
+				font-size: 0.9rem;
+			}
+
+			.exp h2 {
+				font-family: "Canela Deck", Georgia, serif;
+				font-weight: 400;
+				font-size: 1.35rem;
+				margin: 0;
+			}
+
+			.exp .how {
+				color: var(--gray);
+				font-size: 0.88rem;
+				line-height: 1.5;
+				margin: 0.4rem 0 0;
+				font-family: ui-sans-serif, system-ui, sans-serif;
+			}
+
+			.sample {
+				font-size: 1.25rem;
+				line-height: 1.85;
+				margin: 1.6rem 0 0;
+			}
+
+			/* ------ highlight spans ------ */
+			.hl {
+				position: relative;
+			}
+
+			/* Experiment 1 — the control: plain CSS gradient */
+			.hl-flat {
+				background: linear-gradient(
+					104deg,
+					transparent 0.9%,
+					rgba(250, 230, 1, 0.55) 2.4%,
+					rgba(250, 230, 1, 0.4) 50%,
+					rgba(250, 230, 1, 0.55) 97.5%,
+					transparent 99%
+				);
+				padding: 0.1em 0.25em;
+				margin: -0.1em -0.25em;
+				border-radius: 0.15em;
+				box-decoration-break: clone;
+				-webkit-box-decoration-break: clone;
+			}
+
+			/* ------ ink overlay ------ */
+			#ink-layer {
+				position: absolute;
+				inset: 0;
+				pointer-events: none;
+				z-index: 1;
+			}
+
+			#ink-layer .ink {
+				position: absolute;
+				mix-blend-mode: multiply;
+			}
+
+			#ink-layer img,
+			#ink-layer canvas,
+			#ink-layer svg {
+				position: absolute;
+				mix-blend-mode: multiply;
+				display: block;
+			}
+
+			#reroll {
+				position: fixed;
+				top: 1rem;
+				right: 1rem;
+				z-index: 10;
+				font-family: ui-sans-serif, system-ui, sans-serif;
+				font-size: 0.85rem;
+				padding: 0.45rem 0.9rem;
+				border: 1px solid #d8d5cc;
+				border-radius: 999px;
+				background: #fff;
+				color: #55524c;
+				cursor: pointer;
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+			}
+			#reroll:hover {
+				border-color: #b9b5ac;
+			}
+
+			.svg-defs {
+				position: absolute;
+				width: 0;
+				height: 0;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		<button id="reroll" title="Regenerate all ink with new random seeds">↻ re-roll ink</button>
+
+		<main id="page">
+			<h1>Highlighter experiments</h1>
+			<p class="intro">
+				Ten attempts at a highlight that looks like a human dragged a real chisel-tip
+				highlighter across the page. Every mark is generated with a unique random seed —
+				hit <em>re-roll</em> to prove no two are alike.
+			</p>
+
+			<section class="exp" id="exp1">
+				<header><span class="num">01</span><h2>Control — flat CSS gradient</h2></header>
+				<p class="how">
+					The standard trick: a skewed linear-gradient background on the span. This is the
+					baseline every other experiment needs to beat.
+				</p>
+				<p class="sample">
+					A good highlight should <span class="hl hl-flat">pull your eye to the phrase</span>
+					without shouting. But a perfectly straight box with
+					<span class="hl hl-flat">machine-crisp edges</span> reads as digital the moment you
+					see it — no pen has <span class="hl hl-flat">ever drawn a rectangle</span>.
+				</p>
+			</section>
+
+			<section class="exp" id="exp2">
+				<header><span class="num">02</span><h2>Randomised layered CSS gradients</h2></header>
+				<p class="how">
+					Pure CSS, no filters: stacked vertical + radial gradients for uneven ink, darker
+					pooling at the ends, a randomised clip-path for slanted chisel ends, and a tiny
+					random rotation per mark.
+				</p>
+				<p class="sample">
+					Real ink is not one flat colour — it <span class="hl" data-fx="2">pools where the pen pauses</span>,
+					thins where the tip moves fast, and every stroke sits at a
+					<span class="hl" data-fx="2" data-color="pink">slightly drunken angle</span> to the
+					text it covers. Even <span class="hl" data-fx="2" data-color="green">two strokes by the same hand</span>
+					never match.
+				</p>
+			</section>
+
+			<section class="exp" id="exp3">
+				<header><span class="num">03</span><h2>SVG displacement filter</h2></header>
+				<p class="how">
+					The classic feTurbulence → feDisplacementMap recipe, but with a fresh noise seed
+					generated per span so every mark warps differently.
+				</p>
+				<p class="sample">
+					Turbulence noise <span class="hl" data-fx="3">bends the straight edges</span> of a
+					plain rectangle into something wobblier. It is cheap and
+					<span class="hl" data-fx="3" data-color="blue">fully declarative</span>, though the
+					ink itself <span class="hl" data-fx="3" data-color="pink">stays suspiciously uniform</span>
+					inside the wobble.
+				</p>
+			</section>
+
+			<section class="exp" id="exp4">
+				<header><span class="num">04</span><h2>Displacement + streaky ink texture</h2></header>
+				<p class="how">
+					Turbulence used twice: once as a horizontal streak mask composited into the ink
+					(dry-fibre texture), once as a displacement map. End pooling is baked into the
+					source gradient before the filter runs.
+				</p>
+				<p class="sample">
+					A felt tip is a bundle of fibres, so the ink it leaves is
+					<span class="hl" data-fx="4">streaked along the stroke direction</span>. Add the
+					darker <span class="hl" data-fx="4" data-color="orange">bands where the pen landed</span>
+					and lifted, and the flat box starts to
+					<span class="hl" data-fx="4" data-color="green">feel like a real deposit of ink</span>.
+				</p>
+			</section>
+
+			<section class="exp" id="exp5">
+				<header><span class="num">05</span><h2>Wet-bleed threshold filter</h2></header>
+				<p class="how">
+					The "gooey" trick: displace, blur heavily, then slam the alpha contrast so the
+					soft blob snaps back to a hard—but organic—edge, like ink feathering into paper
+					fibres.
+				</p>
+				<p class="sample">
+					Liquid highlighters <span class="hl" data-fx="5">bleed into cheap paper</span>,
+					swelling past where the tip actually touched. The threshold trick gives
+					<span class="hl" data-fx="5" data-color="pink">soft, swollen boundaries</span> that
+					no geometric shape can fake, at the cost of
+					<span class="hl" data-fx="5" data-color="blue">looking a little damp</span>.
+				</p>
+			</section>
+
+			<section class="exp" id="exp6">
+				<header><span class="num">06</span><h2>Procedural SVG blob paths</h2></header>
+				<p class="how">
+					No filters at all: a wobbly closed outline is generated point-by-point with
+					seeded noise, smoothed with Catmull-Rom curves, and layered (wash + core + end
+					pools) as translucent SVG paths.
+				</p>
+				<p class="sample">
+					Drawing the outline ourselves means <span class="hl" data-fx="6">total control of the silhouette</span>:
+					slanted ends, a sagging belly, an
+					<span class="hl" data-fx="6" data-color="green">overshoot past the last word</span>.
+					Layered fills give a first taste of
+					<span class="hl" data-fx="6" data-color="orange">ink density that varies</span>
+					across the mark.
+				</p>
+			</section>
+
+			<section class="exp" id="exp7">
+				<header><span class="num">07</span><h2>Multi-pass overlapping strokes</h2></header>
+				<p class="how">
+					People rarely cover a phrase in one pass. Three displaced translucent bars with
+					staggered starts and ends, each multiply-blended, so the overlaps genuinely
+					darken like re-inked paper.
+				</p>
+				<p class="sample">
+					Go over a phrase twice and the <span class="hl" data-fx="7">overlap doubles in darkness</span> —
+					it is the single strongest tell of real ink. Staggered stroke ends leave
+					<span class="hl" data-fx="7" data-color="pink">ragged, stepped edges</span> where
+					each pass <span class="hl" data-fx="7" data-color="blue">started and stopped</span>
+					at a different point.
+				</p>
+			</section>
+
+			<section class="exp" id="exp8">
+				<header><span class="num">08</span><h2>Canvas 2D chisel-tip simulation</h2></header>
+				<p class="how">
+					An actual simulation: a tilted chisel tip is stamped along a wandering path with
+					low-alpha ink that accumulates where stamps overlap. The pen dwells at the start
+					and lift-off (pooling), flow varies along the stroke, and dry fibre streaks are
+					scratched out afterwards.
+				</p>
+				<p class="sample">
+					Instead of faking the result, <span class="hl" data-fx="8">simulate the pen itself</span>:
+					a tip, a path, a flow rate. Ink builds up naturally
+					<span class="hl" data-fx="8" data-color="pink">wherever the tip lingers</span>, and
+					every parameter jitters, so each stroke has
+					<span class="hl" data-fx="8" data-color="green">its own tiny biography</span>.
+				</p>
+			</section>
+
+			<section class="exp" id="exp9">
+				<header><span class="num">09</span><h2>WebGL fragment shader</h2></header>
+				<p class="how">
+					A shader draws the stroke as a signed-distance bar whose edges are domain-warped
+					by fbm noise; ink density mixes anisotropic streak noise with end pooling. Rendered
+					offscreen per mark, then dropped in as a multiply-blended image.
+				</p>
+				<p class="sample">
+					A fragment shader evaluates <span class="hl" data-fx="9">every pixel of the mark independently</span>,
+					so edge wobble, fibre streaks and pooling all come from
+					<span class="hl" data-fx="9" data-color="blue">one continuous noise field</span> —
+					no seams, no repeated texture,
+					<span class="hl" data-fx="9" data-color="pink">infinite unique strokes</span>.
+				</p>
+			</section>
+
+			<section class="exp" id="exp10">
+				<header><span class="num">10</span><h2>Shader v2 — the kitchen sink</h2></header>
+				<p class="how">
+					Everything learned, in one shader: chisel-slanted ends, start/lift-off pooling,
+					a second ghost pass that darkens the overlap, coffee-ring edge darkening, fibre
+					bleed at the boundary, vertical pressure gradient, and a subtle hue shift where
+					ink is dense.
+				</p>
+				<p class="sample">
+					The goal all along: a mark you would <span class="hl" data-fx="10">swear was scanned off paper</span>.
+					It should survive close inspection, work in
+					<span class="hl" data-fx="10" data-color="pink">any of the classic colours</span>,
+					stay <span class="hl" data-fx="10" data-color="green">out of the way of the words</span>,
+					and never once repeat itself across
+					<span class="hl" data-fx="10" data-color="blue">an entire essay of marks</span>.
+				</p>
+			</section>
+
+			<div id="ink-layer" aria-hidden="true"></div>
+		</main>
+
+		<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs id="fx-defs"></defs></svg>
+
+		<script>
+			// ---------------------------------------------------------------
+			// Shared plumbing
+			// ---------------------------------------------------------------
+			const COLORS = {
+				yellow: [250, 225, 0],
+				pink: [255, 125, 190],
+				green: [150, 235, 60],
+				orange: [255, 170, 25],
+				blue: [95, 200, 250],
+			};
+
+			function mulberry32(a) {
+				return function () {
+					a |= 0;
+					a = (a + 0x6d2b79f5) | 0;
+					let t = Math.imul(a ^ (a >>> 15), 1 | a);
+					t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+					return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+				};
+			}
+
+			const page = document.getElementById("page");
+			const layer = document.getElementById("ink-layer");
+			const defs = document.getElementById("fx-defs");
+			const SVGNS = "http://www.w3.org/2000/svg";
+
+			function rgba(c, a) {
+				return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+			}
+
+			function colorOf(el) {
+				return COLORS[el.dataset.color || "yellow"];
+			}
+
+			// Client rects of the span, relative to #page, merged per line
+			function rectsFor(el) {
+				const base = page.getBoundingClientRect();
+				return [...el.getClientRects()]
+					.filter((r) => r.width > 2)
+					.map((r) => ({
+						x: r.left - base.left,
+						y: r.top - base.top,
+						w: r.width,
+						h: r.height,
+					}));
+			}
+
+			function addInk(rect, padX, padY, tag = "div") {
+				const d = document.createElement(tag);
+				d.className = "ink";
+				d.style.left = rect.x - padX + "px";
+				d.style.top = rect.y - padY + "px";
+				d.style.width = rect.w + padX * 2 + "px";
+				d.style.height = rect.h + padY * 2 + "px";
+				layer.appendChild(d);
+				return d;
+			}
+
+			let filterCount = 0;
+			function el(name, attrs) {
+				const n = document.createElementNS(SVGNS, name);
+				for (const k in attrs) n.setAttribute(k, attrs[k]);
+				return n;
+			}
+
+			// ---------------------------------------------------------------
+			// 02 — randomised layered CSS gradients
+			// ---------------------------------------------------------------
+			function fx2(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const ink = addInk(r, r.h * 0.28, -r.h * 0.06);
+					const base = 0.34 + R() * 0.08;
+					// vertical unevenness + end pools
+					ink.style.background = [
+						`radial-gradient(ellipse ${5 + R() * 5}% 75% at ${1 + R() * 2}% ${40 + R() * 25}%, ${rgba(c, 0.5)}, transparent 75%)`,
+						`radial-gradient(ellipse ${4 + R() * 5}% 70% at ${97 - R() * 2}% ${40 + R() * 25}%, ${rgba(c, 0.45)}, transparent 75%)`,
+						`linear-gradient(178deg, ${rgba(c, base)}, ${rgba(c, base + 0.14)} ${25 + R() * 15}%, ${rgba(c, base + 0.05)} ${50 + R() * 15}%, ${rgba(c, base + 0.18)})`,
+					].join(",");
+					// slanted chisel ends via clip-path, all points jittered
+					const s1 = 4 + R() * 6; // left slant px
+					const s2 = 4 + R() * 6;
+					const j = () => (R() - 0.5) * 3;
+					ink.style.clipPath = `polygon(
+						${s1 + j()}px ${j()}px, calc(100% - ${j().toFixed(1)}px) ${j()}px,
+						calc(100% - ${(s2 + j()).toFixed(1)}px) calc(100% + ${j().toFixed(1)}px),
+						${j()}px calc(100% - ${j().toFixed(1)}px))`;
+					ink.style.borderRadius = `${2 + R() * 5}px ${2 + R() * 6}px ${2 + R() * 5}px ${2 + R() * 6}px / ${4 + R() * 6}px ${3 + R() * 5}px ${4 + R() * 6}px ${3 + R() * 5}px`;
+					ink.style.transform = `rotate(${(R() - 0.5) * 1.1}deg)`;
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 03 — SVG displacement filter, unique seed per mark
+			// ---------------------------------------------------------------
+			function makeDisplaceFilter(seed, scale) {
+				const id = `fx-disp-${filterCount++}`;
+				const f = el("filter", { id, x: "-25%", y: "-45%", width: "150%", height: "190%" });
+				f.appendChild(
+					el("feTurbulence", {
+						type: "fractalNoise",
+						baseFrequency: "0.022 0.1",
+						numOctaves: "2",
+						seed: Math.floor(seed * 9999),
+						result: "n",
+					})
+				);
+				f.appendChild(
+					el("feDisplacementMap", {
+						in: "SourceGraphic",
+						in2: "n",
+						scale,
+						xChannelSelector: "R",
+						yChannelSelector: "G",
+					})
+				);
+				defs.appendChild(f);
+				return id;
+			}
+
+			function fx3(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const ink = addInk(r, r.h * 0.3, -r.h * 0.08);
+					ink.style.background = rgba(c, 0.5);
+					ink.style.borderRadius = "3px";
+					ink.style.transform = `rotate(${(R() - 0.5) * 0.9}deg)`;
+					ink.style.filter = `url(#${makeDisplaceFilter(R(), 10 + R() * 8)})`;
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 04 — displacement + streak texture + end pooling
+			// ---------------------------------------------------------------
+			function makeStreakFilter(R) {
+				const id = `fx-streak-${filterCount++}`;
+				const f = el("filter", { id, x: "-25%", y: "-45%", width: "150%", height: "190%" });
+				f.appendChild(
+					el("feTurbulence", {
+						type: "fractalNoise",
+						baseFrequency: `${0.008 + R() * 0.006} ${0.18 + R() * 0.1}`,
+						numOctaves: "3",
+						seed: Math.floor(R() * 9999),
+						result: "tex",
+					})
+				);
+				// map noise red channel to an alpha mask (streaks), keep it mostly opaque
+				f.appendChild(
+					el("feColorMatrix", {
+						in: "tex",
+						type: "matrix",
+						values: "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.9 0 0 0 0.45",
+						result: "mask",
+					})
+				);
+				f.appendChild(
+					el("feComposite", { in: "SourceGraphic", in2: "mask", operator: "in", result: "inked" })
+				);
+				f.appendChild(
+					el("feTurbulence", {
+						type: "fractalNoise",
+						baseFrequency: "0.02 0.09",
+						numOctaves: "2",
+						seed: Math.floor(R() * 9999),
+						result: "disp",
+					})
+				);
+				f.appendChild(
+					el("feDisplacementMap", {
+						in: "inked",
+						in2: "disp",
+						scale: 11 + R() * 6,
+						xChannelSelector: "R",
+						yChannelSelector: "G",
+					})
+				);
+				defs.appendChild(f);
+				return id;
+			}
+
+			function fx4(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const ink = addInk(r, r.h * 0.32, -r.h * 0.07);
+					const p1 = 2 + R() * 3; // pool widths %
+					const p2 = 3 + R() * 4;
+					ink.style.background = `linear-gradient(90deg,
+						${rgba(c, 0.78)} 0%, ${rgba(c, 0.78)} ${p1}%, ${rgba(c, 0.52)} ${p1 + 6}%,
+						${rgba(c, 0.55)} 50%, ${rgba(c, 0.5)} ${94 - p2}%, ${rgba(c, 0.72)} ${100 - p2}%, ${rgba(c, 0.72)} 100%)`;
+					ink.style.borderRadius = "3px";
+					ink.style.transform = `rotate(${(R() - 0.5) * 0.9}deg)`;
+					ink.style.filter = `url(#${makeStreakFilter(R)})`;
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 05 — wet-bleed threshold
+			// ---------------------------------------------------------------
+			function makeBleedFilter(R) {
+				const id = `fx-bleed-${filterCount++}`;
+				const f = el("filter", { id, x: "-30%", y: "-60%", width: "160%", height: "220%" });
+				f.appendChild(
+					el("feTurbulence", {
+						type: "fractalNoise",
+						baseFrequency: `${0.03 + R() * 0.03} ${0.12 + R() * 0.08}`,
+						numOctaves: "3",
+						seed: Math.floor(R() * 9999),
+						result: "n",
+					})
+				);
+				f.appendChild(
+					el("feDisplacementMap", {
+						in: "SourceGraphic",
+						in2: "n",
+						scale: 14 + R() * 10,
+						xChannelSelector: "R",
+						yChannelSelector: "G",
+						result: "d",
+					})
+				);
+				f.appendChild(el("feGaussianBlur", { in: "d", stdDeviation: "3", result: "b" }));
+				f.appendChild(
+					el("feColorMatrix", {
+						in: "b",
+						type: "matrix",
+						values: "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -7",
+						result: "sharp",
+					})
+				);
+				// knock the thresholded ink back down to translucency
+				f.appendChild(
+					el("feColorMatrix", {
+						in: "sharp",
+						type: "matrix",
+						values: "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.55 0",
+						result: "soft",
+					})
+				);
+				f.appendChild(el("feGaussianBlur", { in: "soft", stdDeviation: "0.5" }));
+				defs.appendChild(f);
+				return id;
+			}
+
+			function fx5(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const ink = addInk(r, r.h * 0.25, -r.h * 0.1);
+					ink.style.background = `linear-gradient(${88 + R() * 4}deg, ${rgba(c, 0.6)}, ${rgba(c, 0.45)} 50%, ${rgba(c, 0.58)})`;
+					ink.style.transform = `rotate(${(R() - 0.5) * 1}deg)`;
+					ink.style.filter = `url(#${makeBleedFilter(R)})`;
+					ink.style.opacity = 0.8;
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 06 — procedural SVG blob paths (Catmull-Rom smoothing)
+			// ---------------------------------------------------------------
+			function catmullPath(pts) {
+				// closed Catmull-Rom → cubic bezier
+				const n = pts.length;
+				let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+				for (let i = 0; i < n; i++) {
+					const p0 = pts[(i - 1 + n) % n];
+					const p1 = pts[i];
+					const p2 = pts[(i + 1) % n];
+					const p3 = pts[(i + 2) % n];
+					const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+					const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+					d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+				}
+				return d + " Z";
+			}
+
+			function blobPoints(w, h, R, shrink = 0) {
+				// wobbly closed outline of a stroke, left-to-right along top, back along bottom
+				const pts = [];
+				const n = Math.max(5, Math.round(w / 26));
+				const slL = h * (0.15 + R() * 0.25);
+				const slR = h * (0.15 + R() * 0.25);
+				const top = shrink,
+					bot = h - shrink;
+				const wob = () => (R() - 0.5) * h * 0.22;
+				for (let i = 0; i <= n; i++) {
+					const t = i / n;
+					pts.push([slL * (1 - t) + t * (w - 0) + (i === 0 || i === n ? 0 : wob() * 0.6), top + wob()]);
+				}
+				for (let i = n; i >= 0; i--) {
+					const t = i / n;
+					pts.push([t * (w - slR) + (i === 0 || i === n ? 0 : wob() * 0.6), bot + wob()]);
+				}
+				return pts;
+			}
+
+			function fx6(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const padX = r.h * 0.35,
+						padY = 2;
+					const w = r.w + padX * 2,
+						h = r.h * 0.98;
+					const svg = document.createElementNS(SVGNS, "svg");
+					svg.setAttribute("width", w);
+					svg.setAttribute("height", h + padY * 2);
+					svg.setAttribute("viewBox", `0 -${padY} ${w} ${h + padY * 2}`);
+					svg.style.left = r.x - padX + "px";
+					svg.style.top = r.y + (r.h - h) / 2 - padY + "px";
+					svg.style.overflow = "visible";
+					svg.style.transform = `rotate(${(R() - 0.5) * 1}deg)`;
+
+					const wash = el("path", { d: catmullPath(blobPoints(w, h, R)), fill: rgba(c, 0.38) });
+					const core = el("path", {
+						d: catmullPath(blobPoints(w - h * 0.3, h * 0.8, R)),
+						fill: rgba(c, 0.25),
+						transform: `translate(${h * 0.18}, ${h * 0.1})`,
+					});
+					svg.appendChild(wash);
+					svg.appendChild(core);
+					// end pools
+					for (const px of [h * 0.28, w - h * 0.3]) {
+						svg.appendChild(
+							el("ellipse", {
+								cx: px + (R() - 0.5) * 4,
+								cy: h / 2 + (R() - 0.5) * 3,
+								rx: h * (0.12 + R() * 0.08),
+								ry: h * (0.34 + R() * 0.1),
+								fill: rgba(c, 0.3),
+							})
+						);
+					}
+					layer.appendChild(svg);
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 07 — multi-pass overlapping strokes
+			// ---------------------------------------------------------------
+			function fx7(span, R) {
+				const c = colorOf(span);
+				for (const r of rectsFor(span)) {
+					const passes = 2 + Math.floor(R() * 2);
+					for (let i = 0; i < passes; i++) {
+						const startTrim = R() * r.h * 0.5;
+						const endTrim = R() * r.h * 0.6;
+						const ink = addInk(
+							{
+								x: r.x + startTrim - r.h * 0.25,
+								y: r.y + (R() - 0.5) * r.h * 0.12,
+								w: r.w - startTrim - endTrim + r.h * 0.5,
+								h: r.h,
+							},
+							0,
+							-r.h * (0.1 + R() * 0.06)
+						);
+						ink.style.background = rgba(c, 0.26 + R() * 0.06);
+						ink.style.borderRadius = "3px";
+						ink.style.transform = `rotate(${(R() - 0.5) * 1.2}deg)`;
+						ink.style.filter = `url(#${makeDisplaceFilter(R(), 9 + R() * 7)})`;
+					}
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 08 — Canvas 2D chisel-tip simulation
+			// ---------------------------------------------------------------
+			function fx8(span, R) {
+				const c = colorOf(span);
+				const dpr = Math.min(2, window.devicePixelRatio || 1);
+				for (const r of rectsFor(span)) {
+					const padX = r.h * 0.9,
+						padY = r.h * 0.5;
+					const W = r.w + padX * 2,
+						H = r.h + padY * 2;
+					const cv = document.createElement("canvas");
+					cv.width = Math.ceil(W * dpr);
+					cv.height = Math.ceil(H * dpr);
+					cv.style.width = W + "px";
+					cv.style.height = H + "px";
+					cv.style.left = r.x - padX + "px";
+					cv.style.top = r.y - padY + "px";
+					const ctx = cv.getContext("2d");
+					ctx.scale(dpr, dpr);
+					ctx.lineCap = "round";
+
+					const yMid = H / 2 + (R() - 0.5) * 2;
+					const tipLen = r.h * (0.88 + R() * 0.12);
+					const lean = ((13 + R() * 9) * Math.PI) / 180; // chisel lean from vertical
+					const drift = (R() - 0.5) * 0.02; // baseline drift px/px
+					const wavA = 0.6 + R() * 1.1;
+					const wavF = 0.02 + R() * 0.025;
+					const phase = R() * 6.28;
+
+					function stamp(x, y, alpha, lenScale = 1) {
+						const l = (tipLen / 2) * lenScale;
+						ctx.strokeStyle = rgba(c, alpha);
+						ctx.lineWidth = 3.4;
+						ctx.beginPath();
+						ctx.moveTo(x - Math.sin(lean) * l, y - Math.cos(lean) * l);
+						ctx.lineTo(x + Math.sin(lean) * l, y + Math.cos(lean) * l);
+						ctx.stroke();
+					}
+
+					function pass(x0, x1, baseAlpha) {
+						const yOff = (R() - 0.5) * 1.5;
+						// dwell at touch-down: pooling
+						for (let i = 0; i < 4; i++)
+							stamp(x0 + R() * 1.5, yMid + yOff + (R() - 0.5) * 1, baseAlpha * 0.9);
+						for (let x = x0; x < x1; x += 1.3) {
+							const y =
+								yMid +
+								yOff +
+								Math.sin(x * wavF + phase) * wavA +
+								Math.sin(x * 0.11 + phase * 2) * 0.35 +
+								(x - x0) * drift;
+							const flow = 0.85 + 0.3 * R(); // flow variation
+							const lenJ = 0.97 + R() * 0.06; // fibre length jitter
+							stamp(x, y, baseAlpha * flow, lenJ);
+						}
+						// lift-off dwell
+						for (let i = 0; i < 3; i++)
+							stamp(x1 - R() * 1.5, yMid + yOff + (x1 - x0) * drift + (R() - 0.5) * 1, baseAlpha * 0.8);
+					}
+
+					pass(padX * 0.5, W - padX * 0.5, 0.13);
+					// occasional partial second pass → overlap darkening
+					if (R() < 0.65) pass(padX * 0.4 + R() * 8, padX + (W - padX * 1.5) * (0.35 + R() * 0.6), 0.08);
+
+					// dry fibre streaks scratched out
+					ctx.globalCompositeOperation = "destination-out";
+					const nStreaks = 3 + Math.floor(R() * 4);
+					for (let i = 0; i < nStreaks; i++) {
+						const sy = yMid - tipLen / 2 + R() * tipLen;
+						const sx0 = padX * 0.4 + R() * W * 0.25;
+						const sx1 = W - padX * 0.4 - R() * W * 0.25;
+						ctx.strokeStyle = `rgba(0,0,0,${0.04 + R() * 0.05})`;
+						ctx.lineWidth = 0.6 + R() * 1.1;
+						ctx.beginPath();
+						ctx.moveTo(sx0, sy);
+						ctx.bezierCurveTo(
+							sx0 + (sx1 - sx0) * 0.3, sy + (R() - 0.5) * 3,
+							sx0 + (sx1 - sx0) * 0.7, sy + (R() - 0.5) * 3,
+							sx1, sy + (R() - 0.5) * 2
+						);
+						ctx.stroke();
+					}
+					ctx.globalCompositeOperation = "source-over";
+					layer.appendChild(cv);
+				}
+			}
+
+			// ---------------------------------------------------------------
+			// 09 & 10 — WebGL fragment shaders
+			// ---------------------------------------------------------------
+			const glCanvas = document.createElement("canvas");
+			const gl = glCanvas.getContext("webgl", { premultipliedAlpha: true, preserveDrawingBuffer: true });
+
+			const VERT = `attribute vec2 p; varying vec2 uv;
+				void main(){ uv = p*0.5+0.5; gl_Position = vec4(p,0.,1.); }`;
+
+			const NOISE = `
+				float hash(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
+				float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+					float a=hash(i), b=hash(i+vec2(1.,0.)), c=hash(i+vec2(0.,1.)), d=hash(i+vec2(1.,1.));
+					return mix(mix(a,b,f.x), mix(c,d,f.x), f.y); }
+				float fbm(vec2 p){ float v=0., a=.5; for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.03; a*=.5; } return v; }`;
+
+			const FRAG1 = `precision highp float; varying vec2 uv;
+				uniform vec2 res; uniform float seed; uniform vec3 ink;
+				${NOISE}
+				void main(){
+					float aspect = res.x/res.y;
+					float x = uv.x;
+					float y = (uv.y-0.5)*2.0;
+					// wandering centreline + width
+					float cy = (noise(vec2(x*3.0+seed*17.0, seed*7.1))-0.5)*0.3
+						+ (x-0.5)*(hash(vec2(seed,3.7))-0.5)*0.3;
+					float hw = 0.55 + (noise(vec2(x*5.0+seed*31.0, seed*13.0))-0.5)*0.16;
+					float dEdge = abs(y-cy) - hw;
+					dEdge += (fbm(vec2(x*aspect*16.0+seed*57.0, y*5.0))-0.5)*0.16;
+					float mask = smoothstep(0.04, -0.06, dEdge);
+					// slanted ends
+					float slant = (0.2 + hash(vec2(seed,9.1))*0.25)/aspect;
+					float x0 = 0.035 + (y-cy)*slant;
+					float x1 = 0.965 + (y-cy)*slant*0.8;
+					mask *= smoothstep(x0-0.01, x0+0.015, x) * smoothstep(x1+0.01, x1-0.015, x);
+					// ink density: streaks + pooling
+					float d = 0.52;
+					d += (fbm(vec2(x*aspect*0.8+seed*71.0, y*11.0))-0.5)*0.4;
+					d += smoothstep(0.09, 0.0, x-x0)*0.28;
+					d += smoothstep(-0.07, 0.0, x-x1)*0.24;
+					d = clamp(d, 0.0, 0.85);
+					float alpha = mask*d;
+					gl_FragColor = vec4(ink*alpha, alpha);
+				}`;
+
+			const FRAG2 = `precision highp float; varying vec2 uv;
+				uniform vec2 res; uniform float seed; uniform vec3 ink;
+				${NOISE}
+				// one stroke pass: returns ink density 0..1 at this pixel
+				float strokePass(vec2 q, float aspect, float s, float x0n, float x1n){
+					float x = q.x;
+					float y = (q.y-0.5)*2.0;
+					float cy = (noise(vec2(x*2.5+s*17.0, s*7.1))-0.5)*0.28
+						+ (x-0.5)*(hash(vec2(s,3.7))-0.5)*0.34;
+					float hw = 0.52 + (noise(vec2(x*4.0+s*31.0, s*13.0))-0.5)*0.14;
+					float rel = (y-cy)/hw; // -1..1 across stroke
+					float dEdge = abs(y-cy) - hw;
+					// fibre bleed: two scales of edge noise
+					dEdge += (fbm(vec2(x*aspect*14.0+s*57.0, y*4.0))-0.5)*0.13;
+					dEdge += (noise(vec2(x*aspect*60.0+s*91.0, y*18.0))-0.5)*0.05;
+					float mask = smoothstep(0.035, -0.045, dEdge);
+					// slanted chisel ends with wobble
+					float slant = (0.1 + hash(vec2(s,9.1))*0.14)/aspect;
+					float x0 = x0n + (y-cy)*slant + (noise(vec2(y*2.0+s*5.0,s))-0.5)*0.02;
+					float x1 = x1n + (y-cy)*slant*0.85 + (noise(vec2(y*2.0+s*8.0,s))-0.5)*0.02;
+					mask *= smoothstep(x0-0.012, x0+0.02, x) * smoothstep(x1+0.012, x1-0.02, x);
+					if (mask <= 0.001) return 0.0;
+					// density model
+					float d = 0.46;
+					d += (fbm(vec2(x*aspect*0.6+s*71.0, y*12.0))-0.5)*0.32;  // fibre streaks
+					d += smoothstep(0.08, 0.0, x-x0)*0.3;                     // touch-down pool
+					d += smoothstep(-0.06, 0.0, x-x1)*0.26;                   // lift-off pool
+					d += 0.1*smoothstep(0.25, 0.0, abs(abs(rel)-0.85));       // coffee-ring edges
+					d += 0.06*rel;                                            // pressure gradient
+					return clamp(d, 0.0, 1.0)*mask;
+				}
+				void main(){
+					float aspect = res.x/res.y;
+					float d1 = strokePass(uv, aspect, seed, 0.035, 0.97);
+					// ghost second pass over part of the stroke, nearly on top of the first
+					float len2 = 0.4 + hash(vec2(seed, 21.0))*0.5;
+					float st2 = 0.02 + hash(vec2(seed, 33.0))*0.06;
+					float d2 = strokePass(uv + vec2(0.0, (hash(vec2(seed,41.0))-0.5)*0.025), aspect, seed+13.7, st2, st2+len2) * 0.5;
+					// translucent layering: passes stack like real ink
+					float dens = 1.0 - (1.0-d1*0.7)*(1.0-d2*0.7);
+					float alpha = clamp(dens, 0.0, 0.88);
+					// dense ink goes slightly darker & warmer, very subtly
+					vec3 col = mix(ink, ink*vec3(0.97,0.93,0.8), smoothstep(0.4,0.85,alpha));
+					gl_FragColor = vec4(col*alpha, alpha);
+				}`;
+
+			function makeProgram(fragSrc) {
+				const vs = gl.createShader(gl.VERTEX_SHADER);
+				gl.shaderSource(vs, VERT);
+				gl.compileShader(vs);
+				const fs = gl.createShader(gl.FRAGMENT_SHADER);
+				gl.shaderSource(fs, fragSrc);
+				gl.compileShader(fs);
+				if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS))
+					console.error(gl.getShaderInfoLog(fs));
+				const pr = gl.createProgram();
+				gl.attachShader(pr, vs);
+				gl.attachShader(pr, fs);
+				gl.linkProgram(pr);
+				return pr;
+			}
+
+			let prog1, prog2, quad;
+			function initGL() {
+				prog1 = makeProgram(FRAG1);
+				prog2 = makeProgram(FRAG2);
+				quad = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+			}
+
+			function renderStroke(prog, w, h, seed, c) {
+				const dpr = Math.min(2, window.devicePixelRatio || 1);
+				glCanvas.width = Math.ceil(w * dpr);
+				glCanvas.height = Math.ceil(h * dpr);
+				gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+				gl.clearColor(0, 0, 0, 0);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.useProgram(prog);
+				gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+				const loc = gl.getAttribLocation(prog, "p");
+				gl.enableVertexAttribArray(loc);
+				gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+				gl.uniform2f(gl.getUniformLocation(prog, "res"), glCanvas.width, glCanvas.height);
+				gl.uniform1f(gl.getUniformLocation(prog, "seed"), seed);
+				gl.uniform3f(gl.getUniformLocation(prog, "ink"), c[0] / 255, c[1] / 255, c[2] / 255);
+				gl.drawArrays(gl.TRIANGLES, 0, 3);
+				return glCanvas.toDataURL();
+			}
+
+			function fxShader(prog) {
+				return function (span, R) {
+					const c = colorOf(span);
+					for (const r of rectsFor(span)) {
+						const padX = r.h * 0.6,
+							padY = r.h * 0.35;
+						const w = r.w + padX * 2,
+							h = r.h + padY * 2;
+						const img = document.createElement("img");
+						img.src = renderStroke(prog, w, h, R() * 100, c);
+						img.style.left = r.x - padX + "px";
+						img.style.top = r.y - padY + "px";
+						img.style.width = w + "px";
+						img.style.height = h + "px";
+						img.style.transform = `rotate(${(R() - 0.5) * 1.4}deg)`;
+						layer.appendChild(img);
+					}
+				};
+			}
+
+			// ---------------------------------------------------------------
+			// boot
+			// ---------------------------------------------------------------
+			const FX = { 2: fx2, 3: fx3, 4: fx4, 5: fx5, 6: fx6, 7: fx7, 8: fx8 };
+
+			function renderAll() {
+				layer.innerHTML = "";
+				defs.innerHTML = "";
+				filterCount = 0;
+				FX[9] = fxShader(prog1);
+				FX[10] = fxShader(prog2);
+				document.querySelectorAll(".hl[data-fx]").forEach((span, i) => {
+					const fx = FX[span.dataset.fx];
+					if (!fx) return;
+					const R = mulberry32(Math.floor(Math.random() * 1e9) + i);
+					fx(span, R);
+				});
+			}
+
+			initGL();
+			window.rerenderInk = renderAll;
+			// wait for the custom fonts before measuring text, else ink lands on the wrong lines
+			Promise.all([
+				document.fonts.load('1.25rem "Canela Text"'),
+				document.fonts.load('2rem "Canela Deck"'),
+			])
+				.catch(() => {})
+				.then(() => document.fonts.ready)
+				.then(renderAll);
+			document.getElementById("reroll").addEventListener("click", renderAll);
+			let rT;
+			window.addEventListener("resize", () => {
+				clearTimeout(rT);
+				rT = setTimeout(renderAll, 200);
+			});
+		</script>
+	</body>
+</html>
