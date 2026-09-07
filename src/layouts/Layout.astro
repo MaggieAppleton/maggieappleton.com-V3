@@ -4,6 +4,7 @@ import Navbar from "../components/layouts/navbar/Navbar.astro";
 import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
+import { buildCanonicalUrl } from "../utils/canonical.mjs";
 import "../global.css";
 
 export interface Props {
@@ -11,15 +12,15 @@ export interface Props {
 	desc?: string;
 	type?: string;
 	coverImage?: string;
-	canonicalURL?: string;
+	canonicalPath?: string;
 }
 
-const { title, desc, type, coverImage, canonicalURL: overrideCanonicalURL } = Astro.props;
+const { title, desc, type, coverImage, canonicalPath } = Astro.props;
 
 const DEFAULT_DESCRIPTION =
 	"Maggie's digital garden filled with visual essays on programming, design, and anthropology";
 
-const canonicalURL = overrideCanonicalURL || new URL(Astro.url.pathname, Astro.site).toString();
+const canonicalURL = buildCanonicalUrl(canonicalPath ?? Astro.url.pathname);
 
 // Generate OG image URL based on canonical path so all versions share the same image
 const canonicalPathname = new URL(canonicalURL).pathname;
@@ -62,7 +63,6 @@ if (!type) {
 		<link rel="pingback" href="https://webmention.io/maggieappleton.com/xmlrpc" />
 		<link rel="me" href="https://bsky.app/profile/maggieappleton.com" />
 		<link rel="preconnect" href="https://media.maggieappleton.com" />
-		<link rel="canonical" href={canonicalURL} />
 		<ClientRouter />
 		<SEO
 			title={title}
