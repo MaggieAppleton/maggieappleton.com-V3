@@ -2,15 +2,15 @@
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
 import {
-	getAllVersionsForPost,
 	getLatestVersion,
 	getVersionInfo,
-	hasMultipleVersions,
 } from "../../utils/versionUtils";
 import { getCollection } from "astro:content";
 import {
 	getPublicationBaseSlug,
 	getPublicationVersion,
+	getPublicationVersionEntries,
+	isVersionedPublicationEntry,
 	selectPublicEntries,
 } from "../../utils/publication.mjs";
 
@@ -45,15 +45,16 @@ switch (entry.collection) {
 
 const publicEntry = allEntries.find((candidate) => candidate.id === entry.id);
 const baseSlug = getPublicationBaseSlug(entry);
-const versionInfo = publicEntry
-	? getVersionInfo(publicEntry, allEntries)
+const versionEntries = getPublicationVersionEntries(entry, allEntries) as VersionedContent[];
+const versionInfo = publicEntry && isVersionedPublicationEntry(entry)
+	? getVersionInfo(publicEntry, versionEntries)
 	: {
 			baseSlug,
 			version: getPublicationVersion(entry),
 			isLatest: false,
-			allVersions: getAllVersionsForPost(baseSlug, allEntries),
+			allVersions: versionEntries,
 		};
-const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
+const multipleVersions = !entry.data.draft && versionEntries.length > 1;
 
 const latestUrl = `/${versionInfo.baseSlug}`;
 const isArchived = !versionInfo.isLatest;
