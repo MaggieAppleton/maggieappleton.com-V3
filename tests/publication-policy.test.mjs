@@ -20,6 +20,13 @@ import {
   getSocialImageSlug,
   mergePublicationPaths,
 } from "../src/utils/publicationRoutes.mjs";
+import {
+  collectGeneratorTopics,
+  createGeneratorEntry,
+  getGeneratorLinkSlug,
+  normalizeGeneratorId,
+  sortGeneratorFileNames,
+} from "../src/scripts/publication-generator-helpers.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const readSource = (relativePath) =>
@@ -552,4 +559,108 @@ test("topic collection uses one canonical manifest as the sole topic input", () 
 
   assert.doesNotMatch(source, /getCollection\([^)]*,/);
   assert.doesNotMatch(source, /data\.draft/);
+});
+
+test("filesystem generators adapt frontmatter through the shared publication selectors", () => {
+  const linksSource = readSource("src/scripts/generate-links.js");
+  const topicsSource = readSource("src/scripts/generate-topics.ts");
+
+  assert.match(linksSource, /from "\.\.\/utils\/publication\.mjs"/);
+  assert.match(linksSource, /from "\.\/publication-generator-helpers\.mjs"/);
+  assert.match(linksSource, /selectLatestPublicEntries/);
+  assert.match(linksSource, /getPublicationBaseSlug/);
+  assert.match(linksSource, /createGeneratorEntry\(\{/);
+  assert.match(linksSource, /selectLatestPublicEntries\(allPosts\)/);
+  assert.match(linksSource, /getGeneratorLinkSlug\(post,/);
+  assert.match(linksSource, /sortGeneratorFileNames\(fs\.readdirSync\(dir\)\)/);
+  assert.match(linksSource, /sortGeneratorFileNames\(fs\.readdirSync\(fullPath\)\)/);
+  assert.doesNotMatch(linksSource, /(?:const|let|function)\s+extractBaseSlug/);
+  assert.doesNotMatch(linksSource, /if\s*\(draft\s*===\s*true\)/);
+  assert.doesNotMatch(linksSource, /\.filter\(Boolean\)/);
+
+  assert.match(topicsSource, /from "\.\.\/utils\/publication\.mjs"/);
+  assert.match(topicsSource, /from "\.\/publication-generator-helpers\.mjs"/);
+  assert.match(topicsSource, /createPublicEntryManifest/);
+  assert.match(topicsSource, /createGeneratorEntry\(\{/);
+  assert.match(topicsSource, /id:\s*normalizeGeneratorId\(path\.relative\(directory, file\)\)/);
+  assert.match(topicsSource, /collection,\s*data,/);
+  assert.match(topicsSource, /sortGeneratorFileNames\(await globby/);
+  assert.match(topicsSource, /createPublicEntryManifest\(/);
+  assert.match(topicsSource, /manifest\.canonicalEntries/);
+  assert.doesNotMatch(topicsSource, /if\s*\(data\.topics\)/);
+  assert.doesNotMatch(topicsSource, /data\.topics\.forEach/);
+  assert.doesNotMatch(topicsSource, /as GeneratorEntry\[\]/);
+
+  for (const collection of ["essays", "notes", "patterns", "talks", "smidgeons"]) {
+    assert.match(topicsSource, new RegExp(`\\b${collection}\\b`));
+  }
+});
+
+test("generator helpers normalize platform paths and order filenames without mutation", () => {
+  const input = ["zeta.mdx", "alpha/child.mdx", "alpha.mdx"];
+
+  assert.equal(normalizeGeneratorId("essay\\essay-v2.mdx"), "essay/essay-v2.mdx");
+  assert.equal(normalizeGeneratorId("essay/essay-v2.mdx"), "essay/essay-v2.mdx");
+  assert.deepEqual(sortGeneratorFileNames(input), ["alpha.mdx", "alpha/child.mdx", "zeta.mdx"]);
+  assert.deepEqual(input, ["zeta.mdx", "alpha/child.mdx", "alpha.mdx"]);
+});
+
+test("generator helpers select latest public folder versions but retain ordinary version-like link slugs", () => {
+  const folderV1 = createGeneratorEntry({
+    id: "essay\\essay-v1.mdx",
+    collection: "essays",
+    data: { version: 1 },
+  });
+  const folderDraftV2 = createGeneratorEntry({
+    id: "essay/essay-v2.mdx",
+    collection: "essays",
+    data: { version: 2, draft: true },
+  });
+  const ordinaryV1 = createGeneratorEntry({
+    id: "api-v1.mdx",
+    collection: "essays",
+    data: { version: 1 },
+  });
+  const ordinaryV2 = createGeneratorEntry({
+    id: "api-v2.mdx",
+    collection: "essays",
+    data: { version: 2 },
+  });
+
+  const entries = selectLatestPublicEntries([folderV1, folderDraftV2, ordinaryV1, ordinaryV2]);
+
+  assert.deepEqual(entries, [folderV1, ordinaryV1, ordinaryV2]);
+  assert.deepEqual(
+    entries.map((entry) =>
+      getGeneratorLinkSlug(entry, { isVersionedPublicationEntry, getPublicationBaseSlug }),
+    ),
+    ["essay", "api-v1", "api-v2"],
+  );
+});
+
+test("generator helpers retain parsed fields and tolerate malformed canonical topics", () => {
+  const publicEntry = createGeneratorEntry({
+    id: "public.mdx",
+    collection: "notes",
+    content: "[[Alias]]",
+    data: { aliases: ["Alias"], topics: ["Public", 42, null, "Public"] },
+  });
+  const draftEntry = createGeneratorEntry({
+    id: "draft.mdx",
+    collection: "notes",
+    data: { draft: true, topics: ["Private"] },
+  });
+  const malformedTopicsEntry = createGeneratorEntry({
+    id: "malformed.mdx",
+    collection: "notes",
+    data: { topics: "not-an-array" },
+  });
+  const manifest = createPublicEntryManifest({
+    notes: [publicEntry, draftEntry, malformedTopicsEntry],
+  });
+
+  assert.equal(publicEntry.id, "public.mdx");
+  assert.equal(publicEntry.content, "[[Alias]]");
+  assert.deepEqual(publicEntry.data.aliases, ["Alias"]);
+  assert.deepEqual(collectGeneratorTopics(manifest.canonicalEntries), ["Public"]);
 });
