@@ -99,10 +99,11 @@ export async function waitForServer({
   pollMs = 100,
 }) {
   const deadline = now() + timeoutMs;
+  const readinessURL = buildURL(baseURL, "/robots.txt");
   while (now() < deadline) {
     if (child.exitCode !== null) throw new Error(`Astro dev exited with code ${child.exitCode} before it became ready`);
     try {
-      const response = await fetchImpl(baseURL, { signal: AbortSignal.timeout(750) });
+      const response = await fetchImpl(readinessURL, { signal: AbortSignal.timeout(750) });
       if (response.ok) return;
     } catch {}
     await sleep(pollMs);

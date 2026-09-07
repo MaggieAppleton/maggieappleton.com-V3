@@ -115,6 +115,21 @@ test("waits through transient failures until the server responds", async () => {
   assert.equal(calls, 3);
 });
 
+test("probes the static robots endpoint instead of the homepage during readiness", async () => {
+  const requested = [];
+  await waitForServer({
+    baseURL: "http://127.0.0.1:4322",
+    child: { exitCode: null },
+    fetchImpl: async (url) => {
+      requested.push(url);
+      return new Response("User-agent: *");
+    },
+    sleep: async () => assert.fail("a successful readiness probe should not sleep"),
+  });
+  assert.deepEqual(requested, ["http://127.0.0.1:4322/robots.txt"]);
+  assert.notEqual(requested[0], "http://127.0.0.1:4322");
+});
+
 test("fails readiness when Astro exits or times out", async () => {
   await assert.rejects(() => waitForServer({
     baseURL: "http://127.0.0.1:4322",
