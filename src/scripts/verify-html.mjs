@@ -442,6 +442,7 @@ function assertPageNode(route, document, canonical) {
       assert.notEqual(node.image.trim(), "...");
     }
     if (expected.hasImage) assert.match(node.image ?? "", /^https:\/\/maggieappleton\.com\//, `${route.path}: expected a canonical-origin HTTPS Article image`);
+    if (!expected.hasImage && !expected.image) assert.equal(Object.hasOwn(node, "image"), false, `${route.path}: unexpected Article image`);
     if (expected.image) assert.equal(node.image, expected.image, `${route.path}: wrong Article image`);
   } else {
     assert.equal(typeof node.name, "string");
