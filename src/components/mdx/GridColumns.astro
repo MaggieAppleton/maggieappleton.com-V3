@@ -8,6 +8,8 @@ const {
 	gridGap = "var(--space-s)",
 	justifyItems = "center",
 	margin = "var(--space-s) auto var(--space-l)",
+	centerLastItem = false,
+	lightbox = false,
 } = Astro.props;
 
 // Calculate minimum column width based on number of columns
@@ -22,7 +24,11 @@ const finalMaxWidth = maxWidth || width || "1400px";
 ---
 
 <div
-	class:list={["grid-container", `cols-${columns}`]}
+	class:list={[
+		"grid-container",
+		`cols-${columns}`,
+		{ "center-last-item": centerLastItem },
+	]}
 	style={{
 		maxWidth: finalMaxWidth,
 		margin,
@@ -30,7 +36,9 @@ const finalMaxWidth = maxWidth || width || "1400px";
 		gridTemplateColumns: gridTemplateColumns || defaultGridTemplate,
 		gridGap,
 		alignItems: normalizedAlignment,
+		"--grid-gap": gridGap,
 	}}
+	data-lightbox-gallery={lightbox ? "true" : undefined}
 >
 	<slot />
 </div>
@@ -41,7 +49,7 @@ const finalMaxWidth = maxWidth || width || "1400px";
 		grid-column: 1 / 4 !important;
 		display: grid;
 		padding: 0 var(--space-3xs);
-		overflow-x: hidden;
+		overflow-x: clip;
 		justify-content: center;
 		font-family: var(--font-body);
 	}
@@ -105,5 +113,11 @@ const finalMaxWidth = maxWidth || width || "1400px";
 		height: auto;
 		max-width: 100%;
 		object-fit: contain; /* Ensure image maintains aspect ratio */
+	}
+
+	.grid-container.center-last-item.cols-2 :global(> :last-child) {
+		grid-column: 1 / -1 !important;
+		justify-self: center;
+		width: calc(50% - (var(--grid-gap) / 2));
 	}
 </style>

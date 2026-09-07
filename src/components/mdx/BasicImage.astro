@@ -12,6 +12,7 @@ interface Props {
     sourceTitle?: string;
     framed?: boolean;
     highQuality?: boolean;
+    lightbox?: boolean;
 }
 
 const {
@@ -24,6 +25,7 @@ const {
     sourceTitle,
     framed = false,
     highQuality = false,
+    lightbox = false,
 } = Astro.props;
 
 const quality = highQuality ? 95 : undefined;
@@ -57,10 +59,16 @@ const isGif = typeof src === "string" && src.toLowerCase().endsWith(".gif");
 const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
 ---
 
-<figure class:list={["container", { framed }]} style={`margin: ${margin || ""}`}>
+<figure
+    class:list={["container", { framed }]}
+    style={`margin: ${margin || ""}`}
+    data-basic-image="true"
+    data-lightbox-item={lightbox ? "true" : undefined}
+>
     <div
         class:list={["image-wrapper", { "image-frame": framed }]}
         style={`max-width: ${widthWithUnit}`}
+        data-image-wrapper="true"
     >
         {
             isGif || !isImageMetadata ? (
@@ -84,6 +92,11 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
                 />
             )
         }
+        <span class="lightbox-affordance" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 9L3 3m0 0v5m0-5h5M15 9l6-6m0 0h-5m5 0v5M9 15l-6 6m0 0h5m-5 0v-5M15 15l6 6m0 0v-5m0 5h-5" />
+            </svg>
+        </span>
     </div>
     {
         showalt &&
@@ -112,6 +125,47 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
         width: 100%;
         margin: 0 auto;
         height: auto;
+    }
+
+    .image-wrapper[data-lightbox-enabled="true"] {
+        cursor: zoom-in;
+        outline-offset: 4px;
+        transition: transform 150ms ease;
+    }
+
+    .lightbox-affordance {
+        position: absolute;
+        z-index: 2;
+        top: 0.75rem;
+        right: 0.75rem;
+        display: grid;
+        width: 2.25rem;
+        height: 2.25rem;
+        place-items: center;
+        border-radius: 999px;
+        color: white;
+        background: rgba(20, 20, 20, 0.9);
+        box-shadow: 0 4px 16px rgba(20, 20, 20, 0.22);
+        opacity: 0;
+        transform: scale(0.9);
+        pointer-events: none;
+        transition:
+            opacity 150ms ease,
+            transform 150ms ease;
+    }
+
+    .lightbox-affordance svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .image-wrapper[data-lightbox-enabled="true"]:focus-visible {
+        transform: translateY(-2px) scale(1.015);
+    }
+
+    .image-wrapper[data-lightbox-enabled="true"]:focus-visible .lightbox-affordance {
+        opacity: 1;
+        transform: scale(1);
     }
 
     .image-wrapper::before {
@@ -165,6 +219,29 @@ const isImageMetadata = typeof imageSrc !== "string" && "src" in imageSrc;
     @media (max-width: 768px) {
         .container {
             margin: var(--space-s) auto;
+        }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .image-wrapper[data-lightbox-enabled="true"]:hover {
+            transform: translateY(-2px) scale(1.015);
+        }
+
+        .image-wrapper[data-lightbox-enabled="true"]:hover .lightbox-affordance {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .image-wrapper[data-lightbox-enabled="true"],
+        .lightbox-affordance {
+            transition: none;
+        }
+
+        .image-wrapper[data-lightbox-enabled="true"]:hover,
+        .image-wrapper[data-lightbox-enabled="true"]:focus-visible {
+            transform: none;
         }
     }
 </style>

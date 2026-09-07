@@ -4,6 +4,7 @@ import Navbar from "../components/layouts/navbar/Navbar.astro";
 import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
+import ImageLightbox from "../components/mdx/ImageLightbox.astro";
 import "../global.css";
 
 export interface Props {
@@ -99,6 +100,7 @@ if (!type) {
 			<slot />
 		</main>
 		<Footer />
+		<ImageLightbox />
 		{import.meta.env.DEV && <Agentation client:only="react" />}
 		<style is:global>
 			/* Improve Page speed */
