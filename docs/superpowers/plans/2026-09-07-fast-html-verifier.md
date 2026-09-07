@@ -15,6 +15,7 @@
 - Do not modify `astro.config.mjs`, the production image service, `build`, `build:local`, or deployment behaviour.
 - The verifier starts Astro on `127.0.0.1:4322` by default; `VERIFY_HTML_PORT` may override it only with an integer from 1024 through 65535.
 - The verifier requests page and XML route URLs only. It never follows or directly requests `/_image`, `/og`, or raster image URLs.
+- Every verifier fetch uses manual redirect handling and rejects a redirect response before its target can be requested.
 - The default route set must avoid content with `TweetEmbed` so a normal run remains deterministic without third-party embed requests.
 - Current pages need only at least one canonical link. Exactly one canonical is deliberately deferred to P2.
 - P0a must not claim static-route completeness, production redirect behaviour, image correctness, image optimization correctness, third-party embed availability, or a production build.
@@ -493,7 +494,7 @@ Expected: all Node tests PASS.
 
 Run: `npm run verify:html`
 
-Expected: eleven `✓ 200 <path>` lines followed by `Verified 11 routes without requesting images.`; the command exits zero and port 4322 no longer accepts connections afterward.
+Expected: twelve `✓ 200 <path>` lines followed by `Verified 12 routes without requesting images.`; the command exits zero and port 4322 no longer accepts connections afterward.
 
 Run: `git status --short`
 
@@ -505,6 +506,18 @@ Expected: only `README.md`, `package.json`, `src/scripts/verify-html.mjs`, `test
 git add README.md package.json src/scripts/verify-html.mjs tests/verify-html.test.mjs docs/superpowers/plans/2026-09-07-fast-html-verifier.md
 git commit -m "chore: add fast HTML verification command"
 ```
+
+#### Final whole-branch corrective requirements
+
+The following requirements supersede earlier Task 1/2 examples where they differ:
+
+- The default manifest has twelve routes: the existing eleven representative HTML/XML routes plus `{ path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" }`. Explicit `/` verification remains in the manifest after static `/robots.txt` readiness succeeds.
+- Every readiness and route fetch uses `{ redirect: "manual" }`. Any 3xx response fails with a redirect error before reading the body or following a target; the verifier must never directly or indirectly request image/OG endpoints.
+- Route contracts retain HTML and RSS checks and support `robots`, `sitemap`, optional `jsonLD: true`, and `bodyIncludes` string or regular-expression assertions. Current robots is verified; sitemap and JSON-LD support are unit-tested but are not yet claimed as default-route checks.
+- `runVerifier()` requires both a successful static readiness probe and an owned-child Astro ready-output signal before route verification. Child `error` and `exit` failures race both readiness and route verification, so a stale listener cannot produce a passing run.
+- The child is started with piped output to capture its ready signal. Signal interruption races active work and performs exactly one cleanup in `finally`; `waitForExit()` removes its exit listener and clears its timer on both resolution paths.
+- Tests include a real loopback redirect whose image target receives zero requests, a real occupied-port preflight/cleanup, child-exit coverage during both stale readiness and route verification, and SIGTERM during route verification. The README places complete deployment instructions before the verification section.
+- Required runtime output is twelve `✓ 200 <path>` lines followed by `Verified 12 routes without requesting images.`; it is still not proof of static-route completeness, production redirect behaviour, image correctness/optimisation, third-party embeds, or a production build.
 
 ### Task 3: Branch-wide verification and PR evidence
 
@@ -530,7 +543,7 @@ Expected: exit 0.
 
 Run: `node --test tests/*.test.mjs && npm run verify:html`
 
-Expected: all tests and eleven route checks PASS; the verifier terminates its server.
+Expected: all tests and twelve route checks PASS; the verifier terminates its server.
 
 - [ ] **Step 3: Inspect the complete branch diff**
 
@@ -550,7 +563,7 @@ The final review report must state:
 Spec: P0a fast HTML verification harness
 Base: fef18b34bd13e0fe0bb73fff4758b5b78c7e5af2
 Tests: node --test tests/*.test.mjs
-Runtime: npm run verify:html (11 routes, no image requests)
+Runtime: npm run verify:html (12 routes, no image requests)
 Production image/build configuration: unchanged
 Known boundary: not a static production build or image/redirect verification
 ```
