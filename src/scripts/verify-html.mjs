@@ -20,7 +20,7 @@ export const ROUTES = Object.freeze([
   { path: "/notes", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Notes by Maggie Appleton" },
   { path: "/patterns", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Patterns by Maggie Appleton" },
   { path: "/topics/web-development", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/websecurity", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-02-08", description: "Illustrated notes on the essentials of web security" } },
+  { path: "/websecurity", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-02-08", dateModified: "2020-02-08", description: "Illustrated notes on the essentials of web security" } },
   {
     path: "/api",
     kind: "html",
