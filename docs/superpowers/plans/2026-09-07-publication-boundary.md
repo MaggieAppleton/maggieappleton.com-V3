@@ -391,6 +391,7 @@ git commit -m "fix: centralize public discovery entries"
 
 **Files:**
 
+- Create: `src/scripts/publication-generator-helpers.mjs`
 - Modify: `src/scripts/generate-links.js`
 - Modify: `src/scripts/generate-topics.ts`
 - Modify: `tests/publication-policy.test.mjs`
@@ -399,12 +400,25 @@ git commit -m "fix: centralize public discovery entries"
 
 Assert that both generators import from `../utils/publication.mjs`, adapt parsed frontmatter into `{ id, collection, data }` entries, and consume the public/canonical selection. Explicitly forbid the current local `if (draft === true)`/`.filter(Boolean)` publication branch in `generate-links.js` and topic collection from raw unfiltered `data.topics` in `generate-topics.ts`.
 
+Exercise the shared generator helper with values, not only source contracts:
+
+- POSIX and Windows relative paths normalize to `/`-separated collection IDs;
+- folder versions select the latest public entry while ordinary `api-v1` and
+  `api-v2` remain distinct and keep distinct extensionless link slugs;
+- draft topics are excluded, topic arrays are validated, and aliases/content
+  survive adaptation;
+- input filenames are sorted before processing so output order is
+  deterministic across filesystems.
+
 ### Step 2: Convert `generate-links.js`
 
 - Remove its local `extractBaseSlug` copy.
 - Preserve parsed `data` and an `id` compatible with `getPublicationBaseSlug` on each post object.
 - Feed parsed posts through `selectLatestPublicEntries`.
-- Set the emitted link-map slug from `getPublicationBaseSlug`.
+- Set the emitted link-map slug to the base slug only for a folder-versioned
+  entry; ordinary IDs retain their own extensionless slug even when their name
+  ends in `-vN`.
+- Sort top-level and nested directory entries before reading them.
 - Preserve link extraction, aliases, inbound/outbound maps, and output formatting.
 
 This guarantees wiki links resolve to the latest public version even when a newer draft exists.
@@ -413,7 +427,11 @@ This guarantees wiki links resolve to the latest public version even when a newe
 
 - Parse each MDX file into an Astro-like `{ id, collection, data }` object.
 - Derive collection and collection-relative ID from the known content directory, without absolute paths.
+- Normalize platform separators in collection-relative IDs before publication
+  selection, and sort glob results before reading them.
 - Build a manifest and collect topics only from `canonicalEntries`.
+- Ignore malformed non-array/non-string topic values rather than throwing in
+  this raw-frontmatter script.
 - Preserve the script's current logging-only behaviour; do not add schema generation in this PR.
 
 ### Step 4: Verify generators and commit
