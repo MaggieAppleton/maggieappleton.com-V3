@@ -462,7 +462,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 ```
 
-When implementing, retain the Task 1 imports and exports. This Task 2 correction supersedes the earlier `verifyRoutes` loop example: call `assertSafeRoutePath(route.path)` before `fetchImpl`, and reject `/_image`, `/og`, and raster-image paths with an `image route` error before any request. Add a unit test for the Windows `child.kill()` fallback and passing `runVerifier` coverage for the exact spawn command, working directory suffix, `--strictPort`, route forwarding, result logging, and single cleanup call. The new tests must additionally cover an occupied-port preflight that forwards `{ host, port }` and prevents spawn, plus an injected SIGINT that rejects readiness and removes both signal listeners.
+When implementing, retain the Task 1 imports and exports. This Task 2 correction supersedes the earlier `verifyRoutes` loop example: call `assertSafeRoutePath(route.path)` before `fetchImpl`, and reject `/_image`, `/og`, and raster-image paths with an `image route` error before any request. Add a unit test for the Windows `child.kill()` fallback and passing `runVerifier` coverage for the exact spawn command, exact repository root derived from the test file's `import.meta.url`, `--strictPort`, route forwarding, result logging, and single cleanup call. The new tests must additionally cover an occupied-port preflight that forwards `{ host, port }` and prevents spawn, plus an injected SIGINT that rejects readiness and removes both signal listeners.
 
 - [ ] **Step 4: Add the package command and limits documentation**
 
