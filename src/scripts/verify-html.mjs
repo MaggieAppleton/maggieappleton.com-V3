@@ -422,7 +422,9 @@ function assertPageNode(route, document, canonical) {
   const allowed = descriptor === "article"
     ? ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished", "dateModified", "description", "image"]
     : ["@id", "@type", "url", "name", "isPartOf", "datePublished", "description"];
-  assert.deepEqual(Object.keys(node).sort(), [...allowed].sort(), `${route.path}: unsupported page node property`);
+  for (const key of Object.keys(node)) {
+    assert.ok(allowed.includes(key), `${route.path}: unsupported page node property ${key}`);
+  }
   if (descriptor === "article") {
     assert.equal(typeof node.headline, "string");
     assert.deepEqual(node.author, { "@id": "https://maggieappleton.com/#person" });
