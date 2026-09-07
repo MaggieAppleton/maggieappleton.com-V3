@@ -279,6 +279,7 @@ git commit -m "fix: keep drafts outside public routes"
 
 **Files:**
 
+- Modify: `src/utils/publication.mjs`
 - Modify: `src/utils/publicationRoutes.mjs`
 - Modify: `src/pages/og/[...slug].png.ts`
 - Modify: `tests/publication-policy.test.mjs`
