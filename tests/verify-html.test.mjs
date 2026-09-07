@@ -35,7 +35,7 @@ const html = (title = "Maggie Appleton", {
   ogImage = "http://localhost:4321/og/about.png",
   extraCanonical = "",
 } = {}) =>
-  `<!doctype html><html><head><title>${title}</title>${canonical === false ? "" : `<link HREF="${canonical}" REL="canonical">${extraCanonical}`}<meta CONTENT="${ogUrl}" PROPERTY="og:url"><meta content="${ogImage}" property="og:image"></head><body><main><h1>${title}</h1></main></body></html>`;
+  `<!doctype html><html><head><title>${title}</title>${canonical === false ? "" : `<link HREF="${canonical}" REL="canonical">${extraCanonical}`}<meta CONTENT="${ogUrl}" PROPERTY="og:url"><meta content="website" property="og:type"><meta content="${ogImage}" property="og:image"></head><body><main><h1>${title}</h1></main></body></html>`;
 const noindexHtml = (title = "Diagram Preview", robots = "noindex, nofollow") =>
   `<!doctype html><html><head><title>${title}</title><meta content="${robots}" name="robots"></head><body><h2>${title}</h2></body></html>`;
 const response = (body, contentType = "text/html", status = 200) =>
@@ -89,10 +89,10 @@ test("parses only unprivileged TCP ports", () => {
 
 test("defines unique non-image routes with supported kinds", () => {
 	assert.equal(ROUTES.length, 26);
-  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" });
+  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
-    { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" },
+    { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" },
   );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   assert.deepEqual(
@@ -101,6 +101,8 @@ test("defines unique non-image routes with supported kinds", () => {
       path: "/api",
       kind: "html",
       siteIdentity: true,
+      pageMetadata: "article",
+      article: { datePublished: "2019-04-10", dateModified: "2019-06-30", description: "Everything you need to know about what API's are and how they work", hasImage: true },
       canonical: "https://maggieappleton.com/api",
       ogUrl: "https://maggieappleton.com/api",
       ogImagePath: "/og/api.png",
@@ -108,10 +110,10 @@ test("defines unique non-image routes with supported kinds", () => {
   );
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/about?source=verify"),
-    { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+    { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
   );
-	assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", siteIdentity: true });
-	assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true });
+	assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage" });
+	assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage" });
 	for (const path of [
 		"/now",
 		"/smidgeons",
@@ -121,7 +123,10 @@ test("defines unique non-image routes with supported kinds", () => {
 		"/xanadu-patterns",
 		"/greensock-react",
 	]) {
-		assert.deepEqual(ROUTES.find((route) => route.path === path), { path, kind: "html", siteIdentity: true });
+		const route = ROUTES.find((candidate) => candidate.path === path);
+		assert.equal(route.kind, "html");
+		assert.equal(route.siteIdentity, true);
+		assert.ok(route.pageMetadata);
 	}
   assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/colophon/colophon-content"), { path: "/colophon/colophon-content", kind: "absent" });
@@ -166,7 +171,10 @@ test("keeps the P4 route manifest and marks only ordinary HTML routes for identi
 		"/xanadu-patterns",
 		"/greensock-react",
 	]) {
-		assert.deepEqual(ROUTES.find((route) => route.path === path), { path, kind: "html", siteIdentity: true });
+		const route = ROUTES.find((candidate) => candidate.path === path);
+		assert.equal(route.kind, "html");
+		assert.equal(route.siteIdentity, true);
+		assert.ok(route.pageMetadata);
 	}
 	assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
 });
