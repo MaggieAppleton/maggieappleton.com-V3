@@ -20,6 +20,7 @@ import {
 } from "../src/utils/publication.mjs";
 import {
   getDraftPreviewSlug,
+  getNowRoutePathSlug,
   getSocialImageSlug,
   mergePublicationPaths,
   toNowRouteParams,
@@ -316,19 +317,33 @@ test("Now route params preserve flat IDs and split nested IDs for the optional r
   assert.deepEqual(toNowRouteParams("archive/monthly/2026-08.mdx"), { slug: "archive", rest: "monthly/2026-08.mdx" });
 });
 
-test("Now path collision checks compare the complete flat or nested pathname", () => {
-  const getNowPathSlug = ({ params }) => `now-${params.slug}${params.rest ? `/${params.rest}` : ""}`;
+test("Now route path keys retain flat and nested paths while rejecting malformed params", () => {
+  assert.equal(getNowRoutePathSlug({ params: { slug: "2026-08.mdx" } }), "now-2026-08.mdx");
+  assert.equal(
+    getNowRoutePathSlug({ params: { slug: "archive", rest: "2026-08.mdx" } }),
+    "now-archive/2026-08.mdx",
+  );
+  assert.throws(
+    () => getNowRoutePathSlug({ params: { rest: "2026-08.mdx" } }),
+    /Now route path must contain a string slug/,
+  );
+  assert.throws(
+    () => getNowRoutePathSlug({ params: { slug: "archive", rest: 2 } }),
+    /Now route path rest parameter must be a string/,
+  );
+});
 
+test("Now path collision checks compare the complete flat or nested pathname", () => {
   for (const params of [
     { slug: "2026-08.mdx", rest: undefined },
     { slug: "archive", rest: "2026-08.mdx" },
   ]) {
-    const pathname = getNowPathSlug({ params });
+    const pathname = getNowRoutePathSlug({ params });
     assert.throws(
       () => mergePublicationPaths({
         publicPaths: [{ params }],
         draftPaths: [{ params: { ...params } }],
-        getPathSlug: getNowPathSlug,
+        getPathSlug: getNowRoutePathSlug,
       }),
       (error) => error instanceof Error && error.message.includes(`"${pathname}"`),
     );
@@ -463,7 +478,7 @@ test("publication boundary consumers import and use the shared publication polic
       "import.meta.env.DEV",
       "mergePublicationPaths",
       "toNowRouteParams",
-      "getPathSlug",
+      "getNowRoutePathSlug",
     ],
     "src/layouts/PostLayout.astro": [
       'from "../utils/publication.mjs"',
@@ -597,11 +612,9 @@ test("Now uses its optional-rest route and the generic route reserves the now- n
   const source = fs.readFileSync(nowRoute, "utf8");
   assert.match(source, /from "\.\.\/\.\.\/utils\/publicationRoutes\.mjs"/);
   assert.match(source, /params:\s*toNowRouteParams\(entry\.id\)/);
-  assert.match(source, /const getPathSlug\s*=\s*\(path(?::[^)]*)?\)\s*=>/);
-  assert.match(source, /if \(typeof slug !== "string"\)/);
-  assert.match(source, /rest !== undefined && typeof rest !== "string"/);
-  assert.match(source, /mergePublicationPaths\(\{ publicPaths, draftPaths, getPathSlug \}\)/);
-  assert.match(source, /return `now-\$\{slug\}\$\{rest/);
+  assert.match(source, /import \{ getNowRoutePathSlug, mergePublicationPaths, toNowRouteParams \} from/);
+  assert.match(source, /mergePublicationPaths\(\{ publicPaths, draftPaths, getPathSlug: getNowRoutePathSlug \}\)/);
+  assert.doesNotMatch(source, /const getPathSlug\s*=/);
   assert.match(detailRoute, /reservedStartsWith:\s*\["now-"\]/);
 });
 

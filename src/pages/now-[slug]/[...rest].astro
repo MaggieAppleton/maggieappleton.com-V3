@@ -1,7 +1,7 @@
 ---
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { isPublicEntry, selectPublicEntries } from "../../utils/publication.mjs";
-import { mergePublicationPaths, toNowRouteParams } from "../../utils/publicationRoutes.mjs";
+import { getNowRoutePathSlug, mergePublicationPaths, toNowRouteParams } from "../../utils/publicationRoutes.mjs";
 import Layout from "../../layouts/Layout.astro";
 import Title1 from "../../components/mdx/typography/Title1.astro";
 import Title2 from "../../components/mdx/typography/Title2.astro";
@@ -15,15 +15,6 @@ import Footnote from "../../components/mdx/Footnote.astro";
 import ResourceBook from "../../components/mdx/ResourceBook.astro";
 import Spacer from "../../components/mdx/Spacer.astro";
 import { Icon } from "astro-icon/components";
-
-const getPathSlug = (path: { params: Record<string, unknown> }) => {
-	const { slug, rest } = path.params;
-	if (typeof slug !== "string") throw new TypeError("Now route path must contain a string slug");
-	if (rest !== undefined && typeof rest !== "string") {
-		throw new TypeError("Now route path rest parameter must be a string when provided");
-	}
-	return `now-${slug}${rest ? `/${rest}` : ""}`;
-};
 
 export async function getStaticPaths() {
 	const nowEntries = await getCollection("now");
@@ -41,7 +32,7 @@ export async function getStaticPaths() {
 				}))
 		: [];
 
-	return mergePublicationPaths({ publicPaths, draftPaths, getPathSlug }) as Array<{
+	return mergePublicationPaths({ publicPaths, draftPaths, getPathSlug: getNowRoutePathSlug }) as Array<{
 		params: { slug: string; rest?: string };
 		props: { entry: CollectionEntry<"now"> };
 	}>;
