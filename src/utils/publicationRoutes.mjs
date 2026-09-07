@@ -17,6 +17,19 @@ export function getDraftPreviewSlug(entry) {
 }
 
 /**
+ * Returns the content-derived portion of a social-image route.
+ *
+ * Versioned entries always share an image at their canonical base slug. Other
+ * collections keep their entry ID; callers own collection-specific prefixes.
+ *
+ * @param {{id: string, data?: any}} entry
+ * @returns {string}
+ */
+export function getSocialImageSlug(entry) {
+  return isVersionedPublicationEntry(entry) ? getPublicationBaseSlug(entry) : entry.id;
+}
+
+/**
  * @typedef {{params: {slug: string}, [key: string]: unknown}} PublicationPath
  */
 

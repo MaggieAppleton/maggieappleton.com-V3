@@ -4,7 +4,17 @@ import sharp from "sharp";
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import type { ReactNode } from "react";
-import { extractBaseSlug, getLatestVersion, getAllVersionsForPost } from "../../utils/versionUtils";
+import { createPublicEntryManifest } from "../../utils/publication.mjs";
+import { getSocialImageSlug, mergePublicationPaths } from "../../utils/publicationRoutes.mjs";
+
+type PublicationCollections = {
+  essays: any[];
+  notes: any[];
+  talks: any[];
+  patterns: any[];
+  smidgeons: any[];
+  now: any[];
+};
 
 export async function getStaticPaths() {
   const [essays, notes, talks, patterns, smidgeons, nowPages] = await Promise.all([
@@ -15,6 +25,17 @@ export async function getStaticPaths() {
     getCollection("smidgeons"),
     getCollection("now"),
   ]);
+  const { canonicalByCollection, publicByCollection } = createPublicEntryManifest({
+    essays,
+    notes,
+    talks,
+    patterns,
+    smidgeons,
+    now: nowPages,
+  }) as unknown as {
+    canonicalByCollection: PublicationCollections;
+    publicByCollection: PublicationCollections;
+  };
 
   // Create paths for each content type
   const paths: {
@@ -22,51 +43,24 @@ export async function getStaticPaths() {
     props: { entry: any; type: string };
   }[] = [];
 
-  // Function to add paths for a collection with versioning support
-  const addContentPaths = (entries: any[], type: string) => {
-    const processedBaseSlugs = new Set<string>();
-    
+  const addContentPaths = (entries: any[], type: string, prefix = "") => {
     entries.forEach((entry) => {
-      const baseSlug = extractBaseSlug(entry.id);
-      
-      // Only add canonical path once per base slug
-      if (!processedBaseSlugs.has(baseSlug)) {
-        const allVersions = getAllVersionsForPost(baseSlug, entries);
-        if (allVersions.length > 1) {
-          // This is versioned content, create canonical OG image using latest version
-          const latestVersion = getLatestVersion(allVersions);
-          paths.push({
-            params: { slug: baseSlug },
-            props: { entry: latestVersion, type },
-          });
-        } else {
-          // Single version content, use original entry
-          paths.push({
-            params: { slug: entry.id },
-            props: { entry, type },
-          });
-        }
-        processedBaseSlugs.add(baseSlug);
-      }
+      paths.push({
+        params: { slug: `${prefix}${getSocialImageSlug(entry)}` },
+        props: { entry, type },
+      });
     });
   };
 
   // Add paths for each content type
-  addContentPaths(essays, "essay");
-  addContentPaths(notes, "note");
-  addContentPaths(talks, "talk");
-  addContentPaths(patterns, "pattern");
-  addContentPaths(smidgeons, "smidgeon");
+  addContentPaths(canonicalByCollection.essays, "essay");
+  addContentPaths(canonicalByCollection.notes, "note");
+  addContentPaths(canonicalByCollection.talks, "talk");
+  addContentPaths(canonicalByCollection.patterns, "pattern");
+  addContentPaths(publicByCollection.smidgeons, "smidgeon");
+  addContentPaths(publicByCollection.now, "now", "now-");
 
-  // Now pages
-  nowPages.forEach((entry) => {
-    paths.push({
-      params: { slug: `now-${entry.id}` },
-      props: { entry, type: "now" },
-    });
-  });
-
-  return paths;
+  return mergePublicationPaths({ publicPaths: paths });
 }
 
 async function getImageData(imagePath: string) {
