@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { createServer as createHTTPServer } from "node:http";
 import { createServer } from "node:net";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   DEFAULT_HOST,
   DEFAULT_PORT,
@@ -21,6 +22,8 @@ import {
   waitForExit,
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
+
+const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 const html = (title = "Maggie Appleton") =>
   `<!doctype html><html><head><title>${title}</title><link rel="canonical" href="https://maggieappleton.com/"></head><body><main><h1>${title}</h1></main></body></html>`;
@@ -324,7 +327,7 @@ test("runs the verifier with its manifest and reports every result", async () =>
   assert.deepEqual(results, [{ path: "/about", status: 200 }]);
   assert.equal(spawnCall[0], process.platform === "win32" ? "npm.cmd" : "npm");
   assert.deepEqual(spawnCall[1], ["run", "dev", "--", "--host", "127.0.0.1", "--port", "4322", "--strictPort"]);
-  assert.match(spawnCall[2].cwd, /maggie-seo-aeo-p0a\/$/);
+  assert.equal(spawnCall[2].cwd, repoRoot);
   assert.equal(spawnCall[2].detached, process.platform !== "win32");
   assert.deepEqual(spawnCall[2].stdio, ["ignore", "pipe", "pipe"]);
   assert.equal(readinessCall.baseURL, "http://127.0.0.1:4322");
