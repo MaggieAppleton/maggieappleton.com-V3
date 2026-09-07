@@ -21,6 +21,7 @@ export const ROUTES = Object.freeze([
   { path: "/rss.xml", kind: "xml" },
   { path: "/smidgeons.xml", kind: "xml" },
   { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" },
+  { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {

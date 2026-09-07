@@ -39,8 +39,12 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
-  assert.equal(ROUTES.length, 12);
-  assert.deepEqual(ROUTES.at(-1), { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" });
+  assert.equal(ROUTES.length, 13);
+  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" });
+  assert.deepEqual(
+    ROUTES.find(({ path }) => path === "/drafts"),
+    { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
+  );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   for (const route of ROUTES) {
     assert.match(route.path, /^\//);
