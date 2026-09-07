@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import rss from "@astrojs/rss";
 import { normalizeCanonicalPath } from "../src/utils/canonical.mjs";
 
 const fromRoot = (path) => new URL(`../${path}`, import.meta.url);
@@ -62,6 +63,66 @@ test("normalizes only the four internal feed-item link builders", async () => {
 
   assert.match(source, /import\s*\{\s*normalizeCanonicalPath\s*\}\s*from\s*["']\.\/canonical\.mjs["'];/);
   assert.equal((source.match(/link:\s*normalizeCanonicalPath\(/g) ?? []).length, 4);
+});
+
+const xmlElementContents = (xml, element) => [
+  ...xml.matchAll(new RegExp(`<${element}\\b[^>]*>([\\s\\S]*?)</${element}>`, "gi")),
+].map(([, content]) => content.trim());
+
+const serializedRssUrls = async (options) => {
+  const xml = await (await rss(options)).text();
+  const [channel] = xmlElementContents(xml, "channel");
+  assert.ok(channel, "serialized RSS must include one channel");
+  const channelLinks = xmlElementContents(channel, "link");
+  const items = xmlElementContents(channel, "item").map((item) => ({
+    link: xmlElementContents(item, "link")[0],
+    guid: xmlElementContents(item, "guid")[0],
+  }));
+
+  return { channelLink: channelLinks[0], items };
+};
+
+test("proves the RSS serializer defaults to slashful channel and item URLs", async () => {
+  const { channelLink, items } = await serializedRssUrls({
+    title: "Test feed",
+    description: "Test description",
+    site: "https://example.test",
+    items: [{ title: "An item", link: "/slashless-item" }],
+  });
+
+  assert.equal(channelLink, "https://example.test/");
+  assert.equal(items[0].link, "https://example.test/slashless-item/");
+  assert.equal(items[0].guid, "https://example.test/slashless-item/");
+});
+
+test("keeps RSS channel, link, and guid URLs slashless when configured", async () => {
+  const { channelLink, items } = await serializedRssUrls({
+    title: "Test feed",
+    description: "Test description",
+    site: "https://example.test",
+    trailingSlash: false,
+    items: [
+      { title: "Flat", link: "/flat-item" },
+      { title: "Nested", link: "/nested/item" },
+    ],
+  });
+
+  assert.equal(channelLink, "https://example.test");
+  assert.deepEqual(items.map(({ link }) => link), [
+    "https://example.test/flat-item",
+    "https://example.test/nested/item",
+  ]);
+  assert.deepEqual(items.map(({ guid }) => guid), [
+    "https://example.test/flat-item",
+    "https://example.test/nested/item",
+  ]);
+});
+
+test("configures both feed endpoints to preserve slashless serialization", async () => {
+  for (const path of ["src/pages/rss.xml.js", "src/pages/smidgeons.xml.js"]) {
+    const source = await readFile(fromRoot(path), "utf8");
+    assert.equal((source.match(/\btrailingSlash\s*:\s*false\b/g) ?? []).length, 1, `${path} must configure RSS trailingSlash: false`);
+  }
 });
 
 test("makes generated backlink targets root-relative and slashless", async () => {
