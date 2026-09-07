@@ -173,7 +173,8 @@ git commit -m "feat: define shared publication policy"
 
 - Create: `src/utils/publicationRoutes.mjs`
 - Modify: `src/pages/[...slug].astro`
-- Modify: `src/pages/now-[slug].astro`
+- Delete: `src/pages/now-[slug].astro`
+- Create: `src/pages/now-[slug]/[...rest].astro`
 - Modify: `src/layouts/PostLayout.astro`
 - Modify: `src/components/layouts/VersionDropdown.astro`
 - Modify: `src/components/layouts/VersionWarning.astro`
@@ -197,7 +198,9 @@ Add pure route fixtures through `publicationRoutes.mjs` proving:
 - draft-only v2 emits `v2/slug`, never `slug`;
 - versioned status uses `isVersionedPublicationEntry`, not a second predicate;
 - duplicate public/public, public/draft, and draft/draft candidates throw descriptive errors;
-- the reserved `drafts` segment and everything beneath it are rejected for generic content paths.
+- the reserved `drafts` segment and everything beneath it are rejected for generic content paths;
+- flat and nested Now IDs map to `/now-id` and `/now-prefix/rest` without collisions;
+- the entire `now-` namespace is rejected for generic content paths so the dedicated Now route cannot shadow them.
 
 Export exactly:
 
@@ -207,13 +210,18 @@ export function mergePublicationPaths({
   publicPaths,
   draftPaths,
   reservedPrefixes = [],
+  reservedStartsWith = [],
+  getPathSlug,
 }) { /* ordered, collision-free path objects */ }
+export function toNowRouteParams(id) { /* first ID segment as slug, optional remainder as rest */ }
 ```
 
 `mergePublicationPaths` must preserve public paths before preview paths, must
 not mutate either input, and must validate the string value at
-`path.params.slug`. A reserved prefix rejects both an exact slug and its `/`
-descendants.
+`path.params.slug` by default. `getPathSlug` may reconstruct a path from routes
+with multiple parameters, such as the Now route. A reserved prefix rejects both
+an exact slug and its `/` descendants; `reservedStartsWith` rejects a complete
+leading string namespace such as `now-`.
 
 Run RED:
 
@@ -242,12 +250,21 @@ In `src/pages/[...slug].astro`:
    - unversioned drafts and smidgeons: their ordinary ID path.
 4. Merge paths through a small pure helper in `publicationRoutes.mjs` that owns one global `Set`, rejects any collision across public and draft candidates, and fails closed with the colliding slug in its error.
 5. Reserve the `drafts` segment and its entire prefix so generic public or preview content can never be shadowed by `src/pages/drafts/[...slug].astro`.
+6. Reserve the entire `now-` leading namespace so generic paths cannot be shadowed by the dedicated Now route.
 
-In `src/pages/now-[slug].astro`:
+Replace `src/pages/now-[slug].astro` with
+`src/pages/now-[slug]/[...rest].astro`:
 
 1. Build public paths from `selectPublicEntries(nowEntries)`.
-2. Append draft Now paths only under `import.meta.env.DEV`, using the same collision helper without the root catch-all's `drafts` reservation.
-3. Remove the unused `getEntry` import while touching the file.
+2. Convert each ID with `toNowRouteParams`: a flat ID uses
+   `{ slug: id, rest: undefined }`; a nested ID uses its first segment as
+   `slug` and the remaining path as `rest`. This preserves `/now-id` for flat
+   content and emits `/now-prefix/rest` for nested content.
+3. Append draft Now paths only under `import.meta.env.DEV`, using the same
+   collision helper with a `getPathSlug` callback that reconstructs the complete
+   `now-...` pathname from both parameters.
+4. Remove the unused `getEntry` import and adjust relative imports after moving
+   the file two directories deep.
 
 Do not alter rendering or component maps.
 
@@ -269,7 +286,7 @@ Spot checks during the verifier run must include:
 ### Step 5: Commit
 
 ```bash
-git add src/utils/publicationRoutes.mjs src/pages/'[...slug].astro' src/pages/'now-[slug].astro' src/layouts/PostLayout.astro src/components/layouts/VersionDropdown.astro src/components/layouts/VersionWarning.astro tests/publication-policy.test.mjs
+git add src/utils/publicationRoutes.mjs src/pages/'[...slug].astro' src/pages/'now-[slug].astro' src/pages/'now-[slug]'/'[...rest].astro' src/layouts/PostLayout.astro src/components/layouts/VersionDropdown.astro src/components/layouts/VersionWarning.astro tests/publication-policy.test.mjs
 git commit -m "fix: keep drafts outside public routes"
 ```
 
@@ -515,6 +532,10 @@ git commit -m "fix: publish only canonical public feed items"
 - Modify: `src/scripts/verify-html.mjs`
 - Modify: `tests/verify-html.test.mjs`
 - Modify: `tests/publication-policy.test.mjs`
+- Delete: `src/pages/now-[slug].astro`
+- Create: `src/pages/now-[slug]/[...rest].astro`
+- Modify: `src/utils/publicationRoutes.mjs`
+- Modify: `src/pages/[...slug].astro`
 
 ### Step 1: Add RED route contracts
 
@@ -525,6 +546,8 @@ Add source tests asserting:
 - its `getStaticPaths()` returns `[]` unless `import.meta.env.DEV` is true;
 - no production page/navigation source links to `/drafts`;
 - the route uses only `data.draft === true` collections for its listing.
+- flat and nested Now draft links resolve through the dedicated optional-rest
+  route, while generic `now-` paths are rejected as route collisions.
 
 Add `/drafts` to the P0a route manifest as an HTML route with `bodyIncludes: "Draft Posts"`. Update the verifier manifest-count test from 12 to 13 and assert the new route explicitly.
 
@@ -540,6 +563,11 @@ export function getStaticPaths() {
 ```
 
 Keep draft listing and preview links, but make versioned preview links agree with Task 2's development paths. The page should not render images through new code paths beyond its existing essay/talk thumbnails.
+
+Complete the Now route hardening described in Task 2 while this navigation is
+being verified: use the optional-rest route for both flat and nested IDs, share
+the pure parameter conversion and collision checks, and reserve the complete
+`now-` namespace in the generic catch-all.
 
 Delete the old production-visible physical page rather than redirecting it.
 
@@ -557,7 +585,7 @@ The verifier must report 13 routes and still end with “without requesting imag
 ### Step 4: Commit
 
 ```bash
-git add src/pages/drafts.astro src/pages/drafts/'[...slug].astro' src/scripts/verify-html.mjs tests/verify-html.test.mjs tests/publication-policy.test.mjs
+git add src/pages/drafts.astro src/pages/drafts/'[...slug].astro' src/pages/'now-[slug].astro' src/pages/'now-[slug]'/'[...rest].astro' src/pages/'[...slug].astro' src/utils/publicationRoutes.mjs src/scripts/verify-html.mjs tests/verify-html.test.mjs tests/publication-policy.test.mjs
 git commit -m "fix: make draft index development-only"
 ```
 
