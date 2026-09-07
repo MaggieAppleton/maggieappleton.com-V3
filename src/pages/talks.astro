@@ -15,9 +15,10 @@ import talks1 from "../images/general/talks_1.webp";
 import talks2 from "../images/general/talks_2.webp";
 import talks3 from "../images/general/talks_3.webp";
 import talks5 from "../images/general/talks_5.webp";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
 
-// Get all talks that aren't drafts
-const talks = await getCollection("talks", ({ data }) => !data.draft);
+// Get the latest public version of each talk
+const talks = selectLatestPublicEntries(await getCollection("talks"));
 
 // Sort talks by date
 const sortedTalks = talks.sort(

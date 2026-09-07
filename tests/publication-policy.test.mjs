@@ -100,6 +100,18 @@ test("selectLatestPublicEntries chooses the highest public version and retains t
   assert.deepEqual(selectLatestPublicEntries(entries), [firstV2, entries[3]]);
 });
 
+test("selectLatestPublicEntries collapses only folder-versioned entries", () => {
+  const ordinaryV1 = entry({ id: "api-v1.mdx", version: 1 });
+  const ordinaryV2 = entry({ id: "api-v2.mdx", version: 2 });
+  const folderV1 = entry({ id: "guide/guide-v1.mdx", version: 1 });
+  const folderV2 = entry({ id: "guide/guide-v2.mdx", version: 2 });
+
+  assert.deepEqual(
+    selectLatestPublicEntries([ordinaryV1, folderV1, ordinaryV2, folderV2]),
+    [ordinaryV1, folderV2, ordinaryV2],
+  );
+});
+
 test("a draft v2 cannot replace public v1 in a versioned collection manifest", () => {
   const publicV1 = entry({ id: "essay/essay-v1.mdx", version: 1 });
   const manifest = createPublicEntryManifest({
@@ -159,6 +171,33 @@ test("createPublicEntryManifest flattens declared collection order without mutat
   assert.deepEqual(manifest.canonicalEntries, [essays[0], talks[0], smidgeons[0]]);
   assert.deepEqual(collections, before);
   assert.deepEqual(VERSIONED_COLLECTIONS, ["essays", "notes", "patterns", "talks"]);
+});
+
+test("discovery and topic inputs contain one latest public version and no draft-only topics", () => {
+  const essayV1 = {
+    ...entry({ id: "essay/essay-v1.mdx", version: 1 }),
+    data: { version: 1, topics: ["Keep"] },
+  };
+  const essayV2 = {
+    ...entry({ id: "essay/essay-v2.mdx", version: 2 }),
+    data: { version: 2, topics: ["Keep", "Latest"] },
+  };
+  const draftOnlyNote = {
+    ...entry({ id: "private/private-v1.mdx", collection: "notes", version: 1, draft: true }),
+    data: { version: 1, draft: true, topics: ["Private"] },
+  };
+  const manifest = createPublicEntryManifest({ essays: [essayV1, essayV2], notes: [draftOnlyNote] });
+
+  assert.deepEqual(manifest.canonicalByCollection.essays, [essayV2]);
+  assert.deepEqual(manifest.canonicalEntries, [essayV2]);
+  assert.deepEqual(
+    manifest.canonicalEntries.flatMap((post) => post.data.topics ?? []),
+    ["Keep", "Latest"],
+  );
+  assert.equal(
+    manifest.canonicalEntries.flatMap((post) => post.data.topics ?? []).includes("Private"),
+    false,
+  );
 });
 
 test("draft preview slugs use version/base for folder versions and the ordinary ID otherwise", () => {
@@ -420,4 +459,97 @@ test("production version paths and metadata consume public entries rather than r
       assert.match(source, helperContract, `${relativePath} must pass the filtered allEntries result to its helper`);
     }
   }
+});
+
+test("discovery pages consume canonical public entries through the shared policy", () => {
+  const contracts = {
+    "src/pages/index.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [
+        /selectLatestPublicEntries\(\s*await getCollection\("essays"\)\s*,?\s*\)/,
+        /selectLatestPublicEntries\(\s*await getCollection\("notes"\)\s*,?\s*\)/,
+        /selectLatestPublicEntries\(\s*await getCollection\("patterns"\)\s*,?\s*\)/,
+      ],
+    },
+    "src/pages/essays.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectLatestPublicEntries\(\s*await getCollection\("essays"\)\s*,?\s*\)/],
+    },
+    "src/pages/notes.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectLatestPublicEntries\(\s*await getCollection\("notes"\)\s*,?\s*\)/],
+    },
+    "src/pages/patterns.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectLatestPublicEntries\(\s*await getCollection\("patterns"\)\s*,?\s*\)/],
+    },
+    "src/pages/talks.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectLatestPublicEntries\(\s*await getCollection\("talks"\)\s*,?\s*\)/],
+    },
+    "src/pages/now.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectPublicEntries\(\s*await getCollection\("now"\)\s*,?\s*\)/],
+    },
+    "src/pages/smidgeons.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectPublicEntries\(\s*await getCollection\("smidgeons"\)\s*,?\s*\)/],
+    },
+    "src/pages/podcasts.astro": {
+      import: 'from "../utils/publication.mjs"',
+      calls: [/selectPublicEntries\(\s*await getCollection\("podcasts"\)\s*,?\s*\)/],
+    },
+  };
+
+  for (const [relativePath, contract] of Object.entries(contracts)) {
+    const source = readSource(relativePath);
+    assert.ok(source.includes(contract.import), `${relativePath} must import publication policy`);
+    for (const call of contract.calls) {
+      assert.match(source, call, `${relativePath} must select its public discovery entries`);
+    }
+    assert.doesNotMatch(
+      source,
+      /getCollection\([^)]*,\s*\(\{\s*data\s*\}\)\s*=>\s*!data\.draft\s*\)/,
+      `${relativePath} must not define an inline draft predicate`,
+    );
+  }
+
+  const homepage = readSource("src/pages/index.astro");
+  assert.match(homepage, /href=\{`\/\$\{extractBaseSlug\(note\.id\)\}`\}/);
+  assert.doesNotMatch(homepage, /href=\{`\/\$\{note\.id\}`\}/);
+});
+
+test("garden builds one canonical manifest from all seven publication collections", () => {
+  const source = readSource("src/pages/garden.astro");
+
+  assert.ok(source.includes('from "../utils/publication.mjs"'));
+  assert.match(source, /const manifest\s*=\s*createPublicEntryManifest\(\{/);
+  for (const collection of PUBLICATION_COLLECTIONS) {
+    assert.match(source, new RegExp(`\\b${collection}\\b`));
+    assert.match(
+      source,
+      new RegExp(`canonicalByCollection\\.${collection}`),
+      `garden must consume manifest.canonicalByCollection.${collection}`,
+    );
+  }
+  assert.doesNotMatch(source, /getCollection\([^)]*,\s*\(\{\s*data\s*\}\)/);
+});
+
+test("topic collection uses one canonical manifest as the sole topic input", () => {
+  const source = readSource("src/utils/getTopics.ts");
+
+  assert.ok(source.includes('from "./publication.mjs"'));
+  assert.match(source, /const manifest\s*=\s*await fetchAllContent\(\)/);
+  assert.equal((source.match(/manifest\.canonicalEntries/g) ?? []).length, 2);
+
+  for (const collection of PUBLICATION_COLLECTIONS) {
+    assert.equal(
+      (source.match(new RegExp(`getCollection\\(\\"${collection}\\"\\)`, "g")) ?? []).length,
+      1,
+      `getTopics must fetch ${collection} once without an inline callback`,
+    );
+  }
+
+  assert.doesNotMatch(source, /getCollection\([^)]*,/);
+  assert.doesNotMatch(source, /data\.draft/);
 });
