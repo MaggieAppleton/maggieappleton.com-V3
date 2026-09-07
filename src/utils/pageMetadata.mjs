@@ -78,7 +78,7 @@ export function createPageMetadataNode({
 
   if (normalizedPublished) node.datePublished = normalizedPublished;
   const normalizedModified = toCalendarDate(dateModified);
-  if (normalizedModified) node.dateModified = normalizedModified;
+  if (type === "article" && normalizedModified) node.dateModified = normalizedModified;
   const text = meaningfulText(description);
   if (text) node.description = text;
 
