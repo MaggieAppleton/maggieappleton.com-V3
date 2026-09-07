@@ -161,11 +161,28 @@ test("accepts only canonical-origin or HTTPS images and omits unsafe values", ()
     type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10",
     image: "/cover.png",
   }).image, "https://maggieappleton.com/cover.png");
-  for (const image of ["", "  ", "...", "//host/image.png", "http://host/image.png", "data:image/png;base64,x", "blob:https://host/id", "javascript:alert(1)", "not a URL"]) {
+  for (const image of ["", "  ", "...", "//host/image.png", "/\\evil.test/x", "http://host/image.png", "data:image/png;base64,x", "blob:https://host/id", "javascript:alert(1)", "not a URL", "/cover\u0000.png", "https://host\\evil.test/x"]) {
     assert.equal(Object.hasOwn(createPageMetadataNode({
       type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10", image,
     }), "image"), false, image);
   }
+});
+
+test("keeps canonical-origin root-relative images exact", () => {
+  for (const image of ["/cover.png", "/nested/cover.webp"]) {
+    assert.match(createPageMetadataNode({
+      type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10", image,
+    }).image, /^https:\/\/maggieappleton\.com\/(?!\/)/);
+  }
+});
+
+test("deep-freezes nested values in a shallow-frozen page node", () => {
+  const page = createPageMetadataNode({ type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10" });
+  Object.freeze(page);
+  const graph = createStructuredDataGraph(page);
+  assert.equal(Object.isFrozen(graph["@graph"][2].isPartOf), true);
+  assert.equal(Object.isFrozen(graph["@graph"][2].author), true);
+  assert.throws(() => { graph["@graph"][2].author["@id"] = "changed"; }, TypeError);
 });
 
 test("omits invalid optional WebPage dates and Article-only fields", () => {
@@ -216,7 +233,25 @@ test("detail layouts use guarded canonical metadata and calendar time values", a
     assert.match(source, /type:\s*["']webpage["']/);
     assert.match(source, /startDateCalendar/);
     assert.match(source, /datetime=\{startDateCalendar\}/);
+    assert.match(source, /timeZone:\s*["']UTC["']/);
   }
+});
+
+test("authored date frontmatter uses calendar dates or UTC timestamps before schema coercion", async () => {
+  const collections = ["essays", "notes", "patterns", "talks", "now", "smidgeons"];
+  const valid = /^(?:\d{4}-\d{2}-\d{2}|\d{4}-\d{2}-\d{2}T[^\s]+Z)$/;
+  for (const collection of collections) {
+    const files = await import("node:fs/promises").then(({ readdir }) => readdir(new URL(`../src/content/${collection}/`, import.meta.url)));
+    for (const file of files.filter((name) => name.endsWith(".mdx"))) {
+      const source = await readFile(new URL(`../src/content/${collection}/${file}`, import.meta.url), "utf8");
+      const frontmatter = source.match(/^---\n([\s\S]*?)\n---/m)?.[1] ?? "";
+      for (const [, value] of frontmatter.matchAll(/^(?:startDate|updated):\s*["']?([^"'\s]+)["']?\s*$/gm)) {
+        assert.match(value, valid, `${collection}/${file}: non-UTC authored date`);
+      }
+    }
+  }
+  assert.equal(valid.test("2025-01-07T09:58:54.908+01:00"), false);
+  assert.equal(valid.test("2025-01-07T09:58:54.908Z"), true);
 });
 
 test("publication Dates use canonical calendar datetime values", async () => {

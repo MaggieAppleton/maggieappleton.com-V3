@@ -31,10 +31,13 @@ export const toCalendarDate = (value) => {
 function optionalHttpsImageUrl(value) {
   const source = meaningfulText(value);
   if (!source) return undefined;
+  if (/[\u0000-\u001F\u007F]/.test(source) || source.includes("\\") || source.startsWith("//")) return undefined;
   try {
-    const url = source.startsWith("/") && !source.startsWith("//")
-      ? new URL(source, CANONICAL_ORIGIN)
-      : new URL(source);
+    if (source.startsWith("/")) {
+      const url = new URL(source, CANONICAL_ORIGIN);
+      return url.protocol === "https:" && url.origin === CANONICAL_ORIGIN ? url.toString() : undefined;
+    }
+    const url = new URL(source);
     return url.protocol === "https:" ? url.toString() : undefined;
   } catch {
     return undefined;
@@ -42,9 +45,9 @@ function optionalHttpsImageUrl(value) {
 }
 
 function deepFreeze(value) {
-  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  if (!value || typeof value !== "object") return value;
   for (const child of Object.values(value)) deepFreeze(child);
-  return Object.freeze(value);
+  return Object.isFrozen(value) ? value : Object.freeze(value);
 }
 
 export function createPageMetadataNode({

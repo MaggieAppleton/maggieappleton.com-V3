@@ -37,8 +37,8 @@ export const ROUTES = Object.freeze([
   { path: "/smidgeons", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
   { path: "/2025-01-deepseek", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
   { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/still-cant-draw", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-08-18", dateModified: "2023-12-12", description: "The failure of drawing materials without mediums and meat" } },
-  { path: "/xanadu-patterns", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-07-10", dateModified: "2021-12-20", description: "Project Xanadu as a pattern language, rather than a failed software project" } },
+  { path: "/still-cant-draw", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-08-18", dateModified: "2023-12-12", description: "The failure of drawing materials without mediums and meat", hasImage: true } },
+  { path: "/xanadu-patterns", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-07-10", dateModified: "2021-12-20", description: "Project Xanadu as a pattern language, rather than a failed software project", hasImage: true } },
   { path: "/greensock-react", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-09-27", dateModified: "2020-09-27", description: "How to use the Greensock animation library inside React using React hooks" } },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
@@ -426,6 +426,8 @@ function assertPageNode(route, document, canonical) {
     assert.ok(allowed.includes(key), `${route.path}: unsupported page node property ${key}`);
   }
   if (descriptor === "article") {
+    const required = ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished"];
+    for (const field of required) assert.equal(Object.hasOwn(node, field), true, `${route.path}: Article missing ${field}`);
     assert.equal(typeof node.headline, "string");
     assert.deepEqual(node.author, { "@id": "https://maggieappleton.com/#person" });
     assert.deepEqual(node.publisher, { "@id": "https://maggieappleton.com/#person" });
@@ -472,6 +474,11 @@ export function assertHTMLResponse(route, response, body) {
   if (!isArticle) {
     assert.deepEqual(articleMeta, [], `${route.path}: WebPage must not emit article:* metadata`);
   } else {
+    const allowedArticleMeta = new Set(["article:published_time", "article:author", "article:modified_time"]);
+    for (const property of articleMeta) assert.equal(allowedArticleMeta.has(property), true, `${route.path}: unsupported Article Open Graph property ${property}`);
+    assert.equal(articleMeta.filter((property) => property === "article:published_time").length, 1, `${route.path}: expected exactly one article:published_time`);
+    assert.equal(articleMeta.filter((property) => property === "article:author").length, 1, `${route.path}: expected exactly one article:author`);
+    assert.ok(articleMeta.filter((property) => property === "article:modified_time").length <= 1, `${route.path}: expected at most one article:modified_time`);
     assert.equal(getMetaContent(body, "article:published_time"), route.article?.datePublished, `${route.path}: wrong article:published_time`);
     assert.equal(getMetaContent(body, "article:author"), "https://maggieappleton.com/about", `${route.path}: wrong article:author`);
     if (route.article?.dateModified) assert.equal(getMetaContent(body, "article:modified_time"), route.article.dateModified, `${route.path}: wrong article:modified_time`);
