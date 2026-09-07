@@ -17,6 +17,7 @@ import {
 } from "../src/utils/publication.mjs";
 import {
   getDraftPreviewSlug,
+  getSocialImageSlug,
   mergePublicationPaths,
 } from "../src/utils/publicationRoutes.mjs";
 
@@ -56,10 +57,27 @@ test("getPublicationBaseSlug identifies folder versions, filename versions, and 
   assert.equal(getPublicationBaseSlug(entry({ id: "already-a-slug" })), "already-a-slug");
 });
 
-test("isVersionedPublicationEntry requires a folder rather than a filename version suffix", () => {
-  assert.equal(isVersionedPublicationEntry(entry({ id: "ai-dark-forest/ai-dark-forest-v2.mdx" })), true);
+test("isVersionedPublicationEntry requires a versioned collection and a folder", () => {
+  for (const collection of ["essays", "notes", "patterns", "talks"]) {
+    assert.equal(
+      isVersionedPublicationEntry(
+        entry({ id: "ai-dark-forest/ai-dark-forest-v2.mdx", collection, version: 2 }),
+      ),
+      true,
+    );
+  }
   assert.equal(isVersionedPublicationEntry(entry({ id: "ai-dark-forest-v2.mdx" })), false);
   assert.equal(isVersionedPublicationEntry(entry({ id: "ai-dark-forest.mdx" })), false);
+  assert.equal(
+    isVersionedPublicationEntry(
+      entry({ id: "nested/smidgeon.mdx", collection: "smidgeons", version: 2 }),
+    ),
+    false,
+  );
+  assert.equal(
+    isVersionedPublicationEntry(entry({ id: "nested/now.mdx", collection: "now", version: 2 })),
+    false,
+  );
 });
 
 test("getPublicationVersion defaults invalid and absent versions to one", () => {
@@ -151,6 +169,16 @@ test("draft preview slugs use version/base for folder versions and the ordinary 
     "v2/ai-dark-forest",
   );
   assert.equal(getDraftPreviewSlug(entry({ id: "ordinary-note.mdx", draft: true })), "ordinary-note.mdx");
+  assert.equal(
+    getDraftPreviewSlug(
+      entry({ id: "nested/smidgeon.mdx", collection: "smidgeons", version: 2, draft: true }),
+    ),
+    "nested/smidgeon.mdx",
+  );
+  assert.equal(
+    getDraftPreviewSlug(entry({ id: "nested/now.mdx", collection: "now", version: 2, draft: true })),
+    "nested/now.mdx",
+  );
 });
 
 test("public v1 keeps its canonical slug while development adds only a draft v2 preview", () => {
@@ -226,6 +254,71 @@ test("publication paths require every candidate to expose a string slug", () => 
 
 test("draft preview routing delegates folder detection to the shared predicate", () => {
   assert.match(getDraftPreviewSlug.toString(), /isVersionedPublicationEntry\(entry\)/);
+});
+
+test("social-image slugs keep public canonical versions and ordinary entry IDs", () => {
+  const publicV1 = entry({ id: "foo/foo-v1.mdx", version: 1 });
+  const manifest = createPublicEntryManifest({
+    essays: [publicV1, entry({ id: "foo/foo-v2.mdx", version: 2, draft: true })],
+    smidgeons: [entry({ id: "small-thought.mdx", collection: "smidgeons" })],
+    now: [entry({ id: "2026-08.mdx", collection: "now" })],
+  });
+
+  assert.deepEqual(
+    manifest.canonicalByCollection.essays.map(getSocialImageSlug),
+    ["foo"],
+  );
+  assert.deepEqual(
+    manifest.publicByCollection.smidgeons.map(getSocialImageSlug),
+    ["small-thought.mdx"],
+  );
+  assert.deepEqual(manifest.publicByCollection.now.map(getSocialImageSlug), ["2026-08.mdx"]);
+  assert.equal(
+    getSocialImageSlug(entry({ id: "nested/smidgeon.mdx", collection: "smidgeons" })),
+    "nested/smidgeon.mdx",
+  );
+  assert.equal(
+    getSocialImageSlug(entry({ id: "nested/now.mdx", collection: "now" })),
+    "nested/now.mdx",
+  );
+});
+
+test("draft-only entries supply no social-image candidates", () => {
+  const manifest = createPublicEntryManifest({
+    essays: [entry({ id: "private/private-v2.mdx", version: 2, draft: true })],
+  });
+
+  assert.deepEqual(manifest.canonicalByCollection.essays.map(getSocialImageSlug), []);
+});
+
+test("social-image route consumes one public manifest without development drafts", () => {
+  const source = readSource("src/pages/og/[...slug].png.ts");
+
+  assert.match(source, /createPublicEntryManifest/);
+  assert.match(source, /canonicalByCollection\.essays/);
+  assert.match(source, /canonicalByCollection\.notes/);
+  assert.match(source, /canonicalByCollection\.talks/);
+  assert.match(source, /canonicalByCollection\.patterns/);
+  assert.match(source, /publicByCollection\.smidgeons/);
+  assert.match(source, /publicByCollection\.now/);
+  assert.match(source, /getSocialImageSlug\(entry\)/);
+  assert.match(source, /mergePublicationPaths\(\{\s*publicPaths:\s*paths\s*\}\)/);
+  assert.match(source, /addContentPaths\(publicByCollection\.now, "now", "now-"\)/);
+  assert.doesNotMatch(source, /getAllVersionsForPost|getLatestVersion|import\.meta\.env\.DEV/);
+});
+
+test("social-image path assembly rejects an exact Now and Smidgeon collision", () => {
+  const smidgeon = entry({ id: "now-2026-08", collection: "smidgeons" });
+  const now = entry({ id: "2026-08", collection: "now" });
+  const assembledPaths = [
+    { params: { slug: getSocialImageSlug(smidgeon) } },
+    { params: { slug: `now-${getSocialImageSlug(now)}` } },
+  ];
+
+  assert.throws(
+    () => mergePublicationPaths({ publicPaths: assembledPaths }),
+    (error) => error instanceof Error && error.message.includes('"now-2026-08"'),
+  );
 });
 
 test("publication paths fail closed for leading-slash params", () => {
