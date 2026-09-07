@@ -461,6 +461,7 @@ git commit -m "fix: keep draft content out of generated indexes"
 
 **Files:**
 
+- Create: `src/utils/feedPublication.mjs`
 - Modify: `src/pages/rss.xml.js`
 - Modify: `src/pages/smidgeons.xml.js`
 - Modify: `tests/publication-policy.test.mjs`
@@ -468,6 +469,12 @@ git commit -m "fix: keep draft content out of generated indexes"
 ### Step 1: Add RED feed contracts
 
 Assert both feed routes import the shared policy. The main feed must use latest public entries for versioned collections and public-only entries for Now/Smidgeons. The Smidgeon feed must use `selectPublicEntries`. Forbid inline `getCollection` draft predicates.
+
+Add executable feed-item fixtures through `feedPublication.mjs`. They must
+assert the emitted item set and descending order for public v1 plus draft v2,
+ordinary unversioned `*-vN` entries, draft Now/Smidgeons, and a content-bearing
+Smidgeon. Preserve titles, dates, descriptions, links, and mapped content; the
+source contracts only prove that both real `GET` handlers call this tested seam.
 
 ### Step 2: Convert feed inputs only
 
