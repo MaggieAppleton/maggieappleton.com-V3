@@ -229,6 +229,21 @@ test("accepts valid HTML and rejects each missing contract", async () => {
 	}
 });
 
+test("enforces exact Article Open Graph properties and cardinality", () => {
+  const route = { path: "/api", kind: "html", pageMetadata: "article", canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10" } };
+  const articleHead = '<meta content="article" property="og:type"><meta content="2019-04-10" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">';
+  const valid = html("API", { canonical: route.canonical, ogUrl: route.canonical }).replace('<meta content="website" property="og:type">', articleHead);
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(valid), valid));
+  for (const property of ["article:section", "article:tag", "article:expiration_time"]) {
+    const body = valid.replace("</head>", `<meta content="extra" property="${property}"></head>`);
+    assert.throws(() => assertHTMLResponse(route, response(body), body), /unsupported|property|exactly/);
+  }
+  const duplicatePublished = valid.replace("</head>", '<meta content="2019-04-11" property="article:published_time"></head>');
+  assert.throws(() => assertHTMLResponse(route, response(duplicatePublished), duplicatePublished), /exactly one article:published_time/);
+  const duplicateAuthor = valid.replace("</head>", '<meta content="https://example.test/person" property="article:author"></head>');
+  assert.throws(() => assertHTMLResponse(route, response(duplicateAuthor), duplicateAuthor), /exactly one article:author/);
+});
+
 test("requires exactly one complete Site/Person JSON-LD graph", () => {
   const route = { path: "/about", kind: "html", siteIdentity: true };
   const duplicatePerson = {
@@ -486,25 +501,66 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertSitemapResponse(sitemap, response(body, contentType, status), body), message);
 });
 
-test("verifies routes in order without fetching image URLs", async () => {
+function fixtureCanonical(route) {
+  if (route.canonical) return route.canonical;
+  const url = new URL(route.path, "https://maggieappleton.com");
+  return `https://maggieappleton.com${url.pathname === "/" ? "/" : url.pathname.replace(/\/+$/, "")}`;
+}
+
+function fixtureIdentity(route) {
+  const canonical = fixtureCanonical(route);
+  if (!route.pageMetadata) return expectedSiteIdentity;
+  const article = route.pageMetadata === "article";
+  const node = article
+    ? {
+        "@id": `${canonical}#article`, "@type": "Article", url: canonical, headline: "Fixture",
+        isPartOf: { "@id": "https://maggieappleton.com/#website" },
+        author: { "@id": "https://maggieappleton.com/#person" }, publisher: { "@id": "https://maggieappleton.com/#person" },
+        datePublished: route.article.datePublished,
+        ...(route.article.dateModified ? { dateModified: route.article.dateModified } : {}),
+        ...(route.article.description ? { description: route.article.description } : {}),
+        ...(route.article.hasImage ? { image: "https://maggieappleton.com/_astro/fixture.png" } : {}),
+      }
+    : {
+        "@id": `${canonical}#webpage`, "@type": "WebPage", url: canonical, name: "Fixture",
+        isPartOf: { "@id": "https://maggieappleton.com/#website" },
+      };
+  return { ...expectedSiteIdentity, "@graph": [...expectedSiteIdentity["@graph"], node] };
+}
+
+function routeFixture(route) {
+  if (route.kind === "noindexHtml") return response(noindexHtml());
+  if (route.kind === "absent") return response("Not found", "text/html", 404);
+  if (route.kind === "xml") return response("<rss><channel><item /></channel></rss>", "application/xml");
+  if (route.kind === "robots") return response("User-agent: *\nAllow: /\nSitemap: https://maggieappleton.com/sitemap.xml", "text/plain");
+  if (route.kind === "sitemap") {
+    const urls = route.requiredLocations.map((location) => `<url><loc>${location}</loc></url>`).join("");
+    return response(`<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`, "application/xml");
+  }
+  const canonical = fixtureCanonical(route);
+  const title = route.bodyIncludes ?? route.title ?? "Fixture";
+  const options = { canonical, ogUrl: canonical, ogImage: route.ogImagePath ? `https://maggieappleton.com${route.ogImagePath}` : "https://maggieappleton.com/og.png" };
+  let body = html(title, options);
+  if (route.pageMetadata === "article") {
+    const tags = `<meta content="article" property="og:type"><meta content="${route.article.datePublished}" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">${route.article.dateModified ? `<meta content="${route.article.dateModified}" property="article:modified_time">` : ""}`;
+    body = body.replace('<meta content="website" property="og:type">', tags);
+  }
+  return response(body.replace("</head>", `<script type="application/ld+json">${JSON.stringify(fixtureIdentity(route))}</script></head>`));
+}
+
+test("verifies the exact default 26-route manifest without fetching image URLs", async () => {
   const requested = [];
-  const routes = [
-    { path: "/", kind: "html", title: "Maggie Appleton" },
-    { path: "/rss.xml", kind: "xml" },
-  ];
   const results = await verifyRoutes({
     baseURL: "http://127.0.0.1:4322",
-    routes,
+    routes: ROUTES,
     fetchImpl: async (url) => {
       requested.push(url);
-      return url.endsWith(".xml")
-        ? response("<rss><channel><item /></channel></rss>", "application/xml")
-        : response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/", ogUrl: "https://maggieappleton.com/" }));
+      return routeFixture(ROUTES[requested.length - 1]);
     },
   });
-  assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
-  assert.deepEqual(requested, ["http://127.0.0.1:4322/", "http://127.0.0.1:4322/rss.xml"]);
-  assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
+  assert.equal(results.length, ROUTES.length);
+  assert.equal(requested.length, ROUTES.length);
+  assert.ok(requested.every((url) => !/(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$))/i.test(url)));
 });
 
 test("verifies noindex and absent routes without relaxing redirect handling", async () => {
