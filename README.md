@@ -57,6 +57,6 @@ Automatic deploys on push to `main` are disabled in `vercel.json` (`git.deployme
 
 ## Verification
 
-`npm run verify:html` starts Astro locally and checks representative HTML and XML routes without requesting images. Use it for fast metadata, content, and route smoke checks.
+`npm run verify:html` starts Astro locally and checks representative HTML and XML routes without requesting images. Use it for fast metadata, content, and slashless destination smoke checks. The fast verifier checks local destinations only: it does not prove Vercel's redirect behaviour.
 
-This verifier refuses redirects and does not prove static route completeness, production redirects, image correctness or optimisation, third-party embed availability, or a production build. Run `npm run build:local` for image-related changes and before deployment; keep Astro's asset cache between full builds when possible.
+This verifier refuses redirects and does not prove static route completeness, Vercel or production redirects, image correctness or optimisation, third-party embed availability, or a production build. Run `npm run build:local` for image-related changes and immediately before a separately authorized deployment; keep Astro's asset cache between full builds when possible. For the deployed trailing-slash redirect checks, use the [P3 slashless URL normalization smoke checklist](docs/superpowers/plans/2026-09-07-slashless-url-normalization.md#task-3-branch-wide-verification-and-deployment-evidence); its Vercel preview smoke test is the pre-production evidence boundary.
