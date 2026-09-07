@@ -73,6 +73,28 @@ export function getPublicationVersion(entry) {
 }
 
 /**
+ * Returns the public version history for a folder-versioned entry.
+ * Ordinary IDs, including names such as `api-v1.mdx`, never have a version UI.
+ *
+ * @template {PublicationEntry} T
+ * @param {T | null | undefined} entry
+ * @param {ReadonlyArray<T> | null | undefined} entries
+ * @returns {T[]}
+ */
+export function getPublicationVersionEntries(entry, entries) {
+  if (!isVersionedPublicationEntry(entry)) return [];
+
+  const baseSlug = getPublicationBaseSlug(entry);
+  return selectPublicEntries(entries)
+    .filter((candidate) =>
+      candidate.collection === entry.collection &&
+      isVersionedPublicationEntry(candidate) &&
+      getPublicationBaseSlug(candidate) === baseSlug,
+    )
+    .sort((left, right) => getPublicationVersion(left) - getPublicationVersion(right));
+}
+
+/**
  * @template {PublicationEntry} T
  * @param {ReadonlyArray<T> | null | undefined} entries
  * @returns {T[]}
