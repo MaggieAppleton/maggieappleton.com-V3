@@ -37,6 +37,8 @@ links, and backlinks agree on the destination.
 - Do not claim local Astro dev proves Vercel status semantics. With
   `trailingSlash: "never"`, Astro dev rejects a slashful route; Vercel owns the
   deployed 308.
+- Pull requests do not create Vercel preview deployments. Do not seek, link, or
+  treat a preview URL as redirect evidence.
 - Do not run a full image build. P3 changes routing configuration and text URL
   output, not source images or image generation.
 
@@ -76,7 +78,8 @@ Assert that:
   `trailingSlash` property is the only authored redirect declaration;
 - the configured site remains `https://maggieappleton.com`;
 - README keeps the evidence boundary: the fast verifier checks local
-  destinations, while deployed redirect behavior needs a Vercel smoke test.
+  destinations, while exact deployed redirect behavior remains pending a
+  separately authorized production smoke; pull requests create no previews.
 
 Run RED:
 
@@ -88,10 +91,11 @@ node --test tests/slashless-routing.test.mjs
 
 Add `trailingSlash: "never"` to Astro and `"trailingSlash": false` to Vercel.
 Keep the existing Vercel headers unchanged. Update the README verifier note
-with the P3 boundary and point to this plan's exact smoke checklist. Preserve
-the existing requirement to run `npm run build:local` immediately before a
-separately authorized deployment; P3 skips the repeated full build only for
-this routing/text-only PR.
+with the P3 boundary and point to this plan's exact smoke checklist. Reserve
+`npm run build:local` for image-sensitive changes or final integrated
+verification when specifically needed. Do not run it immediately before an
+authorized deployment: `./deploy.sh` already performs the single authoritative
+local production image build.
 
 ### Verify
 
@@ -217,9 +221,20 @@ Request two fresh read-only reviews:
 
 Fix every Critical or Important finding through an implementer/re-review loop.
 
-### Preview smoke after the PR creates a Vercel preview
+### Production smoke after separately authorized deployment
 
-Use manual/no-follow requests and do not request image routes:
+Pull requests do not create preview deployments. The actual production workflow
+is `./deploy.sh`, which runs local `vercel build --prod` followed by
+`vercel deploy --prebuilt --prod`. Until a separately authorized production
+deployment, local evidence is limited to the unit/configuration tests and the
+18-route no-image destination verifier; it cannot establish Vercel's exact 308
+status, query preservation, or root behavior. `npm run build:local` is for
+image-sensitive changes or final integrated verification when specifically
+needed; do not duplicate the deploy script's local production image build
+immediately before deployment.
+
+After that authorized deployment, use manual/no-follow production requests and
+do not request image routes:
 
 - `/about/` -> one 308 with slashless `Location`;
 - `/topics/web-development/` -> one 308 with slashless `Location`;
@@ -230,19 +245,8 @@ Use manual/no-follow requests and do not request image routes:
   production URL.
 
 For every redirect case, require source status exactly 308 and verify the
-single `Location` target directly returns 200 rather than another 3xx. If an
-optional `vercel dev` diagnostic is used, record that the installed CLI may
-return 301 locally; skip it if it asks to link the project or create `.vercel`.
-Preview is the authoritative pre-production 308 check.
-
-If Vercel preview behavior differs from production-domain behavior, record the
-difference and retain the production smoke as pending. Do not deploy or change
-project linkage to manufacture evidence.
-
-### Production smoke after separately approved deployment
-
-Repeat the same no-follow checks on `https://maggieappleton.com`. Optionally
-and non-blockingly check `/rss.xml/`, `/smidgeons.xml/`, and `/robots.txt/`;
+single `Location` target directly returns 200 rather than another 3xx.
+Optionally and non-blockingly check `/rss.xml/`, `/smidgeons.xml/`, and `/robots.txt/`;
 endpoint names with extensions may differ across provider handling. Do not request
 `/_image/` or `/og/*.png/`. This remains pending until merge/deploy authority is
 given.
@@ -256,7 +260,8 @@ Push `codex/seo-aeo-slashless` and open it against
 - dependency on PR #247;
 - eventual target `main`, oldest-first;
 - local test, generator, 18-route no-image verifier, and Astro results;
-- Vercel preview smoke results and production smoke still pending;
+- no preview deployments are built; production smoke remains pending separate
+  deployment authority;
 - no merge or deploy authorization.
 
 Suggested title: `SEO: normalize slashless URLs`
@@ -275,6 +280,7 @@ Suggested title: `SEO: normalize slashless URLs`
 - [ ] External URLs, assets, fragments, XML names, and Webmention compatibility
       lookups are not rewritten.
 - [ ] Local gates and two independent reviews are clean.
-- [ ] Preview redirect behavior is recorded without requesting images.
+- [ ] Production redirect behavior is recorded after separately authorized
+      deployment, without requesting images.
 - [ ] Production smoke is explicitly pending deployment approval.
 - [ ] Stacked PR is open; nothing is merged or deployed.
