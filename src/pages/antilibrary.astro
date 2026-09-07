@@ -9,7 +9,7 @@ import { getCollection } from "astro:content";
 const antiBookData = await getCollection("antibooks");
 ---
 
-<Layout title="Antilibrary of Maggie Appleton">
+<Layout title="Antilibrary of Maggie Appleton" pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
 			<TitleWithCount posts={antiBookData}>

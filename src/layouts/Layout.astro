@@ -5,6 +5,8 @@ import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
 import { buildCanonicalUrl } from "../utils/canonical.mjs";
+import { createPageMetadataNode } from "../utils/pageMetadata.mjs";
+import { SITE_IDENTITY } from "../utils/siteIdentity.mjs";
 import SiteIdentityJsonLd from "../components/seo/SiteIdentityJsonLd.astro";
 import "../global.css";
 
@@ -14,9 +16,15 @@ export interface Props {
 	type?: string;
 	coverImage?: string;
 	canonicalPath?: string;
+	pageMetadata?: false | "webpage" | {
+		type: "article" | "webpage";
+		name?: string;
+		datePublished?: string;
+		dateModified?: string;
+	};
 }
 
-const { title, desc, type, coverImage, canonicalPath } = Astro.props;
+const { title, desc, type, coverImage, canonicalPath, pageMetadata = false } = Astro.props;
 
 const DEFAULT_DESCRIPTION =
 	"Maggie's digital garden filled with visual essays on programming, design, and anthropology";
@@ -39,6 +47,22 @@ if (!type) {
 	if (desc) ogImageURL.searchParams.set("description", desc);
 	if (coverImage) ogImageURL.searchParams.set("coverImage", coverImage);
 }
+
+const normalizedPageMetadata: Exclude<Props["pageMetadata"], false | undefined> | false =
+	pageMetadata === "webpage" ? { type: "webpage" } : (pageMetadata ?? false);
+const pageNode = normalizedPageMetadata !== false
+	? createPageMetadataNode({
+			...normalizedPageMetadata,
+			canonicalUrl: canonicalURL,
+			name: normalizedPageMetadata.name ?? title,
+			description: desc,
+			image: normalizedPageMetadata.type === "article" ? coverImage : undefined,
+		})
+	: undefined;
+const articleMetadata = normalizedPageMetadata !== false && normalizedPageMetadata.type === "article"
+	? normalizedPageMetadata
+	: undefined;
+const isArticle = Boolean(articleMetadata);
 
 ---
 
@@ -71,11 +95,22 @@ if (!type) {
 			canonical={canonicalURL}
 			openGraph={{
 				basic: {
-					type: "website",
+					type: isArticle ? "article" : "website",
 					url: canonicalURL,
 					title: title || "Maggie Appleton",
 					image: ogImageURL.toString(),
 				},
+				...(isArticle
+					? {
+						article: {
+							publishedTime: articleMetadata?.datePublished,
+							...(articleMetadata?.dateModified
+								? { modifiedTime: articleMetadata.dateModified }
+								: {}),
+							authors: [SITE_IDENTITY.personUrl],
+						},
+					}
+					: {}),
 				optional: {
 					locale: "en_GB",
 					description: desc || DEFAULT_DESCRIPTION,
@@ -93,7 +128,7 @@ if (!type) {
 				imageAlt: title || "Maggie Appleton's digital garden",
 			}}
 		/>
-		<SiteIdentityJsonLd />
+		<SiteIdentityJsonLd pageNode={pageNode} />
 	</head>
 	<body>
 		<Navbar />

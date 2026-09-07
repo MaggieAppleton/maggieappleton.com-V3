@@ -16,10 +16,12 @@ import { getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 import {
 	getPublicationBaseSlug,
+	isPublicEntry,
 	selectLatestPublicEntries,
 	selectPublicEntries,
 } from "../utils/publication.mjs";
 import { getEntryCanonicalPath } from "../utils/canonical.mjs";
+import { isCanonicalPublicArticle, toCalendarDate } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter:
@@ -78,14 +80,23 @@ const backlinks = currentPost?.inboundLinks || [];
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 
-const startDateISO =
-	canonicalDates.startDate instanceof Date
-		? canonicalDates.startDate.toISOString()
-		: canonicalDates.startDate;
-const updatedISO =
-	canonicalDates.updated instanceof Date
-		? canonicalDates.updated.toISOString()
-		: (canonicalDates.updated ?? "");
+const startDateCalendar = toCalendarDate(canonicalDates.startDate);
+const updatedCalendar = toCalendarDate(canonicalDates.updated);
+if (!startDateCalendar) {
+	throw new Error("Canonical Article publication date must be a valid calendar date");
+}
+const pageMetadata = entry && isCanonicalPublicArticle({
+	collection: entry.collection,
+	isPublic: isPublicEntry(entry),
+	requestPath: Astro.url.pathname,
+	canonicalPath,
+})
+	? {
+		type: "article" as const,
+		datePublished: startDateCalendar,
+		...(updatedCalendar ? { dateModified: updatedCalendar } : {}),
+	}
+	: false;
 ---
 
 <Layout
@@ -94,6 +105,7 @@ const updatedISO =
 	type={frontmatter.type}
 	coverImage={coverImage}
 	canonicalPath={canonicalPath}
+	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -122,8 +134,8 @@ const updatedISO =
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={startDateISO}
-					updated={updatedISO}
+					startDate={startDateCalendar}
+					updated={updatedCalendar}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>

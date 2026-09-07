@@ -1,40 +1,25 @@
 ---
-import { parseISO, differenceInDays } from "date-fns";
 import RelativeDate from "./RelativeDate.astro";
 
 interface Props {
 	startDate: string;
-	updated: string;
+	updated?: string;
 }
 
 const { startDate, updated } = Astro.props;
-
-const hasStartDate = Boolean(startDate);
-
-const relativeStartDate = startDate ? parseISO(startDate) : new Date();
-const relativeUpdatedDate = updated ? parseISO(updated) : new Date();
-
-const dateDifference = differenceInDays(relativeUpdatedDate, relativeStartDate);
-const isRecentUpdate = hasStartDate ? dateDifference <= 3 : true;
 ---
 
 <div class="dates">
-	{
-		!hasStartDate || isRecentUpdate ? (
-			<span>
-				Planted <RelativeDate postDate={updated} />
-			</span>
-		) : (
-			<Fragment>
-				<span>
-					Planted <RelativeDate postDate={startDate} />
-				</span>
-				<span>
-					Last tended <RelativeDate postDate={updated} />
-				</span>
-			</Fragment>
-		)
-	}
+	{startDate && (
+		<span>
+			Planted <time datetime={startDate}><RelativeDate postDate={startDate} /></time>
+		</span>
+	)}
+	{updated && updated !== startDate && (
+		<span>
+			Last tended <time datetime={updated}><RelativeDate postDate={updated} /></time>
+		</span>
+	)}
 </div>
 
 <style>
