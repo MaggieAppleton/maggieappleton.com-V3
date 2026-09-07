@@ -9,6 +9,7 @@ export async function GET(context) {
     title: "Maggie Appleton's Smidgeons",
     description: "A stream of interesting links, papers, and tiny thoughts",
     site: context.site,
+    trailingSlash: false,
     items: buildSmidgeonFeedItems({
       entries: smidgeons,
       site: context.site,

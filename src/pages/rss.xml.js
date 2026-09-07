@@ -23,6 +23,7 @@ export async function GET(context) {
     title: "Maggie Appleton",
     description: "Essays on programming, design, and anthropology",
     site: context.site,
+    trailingSlash: false,
     items: buildPublicationFeedItems({
       manifest,
       site: context.site,
