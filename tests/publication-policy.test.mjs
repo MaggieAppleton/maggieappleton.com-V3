@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { transform as transformAstro } from "@astrojs/compiler";
+import { transform as transformESBuild } from "esbuild";
 
 import {
   PUBLICATION_COLLECTIONS,
@@ -601,6 +603,24 @@ test("Now uses its optional-rest route and the generic route reserves the now- n
   assert.match(source, /mergePublicationPaths\(\{ publicPaths, draftPaths, getPathSlug \}\)/);
   assert.match(source, /return `now-\$\{slug\}\$\{rest/);
   assert.match(detailRoute, /reservedStartsWith:\s*\["now-"\]/);
+});
+
+test("Now optional-rest route compiles to valid ESM", async () => {
+  const relativePath = "src/pages/now-[slug]/[...rest].astro";
+  const filename = path.join(repoRoot, relativePath);
+  const source = fs.readFileSync(filename, "utf8");
+  const transformed = await transformAstro(source, {
+    filename,
+    normalizedFilename: relativePath,
+    internalURL: "@astrojs/runtime/server/index.js",
+  });
+
+  assert.deepEqual(transformed.diagnostics, []);
+  await assert.doesNotReject(() => transformESBuild(transformed.code, {
+    loader: "ts",
+    format: "esm",
+    target: "es2022",
+  }));
 });
 
 test("discovery pages consume canonical public entries through the shared policy", () => {

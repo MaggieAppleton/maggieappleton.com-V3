@@ -1,5 +1,5 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import { isPublicEntry, selectPublicEntries } from "../../utils/publication.mjs";
 import { mergePublicationPaths, toNowRouteParams } from "../../utils/publicationRoutes.mjs";
 import Layout from "../../layouts/Layout.astro";
@@ -48,7 +48,6 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-import { render } from "astro:content";
 const { Content } = await render(entry);
 
 const components = {
