@@ -99,6 +99,8 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html(route.title, { canonical: "https://maggieappleton.com/about", extraCanonical: '<link rel="canonical" href="https://maggieappleton.com/about">' }), /exactly one canonical/],
     [html(route.title, { canonical: "/about" }), /absolute HTTPS canonical/],
     [html(route.title, { canonical: "https://example.test/about" }), /absolute HTTPS canonical/],
+    [html(route.title, { canonical: "https://reader@maggieappleton.com/about" }), /username or password/],
+    [html(route.title, { canonical: "https://reader:secret@maggieappleton.com/about" }), /username or password/],
     [html(route.title, { canonical: "https://maggieappleton.com/about?source=verify" }), /query or fragment/],
     [html(route.title, { canonical: "https://maggieappleton.com/about#section" }), /query or fragment/],
     [html(route.title, { canonical: "https://maggieappleton.com/about/" }), /slashless/],
@@ -113,13 +115,41 @@ test("does not mistake prefixed attributes or rel lookalikes for canonical metad
     withoutCanonical.replace("</head>", '<link data-rel="canonical" data-href="https://maggieappleton.com/about"></head>'),
     withoutCanonical.replace("</head>", '<link rel="canonical-ish" href="https://maggieappleton.com/about"></head>'),
     withoutCanonical.replace("</head>", '<link rel="not-canonical" href="https://maggieappleton.com/about"></head>'),
+    withoutCanonical.replace("</head>", `<link data-note=' rel="canonical" href="https://maggieappleton.com/about"'></head>`),
     html("About", { canonical: "https://maggieappleton.com/about" }).replace('PROPERTY="og:url"', 'data-property="og:url"'),
+    html("About", { canonical: "https://maggieappleton.com/about" }).replace('PROPERTY="og:url"', `data-note=' property="og:url"'`),
   ]) {
     assert.throws(() => assertHTMLResponse(route, response(body), body), /exactly one canonical|exactly one og:url/);
   }
 
   const missingHref = withoutCanonical.replace("</head>", '<link rel="canonical" data-href="https://maggieappleton.com/about"></head>');
   assert.throws(() => assertHTMLResponse(route, response(missingHref), missingHref), /must have an href/);
+  const quotedFakeHref = withoutCanonical.replace("</head>", `<link rel="canonical" data-note=' href="https://maggieappleton.com/about"'></head>`);
+  assert.throws(() => assertHTMLResponse(route, response(quotedFakeHref), quotedFakeHref), /must have an href/);
+});
+
+test("uses the browser-effective first duplicate metadata attribute", () => {
+  const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
+  const evilHrefFirst = html("About").replace(
+    'HREF="https://maggieappleton.com/about"',
+    'HREF="https://evil.test/about" href="https://maggieappleton.com/about"',
+  );
+  assert.throws(() => assertHTMLResponse(route, response(evilHrefFirst), evilHrefFirst), /absolute HTTPS canonical/);
+
+  const evilOgContentFirst = html("About").replace(
+    'CONTENT="https://maggieappleton.com/about"',
+    'CONTENT="https://evil.test/about" content="https://maggieappleton.com/about"',
+  );
+  assert.throws(() => assertHTMLResponse(route, response(evilOgContentFirst), evilOgContentFirst), /og:url to equal/);
+
+  const goodHrefFirst = html("About").replace(
+    'HREF="https://maggieappleton.com/about"',
+    'HREF="https://maggieappleton.com/about" href="https://evil.test/about"',
+  ).replace(
+    'PROPERTY="og:url"',
+    'content="https://evil.test/about" PROPERTY="og:url"',
+  );
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(goodHrefFirst), goodHrefFirst));
 });
 
 test("checks the configured API social-image pathname", () => {

@@ -73,12 +73,65 @@ function assertSuccessfulResponse(route, response) {
 }
 
 function extractTags(body, name) {
-  return [...body.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map(([tag]) => tag);
+  const tags = [];
+  const startPattern = new RegExp(`<${name}\\b`, "gi");
+  let match;
+  while ((match = startPattern.exec(body))) {
+    let quote;
+    for (let index = startPattern.lastIndex; index < body.length; index += 1) {
+      const character = body[index];
+      if (quote) {
+        if (character === quote) quote = undefined;
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === ">") {
+        tags.push(body.slice(match.index, index + 1));
+        startPattern.lastIndex = index + 1;
+        break;
+      }
+    }
+  }
+  return tags;
+}
+
+function parseTagAttributes(tag) {
+  const attributes = new Map();
+  let index = 1;
+  while (index < tag.length && !/[\s/>]/.test(tag[index])) index += 1;
+
+  while (index < tag.length) {
+    while (index < tag.length && /\s/.test(tag[index])) index += 1;
+    if (index >= tag.length || tag[index] === ">" || tag[index] === "/") break;
+
+    const nameStart = index;
+    while (index < tag.length && !/[\s=/>]/.test(tag[index])) index += 1;
+    const attributeName = tag.slice(nameStart, index).toLowerCase();
+    while (index < tag.length && /\s/.test(tag[index])) index += 1;
+
+    let value = "";
+    if (tag[index] === "=") {
+      index += 1;
+      while (index < tag.length && /\s/.test(tag[index])) index += 1;
+      const quote = tag[index];
+      if (quote === '"' || quote === "'") {
+        index += 1;
+        const valueStart = index;
+        while (index < tag.length && tag[index] !== quote) index += 1;
+        value = tag.slice(valueStart, index);
+        if (tag[index] === quote) index += 1;
+      } else {
+        const valueStart = index;
+        while (index < tag.length && !/[\s>]/.test(tag[index])) index += 1;
+        value = tag.slice(valueStart, index);
+      }
+    }
+    if (attributeName && !attributes.has(attributeName)) attributes.set(attributeName, value);
+  }
+  return attributes;
 }
 
 function getAttribute(tag, name) {
-  const match = tag.match(new RegExp(`(?:^|\\s)${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i"));
-  return match?.[2];
+  return parseTagAttributes(tag).get(name.toLowerCase());
 }
 
 function canonicalLinks(body) {
@@ -109,6 +162,8 @@ function assertCanonical(route, body) {
   assert.equal(url.protocol, "https:", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
   assert.equal(url.hostname, "maggieappleton.com", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
   assert.equal(url.port, "", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
+  assert.equal(url.username, "", `${route.path}: canonical link must not contain a username or password`);
+  assert.equal(url.password, "", `${route.path}: canonical link must not contain a username or password`);
   assert.equal(url.search, "", `${route.path}: canonical link must not contain a query or fragment`);
   assert.equal(url.hash, "", `${route.path}: canonical link must not contain a query or fragment`);
   if (url.pathname !== "/") {
