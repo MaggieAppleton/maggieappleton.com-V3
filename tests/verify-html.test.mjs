@@ -83,6 +83,21 @@ test("verifies routes in order without fetching image URLs", async () => {
   assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
 });
 
+test("rejects supplied image routes before fetching them", async () => {
+  let fetchCalls = 0;
+  for (const path of ["/_image", "/_image?href=card", "/og", "/og?slug=card", "/images/card.png?width=1200"]) {
+    await assert.rejects(() => verifyRoutes({
+      baseURL: "http://127.0.0.1:4322",
+      routes: [{ path, kind: "html" }],
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return response(html());
+      },
+    }), /image route/i);
+  }
+  assert.equal(fetchCalls, 0);
+});
+
 test("waits through transient failures until the server responds", async () => {
   let calls = 0;
   await waitForServer({
@@ -158,6 +173,7 @@ test("runs the verifier with its manifest and reports every result", async () =>
     host: "127.0.0.1",
     port: 4322,
     routes,
+    assertPortAvailableImpl: async () => {},
     spawnImpl: (...args) => {
       spawnCall = args;
       return child;
@@ -182,6 +198,51 @@ test("runs the verifier with its manifest and reports every result", async () =>
   assert.equal(stopped, 1);
 });
 
+test("fails before spawning when an occupied-port preflight loses the startup race", async () => {
+  let spawnCalls = 0;
+  let preflightCall;
+  await assert.rejects(() => runVerifier({
+    port: 4322,
+    assertPortAvailableImpl: async (options) => {
+      preflightCall = options;
+      throw new Error("Port 4322 is already in use");
+    },
+    spawnImpl: () => {
+      spawnCalls += 1;
+      return new EventEmitter();
+    },
+    logger: { log() {}, error() {} },
+  }), /already in use/);
+  assert.equal(spawnCalls, 0);
+  assert.deepEqual(preflightCall, { host: "127.0.0.1", port: 4322 });
+});
+
+test("interrupts active verification and removes signal listeners", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  const signals = new EventEmitter();
+  let stopped = 0;
+  const verification = runVerifier({
+    port: 4322,
+    assertPortAvailableImpl: async () => {},
+    spawnImpl: () => child,
+    waitForServerImpl: async () => new Promise(() => {}),
+    verifyRoutesImpl: async () => [],
+    stopDevServerImpl: async () => { stopped += 1; },
+    signalTarget: signals,
+    logger: { log() {}, error() {} },
+  });
+  await Promise.resolve();
+  assert.equal(signals.listenerCount("SIGINT"), 1);
+  assert.equal(signals.listenerCount("SIGTERM"), 1);
+  signals.emit("SIGINT");
+  await assert.rejects(() => verification, /interrupted by SIGINT/);
+  assert.equal(stopped, 1);
+  assert.equal(signals.listenerCount("SIGINT"), 0);
+  assert.equal(signals.listenerCount("SIGTERM"), 0);
+});
+
 test("always stops the child when route verification fails", async () => {
   const child = new EventEmitter();
   child.pid = 99;
@@ -189,6 +250,7 @@ test("always stops the child when route verification fails", async () => {
   let stopped = 0;
   await assert.rejects(() => runVerifier({
     port: 4322,
+    assertPortAvailableImpl: async () => {},
     spawnImpl: () => child,
     waitForServerImpl: async () => {},
     verifyRoutesImpl: async () => { throw new Error("bad route"); },
@@ -205,6 +267,7 @@ test("surfaces spawn errors and still stops the child", async () => {
   let stopped = 0;
   const verification = runVerifier({
     port: 4322,
+    assertPortAvailableImpl: async () => {},
     spawnImpl: () => child,
     waitForServerImpl: async () => new Promise(() => {}),
     verifyRoutesImpl: async () => [],
