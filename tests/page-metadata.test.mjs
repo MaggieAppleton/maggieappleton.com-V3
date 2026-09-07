@@ -239,19 +239,29 @@ test("detail layouts use guarded canonical metadata and calendar time values", a
 
 test("authored date frontmatter uses calendar dates or UTC timestamps before schema coercion", async () => {
   const collections = ["essays", "notes", "patterns", "talks", "now", "smidgeons"];
-  const valid = /^(?:\d{4}-\d{2}-\d{2}|\d{4}-\d{2}-\d{2}T[^\s]+Z)$/;
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/;
+  const utcTimestamp = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
+  const isAuthoredDate = (value) => {
+    if (dateOnly.test(value)) return Boolean(toCalendarDate(value));
+    const match = value.match(utcTimestamp);
+    if (!match || !toCalendarDate(match[1])) return false;
+    const parsed = new Date(value);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[1];
+  };
   for (const collection of collections) {
     const files = await import("node:fs/promises").then(({ readdir }) => readdir(new URL(`../src/content/${collection}/`, import.meta.url)));
     for (const file of files.filter((name) => name.endsWith(".mdx"))) {
       const source = await readFile(new URL(`../src/content/${collection}/${file}`, import.meta.url), "utf8");
       const frontmatter = source.match(/^---\n([\s\S]*?)\n---/m)?.[1] ?? "";
       for (const [, value] of frontmatter.matchAll(/^(?:startDate|updated):\s*["']?([^"'\s]+)["']?\s*$/gm)) {
-        assert.match(value, valid, `${collection}/${file}: non-UTC authored date`);
+        assert.equal(isAuthoredDate(value), true, `${collection}/${file}: invalid authored date`);
       }
     }
   }
-  assert.equal(valid.test("2025-01-07T09:58:54.908+01:00"), false);
-  assert.equal(valid.test("2025-01-07T09:58:54.908Z"), true);
+  assert.equal(isAuthoredDate("2023-02-29"), false);
+  assert.equal(isAuthoredDate("2024-02-29"), true);
+  assert.equal(isAuthoredDate("2025-01-07T09:58:54.908+01:00"), false);
+  assert.equal(isAuthoredDate("2025-01-07T09:58:54.908Z"), true);
 });
 
 test("publication Dates use canonical calendar datetime values", async () => {
