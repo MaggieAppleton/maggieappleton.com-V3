@@ -331,6 +331,7 @@ The expensive build is intentionally not repeated during implementation.
 
 **Files:**
 
+- Modify: `src/utils/publication.mjs`
 - Modify: `src/pages/index.astro`
 - Modify: `src/pages/garden.astro`
 - Modify: `src/pages/essays.astro`
@@ -357,6 +358,15 @@ Behaviour fixtures must prove topic/discovery inputs contain one latest public v
 - For `now.astro`, `smidgeons.astro`, and `podcasts.astro`, use `selectPublicEntries`; this is equivalent to `canonicalByCollection` for unversioned collections.
 
 Keep existing sorting, card props, previews, and visual markup unchanged.
+When a selected homepage Note is folder-versioned, its existing title link must
+use the public base slug rather than the raw folder/file ID. Add a regression
+fixture for that route. This is a publication-boundary correction, not the P3
+slash-normalization work.
+
+`selectLatestPublicEntries` must collapse only entries for which
+`isVersionedPublicationEntry(entry)` is true. Ordinary IDs such as `api-v1` and
+`api-v2` are separate public entries even though `getPublicationBaseSlug` has a
+legacy filename fallback; add a fixture that keeps both.
 
 ### Step 3: Convert topic collection
 
