@@ -7,9 +7,10 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
+import { selectPublicEntries } from "../utils/publication.mjs";
 
-// Get all podcasts
-const podcasts = await getCollection("podcasts");
+// Get all public podcasts
+const podcasts = selectPublicEntries(await getCollection("podcasts"));
 
 // Sort podcasts by date
 const sortedPodcasts = podcasts.sort(
