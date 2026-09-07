@@ -8,9 +8,10 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
 
-// Get all patterns that aren't drafts
-const patterns = await getCollection("patterns", ({ data }) => !data.draft);
+// Get the latest public version of each pattern
+const patterns = selectLatestPublicEntries(await getCollection("patterns"));
 
 // Sort patterns by date
 const sortedPatterns = patterns.sort(
