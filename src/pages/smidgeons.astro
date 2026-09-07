@@ -9,7 +9,7 @@ import ProseWrapper from "../components/layouts/ProseWrapper.astro";
 import Topics from "../components/layouts/Topics.astro";
 import { Icon } from "astro-icon/components";
 // Import components used in MDX files
-import Title1 from "../components/mdx/typography/Title1.astro";
+import BodyHeading1 from "../components/mdx/typography/BodyHeading1.astro";
 import Title3 from "../components/mdx/typography/Title3.astro";
 import Title4 from "../components/mdx/typography/Title4.astro";
 import TooltipLink from "../components/mdx/TooltipLink.astro";
@@ -31,7 +31,7 @@ const sortedSmidgeons = smidgeons.sort(
 
 // Define components for MDX rendering
 const components = {
-	h1: Title1,
+	h1: BodyHeading1,
 	h2: Title2,
 	h3: Title3,
 	h4: Title4,
@@ -105,10 +105,10 @@ const renderedSmidgeons = await Promise.all(
 									{smidgeon.data.external && (
 										<a href={smidgeon.data.external.url} target="_blank" rel="noopener noreferrer">
 											<div class="reference-card">
-												<h1 class="content-header">
-													{smidgeon.data.external.title}
-													<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-												</h1>
+								<h2 class="content-header">
+									{smidgeon.data.external.title}
+									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+								</h2>
 												{smidgeon.data.external.author && (
 													<p class="byline">
 														<Icon name="heroicons:user" size={14} />
@@ -124,10 +124,10 @@ const renderedSmidgeons = await Promise.all(
 										<a href={smidgeon.data.citation.url} target="_blank" rel="noopener noreferrer">
 											<div class="reference-card">
 												<div class="citation-header">
-													<h1 class="content-header">
-														{smidgeon.data.citation.title}{" "}
-														<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-													</h1>
+								<h2 class="content-header">
+									{smidgeon.data.citation.title}{" "}
+									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+								</h2>
 													<div class="citation-metadata">
 														<p class="byline">
 															<Icon name="heroicons:users" size={14} />

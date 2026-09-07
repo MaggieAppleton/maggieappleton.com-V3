@@ -1,4 +1,13 @@
-<h1 class="title1"><slot /></h1>
+---
+export interface Props {
+	as?: "h1" | "h2";
+	style?: Record<string, string | number>;
+}
+
+const { as: Tag = "h1", style } = Astro.props;
+---
+
+<Tag class="title1" style={style}><slot /></Tag>
 
 <style>
 	.title1 {
