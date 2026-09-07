@@ -13,7 +13,7 @@ import {
   isMeaningfulDescription,
   requirePageDescription,
 } from "../src/utils/descriptions.mjs";
-import { SITE_IDENTITY } from "../src/utils/siteIdentity.mjs";
+import { createSiteIdentityGraph, SITE_IDENTITY } from "../src/utils/siteIdentity.mjs";
 
 const expectedDescriptions = {
   home: "Maggie Appleton's digital garden of visual essays, notes, and patterns about programming, design, anthropology, and software.",
@@ -87,6 +87,15 @@ test("requires explicit meaningful page metadata and enforces Unicode bounds", (
   assert.throws(() => assertP8DescriptionLength("x".repeat(79), "short"), RangeError);
   assert.throws(() => assertP8DescriptionLength("x".repeat(161), "long"), RangeError);
   assert.equal(assertP8DescriptionLength("🙂".repeat(80), "unicode"), "🙂".repeat(80));
+});
+
+test("uses the P5 Site identity as the only generic description source", async () => {
+  const source = await readFile(new URL("../src/utils/descriptions.mjs", import.meta.url), "utf8");
+  assert.match(source, /import\s*\{\s*SITE_IDENTITY\s*\}\s*from\s*["']\.\/siteIdentity\.mjs["']/);
+  assert.match(source, /SITE_IDENTITY\.websiteDescription/);
+  assert.doesNotMatch(source, /GENERIC_SITE_DESCRIPTION/);
+  assert.equal(createSiteIdentityGraph()["@graph"][0].description, SITE_IDENTITY.websiteDescription);
+  assert.equal(isMeaningfulDescription(SITE_IDENTITY.websiteDescription, SITE_IDENTITY.websiteDescription), false);
 });
 
 test("Layout has one explicit resolved description path", async () => {

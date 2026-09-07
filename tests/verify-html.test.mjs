@@ -27,6 +27,7 @@ import {
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
 import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon } from "../src/utils/descriptions.mjs";
+import { SITE_IDENTITY } from "../src/utils/siteIdentity.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -231,9 +232,11 @@ test("accepts valid HTML and rejects each missing contract", async () => {
 });
 
 test("enforces exact Article Open Graph properties and cardinality", () => {
-  const route = { path: "/api", kind: "html", pageMetadata: "article", canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10" } };
+  const route = { path: "/api", kind: "html", pageMetadata: "article", description: PAGE_DESCRIPTIONS.home, canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10", description: PAGE_DESCRIPTIONS.home } };
   const articleHead = '<meta content="article" property="og:type"><meta content="2019-04-10" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">';
-  const valid = html("API", { canonical: route.canonical, ogUrl: route.canonical }).replace('<meta content="website" property="og:type">', articleHead);
+  const valid = html("API", { canonical: route.canonical, ogUrl: route.canonical })
+    .replace("</head>", `<meta name="description" content="${route.description}"><meta property="og:description" content="${route.description}"></head>`)
+    .replace('<meta content="website" property="og:type">', articleHead);
   assert.doesNotThrow(() => assertHTMLResponse(route, response(valid), valid));
   for (const property of ["article:section", "article:tag", "article:expiration_time"]) {
     const body = valid.replace("</head>", `<meta content="extra" property="${property}"></head>`);
@@ -566,6 +569,7 @@ test("verifies the exact default 26-route manifest without fetching image URLs",
   });
   assert.equal(results.length, ROUTES.length);
   assert.equal(requested.length, ROUTES.length);
+  assert.deepEqual(requested, ROUTES.map(({ path }) => buildURL("http://127.0.0.1:4322", path)));
   assert.ok(requested.every((url) => !/(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$))/i.test(url)));
 });
 
@@ -591,6 +595,34 @@ test("requires standard, Open Graph, and JSON-LD descriptions to align", async (
   for (const [body, message] of cases) {
     assert.throws(() => assertHTMLResponse(route, response(body), body), message);
   }
+});
+
+test("rejects blank, placeholder, and P5-generic descriptions on enabled routes", async () => {
+  const baseRoute = {
+    path: "/description-policy-fixture",
+    kind: "html",
+    siteIdentity: true,
+    pageMetadata: "webpage",
+  };
+  for (const description of ["", "   ", "...", SITE_IDENTITY.websiteDescription]) {
+    const route = { ...baseRoute, description };
+    const body = await routeFixture(route).text();
+    assert.throws(
+      () => assertHTMLResponse(route, response(body), body),
+      /meaningful description/,
+      JSON.stringify(description),
+    );
+  }
+  const draftRoute = {
+    path: "/drafts",
+    kind: "html",
+    siteIdentity: true,
+    pageMetadata: false,
+    description: SITE_IDENTITY.websiteDescription,
+    bodyIncludes: "Draft Posts",
+  };
+  const draftBody = await routeFixture(draftRoute).text();
+  assert.doesNotThrow(() => assertHTMLResponse(draftRoute, response(draftBody), draftBody));
 });
 
 test("verifies noindex and absent routes without relaxing redirect handling", async () => {

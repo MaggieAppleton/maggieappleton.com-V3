@@ -1,8 +1,7 @@
+import { SITE_IDENTITY } from "./siteIdentity.mjs";
+
 export const DESCRIPTION_MIN_LENGTH = 80;
 export const DESCRIPTION_MAX_LENGTH = 160;
-
-const GENERIC_SITE_DESCRIPTION =
-  "Maggie's digital garden filled with visual essays on programming, design, and anthropology";
 
 export const PAGE_DESCRIPTIONS = Object.freeze({
   home: "Maggie Appleton's digital garden of visual essays, notes, and patterns about programming, design, anthropology, and software.",
@@ -41,7 +40,7 @@ export function assertP8DescriptionLength(value, context) {
 }
 
 function requireInterpolatedTitle(value, context) {
-  return requirePageDescription(value, context, GENERIC_SITE_DESCRIPTION);
+  return requirePageDescription(value, context, SITE_IDENTITY.websiteDescription);
 }
 
 export function describeTopic(topicName) {

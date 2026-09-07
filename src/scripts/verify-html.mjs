@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
-import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon, describeTopic } from "../utils/descriptions.mjs";
+import { createSiteIdentityGraph, SITE_IDENTITY } from "../utils/siteIdentity.mjs";
+import {
+  isMeaningfulDescription,
+  PAGE_DESCRIPTIONS,
+  describeNow,
+  describeSmidgeon,
+  describeTopic,
+} from "../utils/descriptions.mjs";
 import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -477,6 +483,9 @@ export function assertHTMLResponse(route, response, body) {
   assertExactlyOneOpeningElement(route, body, "h1");
   const canonical = assertCanonical(route, body);
   const expectedDescription = route.description ?? route.article?.description;
+  if (route.pageMetadata && !isMeaningfulDescription(expectedDescription, SITE_IDENTITY.websiteDescription)) {
+    assert.fail(`${route.path}: enabled page metadata requires a meaningful description`);
+  }
   if (expectedDescription !== undefined) {
     assert.notEqual(expectedDescription.trim(), "...");
     assert.equal(getMetaNameContent(body, "description"), expectedDescription, `${route.path}: wrong meta description`);
