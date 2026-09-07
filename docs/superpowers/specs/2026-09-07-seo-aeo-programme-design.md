@@ -220,6 +220,9 @@ Acceptance:
 - Canonical pages self-canonicalize; archive pages point to the intended latest
   public canonical without claiming duplicate article identity.
 - Tests cover the root URL, ordinary content, versions, and special page types.
+- Imported content fragments do not accidentally publish standalone pages, and
+  intentional production utility pages are explicitly non-indexable rather
+  than silently lacking canonical metadata.
 
 ### P3 — Slashless URL normalization
 
