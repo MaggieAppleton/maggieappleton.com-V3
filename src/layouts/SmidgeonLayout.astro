@@ -8,6 +8,7 @@ import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import CalendarDate from "../components/layouts/CalendarDate.astro";
 import { isPublicEntry } from "../utils/publication.mjs";
 import { createDatedWebPageMetadata } from "../utils/pageMetadata.mjs";
+import { describeSmidgeon } from "../utils/descriptions.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
@@ -16,6 +17,7 @@ type Props = {
 
 const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+const description = isPublicEntry(entry) ? describeSmidgeon(frontmatter.title) : undefined;
 const primaryTitle =
 	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
 const pageMetadata = createDatedWebPageMetadata({
@@ -28,6 +30,7 @@ const pageMetadata = createDatedWebPageMetadata({
 <Layout
 	title={frontmatter.title}
 	type="smidgeon"
+	desc={description}
 	pageMetadata={pageMetadata}
 >
 	<header class="header-section">

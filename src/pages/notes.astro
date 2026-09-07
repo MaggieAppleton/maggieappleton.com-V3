@@ -9,6 +9,7 @@ import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
 import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get the latest public version of each note
 const notes = selectLatestPublicEntries(await getCollection("notes"));
@@ -20,7 +21,7 @@ const sortedNotes = notes.sort(
 );
 ---
 
-<Layout title="Notes by Maggie Appleton" pageMetadata="webpage">
+<Layout title="Notes by Maggie Appleton" desc={PAGE_DESCRIPTIONS.notes} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedNotes}>

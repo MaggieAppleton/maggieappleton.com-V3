@@ -28,6 +28,7 @@ import {
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
 import { expectedSiteIdentity } from "./fixtures/site-identity.mjs";
+import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon } from "../src/utils/descriptions.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -62,10 +63,10 @@ test("parses only unprivileged TCP ports", () => {
 
 test("defines unique non-image routes with supported kinds", () => {
   assert.equal(ROUTES.length, 26);
-  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", pageMetadata: false, bodyIncludes: "Draft Posts" });
+  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
-    { path: "/drafts", kind: "html", pageMetadata: false, bodyIncludes: "Draft Posts" },
+    { path: "/drafts", kind: "html", pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" },
   );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   assert.deepEqual(
@@ -82,10 +83,10 @@ test("defines unique non-image routes with supported kinds", () => {
   );
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/about?source=verify"),
-    { path: "/about?source=verify", kind: "html", pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+    { path: "/about?source=verify", kind: "html", pageMetadata: "webpage", title: "About Maggie Appleton", description: PAGE_DESCRIPTIONS.about, canonical: "https://maggieappleton.com/about" },
   );
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", pageMetadata: "webpage" });
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", pageMetadata: "webpage" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", pageMetadata: "webpage", description: describeNow("August 2026") });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", pageMetadata: "webpage", description: describeSmidgeon("Vibe Code is Legacy Code") });
   for (const path of [
     "/now",
     "/smidgeons",

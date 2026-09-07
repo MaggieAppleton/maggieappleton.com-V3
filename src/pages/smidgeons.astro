@@ -21,6 +21,7 @@ import RemoteImage from "../components/mdx/RemoteImage.astro";
 import BasicImage from "../components/mdx/BasicImage.astro";
 import Spacer from "../components/mdx/Spacer.astro";
 import { selectPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 const smidgeons = selectPublicEntries(await getCollection("smidgeons"));
 
@@ -55,7 +56,7 @@ const renderedSmidgeons = await Promise.all(
 );
 ---
 
-<Layout title="Smidgeons Stream | Maggie Appleton" pageMetadata="webpage">
+<Layout title="Smidgeons Stream | Maggie Appleton" desc={PAGE_DESCRIPTIONS.smidgeons} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="header">
 			<TitleWithCount posts={smidgeons}>

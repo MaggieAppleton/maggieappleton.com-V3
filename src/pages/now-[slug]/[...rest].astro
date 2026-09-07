@@ -17,6 +17,7 @@ import ResourceBook from "../../components/mdx/ResourceBook.astro";
 import Spacer from "../../components/mdx/Spacer.astro";
 import { Icon } from "astro-icon/components";
 import { createDatedWebPageMetadata } from "../../utils/pageMetadata.mjs";
+import { describeNow } from "../../utils/descriptions.mjs";
 
 export async function getStaticPaths() {
 	const nowEntries = await getCollection("now");
@@ -42,6 +43,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
+const description = isPublicEntry(entry) ? describeNow(entry.data.title) : undefined;
 const pageMetadata = createDatedWebPageMetadata({
 	isPublic: isPublicEntry(entry),
 	name: entry.data.title,
@@ -66,6 +68,7 @@ const components = {
 <Layout
 	title={`${entry.data.title} | Maggie Appleton`}
 	type="now"
+	desc={description}
 	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
