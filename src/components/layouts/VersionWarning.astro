@@ -1,8 +1,18 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
-import { getVersionInfo, hasMultipleVersions, getLatestVersion } from "../../utils/versionUtils";
+import {
+	getAllVersionsForPost,
+	getLatestVersion,
+	getVersionInfo,
+	hasMultipleVersions,
+} from "../../utils/versionUtils";
 import { getCollection } from "astro:content";
+import {
+	getPublicationBaseSlug,
+	getPublicationVersion,
+	selectPublicEntries,
+} from "../../utils/publication.mjs";
 
 type VersionedContent =
 	| CollectionEntry<"essays">
@@ -20,20 +30,29 @@ const { entry } = Astro.props;
 let allEntries: VersionedContent[] = [];
 switch (entry.collection) {
 	case "essays":
-		allEntries = (await getCollection("essays")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("essays")) as VersionedContent[];
 		break;
 	case "notes":
-		allEntries = (await getCollection("notes")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("notes")) as VersionedContent[];
 		break;
 	case "patterns":
-		allEntries = (await getCollection("patterns")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("patterns")) as VersionedContent[];
 		break;
 	case "talks":
-		allEntries = (await getCollection("talks")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("talks")) as VersionedContent[];
 		break;
 }
 
-const versionInfo = getVersionInfo(entry, allEntries);
+const publicEntry = allEntries.find((candidate) => candidate.id === entry.id);
+const baseSlug = getPublicationBaseSlug(entry);
+const versionInfo = publicEntry
+	? getVersionInfo(publicEntry, allEntries)
+	: {
+			baseSlug,
+			version: getPublicationVersion(entry),
+			isLatest: false,
+			allVersions: getAllVersionsForPost(baseSlug, allEntries),
+		};
 const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
 
 const latestUrl = `/${versionInfo.baseSlug}`;
@@ -52,9 +71,11 @@ function formatDate(date: string | Date | undefined): string {
 }
 
 // Get the latest version's info
-const latestVersion = getLatestVersion(versionInfo.allVersions);
-const latestVersionNumber = latestVersion.data.version || versionInfo.allVersions.length;
-const latestUpdatedDate = formatDate(latestVersion.data.updated);
+const latestVersion = versionInfo.allVersions.length
+	? getLatestVersion(versionInfo.allVersions)
+	: undefined;
+const latestVersionNumber = latestVersion?.data.version || versionInfo.allVersions.length || versionInfo.version;
+const latestUpdatedDate = latestVersion ? formatDate(latestVersion.data.updated) : "";
 ---
 
 {

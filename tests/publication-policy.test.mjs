@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   PUBLICATION_COLLECTIONS,
@@ -12,6 +15,14 @@ import {
   selectLatestPublicEntries,
   selectPublicEntries,
 } from "../src/utils/publication.mjs";
+import {
+  getDraftPreviewSlug,
+  mergePublicationPaths,
+} from "../src/utils/publicationRoutes.mjs";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const readSource = (relativePath) =>
+  fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 
 const entry = ({ id, collection = "essays", version, draft }) => ({
   id,
@@ -130,4 +141,190 @@ test("createPublicEntryManifest flattens declared collection order without mutat
   assert.deepEqual(manifest.canonicalEntries, [essays[0], talks[0], smidgeons[0]]);
   assert.deepEqual(collections, before);
   assert.deepEqual(VERSIONED_COLLECTIONS, ["essays", "notes", "patterns", "talks"]);
+});
+
+test("draft preview slugs use version/base for folder versions and the ordinary ID otherwise", () => {
+  assert.equal(
+    getDraftPreviewSlug(
+      entry({ id: "ai-dark-forest/ai-dark-forest-v2.mdx", version: 2, draft: true }),
+    ),
+    "v2/ai-dark-forest",
+  );
+  assert.equal(getDraftPreviewSlug(entry({ id: "ordinary-note.mdx", draft: true })), "ordinary-note.mdx");
+});
+
+test("public v1 keeps its canonical slug while development adds only a draft v2 preview", () => {
+  const publicPath = { params: { slug: "published" }, props: { kind: "public-v1" } };
+  const draftPath = {
+    params: {
+      slug: getDraftPreviewSlug(
+        entry({ id: "published/published-v2.mdx", version: 2, draft: true }),
+      ),
+    },
+    props: { kind: "draft-v2" },
+  };
+  const publicPaths = [publicPath];
+  const draftPaths = [draftPath];
+
+  assert.deepEqual(mergePublicationPaths({ publicPaths, draftPaths }), [publicPath, draftPath]);
+  assert.deepEqual(mergePublicationPaths({ publicPaths, draftPaths: [] }), [publicPath]);
+  assert.deepEqual(publicPaths, [publicPath]);
+  assert.deepEqual(draftPaths, [draftPath]);
+});
+
+test("a draft-only versioned v2 receives only its preview slug", () => {
+  const draftPath = {
+    params: {
+      slug: getDraftPreviewSlug(
+        entry({ id: "private-note/private-note-v2.mdx", version: 2, draft: true }),
+      ),
+    },
+  };
+
+  assert.deepEqual(mergePublicationPaths({ publicPaths: [], draftPaths: [draftPath] }), [draftPath]);
+  assert.notEqual(draftPath.params.slug, "private-note");
+});
+
+test("publication paths reject duplicate public and preview slugs with the colliding slug", () => {
+  for (const [publicPaths, draftPaths] of [
+    [[{ params: { slug: "same" } }, { params: { slug: "same" } }], []],
+    [[{ params: { slug: "same" } }], [{ params: { slug: "same" } }]],
+    [[], [{ params: { slug: "same" } }, { params: { slug: "same" } }]],
+  ]) {
+    assert.throws(
+      () => mergePublicationPaths({ publicPaths, draftPaths }),
+      (error) => error instanceof Error && error.message.includes('"same"'),
+    );
+  }
+});
+
+test("publication paths reject the reserved drafts segment and its descendants", () => {
+  for (const slug of ["drafts", "drafts/essay", "drafts/essay/v2"]) {
+    assert.throws(
+      () => mergePublicationPaths({ publicPaths: [{ params: { slug } }], reservedPrefixes: ["drafts"] }),
+      (error) => error instanceof Error && error.message.includes(slug),
+    );
+  }
+
+  assert.deepEqual(
+    mergePublicationPaths({
+      publicPaths: [{ params: { slug: "draftsman" } }],
+      reservedPrefixes: ["drafts"],
+    }),
+    [{ params: { slug: "draftsman" } }],
+  );
+});
+
+test("publication paths require every candidate to expose a string slug", () => {
+  for (const pathCandidate of [{}, { params: {} }, { params: { slug: 42 } }]) {
+    assert.throws(
+      () => mergePublicationPaths({ publicPaths: [pathCandidate] }),
+      /path\.params\.slug/,
+    );
+  }
+});
+
+test("draft preview routing delegates folder detection to the shared predicate", () => {
+  assert.match(getDraftPreviewSlug.toString(), /isVersionedPublicationEntry\(entry\)/);
+});
+
+test("publication paths fail closed for leading-slash params", () => {
+  for (const slug of ["/drafts", "/drafts/x", "/foo"]) {
+    assert.throws(
+      () =>
+        mergePublicationPaths({
+          publicPaths: [{ params: { slug } }],
+          reservedPrefixes: ["drafts"],
+        }),
+      (error) => error instanceof Error && error.message.includes("must not begin with /"),
+    );
+  }
+});
+
+test("publication boundary consumers import and use the shared publication policy", () => {
+  const contracts = {
+    "src/pages/[...slug].astro": [
+      'from "../utils/publication.mjs"',
+      "createPublicEntryManifest",
+      "selectPublicEntries",
+      "import.meta.env.DEV",
+      "mergePublicationPaths",
+      "reservedPrefixes",
+    ],
+    "src/pages/now-[slug].astro": [
+      'from "../utils/publication.mjs"',
+      "selectPublicEntries",
+      "import.meta.env.DEV",
+      "mergePublicationPaths",
+    ],
+    "src/layouts/PostLayout.astro": [
+      'from "../utils/publication.mjs"',
+      "selectPublicEntries",
+    ],
+    "src/components/layouts/VersionDropdown.astro": [
+      'from "../../utils/publication.mjs"',
+      "selectPublicEntries",
+    ],
+    "src/components/layouts/VersionWarning.astro": [
+      'from "../../utils/publication.mjs"',
+      "selectPublicEntries",
+    ],
+  };
+
+  for (const [relativePath, fragments] of Object.entries(contracts)) {
+    const source = readSource(relativePath);
+    for (const fragment of fragments) {
+      assert.ok(source.includes(fragment), `${relativePath} must contain ${fragment}`);
+    }
+  }
+});
+
+test("production version paths and metadata consume public entries rather than raw collections", () => {
+  const detailRoute = readSource("src/pages/[...slug].astro");
+  const versionPathArguments = [...detailRoute.matchAll(/generateVersionedPaths\(\s*([^()\n]+?)\s*\)/g)].map(
+    ([, argument]) => argument.trim(),
+  );
+  assert.deepEqual(versionPathArguments, [
+    "publicByCollection.essays",
+    "publicByCollection.notes",
+    "publicByCollection.patterns",
+    "publicByCollection.talks",
+  ]);
+
+  const filteredCollectionContracts = {
+    "src/layouts/PostLayout.astro": [
+      /getCanonicalDates\(publicEntryForDates, allEntries\)/,
+      /const allEntries = selectPublicEntries\(await getCollection\(entry\.collection\)\)/,
+    ],
+    "src/components/layouts/VersionDropdown.astro": [
+      /getVersionInfo\(publicEntry, allEntries\)/,
+      /hasMultipleVersions\(versionInfo\.baseSlug, allEntries\)/,
+      /getAllVersionsForPost\(baseSlug, allEntries\)/,
+    ],
+    "src/components/layouts/VersionWarning.astro": [
+      /getVersionInfo\(publicEntry, allEntries\)/,
+      /hasMultipleVersions\(versionInfo\.baseSlug, allEntries\)/,
+      /getAllVersionsForPost\(baseSlug, allEntries\)/,
+    ],
+  };
+
+  for (const [relativePath, helperContracts] of Object.entries(filteredCollectionContracts)) {
+    const source = readSource(relativePath);
+    const collectionCalls = [...source.matchAll(/getCollection\(([^)]*)\)/g)].map(([, argument]) => argument.trim());
+    const filteredCalls = [...source.matchAll(/selectPublicEntries\(\s*await getCollection\(([^)]*)\)\s*\)/g)].map(
+      ([, argument]) => argument.trim(),
+    );
+
+    assert.ok(collectionCalls.length > 0, `${relativePath} must fetch a collection`);
+    assert.deepEqual(
+      filteredCalls,
+      collectionCalls,
+      `${relativePath} must route every getCollection call directly through selectPublicEntries`,
+    );
+    assert.doesNotMatch(source, /(?:const|let|var)\s+\w+\s*=\s*await getCollection\(/);
+    assert.doesNotMatch(source, /getCollection\([^)]*\)\s*\.(?:filter|map)\(/);
+    for (const helperContract of helperContracts) {
+      assert.match(source, helperContract, `${relativePath} must pass the filtered allEntries result to its helper`);
+    }
+  }
 });

@@ -5,6 +5,12 @@ import ProseWrapper from "../components/layouts/ProseWrapper.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { render } from "astro:content";
 import { generateVersionedPaths } from "../utils/versionUtils";
+import {
+	createPublicEntryManifest,
+	isPublicEntry,
+	selectPublicEntries,
+} from "../utils/publication.mjs";
+import { getDraftPreviewSlug, mergePublicationPaths } from "../utils/publicationRoutes.mjs";
 import TableOfContents from "../components/layouts/TableOfContents.astro";
 // Component imports
 import Title1 from "../components/mdx/typography/Title1.astro";
@@ -22,6 +28,15 @@ import Spacer from "../components/mdx/Spacer.astro";
 
 type ContentType = "essay" | "note" | "pattern" | "talk" | "smidgeon";
 type Collections = "essays" | "notes" | "patterns" | "talks" | "smidgeons";
+type PublicationManifest = {
+	publicByCollection: {
+		essays: CollectionEntry<"essays">[];
+		notes: CollectionEntry<"notes">[];
+		patterns: CollectionEntry<"patterns">[];
+		talks: CollectionEntry<"talks">[];
+		smidgeons: CollectionEntry<"smidgeons">[];
+	};
+};
 
 // Add type definitions for different frontmatter types
 type BaseFrontmatter = {
@@ -46,39 +61,77 @@ export async function getStaticPaths() {
 	const patterns = await getCollection("patterns");
 	const talks = await getCollection("talks");
 	const smidgeons = await getCollection("smidgeons");
+	const manifest = createPublicEntryManifest({ essays, notes, patterns, talks, smidgeons }) as unknown as PublicationManifest;
+	const { publicByCollection } = manifest;
 
 	// Generate versioned paths for content that supports versioning
-	const versionedEssayPaths = generateVersionedPaths(essays).map(({ slug, entry }) => ({
+	const versionedEssayPaths = generateVersionedPaths(publicByCollection.essays).map(({ slug, entry }) => ({
 		params: { slug },
 		props: { entry, type: "essay" } as const,
 	}));
 
-	const versionedNotePaths = generateVersionedPaths(notes).map(({ slug, entry }) => ({
+	const versionedNotePaths = generateVersionedPaths(publicByCollection.notes).map(({ slug, entry }) => ({
 		params: { slug },
 		props: { entry, type: "note" } as const,
 	}));
 
-	const versionedPatternPaths = generateVersionedPaths(patterns).map(({ slug, entry }) => ({
+	const versionedPatternPaths = generateVersionedPaths(publicByCollection.patterns).map(({ slug, entry }) => ({
 		params: { slug },
 		props: { entry, type: "pattern" } as const,
 	}));
 
-	const versionedTalkPaths = generateVersionedPaths(talks).map(({ slug, entry }) => ({
+	const versionedTalkPaths = generateVersionedPaths(publicByCollection.talks).map(({ slug, entry }) => ({
 		params: { slug },
 		props: { entry, type: "talk" } as const,
 	}));
 
-	return [
+	const publicSmidgeonEntries = selectPublicEntries(smidgeons) as CollectionEntry<"smidgeons">[];
+	const publicPaths = [
 		...versionedEssayPaths,
 		...versionedNotePaths,
 		...versionedPatternPaths,
 		...versionedTalkPaths,
 		// Smidgeons don't support versioning, so keep the original mapping
-		...smidgeons.map((entry) => ({
+		...publicSmidgeonEntries.map((entry) => ({
 			params: { slug: entry.id },
 			props: { entry, type: "smidgeon" } as const,
 		})),
 	];
+
+	const draftEntries = [
+		...essays,
+		...notes,
+		...patterns,
+		...talks,
+		...smidgeons,
+	].filter((entry) => !isPublicEntry(entry)) as CollectionEntry<Collections>[];
+	const draftPaths = import.meta.env.DEV
+		? draftEntries.map((entry) => {
+				const type =
+					entry.collection === "essays"
+						? "essay"
+						: entry.collection === "notes"
+							? "note"
+							: entry.collection === "patterns"
+								? "pattern"
+								: entry.collection === "talks"
+									? "talk"
+									: "smidgeon";
+				return {
+					params: { slug: getDraftPreviewSlug(entry) },
+					props: { entry, type } as const,
+				};
+			})
+		: [];
+
+	return mergePublicationPaths({
+		publicPaths,
+		draftPaths,
+		reservedPrefixes: ["drafts"],
+	}) as Array<{
+		params: { slug: string };
+		props: { entry: CollectionEntry<Collections>; type: ContentType };
+	}>;
 }
 
 const { entry } = Astro.props;
