@@ -51,10 +51,14 @@ test("uses Vercel's first-class trailing-slash redirect setting only", async () 
 test("documents the local-versus-deployed redirect evidence boundary", async () => {
   const readme = await readFile(fromRoot("README.md"), "utf8");
 
-  assert.match(readme, /npm run build:local[\s\S]*before a separately authorized deployment/i);
+  assert.match(readme, /npm run build:local[\s\S]*image-sensitive changes[\s\S]*final integrated verification.*specifically needed/i);
+  assert.doesNotMatch(readme, /npm run build:local[\s\S]*immediately before a separately authorized deployment/i);
   assert.match(readme, /fast verifier[\s\S]*local destinations/i);
-  assert.match(readme, /Vercel(?: preview)? smoke test/i);
-  assert.match(readme, /redirect/i);
+  assert.match(readme, /\.\/deploy\.sh[\s\S]*vercel build --prod[\s\S]*vercel deploy --prebuilt --prod/i);
+  assert.match(readme, /no preview deployments are built for pull requests/i);
+  assert.match(readme, /18-route[\s\S]*destination verifier/i);
+  assert.match(readme, /production.*smoke[\s\S]*pending[\s\S]*separately authorized production deployment/i);
+  assert.doesNotMatch(readme, /Vercel preview smoke test is the pre-production evidence boundary/i);
   assert.match(readme, /2026-09-07-slashless-url-normalization\.md/);
 });
 
