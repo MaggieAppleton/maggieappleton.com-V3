@@ -1,12 +1,13 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import PageWrapper from "../components/layouts/PageWrapper.astro";
+import Layout from "../../layouts/Layout.astro";
+import PageWrapper from "../../components/layouts/PageWrapper.astro";
 import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
+import { getDraftPreviewSlug } from "../../utils/publicationRoutes.mjs";
 
-// Redirect if we're not in development mode
-if (import.meta.env.PROD) {
-	return Astro.redirect("/404");
+export function getStaticPaths() {
+	if (!import.meta.env.DEV) return [];
+	return [{ params: { slug: undefined } }];
 }
 
 const essays = await getCollection("essays", ({ data }) => data.draft === true);
@@ -20,7 +21,7 @@ const totalDrafts =
 	essays.length + notes.length + patterns.length + talks.length + smidgeons.length + now.length;
 ---
 
-<Layout>
+<Layout title="Draft Posts | Maggie Appleton">
 	<PageWrapper>
 		<h1>Draft Posts ({totalDrafts})</h1>
 		<p class="draft-notice">These posts are only visible in development mode</p>
@@ -33,7 +34,7 @@ const totalDrafts =
 						{essays.map((essay) => (
 							<li>
 								<Image src={essay.data.cover} width={420} alt={essay.data.title} />
-								<a href={`/${essay.id}`}>{essay.data.title}</a>
+								<a href={`/${getDraftPreviewSlug(essay)}`}>{essay.data.title}</a>
 								<p>{essay.data.description}</p>
 							</li>
 						))}
@@ -49,7 +50,7 @@ const totalDrafts =
 					<ul>
 						{notes.map((note) => (
 							<li>
-								<a href={`/${note.id}`}>{note.data.title}</a>
+								<a href={`/${getDraftPreviewSlug(note)}`}>{note.data.title}</a>
 								<p>{note.data.description}</p>
 							</li>
 						))}
@@ -65,7 +66,7 @@ const totalDrafts =
 					<ul>
 						{patterns.map((pattern) => (
 							<li>
-								<a href={`/${pattern.id}`}>{pattern.data.title}</a>
+								<a href={`/${getDraftPreviewSlug(pattern)}`}>{pattern.data.title}</a>
 								<p>{pattern.data.description}</p>
 							</li>
 						))}
@@ -82,7 +83,7 @@ const totalDrafts =
 						{talks.map((talk) => (
 							<li>
 								<Image src={talk.data.cover} width={420} alt={talk.data.title} />
-								<a href={`/${talk.id}`}>{talk.data.title}</a>
+								<a href={`/${getDraftPreviewSlug(talk)}`}>{talk.data.title}</a>
 								<p>{talk.data.description}</p>
 							</li>
 						))}
@@ -98,7 +99,7 @@ const totalDrafts =
 					<ul>
 						{smidgeons.map((smidgeon) => (
 							<li>
-								<a href={`/${smidgeon.id}`}>{smidgeon.data.title}</a>
+								<a href={`/${getDraftPreviewSlug(smidgeon)}`}>{smidgeon.data.title}</a>
 								<p>Started: {smidgeon.data.startDate.toLocaleDateString()}</p>
 							</li>
 						))}

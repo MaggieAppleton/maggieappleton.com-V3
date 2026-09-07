@@ -128,6 +128,7 @@ export async function getStaticPaths() {
 		publicPaths,
 		draftPaths,
 		reservedPrefixes: ["drafts"],
+		reservedStartsWith: ["now-"],
 	}) as Array<{
 		params: { slug: string };
 		props: { entry: CollectionEntry<Collections>; type: ContentType };

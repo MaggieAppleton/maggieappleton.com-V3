@@ -19,6 +19,7 @@ import {
   getDraftPreviewSlug,
   getSocialImageSlug,
   mergePublicationPaths,
+  toNowRouteParams,
 } from "../src/utils/publicationRoutes.mjs";
 import {
   collectGeneratorTopics,
@@ -293,6 +294,51 @@ test("publication paths reject the reserved drafts segment and its descendants",
   );
 });
 
+test("Now route params preserve flat IDs and split nested IDs for the optional rest route", () => {
+  assert.deepEqual(toNowRouteParams("2026-08.mdx"), { slug: "2026-08.mdx", rest: undefined });
+  assert.deepEqual(toNowRouteParams("archive/2026-08.mdx"), { slug: "archive", rest: "2026-08.mdx" });
+  assert.deepEqual(toNowRouteParams("archive/monthly/2026-08.mdx"), { slug: "archive", rest: "monthly/2026-08.mdx" });
+});
+
+test("Now path collision checks compare the complete flat or nested pathname", () => {
+  const getNowPathSlug = ({ params }) => `now-${params.slug}${params.rest ? `/${params.rest}` : ""}`;
+
+  for (const params of [
+    { slug: "2026-08.mdx", rest: undefined },
+    { slug: "archive", rest: "2026-08.mdx" },
+  ]) {
+    const pathname = getNowPathSlug({ params });
+    assert.throws(
+      () => mergePublicationPaths({
+        publicPaths: [{ params }],
+        draftPaths: [{ params: { ...params } }],
+        getPathSlug: getNowPathSlug,
+      }),
+      (error) => error instanceof Error && error.message.includes(`"${pathname}"`),
+    );
+  }
+});
+
+test("publication paths reject the full now- namespace when reserved by the root catch-all", () => {
+  for (const slug of ["now-2026-08.mdx", "now-archive/2026-08.mdx"]) {
+    assert.throws(
+      () => mergePublicationPaths({
+        publicPaths: [{ params: { slug } }],
+        reservedStartsWith: ["now-"],
+      }),
+      (error) => error instanceof Error && error.message.includes(slug),
+    );
+  }
+
+  assert.deepEqual(
+    mergePublicationPaths({
+      publicPaths: [{ params: { slug: "not-now-2026-08.mdx" } }],
+      reservedStartsWith: ["now-"],
+    }),
+    [{ params: { slug: "not-now-2026-08.mdx" } }],
+  );
+});
+
 test("publication paths require every candidate to expose a string slug", () => {
   for (const pathCandidate of [{}, { params: {} }, { params: { slug: 42 } }]) {
     assert.throws(
@@ -393,12 +439,15 @@ test("publication boundary consumers import and use the shared publication polic
       "import.meta.env.DEV",
       "mergePublicationPaths",
       "reservedPrefixes",
+      "reservedStartsWith",
     ],
-    "src/pages/now-[slug].astro": [
-      'from "../utils/publication.mjs"',
+    "src/pages/now-[slug]/[...rest].astro": [
+      'from "../../utils/publication.mjs"',
       "selectPublicEntries",
       "import.meta.env.DEV",
       "mergePublicationPaths",
+      "toNowRouteParams",
+      "getPathSlug",
     ],
     "src/layouts/PostLayout.astro": [
       'from "../utils/publication.mjs"',
@@ -419,6 +468,49 @@ test("publication boundary consumers import and use the shared publication polic
     for (const fragment of fragments) {
       assert.ok(source.includes(fragment), `${relativePath} must contain ${fragment}`);
     }
+  }
+});
+
+test("draft index is an optional development-only route with draft-only listings", () => {
+  const legacyRoute = path.join(repoRoot, "src/pages/drafts.astro");
+  const draftRoute = path.join(repoRoot, "src/pages/drafts/[...slug].astro");
+
+  assert.equal(fs.existsSync(legacyRoute), false, "the production-visible draft route must be removed");
+  assert.equal(fs.existsSync(draftRoute), true, "the optional draft route must exist");
+
+  const source = fs.readFileSync(draftRoute, "utf8");
+  assert.match(source, /<Layout title="Draft Posts \| Maggie Appleton">/);
+  assert.match(source, /from "\.\.\/\.\.\/utils\/publicationRoutes\.mjs"/);
+  assert.equal((source.match(/getDraftPreviewSlug\(/g) ?? []).length, 5);
+  assert.match(source, /href=\{`\/now-\$\{nowPost\.id\}`\}/);
+  assert.match(
+    source,
+    /export function getStaticPaths\(\)\s*\{\s*if \(!import\.meta\.env\.DEV\) return \[\];\s*return \[\{ params: \{ slug: undefined \} \}\];\s*\}/,
+  );
+  assert.deepEqual(
+    [...source.matchAll(/getCollection\("([^"]+)", \(\{ data \}\) => data\.draft === true\)/g)].map(([, collection]) => collection),
+    ["essays", "notes", "patterns", "talks", "smidgeons", "now"],
+  );
+  assert.doesNotMatch(source, /getCollection\([^)]*,\s*\(\{\s*data\s*\}\)\s*=>\s*[^)]*(?:!data\.draft|data\.draft\s*!==\s*true)/);
+});
+
+test("production page and navigation sources do not link to the development-only draft index", () => {
+  const sourceDirectories = ["src/pages", "src/components", "src/layouts"];
+  const sourcePaths = sourceDirectories.flatMap((relativeDirectory) => {
+    const directory = path.join(repoRoot, relativeDirectory);
+    return fs.readdirSync(directory, { recursive: true })
+      .filter((entry) => typeof entry === "string" && /\.(?:astro|[cm]?[jt]sx?)$/.test(entry))
+      .map((entry) => path.join(directory, entry));
+  });
+
+  for (const sourcePath of sourcePaths) {
+    if (sourcePath.endsWith(path.join("src", "pages", "drafts", "[...slug].astro"))) continue;
+    const source = fs.readFileSync(sourcePath, "utf8");
+    assert.doesNotMatch(
+      source,
+      /(?:href|to)\s*=\s*(?:["']\/drafts(?:["'/?#])|\{["']\/drafts(?:["'/?#])|\{`\/drafts(?:[/?#`]))/,
+      `${path.relative(repoRoot, sourcePath)} must not link to /drafts`,
+    );
   }
 });
 
@@ -470,6 +562,25 @@ test("production version paths and metadata consume public entries rather than r
       assert.match(source, helperContract, `${relativePath} must pass the filtered allEntries result to its helper`);
     }
   }
+});
+
+test("Now uses its optional-rest route and the generic route reserves the now- namespace", () => {
+  const legacyRoute = path.join(repoRoot, "src/pages/now-[slug].astro");
+  const nowRoute = path.join(repoRoot, "src/pages/now-[slug]/[...rest].astro");
+  const detailRoute = readSource("src/pages/[...slug].astro");
+
+  assert.equal(fs.existsSync(legacyRoute), false, "the one-segment Now route must be removed");
+  assert.equal(fs.existsSync(nowRoute), true, "the optional-rest Now route must exist");
+
+  const source = fs.readFileSync(nowRoute, "utf8");
+  assert.match(source, /from "\.\.\/\.\.\/utils\/publicationRoutes\.mjs"/);
+  assert.match(source, /params:\s*toNowRouteParams\(entry\.id\)/);
+  assert.match(source, /const getPathSlug\s*=\s*\(path(?::[^)]*)?\)\s*=>/);
+  assert.match(source, /if \(typeof slug !== "string"\)/);
+  assert.match(source, /rest !== undefined && typeof rest !== "string"/);
+  assert.match(source, /mergePublicationPaths\(\{ publicPaths, draftPaths, getPathSlug \}\)/);
+  assert.match(source, /return `now-\$\{slug\}\$\{rest/);
+  assert.match(detailRoute, /reservedStartsWith:\s*\["now-"\]/);
 });
 
 test("discovery pages consume canonical public entries through the shared policy", () => {
