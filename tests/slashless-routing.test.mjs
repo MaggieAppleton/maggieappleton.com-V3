@@ -55,3 +55,10 @@ test("documents the local-versus-deployed redirect evidence boundary", async () 
   assert.match(readme, /redirect/i);
   assert.match(readme, /2026-09-07-slashless-url-normalization\.md/);
 });
+
+test("normalizes only the four internal feed-item link builders", async () => {
+  const source = await readFile(fromRoot("src/utils/feedPublication.mjs"), "utf8");
+
+  assert.match(source, /import\s*\{\s*normalizeCanonicalPath\s*\}\s*from\s*["']\.\/canonical\.mjs["'];/);
+  assert.equal((source.match(/link:\s*normalizeCanonicalPath\(/g) ?? []).length, 4);
+});
