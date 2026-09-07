@@ -1,5 +1,7 @@
 ---
-import { getCollection, getEntry } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
+import { isPublicEntry, selectPublicEntries } from "../utils/publication.mjs";
+import { getDraftPreviewSlug, mergePublicationPaths } from "../utils/publicationRoutes.mjs";
 import Layout from "../layouts/Layout.astro";
 import Title1 from "../components/mdx/typography/Title1.astro";
 import Title2 from "../components/mdx/typography/Title2.astro";
@@ -16,11 +18,24 @@ import { Icon } from "astro-icon/components";
 
 export async function getStaticPaths() {
 	const nowEntries = await getCollection("now");
-
-	return nowEntries.map((entry) => ({
+	const publicEntries = selectPublicEntries(nowEntries) as CollectionEntry<"now">[];
+	const publicPaths = publicEntries.map((entry: CollectionEntry<"now">) => ({
 		params: { slug: entry.id },
 		props: { entry },
 	}));
+	const draftPaths = import.meta.env.DEV
+		? nowEntries
+				.filter((entry) => !isPublicEntry(entry))
+				.map((entry) => ({
+					params: { slug: getDraftPreviewSlug(entry) },
+					props: { entry },
+				}))
+		: [];
+
+	return mergePublicationPaths({ publicPaths, draftPaths }) as Array<{
+		params: { slug: string };
+		props: { entry: CollectionEntry<"now"> };
+	}>;
 }
 
 const { entry } = Astro.props;
