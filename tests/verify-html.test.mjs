@@ -10,6 +10,7 @@ import {
   ROUTES,
   assertAbsentResponse,
   assertHTMLResponse,
+  countOpeningElements,
   assertNoindexHTMLResponse,
   assertPortAvailable,
   assertRobotsResponse,
@@ -87,7 +88,7 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
-  assert.equal(ROUTES.length, 19);
+	assert.equal(ROUTES.length, 26);
   assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
@@ -109,8 +110,19 @@ test("defines unique non-image routes with supported kinds", () => {
     ROUTES.find(({ path }) => path === "/about?source=verify"),
     { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
   );
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", siteIdentity: true, requireH1: false });
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true });
+	assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", siteIdentity: true });
+	assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true });
+	for (const path of [
+		"/now",
+		"/smidgeons",
+		"/2025-01-deepseek",
+		"/2025-01-common-misconceptions",
+		"/still-cant-draw",
+		"/xanadu-patterns",
+		"/greensock-react",
+	]) {
+		assert.deepEqual(ROUTES.find((route) => route.path === path), { path, kind: "html", siteIdentity: true });
+	}
   assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/colophon/colophon-content"), { path: "/colophon/colophon-content", kind: "absent" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/sitemap.xml"), {
@@ -133,19 +145,45 @@ test("defines unique non-image routes with supported kinds", () => {
 });
 
 test("keeps the P4 route manifest and marks only ordinary HTML routes for identity", () => {
-  assert.deepEqual(ROUTES.map(({ path }) => path), [
-    "/", "/about", "/about?source=verify", "/garden", "/essays", "/notes",
-    "/patterns", "/topics/web-development", "/websecurity", "/api", "/now-2026-08",
-    "/2025-08-vibe-legacy-code", "/diagram-preview", "/colophon/colophon-content",
-    "/rss.xml", "/smidgeons.xml", "/robots.txt", "/sitemap.xml", "/drafts",
-  ]);
-  assert.equal(ROUTES.length, 19);
-  for (const route of ROUTES) assert.equal(route.siteIdentity === true, route.kind === "html", route.path);
-  assert.equal(ROUTES.find(({ path }) => path === "/diagram-preview").siteIdentity, undefined);
+	assert.deepEqual(ROUTES.map(({ path }) => path), [
+		"/", "/about", "/about?source=verify", "/garden", "/essays", "/notes",
+		"/patterns", "/topics/web-development", "/websecurity", "/api", "/now-2026-08",
+		"/2025-08-vibe-legacy-code", "/now", "/smidgeons", "/2025-01-deepseek",
+		"/2025-01-common-misconceptions", "/still-cant-draw", "/xanadu-patterns", "/greensock-react",
+		"/diagram-preview", "/colophon/colophon-content", "/rss.xml", "/smidgeons.xml", "/robots.txt",
+		"/sitemap.xml", "/drafts",
+	]);
+	assert.equal(ROUTES.length, 26);
+	for (const route of ROUTES) assert.equal(route.siteIdentity === true, route.kind === "html", route.path);
+	assert.equal(ROUTES.find(({ path }) => path === "/diagram-preview").siteIdentity, undefined);
+	assert.equal(Object.hasOwn(ROUTES.find(({ path }) => path === "/now-2026-08"), "requireH1"), false);
+	for (const path of [
+		"/now",
+		"/smidgeons",
+		"/2025-01-deepseek",
+		"/2025-01-common-misconceptions",
+		"/still-cant-draw",
+		"/xanadu-patterns",
+		"/greensock-react",
+	]) {
+		assert.deepEqual(ROUTES.find((route) => route.path === path), { path, kind: "html", siteIdentity: true });
+	}
+	assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
 });
 
 test("joins route paths to one base URL", () => {
   assert.equal(buildURL("http://127.0.0.1:4322/", "/about"), "http://127.0.0.1:4322/about");
+});
+
+test("counts real opening elements while skipping comments, quoted attributes, and raw script/style text", () => {
+	const body = `<!doctype html>
+		<!-- <main><h1>comment bait</h1></main> -->
+		<div data-template="<main><h1>attribute bait</h1></main>"></div>
+		<script>const template = "<main><h1>script bait</h1></main>";</script>
+		<style>.example::before { content: "<main><h1>style bait</h1></main>"; }</style>
+		<main><h1>Real page title</h1></main>`;
+	assert.equal(countOpeningElements(body, "main"), 1);
+	assert.equal(countOpeningElements(body, "h1"), 1);
 });
 
 test("accepts valid HTML and rejects each missing contract", async () => {
@@ -157,6 +195,12 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html().replace(/<title>[\s\S]*?<\/title>/, ""), /title/],
     [html().replace(/<main>[\s\S]*?<\/main>/, ""), /main/],
     [html().replace(/<h1>[\s\S]*?<\/h1>/, ""), /h1/],
+	[html().replace("<main>", "<main><main>"), /exactly one main/],
+	[html().replace("<h1>", "<h1>Second</h1><h1>"), /exactly one h1/],
+	[
+		html(route.title).replace("</body>", "<!-- <main><h1>comment</h1></main> --><script>const x = '<main><h1>script</h1></main>';</script><style>.x{content:'<main><h1>style</h1></main>'}</style></body>"),
+		null,
+	],
     [html(route.title, { canonical: false }), /exactly one canonical/],
     [html("Wrong title"), /About Maggie Appleton/],
     [html(route.title, { canonical: "https://maggieappleton.com/about", extraCanonical: '<link rel="canonical" href="https://maggieappleton.com/about">' }), /exactly one canonical/],
@@ -168,7 +212,13 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html(route.title, { canonical: "https://maggieappleton.com/about#section" }), /query or fragment/],
     [html(route.title, { canonical: "https://maggieappleton.com/about/" }), /slashless/],
     [html(route.title, { ogUrl: "https://maggieappleton.com/wrong" }), /og:url to equal/],
-  ]) assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+  ]) {
+		if (message === null) {
+			assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+		} else {
+			assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+		}
+	}
 });
 
 test("requires exactly one complete Site/Person JSON-LD graph", () => {
@@ -330,11 +380,11 @@ test("checks the configured API social-image pathname", () => {
   assert.throws(() => assertHTMLResponse(route, response(body), body), /expected og:image path \/og\/api\.png/);
 });
 
-test("allows an explicitly H1-free page while enforcing exact canonical and Open Graph metadata", () => {
-  const route = { path: "/now-2026-08", kind: "html", requireH1: false };
-  const body = html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" })
+test("requires an H1 on the Now page while enforcing exact canonical and Open Graph metadata", () => {
+	const route = { path: "/now-2026-08", kind: "html" };
+	const body = html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" })
     .replace(/<h1>[\s\S]*?<\/h1>/, "");
-  assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+	assert.throws(() => assertHTMLResponse(route, response(body), body), /exactly one h1/);
 });
 
 test("requires noindex utility and absent-route contracts without generic page landmarks", () => {
