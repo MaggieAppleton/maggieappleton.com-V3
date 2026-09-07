@@ -21,8 +21,8 @@
 - Page-node emission is fail-closed. Do not emit a page node for a version archive, draft preview/list, design-system development page, diagram preview, error/redirect surface, feed, sitemap, robots file, OG/image endpoint, external card record, or other non-HTML route.
 - The canonical URL remains HTTPS maggieappleton.com, slashless except root, through src/utils/canonical.mjs. An archive must never receive a second Article identity.
 - An Article requires a valid canonical `datePublished`, from its earliest startDate; dateModified is the latest updated date and is optional. Do not use a version archive's local date as a new article date. A missing/invalid Article publication date is a fail-closed factory error, never an omitted or invented Article property.
-- Metadata dates are calendar dates only: accept a valid project Date or exact valid `YYYY-MM-DD`, normalize to and retain `YYYY-MM-DD` in JSON-LD, OG, and `time[datetime]`, and reject ambiguous strings/timezone-bearing timestamps. This prevents a local timezone from changing an authored calendar day or inventing midnight precision.
-- Pass only nonempty, non-placeholder descriptions and real cover assets. Treat trimmed empty text and exactly ... as absent. An image may be a root-relative path (resolved against the canonical HTTPS origin) or absolute HTTPS URL; reject blank/placeholders, protocol-relative, data/blob/javascript/http, and other schemes. Do not use Layout's generic SEO fallback as a JSON-LD description and do not use generated OG URLs as Article images.
+- Authored frontmatter may use a valid exact `YYYY-MM-DD` or a strict valid UTC-Z timestamp already present in the repository. Source-policy tests inspect raw strings before `z.coerce.date`: reject timezone offsets and invalid calendar dates, validate the timestamp's parsed UTC calendar day against its authored prefix, and normalize accepted values to retain `YYYY-MM-DD` in JSON-LD, OG, and `time[datetime]`. This prevents a local timezone from changing an authored calendar day or inventing midnight precision.
+- Pass only nonempty, non-placeholder descriptions and real cover assets. Treat trimmed empty text and exactly ... as absent. An image may be a root-relative path (resolved against the canonical HTTPS origin) or absolute HTTPS URL; reject blank/placeholders, backslashes, control characters, protocol-relative origin escapes, data/blob/javascript/http, and other schemes. Do not use Layout's generic SEO fallback as a JSON-LD description and do not use generated OG URLs as Article images.
 - Leave P8's content repairs out of this change. The known empty ai-profilepics description and ... descriptions in post-pull-request and visual-expressions are omission cases, not facts to repair here.
 - OG basic type is article and Article OG fields exist only for Article pages. Every WebPage/no-page route remains website and emits no article:* meta tag.
 - Render PostLayout publication/modification dates with native time datetime elements. Preserve the existing semantic Now and Smidgeon times; card, version-picker, and webmention relative-date surfaces are not this P7 publication-detail contract.
@@ -112,7 +112,7 @@ WebPage node shape:
 }
 ~~~
 
-The node factory omits optional fields rather than substituting a fallback. It accepts only the two types above and throws for an unknown type, invalid/blank name or canonical URL, and a missing/invalid Article datePublished. Invalid optional WebPage/dateModified values and image URLs are omitted rather than converted into a made-up value. A calendar date is precisely a valid project Date interpreted by its UTC calendar day or a valid `YYYY-MM-DD` string; timestamp strings (including offset/Z forms) are deliberately rejected. createStructuredDataGraph(undefined) returns a deeply frozen exact P5 two-node graph; a defined node returns a deeply frozen graph with that node appended, never a second document/script.
+The node factory omits optional fields rather than substituting a fallback. It accepts only the two types above and throws for an unknown type, invalid/blank name or canonical URL, and a missing/invalid Article datePublished. Invalid optional WebPage/dateModified values and image URLs are omitted rather than converted into a made-up value. A calendar date is precisely a valid project Date interpreted by its UTC calendar day or a valid `YYYY-MM-DD` string; callers normalize strict UTC-Z authored timestamps to that form before construction. createStructuredDataGraph(undefined) returns a deeply frozen exact P5 two-node graph; a defined node returns a deeply frozen graph with that node appended, never a second document/script.
 
 Layout.astro accepts:
 
@@ -264,7 +264,7 @@ assert.throws(() => createPageMetadataNode({ type: "article", canonicalUrl: "/x"
 assert.throws(() => createPageMetadataNode({ type: "article", canonicalUrl: "/x", name: "X", datePublished: "2023-02-29" }), /datePublished/);
 ~~~
 
-An archive/base pair given canonicalUrl /api produces one #article ID. Assert root-relative images resolve to the canonical origin, absolute HTTPS images are retained, and blank/`...`/`//host`/`http:`/`data:`/`blob:`/`javascript:`/malformed values are omitted. Assert invalid optional WebPage/dateModified values are omitted. Finally assert that the factory never adds author/publisher to WebPage or Article-only fields to WebPage.
+An archive/base pair given canonicalUrl /api produces one #article ID. Assert root-relative images resolve to the canonical origin, absolute HTTPS images are retained, and blank/`...`/`//host`/`/\\evil.test/x`/backslash/control-character/`http:`/`data:`/`blob:`/`javascript:`/malformed values are omitted. Assert invalid optional WebPage/dateModified values are omitted. Finally assert that the factory never adds author/publisher to WebPage or Article-only fields to WebPage.
 
 - [ ] **Step 2: Run the policy test to confirm the missing-module failure**
 
@@ -312,9 +312,9 @@ function optionalHttpsImageUrl(value) {
 }
 ~~~
 
-Use `toCalendarDate` for both node date fields. For Article, require a normalized datePublished and throw when it is absent; for WebPage and optional dateModified, omit invalid/absent input. Create the common base node with canonical url/name/isPartOf. For Article add headline, Person author/publisher, and the optional meaningful fields. For WebPage add name and only supplied meaningful/date fields. `optionalHttpsImageUrl` must admit only the defined root-relative/HTTPS forms, resolving root-relative values with `CANONICAL_ORIGIN`, not the page URL; it must not accept a protocol-relative source as a root-relative path.
+Use `toCalendarDate` for both node date fields. For Article, require a normalized datePublished and throw when it is absent; for WebPage and optional dateModified, omit invalid/absent input. Create the common base node with canonical url/name/isPartOf. For Article add headline, Person author/publisher, and the optional meaningful fields. For WebPage add name and only supplied meaningful/date fields. `optionalHttpsImageUrl` must admit only the defined root-relative/HTTPS forms, resolving root-relative values with `CANONICAL_ORIGIN`, not the page URL; it must reject backslashes, control characters, and protocol-relative origin escapes rather than treating them as root-relative paths.
 
-Do not mutate the result of createSiteIdentityGraph. Construct a new wrapper with the exact P5 context, a new graph array with its two P5 nodes followed by the optional page node, and call a private recursive `deepFreeze` on the wrapper before returning it. It must freeze the wrapper, `@graph` array, third node, and `isPartOf`/author/publisher references as well as retaining the already-frozen P5 nodes.
+Do not mutate the result of createSiteIdentityGraph. Construct a new wrapper with the exact P5 context, a new graph array with its two P5 nodes followed by the optional page node, and call a private recursive `deepFreeze` on the wrapper before returning it. It must recurse through children even when a parent is already shallow-frozen, freezing the wrapper, `@graph` array, third node, and `isPartOf`/author/publisher references as well as retaining the already-frozen P5 nodes.
 
 Implement isCanonicalPublicArticle by requiring `collection` to be exactly one of `essays`, `notes`, `patterns`, or `talks`, `isPublic === true`, and equality after normalizeCanonicalPath on requestPath and canonicalPath. This explicit collection allowlist prevents a future PostLayout-like caller from classifying Now/Smidgeons as Article and makes archive/draft policy executable in Node tests.
 
@@ -363,7 +363,7 @@ assert.deepEqual(jsonLdScriptEmitters, ["src/components/seo/SiteIdentityJsonLd.a
 assert.deepEqual(pageComponentReferences, []);
 ~~~
 
-In tests/page-metadata.test.mjs source-check Layout for a false default and Article-only OG branch. Assert the Article branch consumes only normalized `YYYY-MM-DD` date fields. Add fixture-level assertions to the verifier tests in Task 5 that a WebPage head accepts og:type website with no article:* properties, while an Article head requires og:type article, article:published_time, article:modified_time when supplied, and article:author equal to the factual P5 Person URL; exact Article OG date values must be date-only, never a fabricated `T00:00:00.000Z` timestamp.
+In tests/page-metadata.test.mjs source-check Layout for a false default and Article-only OG branch. Assert the Article branch consumes only normalized `YYYY-MM-DD` date fields. Add fixture-level assertions to the verifier tests in Task 5 that a WebPage head accepts og:type website with no article:* properties, while an Article head requires og:type article, exactly one each of article:published_time and article:author, and at most one article:modified_time when supplied; reject section/tag/expiration and duplicate Article properties. The author must equal the factual P5 Person URL, and exact Article OG date values must be date-only, never a fabricated `T00:00:00.000Z` timestamp.
 
 - [ ] **Step 2: Run the component/source tests to verify failure**
 
@@ -738,11 +738,11 @@ assert.equal(document["@graph"].length, route.pageMetadata ? 3 : 2, ...);
 
 When route.pageMetadata is false, require the exact original identity graph. When it is Article/WebPage, validate exactly one third plain-object node against the route descriptor and the route's canonical URL plus #article/#webpage. Permit only the documented node fields for each type, require Article datePublished to match a valid `YYYY-MM-DD`, and permit optional fields only when meaningful/safe (including only HTTPS image URLs). Assert optional fields are absent rather than empty strings. This preserves P5 facts while making page-node additions strict.
 
-In assertHTMLResponse verify og:type once. For Article routes require one each of article:published_time and article:author; require article:modified_time only when descriptor supplies it. For WebPage/false routes reject every meta property beginning article:. Continue asserting canonical and og:url equality.
+In assertHTMLResponse verify og:type once. For Article routes require exactly one each of article:published_time and article:author, allow at most one article:modified_time, and reject every other Article property; require article:modified_time when the descriptor supplies it. For WebPage/false routes reject every meta property beginning article:. Continue asserting canonical and og:url equality.
 
 - [ ] **Step 4: Preserve one-fetch-per-manifest-item behaviour**
 
-Keep verifyRoutes as a for-of loop over ROUTES and retain assertSafeRoutePath before fetch. Extend the existing injected-fetch test to invoke all 26 descriptors with HTML/XML fixture responses and assert:
+Keep verifyRoutes as a for-of loop over ROUTES and retain assertSafeRoutePath before fetch. Extend the existing injected-fetch test to invoke all exact 26 descriptors with deterministic per-kind HTML/XML fixture responses and assert:
 
 ~~~
 assert.equal(requested.length, ROUTES.length);
@@ -827,7 +827,7 @@ The reviewer must inspect 855a153...HEAD read-only and independently confirm:
 1. Exactly one JSON-LD script exists per ordinary Layout route, P5 Person/WebSite facts/IDs are byte-for-byte equivalent in the graph, and only declared nodes are appended.
 2. A canonical public page of each authored collection is Article through PostLayout; a version archive and draft fixture emit no page node; all Now/Smidgeon forms are WebPage.
 3. Article dates originate from PostLayout canonical earliest/latest values, are required/valid for Article, and retain `YYYY-MM-DD` precision through JSON-LD, OG, and native time; WebPage values use only owned Now/Smidgeon start dates; P8 placeholder/blank values omit instead of fabricate.
-4. Generic/generated OG images are not used as Article schema images; notes/patterns omit image; accepted image URLs are root-relative canonical-origin or HTTPS only; OG Article fields appear nowhere outside Article pages.
+4. Generic/generated OG images are not used as Article schema images; notes/patterns omit image; accepted image URLs are root-relative canonical-origin or HTTPS only after rejecting backslashes, control characters, and protocol-relative origin escapes; OG Article fields appear nowhere outside Article pages.
 5. The composed graph is deeply frozen without P5 identity drift; Dates.astro uses native time datetime for the true start/updated calendar values, and the existing Now/Smidgeon times remain semantic calendar values.
 6. The explicit `essays`/`notes`/`patterns`/`talks` policy accepts every authored collection and rejects Now, Smidgeons, and any unallowlisted collection before Article construction.
 7. The P6 manifest still has the exact ordered 26 routes and preserves siteIdentity iff HTML, diagram noindex/no JSON-LD, all non-HTML exclusions, the context-aware scanner, and no image fetches.
