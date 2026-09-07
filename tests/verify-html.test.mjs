@@ -8,7 +8,9 @@ import {
   DEFAULT_HOST,
   DEFAULT_PORT,
   ROUTES,
+  assertAbsentResponse,
   assertHTMLResponse,
+  assertNoindexHTMLResponse,
   assertPortAvailable,
   assertRobotsResponse,
   assertSitemapResponse,
@@ -25,8 +27,15 @@ import {
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-const html = (title = "Maggie Appleton") =>
-  `<!doctype html><html><head><title>${title}</title><link rel="canonical" href="https://maggieappleton.com/"></head><body><main><h1>${title}</h1></main></body></html>`;
+const html = (title = "Maggie Appleton", {
+  canonical = "https://maggieappleton.com/about",
+  ogUrl = canonical,
+  ogImage = "http://localhost:4321/og/about.png",
+  extraCanonical = "",
+} = {}) =>
+  `<!doctype html><html><head><title>${title}</title>${canonical === false ? "" : `<link HREF="${canonical}" REL="canonical">${extraCanonical}`}<meta CONTENT="${ogUrl}" PROPERTY="og:url"><meta content="${ogImage}" property="og:image"></head><body><main><h1>${title}</h1></main></body></html>`;
+const noindexHtml = (title = "Diagram Preview", robots = "noindex, nofollow") =>
+  `<!doctype html><html><head><title>${title}</title><meta content="${robots}" name="robots"></head><body><h2>${title}</h2></body></html>`;
 const response = (body, contentType = "text/html", status = 200) =>
   new Response(body, { status, headers: { "content-type": contentType } });
 
@@ -39,16 +48,35 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
-  assert.equal(ROUTES.length, 13);
+  assert.equal(ROUTES.length, 18);
   assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
     { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
   );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
+  assert.deepEqual(
+    ROUTES.find(({ path }) => path === "/api"),
+    {
+      path: "/api",
+      kind: "html",
+      canonical: "https://maggieappleton.com/api",
+      ogUrl: "https://maggieappleton.com/api",
+      ogImagePath: "/og/api.png",
+    },
+  );
+  assert.deepEqual(
+    ROUTES.find(({ path }) => path === "/about?source=verify"),
+    { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  );
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", requireH1: false });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/colophon/colophon-content"), { path: "/colophon/colophon-content", kind: "absent" });
+  assert.equal(ROUTES.some(({ path }) => path === "/api-v1"), false);
   for (const route of ROUTES) {
     assert.match(route.path, /^\//);
-    assert.ok(["html", "xml", "robots", "sitemap"].includes(route.kind));
+    assert.ok(["html", "noindexHtml", "absent", "xml", "robots", "sitemap"].includes(route.kind));
     assert.doesNotMatch(route.path, /(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i);
   }
 });
@@ -58,7 +86,7 @@ test("joins route paths to one base URL", () => {
 });
 
 test("accepts valid HTML and rejects each missing contract", async () => {
-  const route = { path: "/about", kind: "html", title: "About Maggie Appleton" };
+  const route = { path: "/about", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" };
   assert.doesNotThrow(() => assertHTMLResponse(route, response(html(route.title)), html(route.title)));
   assert.throws(() => assertHTMLResponse(route, response("no", "text/plain"), "no"), /text\/html/);
   assert.throws(() => assertHTMLResponse(route, response(html(), "text/html", 404), html()), /status 200/);
@@ -66,9 +94,66 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html().replace(/<title>[\s\S]*?<\/title>/, ""), /title/],
     [html().replace(/<main>[\s\S]*?<\/main>/, ""), /main/],
     [html().replace(/<h1>[\s\S]*?<\/h1>/, ""), /h1/],
-    [html().replace(/<link rel="canonical"[^>]*>/, ""), /canonical/],
+    [html(route.title, { canonical: false }), /exactly one canonical/],
     [html("Wrong title"), /About Maggie Appleton/],
+    [html(route.title, { canonical: "https://maggieappleton.com/about", extraCanonical: '<link rel="canonical" href="https://maggieappleton.com/about">' }), /exactly one canonical/],
+    [html(route.title, { canonical: "/about" }), /absolute HTTPS canonical/],
+    [html(route.title, { canonical: "https://example.test/about" }), /absolute HTTPS canonical/],
+    [html(route.title, { canonical: "https://maggieappleton.com/about?source=verify" }), /query or fragment/],
+    [html(route.title, { canonical: "https://maggieappleton.com/about#section" }), /query or fragment/],
+    [html(route.title, { canonical: "https://maggieappleton.com/about/" }), /slashless/],
+    [html(route.title, { ogUrl: "https://maggieappleton.com/wrong" }), /og:url to equal/],
   ]) assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+});
+
+test("does not mistake prefixed attributes or rel lookalikes for canonical metadata", () => {
+  const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
+  const withoutCanonical = html("About", { canonical: false, ogUrl: route.canonical });
+  for (const body of [
+    withoutCanonical.replace("</head>", '<link data-rel="canonical" data-href="https://maggieappleton.com/about"></head>'),
+    withoutCanonical.replace("</head>", '<link rel="canonical-ish" href="https://maggieappleton.com/about"></head>'),
+    withoutCanonical.replace("</head>", '<link rel="not-canonical" href="https://maggieappleton.com/about"></head>'),
+    html("About", { canonical: "https://maggieappleton.com/about" }).replace('PROPERTY="og:url"', 'data-property="og:url"'),
+  ]) {
+    assert.throws(() => assertHTMLResponse(route, response(body), body), /exactly one canonical|exactly one og:url/);
+  }
+
+  const missingHref = withoutCanonical.replace("</head>", '<link rel="canonical" data-href="https://maggieappleton.com/about"></head>');
+  assert.throws(() => assertHTMLResponse(route, response(missingHref), missingHref), /must have an href/);
+});
+
+test("checks the configured API social-image pathname", () => {
+  const route = {
+    path: "/api",
+    kind: "html",
+    canonical: "https://maggieappleton.com/api",
+    ogUrl: "https://maggieappleton.com/api",
+    ogImagePath: "/og/api.png",
+  };
+  const body = html("API", {
+    canonical: route.canonical,
+    ogUrl: route.ogUrl,
+    ogImage: "http://localhost:4321/og/not-api.png",
+  });
+  assert.throws(() => assertHTMLResponse(route, response(body), body), /expected og:image path \/og\/api\.png/);
+});
+
+test("allows an explicitly H1-free page while enforcing exact canonical and Open Graph metadata", () => {
+  const route = { path: "/now-2026-08", kind: "html", requireH1: false };
+  const body = html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" })
+    .replace(/<h1>[\s\S]*?<\/h1>/, "");
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+});
+
+test("requires noindex utility and absent-route contracts without generic page landmarks", () => {
+  const noindexRoute = { path: "/diagram-preview", kind: "noindexHtml" };
+  assert.doesNotThrow(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml()), noindexHtml()));
+  assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml("Diagram Preview", "index, follow")), noindexHtml("Diagram Preview", "index, follow")), /noindex, nofollow/);
+  assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml().replace("</head>", '<meta name="robots" content="noindex, nofollow"></head>')), noindexHtml().replace("</head>", '<meta name="robots" content="noindex, nofollow"></head>')), /exactly one robots/);
+  assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml().replace("</head>", '<link rel="canonical" href="https://maggieappleton.com/diagram-preview"></head>')), noindexHtml().replace("</head>", '<link rel="canonical" href="https://maggieappleton.com/diagram-preview"></head>')), /canonical/);
+  assert.doesNotThrow(() => assertAbsentResponse({ path: "/colophon/colophon-content", kind: "absent" }, response("Not found", "text/html", 404)));
+  assert.throws(() => assertAbsentResponse({ path: "/colophon/colophon-content", kind: "absent" }, response("Not found", "text/html", 200)), /status 404/);
+  assert.throws(() => assertAbsentResponse({ path: "/colophon/colophon-content", kind: "absent" }, response("Redirect", "text/html", 302)), /redirect/);
 });
 
 test("accepts RSS XML and rejects invalid XML responses", () => {
@@ -85,11 +170,11 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   assert.throws(() => assertRobotsResponse(robots, response("Allow: /", "text/plain"), "Allow: /"), /User-agent/);
 
   const schemaRoute = { path: "/schema", kind: "html", jsonLD: true, bodyIncludes: "Useful body text" };
-  const schemaBody = html().replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
+  const schemaBody = html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
   assert.doesNotThrow(() => assertHTMLResponse(schemaRoute, response(schemaBody), schemaBody));
   const invalidSchema = schemaBody.replace("{\"@context\":\"https://schema.org\"}", "{");
   assert.throws(() => assertHTMLResponse(schemaRoute, response(invalidSchema), invalidSchema), /JSON|Unexpected/);
-  assert.throws(() => assertHTMLResponse(schemaRoute, response(html()), html()), /Useful body text/);
+  assert.throws(() => assertHTMLResponse(schemaRoute, response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), /Useful body text/);
 
   const sitemap = { path: "/sitemap.xml", kind: "sitemap" };
   const sitemapBody = "<?xml version=\"1.0\"?><urlset><url><loc>https://maggieappleton.com/</loc></url></urlset>";
@@ -110,12 +195,30 @@ test("verifies routes in order without fetching image URLs", async () => {
       requested.push(url);
       return url.endsWith(".xml")
         ? response("<rss><channel><item /></channel></rss>", "application/xml")
-        : response(html());
+        : response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/", ogUrl: "https://maggieappleton.com/" }));
     },
   });
   assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
   assert.deepEqual(requested, ["http://127.0.0.1:4322/", "http://127.0.0.1:4322/rss.xml"]);
   assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
+});
+
+test("verifies noindex and absent routes without relaxing redirect handling", async () => {
+  const routes = [
+    { path: "/diagram-preview", kind: "noindexHtml" },
+    { path: "/colophon/colophon-content", kind: "absent" },
+  ];
+  const results = await verifyRoutes({
+    baseURL: "http://127.0.0.1:4322",
+    routes,
+    fetchImpl: async (url) => url.endsWith("diagram-preview")
+      ? response(noindexHtml())
+      : response("Not found", "text/html", 404),
+  });
+  assert.deepEqual(results, [
+    { path: "/diagram-preview", status: 200 },
+    { path: "/colophon/colophon-content", status: 404 },
+  ]);
 });
 
 test("refuses redirects before an image endpoint can be requested", async () => {
