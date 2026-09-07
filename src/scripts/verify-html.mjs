@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -34,6 +35,12 @@ export function buildURL(baseURL, routePath) {
   return new URL(routePath, `${baseURL.replace(/\/+$/, "")}/`).toString();
 }
 
+function assertSafeRoutePath(routePath) {
+  if (/(?:^|\/)(?:_image|og)(?:[/?#]|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$)/i.test(routePath)) {
+    throw new Error(`${routePath}: image route is not allowed`);
+  }
+}
+
 export function assertHTMLResponse(route, response, body) {
   assert.equal(response.status, 200, `${route.path}: expected status 200, received ${response.status}`);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
@@ -55,6 +62,7 @@ export function assertXMLResponse(route, response, body) {
 export async function verifyRoutes({ baseURL, routes = ROUTES, fetchImpl = globalThis.fetch }) {
   const results = [];
   for (const route of routes) {
+    assertSafeRoutePath(route.path);
     const response = await fetchImpl(buildURL(baseURL, route.path));
     const body = await response.text();
     if (route.kind === "html") assertHTMLResponse(route, response, body);
@@ -63,6 +71,22 @@ export async function verifyRoutes({ baseURL, routes = ROUTES, fetchImpl = globa
     results.push({ path: route.path, status: response.status });
   }
   return results;
+}
+
+export function assertPortAvailable({ host, port, createServerImpl = createServer }) {
+  return new Promise((resolve, reject) => {
+    const server = createServerImpl();
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") reject(new Error(`Port ${port} is already in use`));
+      else reject(error);
+    });
+    server.listen({ host, port, exclusive: true }, () => {
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  });
 }
 
 export async function waitForServer({
@@ -115,13 +139,16 @@ export async function runVerifier({
   port = parsePort(process.env.VERIFY_HTML_PORT),
   routes = ROUTES,
   spawnImpl = spawn,
+  assertPortAvailableImpl = assertPortAvailable,
   waitForServerImpl = waitForServer,
   verifyRoutesImpl = verifyRoutes,
   stopDevServerImpl = stopDevServer,
+  signalTarget = process,
   logger = console,
 } = {}) {
   const baseURL = `http://${host}:${port}`;
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  await assertPortAvailableImpl({ host, port });
   const child = spawnImpl(npmCommand, ["run", "dev", "--", "--host", host, "--port", String(port), "--strictPort"], {
     cwd: repoRoot,
     env: { ...process.env },
@@ -129,20 +156,24 @@ export async function runVerifier({
     stdio: "inherit",
   });
   const spawnFailure = new Promise((_, reject) => child.once("error", reject));
+  let rejectInterruption;
+  const interrupted = new Promise((_, reject) => { rejectInterruption = reject; });
   let stopPromise;
   const stop = () => stopPromise ??= stopDevServerImpl(child);
-  const onSignal = () => { void stop(); };
-  process.once("SIGINT", onSignal);
-  process.once("SIGTERM", onSignal);
+  const onSignal = (signal) => rejectInterruption(new Error(`Verifier interrupted by ${signal}`));
+  const onSIGINT = () => onSignal("SIGINT");
+  const onSIGTERM = () => onSignal("SIGTERM");
+  signalTarget.once("SIGINT", onSIGINT);
+  signalTarget.once("SIGTERM", onSIGTERM);
   try {
-    await Promise.race([waitForServerImpl({ baseURL, child }), spawnFailure]);
-    const results = await verifyRoutesImpl({ baseURL, routes });
+    await Promise.race([waitForServerImpl({ baseURL, child }), spawnFailure, interrupted]);
+    const results = await Promise.race([verifyRoutesImpl({ baseURL, routes }), interrupted]);
     for (const result of results) logger.log(`✓ ${result.status} ${result.path}`);
     logger.log(`Verified ${results.length} routes without requesting images.`);
     return results;
   } finally {
-    process.removeListener("SIGINT", onSignal);
-    process.removeListener("SIGTERM", onSignal);
+    signalTarget.removeListener("SIGINT", onSIGINT);
+    signalTarget.removeListener("SIGTERM", onSIGTERM);
     await stop();
   }
 }

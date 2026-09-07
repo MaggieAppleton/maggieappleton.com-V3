@@ -227,12 +227,13 @@ git commit -m "test: define fast HTML verification contracts"
 
 **Interfaces:**
 - Consumes: Task 1's `parsePort`, `verifyRoutes`, `DEFAULT_HOST`, `DEFAULT_PORT`, and `ROUTES` exports.
-- Produces: `waitForServer(options)`, `stopDevServer(child, options)`, and `runVerifier(options)` plus the public command `npm run verify:html`.
-- `runVerifier()` derives the repository root from `import.meta.url`, spawns `npm run dev`, verifies every manifest route, prints one success line per route, and stops the entire detached process group in `finally`.
+- Produces: `assertPortAvailable(options)`, `waitForServer(options)`, `stopDevServer(child, options)`, and `runVerifier(options)` plus the public command `npm run verify:html`.
+- Before spawning, `runVerifier()` exclusively preflights the host/port and fails if a listener already owns it; it then derives the repository root from `import.meta.url`, spawns `npm run dev`, verifies every manifest route, prints one success line per route, and stops the entire detached process group in `finally`.
+- A SIGINT or SIGTERM rejects the active readiness or verification stage, then cleanup runs once in `finally`. `verifyRoutes()` rejects supplied `/_image`, `/og`, and raster-image paths before fetching them.
 
 - [ ] **Step 1: Add failing lifecycle and orchestration tests**
 
-Extend `tests/verify-html.test.mjs` with injected, clock-free tests:
+Extend `tests/verify-html.test.mjs` with injected, clock-free lifecycle tests, including an occupied-port preflight that proves spawning does not begin, and a signal-target test that proves interruption rejects promptly and removes listeners. Also prove `verifyRoutes()` rejects supplied image paths before any fetch call:
 
 ```js
 import { EventEmitter } from "node:events";
@@ -320,11 +321,11 @@ test("surfaces spawn errors and still stops the child", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and confirm the missing-export failures**
+- [ ] **Step 2: Run the focused test and confirm the reliability-regression failures**
 
 Run: `node --test tests/verify-html.test.mjs`
 
-Expected: FAIL because `waitForServer`, `stopDevServer`, and `runVerifier` are not exported.
+Expected before this correction: FAIL because supplied image routes are fetched, occupied-port preflight does not stop spawning, and an injected signal target receives no interrupt listener.
 
 - [ ] **Step 3: Implement readiness, cleanup, orchestration, and CLI behaviour**
 
@@ -333,10 +334,33 @@ Extend `src/scripts/verify-html.mjs` with:
 ```js
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+
+function assertSafeRoutePath(routePath) {
+  if (/(?:^|\/)(?:_image|og)(?:[/?#]|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$)/i.test(routePath)) {
+    throw new Error(`${routePath}: image route is not allowed`);
+  }
+}
+
+export function assertPortAvailable({ host, port, createServerImpl = createServer }) {
+  return new Promise((resolve, reject) => {
+    const server = createServerImpl();
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") reject(new Error(`Port ${port} is already in use`));
+      else reject(error);
+    });
+    server.listen({ host, port, exclusive: true }, () => {
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  });
+}
 
 export async function waitForServer({
   baseURL,
@@ -388,13 +412,16 @@ export async function runVerifier({
   port = parsePort(process.env.VERIFY_HTML_PORT),
   routes = ROUTES,
   spawnImpl = spawn,
+  assertPortAvailableImpl = assertPortAvailable,
   waitForServerImpl = waitForServer,
   verifyRoutesImpl = verifyRoutes,
   stopDevServerImpl = stopDevServer,
+  signalTarget = process,
   logger = console,
 } = {}) {
   const baseURL = `http://${host}:${port}`;
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  await assertPortAvailableImpl({ host, port });
   const child = spawnImpl(npmCommand, ["run", "dev", "--", "--host", host, "--port", String(port), "--strictPort"], {
     cwd: repoRoot,
     env: { ...process.env },
@@ -402,20 +429,24 @@ export async function runVerifier({
     stdio: "inherit",
   });
   const spawnFailure = new Promise((_, reject) => child.once("error", reject));
+  let rejectInterruption;
+  const interrupted = new Promise((_, reject) => { rejectInterruption = reject; });
   let stopPromise;
   const stop = () => stopPromise ??= stopDevServerImpl(child);
-  const onSignal = () => { void stop(); };
-  process.once("SIGINT", onSignal);
-  process.once("SIGTERM", onSignal);
+  const onSignal = (signal) => rejectInterruption(new Error(`Verifier interrupted by ${signal}`));
+  const onSIGINT = () => onSignal("SIGINT");
+  const onSIGTERM = () => onSignal("SIGTERM");
+  signalTarget.once("SIGINT", onSIGINT);
+  signalTarget.once("SIGTERM", onSIGTERM);
   try {
-    await Promise.race([waitForServerImpl({ baseURL, child }), spawnFailure]);
-    const results = await verifyRoutesImpl({ baseURL, routes });
+    await Promise.race([waitForServerImpl({ baseURL, child }), spawnFailure, interrupted]);
+    const results = await Promise.race([verifyRoutesImpl({ baseURL, routes }), interrupted]);
     for (const result of results) logger.log(`✓ ${result.status} ${result.path}`);
     logger.log(`Verified ${results.length} routes without requesting images.`);
     return results;
   } finally {
-    process.removeListener("SIGINT", onSignal);
-    process.removeListener("SIGTERM", onSignal);
+    signalTarget.removeListener("SIGINT", onSIGINT);
+    signalTarget.removeListener("SIGTERM", onSIGTERM);
     await stop();
   }
 }
@@ -428,7 +459,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 ```
 
-When implementing, retain the Task 1 imports and exports. Add a unit test for the Windows `child.kill()` fallback and a passing `runVerifier` case that asserts the exact spawn command, working directory suffix, `--strictPort`, route forwarding, result logging, and single cleanup call.
+When implementing, retain the Task 1 imports and exports. This Task 2 correction supersedes the earlier `verifyRoutes` loop example: call `assertSafeRoutePath(route.path)` before `fetchImpl`, and reject `/_image`, `/og`, and raster-image paths with an `image route` error before any request. Add a unit test for the Windows `child.kill()` fallback and passing `runVerifier` coverage for the exact spawn command, working directory suffix, `--strictPort`, route forwarding, result logging, and single cleanup call. The new tests must additionally cover an occupied-port preflight that forwards `{ host, port }` and prevents spawn, plus an injected SIGINT that rejects readiness and removes both signal listeners.
 
 - [ ] **Step 4: Add the package command and limits documentation**
 
