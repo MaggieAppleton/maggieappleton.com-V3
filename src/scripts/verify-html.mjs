@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
-import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon, describeTopic } from "../utils/descriptions.mjs";
+import { createSiteIdentityGraph, SITE_IDENTITY } from "../utils/siteIdentity.mjs";
+import {
+  isMeaningfulDescription,
+  PAGE_DESCRIPTIONS,
+  describeNow,
+  describeSmidgeon,
+  describeTopic,
+} from "../utils/descriptions.mjs";
 import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -290,6 +296,16 @@ function getMetaContent(body, property) {
   return content;
 }
 
+function getMetaNameContent(body, name) {
+  const tags = extractTags(body, "meta").filter((tag) =>
+    (getAttribute(tag, "name") ?? "").toLowerCase() === name.toLowerCase(),
+  );
+  assert.equal(tags.length, 1, `expected exactly one ${name} meta tag, received ${tags.length}`);
+  const content = getAttribute(tags[0], "content");
+  assert.ok(content, `expected ${name} meta tag to have content`);
+  return content;
+}
+
 function metaProperties(body, prefix) {
   return extractTags(body, "meta")
     .filter((tag) => (getAttribute(tag, "property") ?? "").toLowerCase().startsWith(prefix))
@@ -348,7 +364,7 @@ function assertPageNode(route, document, canonical) {
       assert.equal(toCalendarDate(node.datePublished), node.datePublished);
     }
     for (const field of ["author", "publisher", "headline", "image", "dateModified"]) assert.equal(Object.hasOwn(node, field), false, `${route.path}: WebPage has Article-only ${field}`);
-    if (node.description !== undefined) assert.ok(node.description.trim() && node.description.trim() !== "...");
+    assert.equal(node.description, route.description, `${route.path}: wrong WebPage description`);
   }
 }
 
@@ -365,6 +381,15 @@ export function assertHTMLResponse(route, response, body) {
   assertExactlyOneOpeningElement(route, body, "main");
   assertExactlyOneOpeningElement(route, body, "h1");
   const canonical = assertCanonical(route, body);
+  const expectedDescription = route.description ?? route.article?.description;
+  if (route.pageMetadata && !isMeaningfulDescription(expectedDescription, SITE_IDENTITY.websiteDescription)) {
+    assert.fail(`${route.path}: enabled page metadata requires a meaningful description`);
+  }
+  if (expectedDescription !== undefined) {
+    assert.notEqual(expectedDescription.trim(), "...");
+    assert.equal(getMetaNameContent(body, "description"), expectedDescription, `${route.path}: wrong meta description`);
+    assert.equal(getMetaContent(body, "og:description"), expectedDescription, `${route.path}: wrong og:description`);
+  }
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
   const ogType = getMetaContent(body, "og:type");
