@@ -10,6 +10,7 @@ import {
   createPublicEntryManifest,
   getPublicationBaseSlug,
   getPublicationVersion,
+  getPublicationVersionEntries,
   isPublicEntry,
   isVersionedPublicationEntry,
   selectLatestPublicEntries,
@@ -122,6 +123,19 @@ test("selectLatestPublicEntries collapses only folder-versioned entries", () => 
     selectLatestPublicEntries([ordinaryV1, folderV1, ordinaryV2, folderV2]),
     [ordinaryV1, folderV2, ordinaryV2],
   );
+});
+
+test("version UI groups only public folder versions and never filename-version entries", () => {
+  const apiV1 = entry({ id: "api-v1.mdx", collection: "notes", version: 1 });
+  const apiV2 = entry({ id: "api-v2.mdx", collection: "notes", version: 2 });
+  const essayV1 = entry({ id: "essay/essay-v1.mdx", version: 1 });
+  const essayV2 = entry({ id: "essay/essay-v2.mdx", version: 2 });
+  const draftEssayV3 = entry({ id: "essay/essay-v3.mdx", version: 3, draft: true });
+  const entries = [apiV1, apiV2, essayV2, draftEssayV3, essayV1];
+
+  assert.deepEqual(getPublicationVersionEntries(apiV1, entries), []);
+  assert.deepEqual(getPublicationVersionEntries(apiV2, entries), []);
+  assert.deepEqual(getPublicationVersionEntries(essayV1, entries), [essayV1, essayV2]);
 });
 
 test("a draft v2 cannot replace public v1 in a versioned collection manifest", () => {
@@ -456,10 +470,14 @@ test("publication boundary consumers import and use the shared publication polic
     "src/components/layouts/VersionDropdown.astro": [
       'from "../../utils/publication.mjs"',
       "selectPublicEntries",
+      "getPublicationVersionEntries",
+      "isVersionedPublicationEntry",
     ],
     "src/components/layouts/VersionWarning.astro": [
       'from "../../utils/publication.mjs"',
       "selectPublicEntries",
+      "getPublicationVersionEntries",
+      "isVersionedPublicationEntry",
     ],
   };
 
@@ -532,14 +550,14 @@ test("production version paths and metadata consume public entries rather than r
       /const allEntries = selectPublicEntries\(await getCollection\(entry\.collection\)\)/,
     ],
     "src/components/layouts/VersionDropdown.astro": [
-      /getVersionInfo\(publicEntry, allEntries\)/,
-      /hasMultipleVersions\(versionInfo\.baseSlug, allEntries\)/,
-      /getAllVersionsForPost\(baseSlug, allEntries\)/,
+      /getVersionInfo\(publicEntry, versionEntries\)/,
+      /getPublicationVersionEntries\(entry, allEntries\)/,
+      /const multipleVersions = !entry\.data\.draft && versionEntries\.length > 1/,
     ],
     "src/components/layouts/VersionWarning.astro": [
-      /getVersionInfo\(publicEntry, allEntries\)/,
-      /hasMultipleVersions\(versionInfo\.baseSlug, allEntries\)/,
-      /getAllVersionsForPost\(baseSlug, allEntries\)/,
+      /getVersionInfo\(publicEntry, versionEntries\)/,
+      /getPublicationVersionEntries\(entry, allEntries\)/,
+      /const multipleVersions = !entry\.data\.draft && versionEntries\.length > 1/,
     ],
   };
 
@@ -561,6 +579,8 @@ test("production version paths and metadata consume public entries rather than r
     for (const helperContract of helperContracts) {
       assert.match(source, helperContract, `${relativePath} must pass the filtered allEntries result to its helper`);
     }
+    assert.doesNotMatch(source, /getAllVersionsForPost\(baseSlug, allEntries\)/);
+    assert.doesNotMatch(source, /hasMultipleVersions\(versionInfo\.baseSlug, allEntries\)/);
   }
 });
 
