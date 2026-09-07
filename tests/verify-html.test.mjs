@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import test from "node:test";
 import {
   DEFAULT_PORT,
@@ -7,7 +8,10 @@ import {
   assertXMLResponse,
   buildURL,
   parsePort,
+  runVerifier,
+  stopDevServer,
   verifyRoutes,
+  waitForServer,
 } from "../src/scripts/verify-html.mjs";
 
 const html = (title = "Maggie Appleton") =>
@@ -77,4 +81,137 @@ test("verifies routes in order without fetching image URLs", async () => {
   assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
   assert.deepEqual(requested, ["http://127.0.0.1:4322/", "http://127.0.0.1:4322/rss.xml"]);
   assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
+});
+
+test("waits through transient failures until the server responds", async () => {
+  let calls = 0;
+  await waitForServer({
+    baseURL: "http://127.0.0.1:4322",
+    child: { exitCode: null },
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls < 3) throw new Error("not ready");
+      return new Response("ready");
+    },
+    sleep: async () => {},
+    now: (() => { let value = 0; return () => value += 100; })(),
+    timeoutMs: 1000,
+  });
+  assert.equal(calls, 3);
+});
+
+test("fails readiness when Astro exits or times out", async () => {
+  await assert.rejects(() => waitForServer({
+    baseURL: "http://127.0.0.1:4322",
+    child: { exitCode: 1 },
+    fetchImpl: async () => new Response("ready"),
+  }), /exited/);
+  await assert.rejects(() => waitForServer({
+    baseURL: "http://127.0.0.1:4322",
+    child: { exitCode: null },
+    fetchImpl: async () => { throw new Error("not ready"); },
+    sleep: async () => {},
+    now: (() => { let value = 0; return () => value += 1000; })(),
+    timeoutMs: 500,
+  }), /30 seconds|timed out/);
+});
+
+test("stops a Unix process group and escalates only when needed", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  child.kill = () => assert.fail("group signalling should be used on Unix");
+  const signals = [];
+  await stopDevServer(child, {
+    platform: "darwin",
+    killImpl: (pid, signal) => signals.push([pid, signal]),
+    waitForExitImpl: async () => false,
+  });
+  assert.deepEqual(signals, [[-99, "SIGTERM"], [-99, "SIGKILL"]]);
+});
+
+test("uses child.kill when Windows cannot signal a process group", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  const signals = [];
+  child.kill = (signal) => signals.push(signal);
+  await stopDevServer(child, {
+    platform: "win32",
+    killImpl: () => assert.fail("Windows should use child.kill"),
+    waitForExitImpl: async () => true,
+  });
+  assert.deepEqual(signals, ["SIGTERM"]);
+});
+
+test("runs the verifier with its manifest and reports every result", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  let spawnCall;
+  let readinessCall;
+  let verificationCall;
+  let stopped = 0;
+  const messages = [];
+  const routes = [{ path: "/about", kind: "html" }];
+  const results = await runVerifier({
+    host: "127.0.0.1",
+    port: 4322,
+    routes,
+    spawnImpl: (...args) => {
+      spawnCall = args;
+      return child;
+    },
+    waitForServerImpl: async (options) => { readinessCall = options; },
+    verifyRoutesImpl: async (options) => {
+      verificationCall = options;
+      return [{ path: "/about", status: 200 }];
+    },
+    stopDevServerImpl: async () => { stopped += 1; },
+    logger: { log: (message) => messages.push(message), error() {} },
+  });
+  assert.deepEqual(results, [{ path: "/about", status: 200 }]);
+  assert.equal(spawnCall[0], process.platform === "win32" ? "npm.cmd" : "npm");
+  assert.deepEqual(spawnCall[1], ["run", "dev", "--", "--host", "127.0.0.1", "--port", "4322", "--strictPort"]);
+  assert.match(spawnCall[2].cwd, /maggie-seo-aeo-p0a\/$/);
+  assert.equal(spawnCall[2].detached, process.platform !== "win32");
+  assert.equal(readinessCall.baseURL, "http://127.0.0.1:4322");
+  assert.equal(readinessCall.child, child);
+  assert.deepEqual(verificationCall, { baseURL: "http://127.0.0.1:4322", routes });
+  assert.deepEqual(messages, ["✓ 200 /about", "Verified 1 routes without requesting images."]);
+  assert.equal(stopped, 1);
+});
+
+test("always stops the child when route verification fails", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  let stopped = 0;
+  await assert.rejects(() => runVerifier({
+    port: 4322,
+    spawnImpl: () => child,
+    waitForServerImpl: async () => {},
+    verifyRoutesImpl: async () => { throw new Error("bad route"); },
+    stopDevServerImpl: async () => { stopped += 1; },
+    logger: { log() {}, error() {} },
+  }), /bad route/);
+  assert.equal(stopped, 1);
+});
+
+test("surfaces spawn errors and still stops the child", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  let stopped = 0;
+  const verification = runVerifier({
+    port: 4322,
+    spawnImpl: () => child,
+    waitForServerImpl: async () => new Promise(() => {}),
+    verifyRoutesImpl: async () => [],
+    stopDevServerImpl: async () => { stopped += 1; },
+    logger: { log() {}, error() {} },
+  });
+  queueMicrotask(() => child.emit("error", new Error("spawn failed")));
+  await assert.rejects(() => verification, /spawn failed/);
+  assert.equal(stopped, 1);
 });
