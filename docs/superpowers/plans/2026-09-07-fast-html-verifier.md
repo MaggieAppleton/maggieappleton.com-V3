@@ -230,10 +230,11 @@ git commit -m "test: define fast HTML verification contracts"
 - Produces: `assertPortAvailable(options)`, `waitForServer(options)`, `stopDevServer(child, options)`, and `runVerifier(options)` plus the public command `npm run verify:html`.
 - Before spawning, `runVerifier()` exclusively preflights the host/port and fails if a listener already owns it; it then derives the repository root from `import.meta.url`, spawns `npm run dev`, verifies every manifest route, prints one success line per route, and stops the entire detached process group in `finally`.
 - A SIGINT or SIGTERM rejects the active readiness or verification stage, then cleanup runs once in `finally`. `verifyRoutes()` rejects supplied `/_image`, `/og`, and raster-image paths before fetching them.
+- Readiness polling requests only the static `/robots.txt` endpoint. The manifest still explicitly verifies `/` immediately afterward, so SSR failures reject the command without repeated aborted homepage compilations during startup.
 
 - [ ] **Step 1: Add failing lifecycle and orchestration tests**
 
-Extend `tests/verify-html.test.mjs` with injected, clock-free lifecycle tests, including an occupied-port preflight that proves spawning does not begin, and a signal-target test that proves interruption rejects promptly and removes listeners. Also prove `verifyRoutes()` rejects supplied image paths before any fetch call:
+Extend `tests/verify-html.test.mjs` with injected, clock-free lifecycle tests, including an occupied-port preflight that proves spawning does not begin, a signal-target test that proves interruption rejects promptly and removes listeners, and a readiness test that proves only `http://127.0.0.1:4322/robots.txt` is requested rather than the homepage. Also prove `verifyRoutes()` rejects supplied image paths before any fetch call:
 
 ```js
 import { EventEmitter } from "node:events";
@@ -372,10 +373,11 @@ export async function waitForServer({
   pollMs = 100,
 }) {
   const deadline = now() + timeoutMs;
+  const readinessURL = buildURL(baseURL, "/robots.txt");
   while (now() < deadline) {
     if (child.exitCode !== null) throw new Error(`Astro dev exited with code ${child.exitCode} before it became ready`);
     try {
-      const response = await fetchImpl(baseURL, { signal: AbortSignal.timeout(750) });
+      const response = await fetchImpl(readinessURL, { signal: AbortSignal.timeout(750) });
       if (response.ok) return;
     } catch {}
     await sleep(pollMs);
