@@ -27,6 +27,10 @@ import {
   normalizeGeneratorId,
   sortGeneratorFileNames,
 } from "../src/scripts/publication-generator-helpers.mjs";
+import {
+  buildPublicationFeedItems,
+  buildSmidgeonFeedItems,
+} from "../src/utils/feedPublication.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const readSource = (relativePath) =>
@@ -663,4 +667,184 @@ test("generator helpers retain parsed fields and tolerate malformed canonical to
   assert.equal(publicEntry.content, "[[Alias]]");
   assert.deepEqual(publicEntry.data.aliases, ["Alias"]);
   assert.deepEqual(collectGeneratorTopics(manifest.canonicalEntries), ["Public"]);
+});
+
+test("RSS feed fetches its six collections without inline draft predicates and maps the manifest views", () => {
+  const source = readSource("src/pages/rss.xml.js");
+
+  assert.ok(source.includes('from "../utils/publication.mjs"'));
+  assert.ok(source.includes('from "../utils/feedPublication.mjs"'));
+  assert.deepEqual(
+    [...source.matchAll(/getCollection\("([^"]+)"\)/g)].map(([, collection]) => collection),
+    ["notes", "essays", "talks", "patterns", "smidgeons", "now"],
+  );
+  assert.match(
+    source,
+    /createPublicEntryManifest\(\{\s*notes,\s*essays,\s*talks,\s*patterns,\s*smidgeons,\s*now,?\s*\}\)/,
+  );
+  assert.match(source, /items:\s*buildPublicationFeedItems\(\{\s*manifest,/);
+  assert.match(source, /site:\s*context\.site/);
+  assert.doesNotMatch(source, /canonicalByCollection\.[a-z]+\.map\(/);
+  assert.doesNotMatch(source, /publicByCollection\.[a-z]+\.map\(/);
+  assert.doesNotMatch(source, /getCollection\([^)]*,/);
+  assert.doesNotMatch(source, /data\.draft/);
+});
+
+test("Smidgeon feed selects public entries after fetching without an inline draft predicate", () => {
+  const source = readSource("src/pages/smidgeons.xml.js");
+
+  assert.ok(source.includes('from "../utils/feedPublication.mjs"'));
+  assert.deepEqual(
+    [...source.matchAll(/getCollection\("([^"]+)"\)/g)].map(([, collection]) => collection),
+    ["smidgeons"],
+  );
+  assert.match(source, /items:\s*buildSmidgeonFeedItems\(\{\s*entries:\s*smidgeons,/);
+  assert.match(source, /site:\s*context\.site/);
+  assert.doesNotMatch(source, /getCollection\([^)]*,/);
+  assert.doesNotMatch(source, /data\.draft/);
+});
+
+const feedEntry = ({
+  id,
+  collection,
+  version = 1,
+  draft,
+  title = id,
+  startDate,
+  description = `${title} description`,
+  body = `${title} body`,
+  external,
+  citation,
+}) => ({
+  id,
+  collection,
+  body,
+  data: {
+    title,
+    version,
+    startDate: new Date(startDate),
+    description,
+    ...(external === undefined ? {} : { external }),
+    ...(citation === undefined ? {} : { citation }),
+    ...(draft === undefined ? {} : { draft }),
+  },
+});
+
+test("publication feed builder emits only public canonical items while retaining ordinary version-like entries", () => {
+  const essayV1 = feedEntry({
+    id: "forest/forest-v1.mdx",
+    collection: "essays",
+    title: "Forest v1",
+    startDate: "2026-01-01",
+  });
+  const essayDraftV2 = feedEntry({
+    id: "forest/forest-v2.mdx",
+    collection: "essays",
+    version: 2,
+    draft: true,
+    title: "Forest draft v2",
+    startDate: "2026-03-01",
+  });
+  const ordinaryV1 = feedEntry({
+    id: "api-v1.mdx",
+    collection: "notes",
+    title: "API v1",
+    startDate: "2026-02-01",
+  });
+  const ordinaryV2 = feedEntry({
+    id: "api-v2.mdx",
+    collection: "notes",
+    version: 2,
+    title: "API v2",
+    startDate: "2026-04-01",
+  });
+  const publicNow = feedEntry({
+    id: "2026-02.mdx",
+    collection: "now",
+    title: "Now public",
+    startDate: "2026-05-01",
+    body: '<RemoteImage src="/now.png" alt="Now image" />\n<script>alert("bad")</script>',
+  });
+  const draftNow = feedEntry({
+    id: "2026-03.mdx",
+    collection: "now",
+    draft: true,
+    title: "Now draft",
+    startDate: "2026-06-01",
+  });
+  const publicSmidgeon = feedEntry({
+    id: "reading.mdx",
+    collection: "smidgeons",
+    title: "Reading",
+    startDate: "2026-07-01",
+    body: 'import Thing from "thing";\n\n<BasicImage src="/reading.png" alt="Reading image" />\n<Unknown>remove me</Unknown>\nReading body',
+    external: { url: "https://example.test/reading", title: "Reading link", author: "Author" },
+  });
+  const draftSmidgeon = feedEntry({
+    id: "private.mdx",
+    collection: "smidgeons",
+    draft: true,
+    title: "Private",
+    startDate: "2026-08-01",
+  });
+  const manifest = createPublicEntryManifest({
+    essays: [essayV1, essayDraftV2],
+    notes: [ordinaryV1, ordinaryV2],
+    now: [publicNow, draftNow],
+    smidgeons: [publicSmidgeon, draftSmidgeon],
+  });
+  const items = buildPublicationFeedItems({
+    manifest,
+    site: "https://example.test",
+  });
+
+  assert.deepEqual(
+    items.map(({ title }) => title),
+    ["Reading", "Now public", "API v2", "API v1", "Forest v1"],
+  );
+  assert.deepEqual(
+    items.map(({ link }) => link),
+    ["/reading/", "/now-2026-02.mdx/", "/api-v2/", "/api-v1/", "/forest/"],
+  );
+  assert.equal(items.find(({ title }) => title === "Now public").content.includes("https://example.test/now.png"), true);
+  assert.doesNotMatch(items.find(({ title }) => title === "Now public").content, /<script/);
+  assert.equal(items.find(({ title }) => title === "Reading").description, "Reading link by Author");
+  assert.match(items.find(({ title }) => title === "Reading").content, /href="https:\/\/example\.test\/reading"/);
+  assert.match(items.find(({ title }) => title === "Reading").content, /src="https:\/\/example\.test\/reading\.png"/);
+  assert.doesNotMatch(items.find(({ title }) => title === "Reading").content, /remove me/);
+  assert.equal(items.some(({ title }) => title.includes("draft")), false);
+  assert.deepEqual(
+    items.map(({ pubDate }) => pubDate.toISOString()),
+    ["2026-07-01T00:00:00.000Z", "2026-05-01T00:00:00.000Z", "2026-04-01T00:00:00.000Z", "2026-02-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z"],
+  );
+});
+
+test("Smidgeon feed builder filters drafts and preserves standalone content behavior", () => {
+  const publicEntry = feedEntry({
+    id: "public.mdx",
+    collection: "smidgeons",
+    title: "Public",
+    startDate: "2026-02-01",
+    body: 'Keep this body\n<BasicImage src="/public.png" alt="Public image" />\n<Unknown>remove me</Unknown>',
+  });
+  const draftEntry = feedEntry({
+    id: "draft.mdx",
+    collection: "smidgeons",
+    draft: true,
+    title: "Draft",
+    startDate: "2026-03-01",
+  });
+
+  const items = buildSmidgeonFeedItems({
+    entries: [publicEntry, draftEntry],
+    site: "https://example.test",
+  });
+
+  assert.equal(items.length, 1);
+  assert.equal(items[0].title, "Public");
+  assert.equal(items[0].description, "Keep this body");
+  assert.equal(items[0].link, "/public/");
+  assert.match(items[0].content, /src="\/public\.png"/);
+  assert.doesNotMatch(items[0].content, /remove me/);
+  assert.equal(items[0].content.includes("https://example.test/public.png"), false);
 });
