@@ -13,6 +13,7 @@ import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractBaseSlug } from "../utils/versionUtils";
 import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 const essays = selectLatestPublicEntries(await getCollection("essays")).filter(
 	({ data }) => data.featured === true,
@@ -34,7 +35,7 @@ const sortedPatterns = patterns
 	.slice(0, 8);
 ---
 
-<Layout title="Maggie Appleton" pageMetadata="webpage">
+<Layout title="Maggie Appleton" desc={PAGE_DESCRIPTIONS.home} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="page-header">
 			<Title1 class="main-title">

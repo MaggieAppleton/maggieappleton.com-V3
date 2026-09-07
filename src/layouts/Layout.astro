@@ -5,6 +5,7 @@ import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
 import { buildCanonicalUrl } from "../utils/canonical.mjs";
+import { isMeaningfulDescription, requirePageDescription } from "../utils/descriptions.mjs";
 import { createPageMetadataNode } from "../utils/pageMetadata.mjs";
 import { SITE_IDENTITY } from "../utils/siteIdentity.mjs";
 import SiteIdentityJsonLd from "../components/seo/SiteIdentityJsonLd.astro";
@@ -24,10 +25,7 @@ export interface Props {
 	};
 }
 
-const { title, desc, type, coverImage, canonicalPath, pageMetadata = false } = Astro.props;
-
-const DEFAULT_DESCRIPTION =
-	"Maggie's digital garden filled with visual essays on programming, design, and anthropology";
+const { title, desc = "", type, coverImage, canonicalPath, pageMetadata = false } = Astro.props;
 
 const canonicalURL = buildCanonicalUrl(canonicalPath ?? Astro.url.pathname);
 
@@ -50,12 +48,17 @@ if (!type) {
 
 const normalizedPageMetadata: Exclude<Props["pageMetadata"], false | undefined> | false =
 	pageMetadata === "webpage" ? { type: "webpage" } : (pageMetadata ?? false);
+const resolvedDescription = normalizedPageMetadata !== false
+	? requirePageDescription(desc, canonicalURL, SITE_IDENTITY.websiteDescription)
+	: (isMeaningfulDescription(desc, SITE_IDENTITY.websiteDescription)
+		? desc.trim()
+		: SITE_IDENTITY.websiteDescription);
 const pageNode = normalizedPageMetadata !== false
 	? createPageMetadataNode({
 			...normalizedPageMetadata,
 			canonicalUrl: canonicalURL,
 			name: normalizedPageMetadata.name ?? title,
-			description: desc,
+			description: resolvedDescription,
 			image: normalizedPageMetadata.type === "article" ? coverImage : undefined,
 		})
 	: undefined;
@@ -91,7 +94,7 @@ const isArticle = Boolean(articleMetadata);
 		<ClientRouter />
 		<SEO
 			title={title}
-			description={desc || DEFAULT_DESCRIPTION}
+			description={resolvedDescription}
 			canonical={canonicalURL}
 			openGraph={{
 				basic: {
@@ -113,7 +116,7 @@ const isArticle = Boolean(articleMetadata);
 					: {}),
 				optional: {
 					locale: "en_GB",
-					description: desc || DEFAULT_DESCRIPTION,
+					description: resolvedDescription,
 				},
 				image: {
 					alt: title || "Maggie Appleton's digital garden",
