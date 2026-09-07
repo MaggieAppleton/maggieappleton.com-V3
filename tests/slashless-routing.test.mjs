@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { normalizeCanonicalPath } from "../src/utils/canonical.mjs";
 
 const fromRoot = (path) => new URL(`../${path}`, import.meta.url);
 
@@ -61,4 +62,76 @@ test("normalizes only the four internal feed-item link builders", async () => {
 
   assert.match(source, /import\s*\{\s*normalizeCanonicalPath\s*\}\s*from\s*["']\.\/canonical\.mjs["'];/);
   assert.equal((source.match(/link:\s*normalizeCanonicalPath\(/g) ?? []).length, 4);
+});
+
+test("makes generated backlink targets root-relative and slashless", async () => {
+  const source = await readFile(fromRoot("src/components/layouts/Backlinks.astro"), "utf8");
+
+  assert.match(source, /import\s*\{\s*normalizeCanonicalPath\s*\}\s*from\s*["']\.\.\/\.\.\/utils\/canonical\.mjs["'];/);
+  assert.match(source, /href=\{normalizeCanonicalPath\(`\/\$\{backlink\.slug\}`\)\}/);
+
+  for (const [slug, expected] of [
+    ["flat-post", "/flat-post"],
+    ["nested/essay", "/nested/essay"],
+    ["api-v2", "/api-v2"],
+  ]) {
+    assert.equal(normalizeCanonicalPath(`/${slug}`), expected);
+  }
+});
+
+test("keeps generated link-map slugs unprefixed and slashless", async () => {
+  const linkMaps = JSON.parse(await readFile(fromRoot("src/links.json"), "utf8"));
+  const entries = Object.values(linkMaps).flatMap((entry) => [
+    entry,
+    ...(entry.outboundLinks ?? []),
+    ...(entry.inboundLinks ?? []),
+  ]);
+
+  assert.ok(entries.length > 0);
+  for (const entry of entries) {
+    assert.equal(typeof entry.slug, "string");
+    assert.ok(entry.slug.length > 0);
+    assert.equal(entry.slug.startsWith("/"), false);
+    assert.equal(entry.slug.endsWith("/"), false);
+  }
+});
+
+test("retains the scoped slashless-link and Webmention compatibility contracts", async () => {
+  const sources = Object.fromEntries(await Promise.all([
+    "src/plugins/remark-wiki-link.js",
+    "src/components/layouts/navbar/MainNavLinks.astro",
+    "src/pages/topics/[topic].astro",
+    "src/components/layouts/VersionDropdown.astro",
+    "src/components/layouts/VersionWarning.astro",
+    "src/components/layouts/WebMentions.astro",
+    ...["EssayCard", "NoteCard", "PatternCard", "TalkCard", "NowCard", "SmidgeonCard"].map(
+      (name) => `src/components/cards/${name}.astro`,
+    ),
+  ].map(async (path) => [path, await readFile(fromRoot(path), "utf8")])));
+
+  assert.match(sources["src/plugins/remark-wiki-link.js"], /value:\s*`\/\$\{matchedPost\.slug\}`/);
+
+  const navbarPaths = [...sources["src/components/layouts/navbar/MainNavLinks.astro"].matchAll(/href="(\/[^"?#]*)"/g)]
+    .map(([, href]) => href);
+  assert.ok(navbarPaths.length > 0);
+  assert.ok(navbarPaths.every((href) => href === "/" || !href.endsWith("/")));
+
+  assert.match(sources["src/pages/topics/[topic].astro"], /href="\/garden"/);
+  assert.match(sources["src/pages/topics/[topic].astro"], /slug=\{`now-\$\{post\.id\}`\}/);
+  for (const name of ["EssayCard", "NoteCard", "PatternCard", "TalkCard", "NowCard", "SmidgeonCard"]) {
+    assert.match(sources[`src/components/cards/${name}.astro`], /href=\{`\/\$\{slug\}`\}/);
+  }
+  assert.match(sources["src/components/layouts/VersionDropdown.astro"], /\? `\/\$\{versionInfo\.baseSlug\}`\s*:\s*`\/v\$\{versionNum\}\/\$\{versionInfo\.baseSlug\}`/);
+  assert.match(sources["src/components/layouts/VersionWarning.astro"], /const latestUrl = `\/\$\{versionInfo\.baseSlug\}`/);
+
+  const webMentions = sources["src/components/layouts/WebMentions.astro"];
+  for (const variant of [
+    "target === baseUrl",
+    "target === `${baseUrl}/`",
+    "target === `${baseUrl}.mdx`",
+    "target === `${baseUrl}.mdx/`",
+    "target.startsWith(`${baseUrl}?`)",
+  ]) {
+    assert.ok(webMentions.includes(variant), `WebMention compatibility variant missing: ${variant}`);
+  }
 });
