@@ -5,6 +5,7 @@ import { SEO } from "astro-seo";
 import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
 import { buildCanonicalUrl } from "../utils/canonical.mjs";
+import SiteIdentityJsonLd from "../components/seo/SiteIdentityJsonLd.astro";
 import "../global.css";
 
 export interface Props {
@@ -92,6 +93,7 @@ if (!type) {
 				imageAlt: title || "Maggie Appleton's digital garden",
 			}}
 		/>
+		<SiteIdentityJsonLd />
 	</head>
 	<body>
 		<Navbar />
