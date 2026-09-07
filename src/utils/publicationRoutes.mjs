@@ -42,6 +42,21 @@ export function toNowRouteParams(id) {
 }
 
 /**
+ * Reconstructs the complete pathname owned by the Now route from its params.
+ *
+ * @param {PublicationPath} path
+ * @returns {string}
+ */
+export function getNowRoutePathSlug(path) {
+  const { slug, rest } = path.params;
+  if (typeof slug !== "string") throw new TypeError("Now route path must contain a string slug");
+  if (rest !== undefined && typeof rest !== "string") {
+    throw new TypeError("Now route path rest parameter must be a string when provided");
+  }
+  return `now-${slug}${rest ? `/${rest}` : ""}`;
+}
+
+/**
  * @typedef {{params: Record<string, unknown>, [key: string]: unknown}} PublicationPath
  */
 
