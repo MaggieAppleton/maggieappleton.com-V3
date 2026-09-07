@@ -30,25 +30,42 @@ export function getSocialImageSlug(entry) {
 }
 
 /**
- * @typedef {{params: {slug: string}, [key: string]: unknown}} PublicationPath
+ * Converts a Now entry ID into the params used by `now-[slug]/[...rest]`.
+ *
+ * @param {string} id
+ * @returns {{slug: string, rest: string | undefined}}
+ */
+export function toNowRouteParams(id) {
+  if (typeof id !== "string") throw new TypeError("Now route ID must be a string");
+  const [slug, ...rest] = id.split("/");
+  return { slug, rest: rest.length ? rest.join("/") : undefined };
+}
+
+/**
+ * @typedef {{params: Record<string, unknown>, [key: string]: unknown}} PublicationPath
  */
 
 /**
- * @param {{publicPaths?: PublicationPath[], draftPaths?: PublicationPath[], reservedPrefixes?: string[]}} options
+ * @param {{publicPaths?: PublicationPath[], draftPaths?: PublicationPath[], reservedPrefixes?: string[], reservedStartsWith?: string[], getPathSlug?: (path: PublicationPath) => string}} options
  * @returns {PublicationPath[]}
  */
 export function mergePublicationPaths({
   publicPaths = [],
   draftPaths = [],
   reservedPrefixes = [],
+  reservedStartsWith = [],
+  getPathSlug = (path) => path?.params?.slug,
 } = {}) {
   const seenSlugs = new Set();
   const normalizedPrefixes = reservedPrefixes.map((prefix) =>
     typeof prefix === "string" ? prefix.replace(/^\/+|\/+$/g, "") : prefix,
   );
+  const normalizedStartsWith = reservedStartsWith.map((prefix) =>
+    typeof prefix === "string" ? prefix.replace(/^\/+/, "") : prefix,
+  );
 
   const validatePath = (path, source) => {
-    const slug = path?.params?.slug;
+    const slug = getPathSlug(path);
     if (typeof slug !== "string") {
       throw new TypeError(`Publication ${source} path must contain a string at path.params.slug`);
     }
@@ -59,6 +76,12 @@ export function mergePublicationPaths({
     for (const prefix of normalizedPrefixes) {
       if (typeof prefix === "string" && (slug === prefix || slug.startsWith(`${prefix}/`))) {
         throw new Error(`Publication path slug "${slug}" is reserved by prefix "${prefix}"`);
+      }
+    }
+
+    for (const prefix of normalizedStartsWith) {
+      if (typeof prefix === "string" && slug.startsWith(prefix)) {
+        throw new Error(`Publication path slug "${slug}" is reserved by leading namespace "${prefix}"`);
       }
     }
 
