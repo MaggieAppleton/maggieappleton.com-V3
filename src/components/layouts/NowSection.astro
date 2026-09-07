@@ -17,12 +17,13 @@ import ProseWrapper from "../layouts/ProseWrapper.astro";
 	}
 
 	.now-section :global(h2) {
-		margin-top: -3.4rem;
 		font-family: var(--font-sans);
-		font-size: 1.17em;
-		font-weight: bold;
-		line-height: normal;
+		font-size: calc(var(--font-size-lg) / 1.1);
+		font-weight: 300;
+		line-height: var(--leading-base);
+		margin: -3.4rem 0 var(--space-s);
 		color: var(--color-black);
+		transition: none;
 	}
 
 	.now-section::before {

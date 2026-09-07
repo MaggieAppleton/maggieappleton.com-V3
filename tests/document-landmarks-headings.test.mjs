@@ -104,3 +104,28 @@ test("uses the responsive Title1 adapter for reusable callouts and the two known
 	assert.match(stillCantDraw, /marginTop:\s*0\.25/);
 	assert.match(xanadu, /marginBottom:\s*["']0\.6rem["']/);
 });
+
+test("preserves former Title1, timeline H3, and reference-card cascade values after heading demotion", async () => {
+	const [proseWrapper, nowSection, smidgeonLayout, smidgeons] = await Promise.all([
+		readSource("src/components/layouts/ProseWrapper.astro"),
+		readSource("src/components/layouts/NowSection.astro"),
+		readSource("src/layouts/SmidgeonLayout.astro"),
+		readSource("src/pages/smidgeons.astro"),
+	]);
+
+	assert.match(
+		proseWrapper,
+		/\.prose-wrapper\s*>\s*:global\(h2\.title1\)\s*\{[\s\S]*font-size:\s*var\(--font-size-3xl\);[\s\S]*font-family:\s*var\(--font-serif\);[\s\S]*line-height:\s*var\(--leading-tighter\);[\s\S]*font-weight:\s*normal;[\s\S]*margin:\s*var\(--space-2xl\)\s+0\s+var\(--space-s\);[\s\S]*color:\s*inherit;[\s\S]*transition:\s*none;/,
+	);
+	assert.match(
+		proseWrapper,
+		/@media\s+screen\s+and\s+\(max-width:\s*767px\)[\s\S]*\.prose-wrapper\s*>\s*:global\(h2\.title1\)\s*\{[\s\S]*font-size:\s*var\(--font-size-2xl\);[\s\S]*margin:\s*var\(--space-xl\)\s+0\s+var\(--space-xs\);/,
+	);
+	assert.match(
+		nowSection,
+		/\.now-section\s+:global\(h2\)\s*\{[\s\S]*font-family:\s*var\(--font-sans\);[\s\S]*font-size:\s*calc\(var\(--font-size-lg\)\s*\/\s*1\.1\);[\s\S]*font-weight:\s*300;[\s\S]*line-height:\s*var\(--leading-base\);[\s\S]*margin:\s*-3\.4rem\s+0\s+var\(--space-s\);[\s\S]*color:\s*var\(--color-black\);[\s\S]*transition:\s*none;/,
+	);
+	for (const source of [smidgeonLayout, smidgeons]) {
+		assert.match(source, /\.content-header\s*\{[\s\S]*color:\s*inherit;/);
+	}
+});
