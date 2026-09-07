@@ -170,7 +170,7 @@ const frontmatter = entry.data;
 
 {
 	isSmidgeonFrontmatter(frontmatter) ? (
-		<SmidgeonLayout frontmatter={frontmatter}>
+		<SmidgeonLayout frontmatter={frontmatter} entry={entry as CollectionEntry<"smidgeons">}>
 			<ProseWrapper>
 				<Content components={components} />
 			</ProseWrapper>

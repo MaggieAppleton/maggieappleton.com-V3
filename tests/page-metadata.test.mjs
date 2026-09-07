@@ -179,7 +179,6 @@ test("omits invalid optional WebPage dates and Article-only fields", () => {
     url: "https://maggieappleton.com/about",
     name: "About",
     isPartOf: { "@id": "https://maggieappleton.com/#website" },
-    dateModified: "2020-01-01",
   });
   assert.equal(Object.hasOwn(page, "author"), false);
   assert.equal(Object.hasOwn(page, "publisher"), false);
@@ -191,13 +190,13 @@ test("Layout and templates opt in to page metadata explicitly", async () => {
   const read = async (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
   const layout = await read("src/layouts/Layout.astro");
   assert.match(layout, /pageMetadata\??/);
-  assert.match(layout, /pageMetadatas*=s*false/);
+  assert.match(layout, /pageMetadata\s*=\s*false/);
   assert.match(layout, /isArticle/);
   assert.match(layout, /publishedTime/);
   const staticPages = ["index", "about", "garden", "essays", "notes", "patterns", "talks", "podcasts", "now", "smidgeons", "library", "antilibrary", "hire-me"];
-  for (const page of staticPages) assert.match(await read(`src/pages/${page}.astro`), /pageMetadatas*=s*["']webpage["']/);
-  assert.match(await read("src/pages/topics/[topic].astro"), /pageMetadatas*=s*["']webpage["']/);
-  assert.match(await read("src/pages/colophon/index.astro"), /pageMetadatas*=s*["']webpage["']/);
+  for (const page of staticPages) assert.match(await read(`src/pages/${page}.astro`), /pageMetadata\s*=\s*["']webpage["']/);
+  assert.match(await read("src/pages/topics/[topic].astro"), /pageMetadata\s*=\s*["']webpage["']/);
+  assert.match(await read("src/pages/colophon/index.astro"), /pageMetadata\s*=\s*["']webpage["']/);
   assert.doesNotMatch(await read("src/pages/drafts/[...slug].astro"), /pageMetadata\s*=/);
   assert.doesNotMatch(await read("src/pages/design-system.astro"), /pageMetadata\s*=/);
 });
