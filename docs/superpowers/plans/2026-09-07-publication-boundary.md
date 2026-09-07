@@ -475,6 +475,12 @@ assert the emitted item set and descending order for public v1 plus draft v2,
 ordinary unversioned `*-vN` entries, draft Now/Smidgeons, and a content-bearing
 Smidgeon. Preserve titles, dates, descriptions, links, and mapped content; the
 source contracts only prove that both real `GET` handlers call this tested seam.
+The helper must own the real production item factories, Markdown/MDX cleanup,
+image-path rewriting, and sanitization used by the routes. Tests must not pass
+substitute factories whose link or content behavior can diverge from
+production. Ordinary `api-v1` and `api-v2` feed items keep distinct relative
+paths; folder versions alone collapse to their base slug. Trailing slashes
+remain unchanged for P3.
 
 ### Step 2: Convert feed inputs only
 
