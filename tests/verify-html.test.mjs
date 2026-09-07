@@ -1,16 +1,24 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { createServer as createHTTPServer } from "node:http";
+import { createServer } from "node:net";
 import test from "node:test";
 import {
+  DEFAULT_HOST,
   DEFAULT_PORT,
   ROUTES,
   assertHTMLResponse,
+  assertPortAvailable,
+  assertRobotsResponse,
+  assertSitemapResponse,
   assertXMLResponse,
   buildURL,
   parsePort,
   runVerifier,
   stopDevServer,
   verifyRoutes,
+  waitForChildReady,
+  waitForExit,
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
 
@@ -28,10 +36,12 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
+  assert.equal(ROUTES.length, 12);
+  assert.deepEqual(ROUTES.at(-1), { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" });
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   for (const route of ROUTES) {
     assert.match(route.path, /^\//);
-    assert.ok(["html", "xml"].includes(route.kind));
+    assert.ok(["html", "xml", "robots", "sitemap"].includes(route.kind));
     assert.doesNotMatch(route.path, /(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i);
   }
 });
@@ -62,6 +72,24 @@ test("accepts RSS XML and rejects invalid XML responses", () => {
   assert.throws(() => assertXMLResponse(route, response("<rss />", "application/xml"), "<rss />"), /item/);
 });
 
+test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
+  const robots = { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" };
+  assert.doesNotThrow(() => assertRobotsResponse(robots, response("User-agent: *\nAllow: /", "text/plain"), "User-agent: *\nAllow: /"));
+  assert.throws(() => assertRobotsResponse(robots, response("Allow: /", "text/plain"), "Allow: /"), /User-agent/);
+
+  const schemaRoute = { path: "/schema", kind: "html", jsonLD: true, bodyIncludes: "Useful body text" };
+  const schemaBody = html().replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
+  assert.doesNotThrow(() => assertHTMLResponse(schemaRoute, response(schemaBody), schemaBody));
+  const invalidSchema = schemaBody.replace("{\"@context\":\"https://schema.org\"}", "{");
+  assert.throws(() => assertHTMLResponse(schemaRoute, response(invalidSchema), invalidSchema), /JSON|Unexpected/);
+  assert.throws(() => assertHTMLResponse(schemaRoute, response(html()), html()), /Useful body text/);
+
+  const sitemap = { path: "/sitemap.xml", kind: "sitemap" };
+  const sitemapBody = "<?xml version=\"1.0\"?><urlset><url><loc>https://maggieappleton.com/</loc></url></urlset>";
+  assert.doesNotThrow(() => assertSitemapResponse(sitemap, response(sitemapBody, "application/xml"), sitemapBody));
+  assert.throws(() => assertSitemapResponse(sitemap, response("<urlset />", "application/xml"), "<urlset />"), /url/);
+});
+
 test("verifies routes in order without fetching image URLs", async () => {
   const requested = [];
   const routes = [
@@ -81,6 +109,53 @@ test("verifies routes in order without fetching image URLs", async () => {
   assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
   assert.deepEqual(requested, ["http://127.0.0.1:4322/", "http://127.0.0.1:4322/rss.xml"]);
   assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
+});
+
+test("refuses redirects before an image endpoint can be requested", async () => {
+  let imageRequests = 0;
+  const server = createHTTPServer((request, reply) => {
+    if (request.url === "/safe") {
+      reply.writeHead(302, { location: "/_image?href=fixture" });
+      reply.end();
+      return;
+    }
+    if (request.url?.startsWith("/_image")) imageRequests += 1;
+    reply.writeHead(200, { "content-type": "image/png" });
+    reply.end("image");
+  });
+  await new Promise((resolve) => server.listen(0, DEFAULT_HOST, resolve));
+  const { port } = server.address();
+  try {
+    await assert.rejects(() => verifyRoutes({
+      baseURL: `http://${DEFAULT_HOST}:${port}`,
+      routes: [{ path: "/safe", kind: "html" }],
+    }), /redirect/i);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  assert.equal(imageRequests, 0);
+});
+
+test("uses manual redirect handling for readiness and route requests", async () => {
+  const options = [];
+  await waitForServer({
+    baseURL: "http://127.0.0.1:4322",
+    child: { exitCode: null },
+    fetchImpl: async (_, requestOptions) => {
+      options.push(requestOptions);
+      return new Response("User-agent: *");
+    },
+    sleep: async () => assert.fail("a successful readiness probe should not sleep"),
+  });
+  await verifyRoutes({
+    baseURL: "http://127.0.0.1:4322",
+    routes: [{ path: "/about", kind: "html" }],
+    fetchImpl: async (_, requestOptions) => {
+      options.push(requestOptions);
+      return response(html());
+    },
+  });
+  assert.deepEqual(options.map(({ redirect }) => redirect), ["manual", "manual"]);
 });
 
 test("rejects supplied image routes before fetching them", async () => {
@@ -146,6 +221,50 @@ test("fails readiness when Astro exits or times out", async () => {
   }), /30 seconds|timed out/);
 });
 
+test("maps a concrete occupied loopback port and releases the listener", async () => {
+  const listener = createServer();
+  await new Promise((resolve) => listener.listen(0, DEFAULT_HOST, resolve));
+  const { port } = listener.address();
+  try {
+    await assert.rejects(() => assertPortAvailable({ host: DEFAULT_HOST, port }), /already in use/);
+  } finally {
+    await new Promise((resolve) => listener.close(resolve));
+  }
+});
+
+test("cleans wait-for-exit listeners and timers on exit and timeout", async () => {
+  for (const outcome of ["exit", "timeout"]) {
+    const child = new EventEmitter();
+    child.exitCode = null;
+    let timeoutCallback;
+    const cleared = [];
+    const waiting = waitForExit(child, 2_000, {
+      setTimeoutImpl: (callback) => {
+        timeoutCallback = callback;
+        return outcome;
+      },
+      clearTimeoutImpl: (timeout) => cleared.push(timeout),
+    });
+    assert.equal(child.listenerCount("exit"), 1);
+    if (outcome === "exit") child.emit("exit", 0);
+    else timeoutCallback();
+    assert.equal(await waiting, outcome === "exit");
+    assert.equal(child.listenerCount("exit"), 0);
+    assert.deepEqual(cleared, [outcome]);
+  }
+});
+
+test("resolves owned-child readiness from Astro output", async () => {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  const ready = waitForChildReady(child);
+  child.stdout.emit("data", Buffer.from("astro v5 ready in 42 ms\n"));
+  await ready;
+  assert.equal(child.stdout.listenerCount("data"), 0);
+  assert.equal(child.stderr.listenerCount("data"), 0);
+});
+
 test("stops a Unix process group and escalates only when needed", async () => {
   const child = new EventEmitter();
   child.pid = 99;
@@ -193,6 +312,7 @@ test("runs the verifier with its manifest and reports every result", async () =>
       spawnCall = args;
       return child;
     },
+    waitForChildReadyImpl: async () => {},
     waitForServerImpl: async (options) => { readinessCall = options; },
     verifyRoutesImpl: async (options) => {
       verificationCall = options;
@@ -206,6 +326,7 @@ test("runs the verifier with its manifest and reports every result", async () =>
   assert.deepEqual(spawnCall[1], ["run", "dev", "--", "--host", "127.0.0.1", "--port", "4322", "--strictPort"]);
   assert.match(spawnCall[2].cwd, /maggie-seo-aeo-p0a\/$/);
   assert.equal(spawnCall[2].detached, process.platform !== "win32");
+  assert.deepEqual(spawnCall[2].stdio, ["ignore", "pipe", "pipe"]);
   assert.equal(readinessCall.baseURL, "http://127.0.0.1:4322");
   assert.equal(readinessCall.child, child);
   assert.deepEqual(verificationCall, { baseURL: "http://127.0.0.1:4322", routes });
@@ -242,6 +363,7 @@ test("interrupts active verification and removes signal listeners", async () => 
     port: 4322,
     assertPortAvailableImpl: async () => {},
     spawnImpl: () => child,
+    waitForChildReadyImpl: async () => {},
     waitForServerImpl: async () => new Promise(() => {}),
     verifyRoutesImpl: async () => [],
     stopDevServerImpl: async () => { stopped += 1; },
@@ -258,6 +380,89 @@ test("interrupts active verification and removes signal listeners", async () => 
   assert.equal(signals.listenerCount("SIGTERM"), 0);
 });
 
+test("does not verify a stale responder before the spawned child becomes ready", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  let routeVerificationCalls = 0;
+  let stopped = 0;
+  const verification = runVerifier({
+    port: 4322,
+    assertPortAvailableImpl: async () => {},
+    spawnImpl: () => child,
+    waitForServerImpl: async () => {},
+    waitForChildReadyImpl: async () => new Promise(() => {}),
+    verifyRoutesImpl: async () => { routeVerificationCalls += 1; },
+    stopDevServerImpl: async () => { stopped += 1; },
+    logger: { log() {}, error() {} },
+  });
+  await Promise.resolve();
+  child.exitCode = 1;
+  child.emit("exit", 1);
+  await assert.rejects(() => verification, /exited with code 1/);
+  assert.equal(routeVerificationCalls, 0);
+  assert.equal(stopped, 1);
+});
+
+test("interrupts route verification on SIGTERM and removes signal listeners", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  const signals = new EventEmitter();
+  let routeVerificationStarted;
+  const routeVerification = new Promise((resolve) => { routeVerificationStarted = resolve; });
+  let stopped = 0;
+  const verification = runVerifier({
+    port: 4322,
+    assertPortAvailableImpl: async () => {},
+    spawnImpl: () => child,
+    waitForChildReadyImpl: async () => {},
+    waitForServerImpl: async () => {},
+    verifyRoutesImpl: async () => {
+      routeVerificationStarted();
+      return new Promise(() => {});
+    },
+    stopDevServerImpl: async () => { stopped += 1; },
+    signalTarget: signals,
+    logger: { log() {}, error() {} },
+  });
+  await routeVerification;
+  signals.emit("SIGTERM");
+  await assert.rejects(() => verification, /interrupted by SIGTERM/);
+  assert.equal(stopped, 1);
+  assert.equal(signals.listenerCount("SIGINT"), 0);
+  assert.equal(signals.listenerCount("SIGTERM"), 0);
+});
+
+test("fails route verification when the spawned child exits", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  let routeVerificationStarted;
+  const routeVerification = new Promise((resolve) => { routeVerificationStarted = resolve; });
+  let stopped = 0;
+  const verification = runVerifier({
+    port: 4322,
+    assertPortAvailableImpl: async () => {},
+    spawnImpl: () => child,
+    waitForChildReadyImpl: async () => {},
+    waitForServerImpl: async () => {},
+    verifyRoutesImpl: async () => {
+      routeVerificationStarted();
+      return new Promise(() => {});
+    },
+    stopDevServerImpl: async () => { stopped += 1; },
+    logger: { log() {}, error() {} },
+  });
+  await routeVerification;
+  child.exitCode = 1;
+  child.emit("exit", 1);
+  await assert.rejects(() => verification, /exited with code 1/);
+  assert.equal(stopped, 1);
+});
+
 test("always stops the child when route verification fails", async () => {
   const child = new EventEmitter();
   child.pid = 99;
@@ -267,6 +472,7 @@ test("always stops the child when route verification fails", async () => {
     port: 4322,
     assertPortAvailableImpl: async () => {},
     spawnImpl: () => child,
+    waitForChildReadyImpl: async () => {},
     waitForServerImpl: async () => {},
     verifyRoutesImpl: async () => { throw new Error("bad route"); },
     stopDevServerImpl: async () => { stopped += 1; },
@@ -284,6 +490,7 @@ test("surfaces spawn errors and still stops the child", async () => {
     port: 4322,
     assertPortAvailableImpl: async () => {},
     spawnImpl: () => child,
+    waitForChildReadyImpl: async () => new Promise(() => {}),
     waitForServerImpl: async () => new Promise(() => {}),
     verifyRoutesImpl: async () => [],
     stopDevServerImpl: async () => { stopped += 1; },

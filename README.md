@@ -41,17 +41,22 @@ Poster images are auto-derived by the `ScrollyTalkSection` component (convention
 
 ## Notes to Myself
 
-To run locally: `npm run dev`  
+### Local development
+
+To run locally: `npm run dev`
+
+### Deployment
+
 To deploy: `./deploy.sh`
-
-## Verification
-
-`npm run verify:html` starts Astro locally and checks representative HTML and XML routes without requesting images. Use it for fast metadata, content, and route smoke checks.
-
-This verifier does not prove static route completeness, production redirects, image correctness or optimisation, third-party embed availability, or a production build. Run `npm run build:local` for image-related changes and before deployment; keep Astro's asset cache between full builds when possible.
 
 - Runs `git push`
 - Runs `vercel build --prod` (builds and processes all images locally)
 - Runs `vercel deploy --prebuilt --prod` (uploads the prebuilt output — no build or image processing happens on Vercel)
 
 Automatic deploys on push to `main` are disabled in `vercel.json` (`git.deploymentEnabled.main: false`), so this script is the only way production gets deployed. This avoids Vercel re-processing all images remotely, which previously caused builds to exceed the 45-minute limit after a long gap between deploys.
+
+## Verification
+
+`npm run verify:html` starts Astro locally and checks representative HTML and XML routes without requesting images. Use it for fast metadata, content, and route smoke checks.
+
+This verifier refuses redirects and does not prove static route completeness, production redirects, image correctness or optimisation, third-party embed availability, or a production build. Run `npm run build:local` for image-related changes and before deployment; keep Astro's asset cache between full builds when possible.
