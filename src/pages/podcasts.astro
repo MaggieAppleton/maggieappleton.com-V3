@@ -8,6 +8,7 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
 import { selectPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get all public podcasts
 const podcasts = selectPublicEntries(await getCollection("podcasts"));
@@ -18,7 +19,7 @@ const sortedPodcasts = podcasts.sort(
 );
 ---
 
-<Layout title="Podcasts with Maggie Appleton" pageMetadata="webpage">
+<Layout title="Podcasts with Maggie Appleton" desc={PAGE_DESCRIPTIONS.podcasts} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedPodcasts}>

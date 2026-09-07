@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
+import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon, describeTopic } from "../utils/descriptions.mjs";
 import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -12,14 +13,14 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Maggie Appleton" },
-  { path: "/about", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Maggie Appleton", description: PAGE_DESCRIPTIONS.home },
+  { path: "/about", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", description: PAGE_DESCRIPTIONS.about },
+  { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", description: PAGE_DESCRIPTIONS.about, canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "The Garden of Maggie Appleton", description: PAGE_DESCRIPTIONS.garden },
+  { path: "/essays", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Essays by Maggie Appleton", description: PAGE_DESCRIPTIONS.essays },
+  { path: "/notes", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Notes by Maggie Appleton", description: PAGE_DESCRIPTIONS.notes },
+  { path: "/patterns", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Patterns by Maggie Appleton", description: PAGE_DESCRIPTIONS.patterns },
+  { path: "/topics/web-development", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: describeTopic("Web Development") },
   { path: "/websecurity", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-02-08", dateModified: "2020-02-08", description: "Illustrated notes on the essentials of web security" } },
   {
     path: "/api",
@@ -31,12 +32,12 @@ export const ROUTES = Object.freeze([
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/now", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/smidgeons", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: describeNow("August 2026") },
+  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: describeSmidgeon("Vibe Code is Legacy Code") },
+  { path: "/now", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: PAGE_DESCRIPTIONS.now },
+  { path: "/smidgeons", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: PAGE_DESCRIPTIONS.smidgeons },
+  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: describeSmidgeon("DeepSeek") },
+  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true, pageMetadata: "webpage", description: describeSmidgeon("Common Misconceptions in AI") },
   { path: "/still-cant-draw", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-08-18", dateModified: "2023-12-12", description: "The failure of drawing materials without mediums and meat", hasImage: true } },
   { path: "/xanadu-patterns", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-07-10", dateModified: "2021-12-20", description: "Project Xanadu as a pattern language, rather than a failed software project", hasImage: true } },
   { path: "/greensock-react", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-09-27", dateModified: "2020-09-27", description: "How to use the Greensock animation library inside React using React hooks" } },
@@ -56,7 +57,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -395,6 +396,16 @@ function getMetaContent(body, property) {
   return content;
 }
 
+function getMetaNameContent(body, name) {
+  const tags = extractTags(body, "meta").filter((tag) =>
+    (getAttribute(tag, "name") ?? "").toLowerCase() === name.toLowerCase(),
+  );
+  assert.equal(tags.length, 1, `expected exactly one ${name} meta tag, received ${tags.length}`);
+  const content = getAttribute(tags[0], "content");
+  assert.ok(content, `expected ${name} meta tag to have content`);
+  return content;
+}
+
 function metaProperties(body, prefix) {
   return extractTags(body, "meta")
     .filter((tag) => (getAttribute(tag, "property") ?? "").toLowerCase().startsWith(prefix))
@@ -453,7 +464,7 @@ function assertPageNode(route, document, canonical) {
       assert.equal(toCalendarDate(node.datePublished), node.datePublished);
     }
     for (const field of ["author", "publisher", "headline", "image", "dateModified"]) assert.equal(Object.hasOwn(node, field), false, `${route.path}: WebPage has Article-only ${field}`);
-    if (node.description !== undefined) assert.ok(node.description.trim() && node.description.trim() !== "...");
+    assert.equal(node.description, route.description, `${route.path}: wrong WebPage description`);
   }
 }
 
@@ -465,6 +476,12 @@ export function assertHTMLResponse(route, response, body) {
   assertExactlyOneOpeningElement(route, body, "main");
   assertExactlyOneOpeningElement(route, body, "h1");
   const canonical = assertCanonical(route, body);
+  const expectedDescription = route.description ?? route.article?.description;
+  if (expectedDescription !== undefined) {
+    assert.notEqual(expectedDescription.trim(), "...");
+    assert.equal(getMetaNameContent(body, "description"), expectedDescription, `${route.path}: wrong meta description`);
+    assert.equal(getMetaContent(body, "og:description"), expectedDescription, `${route.path}: wrong og:description`);
+  }
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
   const ogType = getMetaContent(body, "og:type");

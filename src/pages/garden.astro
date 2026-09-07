@@ -7,6 +7,7 @@ import GardenFiltersAndHits from "../components/search/GardenFiltersAndHits.astr
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractPreview } from "../utils/extractPreview";
 import { createPublicEntryManifest } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get all content collections
 const essays = await getCollection("essays");
@@ -75,7 +76,7 @@ const allPosts = [
 ];
 ---
 
-<Layout title="The Garden of Maggie Appleton" pageMetadata="webpage">
+<Layout title="The Garden of Maggie Appleton" desc={PAGE_DESCRIPTIONS.garden} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={allPosts}>The Garden</TitleWithCount>

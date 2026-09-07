@@ -16,6 +16,7 @@ import { extractPreview } from "../../utils/extractPreview";
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../../utils/versionUtils";
+import { describeTopic } from "../../utils/descriptions.mjs";
 
 type Post =
 	| CollectionEntry<"essays">
@@ -37,6 +38,7 @@ export async function getStaticPaths() {
 
 const { topic } = Astro.params;
 const { topicName } = Astro.props;
+const description = describeTopic(topicName);
 const posts = await getPostsForTopic(topic);
 // Sort posts by date (using updated field for most collections, startDate for now posts and smidgeons)
 const sortedPosts = posts.sort((a, b) => {
@@ -48,7 +50,7 @@ const sortedPosts = posts.sort((a, b) => {
 });
 ---
 
-<Layout title={`${topicName} posts by Maggie Appleton`} pageMetadata="webpage">
+<Layout title={`${topicName} posts by Maggie Appleton`} desc={description} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={posts}>

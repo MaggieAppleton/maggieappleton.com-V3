@@ -7,6 +7,7 @@ import Topics from "../components/layouts/Topics.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import { isPublicEntry } from "../utils/publication.mjs";
 import { toCalendarDate } from "../utils/pageMetadata.mjs";
+import { describeSmidgeon } from "../utils/descriptions.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
@@ -16,6 +17,7 @@ type Props = {
 const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 const startDateCalendar = toCalendarDate(frontmatter.startDate);
+const description = isPublicEntry(entry) ? describeSmidgeon(frontmatter.title) : undefined;
 const primaryTitle =
 	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
 ---
@@ -23,6 +25,7 @@ const primaryTitle =
 <Layout
 	title={frontmatter.title}
 	type="smidgeon"
+	desc={description}
 	pageMetadata={isPublicEntry(entry)
 		? {
 				type: "webpage",

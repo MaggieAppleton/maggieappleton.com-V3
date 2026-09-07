@@ -15,6 +15,10 @@ import ResourceBook from "../components/mdx/ResourceBook.astro";
 import Timeline from "../components/layouts/Timeline.astro";
 import SimpleCard from "../components/mdx/SimpleCard.astro";
 import { Content } from "../content/pages/hire-me.mdx";
+import { getEntry } from "astro:content";
+
+const page = await getEntry("pages", "hire-me");
+if (!page) throw new Error("Missing Hire Me page content");
 
 const components = {
 	h1: BodyHeading1,
@@ -32,7 +36,7 @@ const components = {
 };
 ---
 
-<Layout title="Hire Maggie Appleton" pageMetadata="webpage">
+<Layout title="Hire Maggie Appleton" desc={page.data.description} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="header">
 			<Title1>Hire Maggie</Title1>

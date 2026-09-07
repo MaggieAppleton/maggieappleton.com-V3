@@ -16,6 +16,7 @@ import talks2 from "../images/general/talks_2.webp";
 import talks3 from "../images/general/talks_3.webp";
 import talks5 from "../images/general/talks_5.webp";
 import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get the latest public version of each talk
 const talks = selectLatestPublicEntries(await getCollection("talks"));
@@ -27,7 +28,7 @@ const sortedTalks = talks.sort(
 );
 ---
 
-<Layout title="Talks by Maggie Appleton" pageMetadata="webpage">
+<Layout title="Talks by Maggie Appleton" desc={PAGE_DESCRIPTIONS.talks} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedTalks}>
