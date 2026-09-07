@@ -21,7 +21,9 @@ export function selectPublicEntries(entries) {
 }
 
 export function isVersionedPublicationEntry(entry) {
-  return typeof entry?.id === "string" && entry.id.includes("/");
+  return VERSIONED_COLLECTIONS.includes(entry?.collection) &&
+    typeof entry?.id === "string" &&
+    entry.id.includes("/");
 }
 
 export function getPublicationBaseSlug(entryOrId) {
