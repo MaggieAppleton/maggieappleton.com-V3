@@ -4,7 +4,7 @@
 
 **Goal:** Give every ordinary indexable page exactly one useful `<main>` and one visible `<h1>`, without weakening native semantics or changing the established presentation.
 
-**Architecture:** `Layout.astro` remains the only ordinary-page landmark owner. Nested landmark components become classed `<div>` containers, while a small MDX adapter preserves the existing `Title1` styling but emits `<h2>` when a renderer already supplies the page-level heading. The source-policy test guards template composition and selector retargeting; the existing live-development verifier then enforces one real opening `<main>` and `<h1>` on representative non-image routes.
+**Architecture:** `Layout.astro` remains the only ordinary-page landmark owner. Nested landmark components become classed `<div>` containers, while a small MDX adapter preserves the existing `Title1` styling but emits `<h2>` when a renderer already supplies the page-level heading. The visual contract follows the P5 computed baseline: direct prose `h2.title1` matches the former direct `h1` cascade, standalone adapters retain responsive Title1 behaviour, and callouts that previously fixed their size forward that fixed value explicitly. The source-policy test guards template composition and selector retargeting; the existing live-development verifier then enforces one real opening `<main>` and `<h1>` on representative non-image routes.
 
 **Tech Stack:** Astro 5, MDX component maps, scoped Astro CSS, Node.js built-in test runner, existing local Astro HTML verifier.
 
@@ -28,8 +28,9 @@
 
 ## File structure
 
-- Create `src/components/mdx/typography/BodyHeading1.astro`: a semantic adapter which invokes `Title1` with an `h2` element and forwards its limited inline style prop, retaining the responsive `.title1` visual treatment.
-- Modify `src/components/mdx/typography/Title1.astro`: support explicitly limited `as: "h1" | "h2"` and `style` props while retaining `h1` as its default output and all current `.title1` desktop/mobile styles.
+- Create `src/components/mdx/typography/BodyHeading1.astro`: a semantic adapter which invokes `Title1` with an `h2` element and forwards its limited inline style prop, retaining the responsive `.title1` visual treatment for standalone adapter callers.
+- Modify `src/components/mdx/typography/Title1.astro`: support explicitly limited `as: "h1" | "h2"` and `style` props while retaining `h1` as its default output and all current `.title1` desktop/mobile styles; for `h2.title1`, neutralize h2-only leakage with `margin-top: 0`, `color: inherit`, and `transition: none`.
+- Modify `src/components/layouts/ProseWrapper.astro`: explicitly restore the P5 direct `h1` cascade for direct `h2.title1` children: `font-size: var(--font-size-2xl)`, the former Title1 family/line-height/weight/max-width/colour, desktop `margin: var(--space-2xl) 0 var(--space-m)`, and mobile `margin: var(--space-xl) 0 var(--space-m)` while keeping the font at 2xl and transition disabled.
 - Modify `src/layouts/Layout.astro`, `src/components/layouts/PageWrapper.astro`, `src/layouts/PostLayout.astro`, and `src/pages/now.astro`: establish the single-main boundary and preserve exact layout classes/selectors.
 - Modify `src/layouts/SmidgeonLayout.astro`: choose one primary reference title H1, render a second citation reference as H2 when both exist, and provide the frontmatter-title fallback.
 - Modify `src/pages/[...slug].astro`, `src/pages/now.astro`, `src/pages/now-[slug]/[...rest].astro`, `src/pages/smidgeons.astro`, `src/pages/hire-me.astro`, and `src/pages/colophon/index.astro`: use `BodyHeading1` in their MDX component maps; demote stream reference headings to H2.
@@ -47,9 +48,9 @@ Before changing markup, inspect these selectors and keep their class names uncha
 | `PageWrapper.astro` | Local bare `main` rules define max width, margins, and responsive padding. | Change every local selector to `.page-wrapper`; render `class:list={["page-wrapper", className]}` so the base class is never lost when a caller passes `class`. |
 | `PostLayout.astro`, `src/global.css`, Poppy components | `.styled-main` provides the content surface and anchors Poppy Field clipping/positioning. | Change only the tag from `main` to `div`; leave the class and every `.styled-main` selector intact. |
 | `now.astro` | Local `main` width/margin rules would otherwise style the shell-owned landmark after the markup change. | Rename the local element and every local selector to `.now-feed`, including the mobile media rule. |
-| `NowSection.astro` | `.now-section :global(h3)` supplies the timeline title offset. | Retarget it to H2 and explicitly preserve the old H3 typography as well as its `margin-top`, so the heading-level correction does not make stream titles look like generic global H2s. |
-| Smidgeon layouts | `.content-header` intentionally makes reference titles look like compact cards, regardless of heading rank. | Keep the class and its declarations on H2; set `color: inherit` if required to prevent global H2 colour from changing the card appearance. |
-| Callouts and raw MDX | Global H1 and H2 typography differs substantially, including Title1’s mobile rule. | Use `BodyHeading1`, which emits the responsive `.title1` class at H2 level; forward only the old local overrides (`fontWeight`, margins, and `textAlign`) rather than duplicating fixed desktop H2 typography. |
+| `NowSection.astro` | `.now-section :global(h3)` supplies the timeline title offset. | Retarget it to H2 and explicitly preserve the old H3 typography, top offset, bottom margin, and transition, so the heading-level correction does not make stream titles look like generic global H2s. |
+| Smidgeon layouts | `.content-header` intentionally makes reference titles look like compact cards, regardless of heading rank. | Keep the class and its declarations on H2, including `color: inherit`, so global H2 colour cannot change the card appearance. |
+| Callouts and raw MDX | Global H1 and H2 typography differs substantially, including Title1’s mobile rule. | Use `BodyHeading1`, which emits the `.title1` class at H2 level. Direct prose `h2.title1` receives the former direct H1 cascade; standalone raw-body adapters retain responsive Title1 values. ComingSoon and Draft also forward their former fixed `var(--font-size-2xl)` size alongside local weight/margin overrides. |
 
 ---
 
@@ -163,7 +164,7 @@ test("uses a page H1 followed by H2 entry and reference headings without visual-
 Append precise checks for the reusable components and the only currently known literal body H1s. These are deliberately narrow, so prose that merely mentions the text `<h1>` is not treated as markup.
 
 ```js
-test("uses the responsive Title1 adapter for reusable callouts and the two known raw body H1s", async () => {
+test("uses the Title1 adapter and preserves each caller's P5 visual baseline", async () => {
   const [comingSoon, draft, materials, stillCantDraw, xanadu] = await Promise.all([
     readSource("src/components/mdx/ComingSoon.astro"),
     readSource("src/components/mdx/Draft.astro"),
@@ -176,10 +177,11 @@ test("uses the responsive Title1 adapter for reusable callouts and the two known
     assert.match(source, /import\s+BodyHeading1\s+from\s+[^;]+;/);
     assert.match(source, /<BodyHeading1\b/);
     assert.equal(openingTags(source, "h1").length, 0);
-    assert.doesNotMatch(source, /fontSize:\s*["']var\(--font-size-3xl\)["']/);
   }
+  assert.match(comingSoon, /fontSize:\s*["']var\(--font-size-2xl\)["']/);
   assert.match(comingSoon, /fontWeight:\s*600/);
   assert.match(comingSoon, /marginBottom:\s*["']var\(--space-2xs\)["']/);
+  assert.match(draft, /fontSize:\s*["']var\(--font-size-2xl\)["']/);
   assert.match(draft, /fontWeight:\s*600/);
   assert.match(draft, /margin:\s*0/);
   assert.match(materials, /textAlign:\s*["']center["']/);
@@ -318,7 +320,7 @@ Expected: the sole-main/selector test progresses; heading tests still fail until
 
 - [ ] **Step 1: Generalise `Title1` only across the two valid semantic levels**
 
-Replace the top matter and opening element in `Title1.astro`; leave the existing `.title1` style block byte-for-byte unchanged. The forwarded style is intentionally limited to a flat inline CSS-property record: it is sufficient for the existing local overrides and cannot alter tag selection.
+Replace the top matter and opening element in `Title1.astro`; retain the existing `.title1` H1 desktop/mobile values and add a narrow `h2.title1` reset for h2-only margin, colour, and transition leakage. The forwarded style is intentionally limited to a flat inline CSS-property record: it is sufficient for the existing local overrides and cannot alter tag selection.
 
 ```astro
 ---
@@ -333,7 +335,7 @@ const { as: Tag = "h1", style } = Astro.props;
 <Tag class="title1" style={style}><slot /></Tag>
 ```
 
-This keeps all current ordinary `Title1` callers as native H1s and gives the adapter exactly one controlled way to emit the same `.title1` visual treatment at H2 level, including its existing mobile media query.
+This keeps all current ordinary `Title1` callers as native H1s and gives the adapter exactly one controlled way to emit an H2. Standalone adapter callers retain responsive Title1 values, while direct prose `h2.title1` is completed by the ProseWrapper rule that restores the former direct H1 cascade (2xl size, family, line-height, weight, max-width, colour, and desktop/mobile margins).
 
 - [ ] **Step 2: Create the adapter**
 
@@ -409,16 +411,17 @@ In `now.astro`, make each linked update title an H2 below the page’s `Title1` 
 					</h2>
 ```
 
-In `NowSection.astro`, replace the H3-specific rule with this visual-equivalent H2 rule. It preserves the old globally-reset H3 appearance and its existing timeline offset instead of inheriting the generic global H2 design.
+In `NowSection.astro`, replace the H3-specific rule with this visual-equivalent H2 rule. It preserves the old globally-reset H3 appearance and its existing timeline offset instead of inheriting the generic global H2 design, including the old bottom margin and transition behaviour.
 
 ```css
 	.now-section :global(h2) {
-		margin-top: -3.4rem;
 		font-family: var(--font-sans);
-		font-size: 1.17em;
-		font-weight: bold;
-		line-height: normal;
+		font-size: calc(var(--font-size-lg) / 1.1);
+		font-weight: 300;
+		line-height: var(--leading-base);
+		margin: -3.4rem 0 var(--space-s);
 		color: var(--color-black);
+		transition: none;
 	}
 ```
 
@@ -434,7 +437,7 @@ The existing `.title` rule is class-specific and already fixes its presentation,
 
 - [ ] **Step 3: Demote Smidgeons index references to H2**
 
-In `smidgeons.astro`, replace both `h1 class="content-header"` card titles with `h2 class="content-header"`; retain the full `content-header` class and its existing compact card CSS. Add `color: inherit;` to `.content-header` only if browser inspection shows the inherited H1 colour has changed due to global H2 colour.
+In `smidgeons.astro`, replace both `h1 class="content-header"` card titles with `h2 class="content-header"`; retain the full `content-header` class and its existing compact card CSS, and add `color: inherit;` so the old inherited/black card colour is stable under the global H2 cascade.
 
 ```astro
 <h2 class="content-header">
@@ -514,16 +517,16 @@ Expected: Now/Smidgeon rank assertions pass; the known-callout test is the only 
 
 - [ ] **Step 1: Replace all three reusable callout H1s with `BodyHeading1`**
 
-Import `BodyHeading1` in each component and replace the semantic heading. Delete the three H1-specific CSS selectors rather than recreating Title1 styling locally. The shared adapter retains the Title1 class, including its max width, transition-independent visual rules, and existing mobile media query. Pass only the component's existing local overrides:
+Import `BodyHeading1` in each component and replace the semantic heading. Delete the three H1-specific CSS selectors rather than recreating Title1 styling locally. The shared adapter retains the Title1 class, including its max width, transition-independent visual rules, and existing mobile media query. Pass each component's existing local overrides, including the fixed 2xl size that ComingSoon and Draft previously set:
 
 ```astro
 <!-- ComingSoon.astro -->
-<BodyHeading1 style={{ fontWeight: 600, marginBottom: "var(--space-2xs)" }}>
+<BodyHeading1 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 600, marginBottom: "var(--space-2xs)" }}>
 	Coming Soon
 </BodyHeading1>
 
 <!-- Draft.astro, inside the existing inner div -->
-<BodyHeading1 style={{ fontWeight: 600, margin: 0 }}>
+<BodyHeading1 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 600, margin: 0 }}>
 	Draft in Progress
 </BodyHeading1>
 
@@ -531,7 +534,7 @@ Import `BodyHeading1` in each component and replace the semantic heading. Delete
 <BodyHeading1 style={{ textAlign: "center" }}>{sectionTitle}</BodyHeading1>
 ```
 
-Keep the surrounding container markup, icons, SVG separators, slot, and non-heading CSS exactly as-is. Do not replace this with a hand-written H2 selector or a fixed `fontSize`: responsive H1 appearance comes from `Title1`.
+Keep the surrounding container markup, icons, SVG separators, slot, and non-heading CSS exactly as-is. Do not replace this with a hand-written H2 selector. ComingSoon and Draft must forward their former fixed `fontSize: "var(--font-size-2xl)"` alongside the existing local weight/margin overrides; MediumMaterialsMeat retains responsive Title1 sizing with only its existing `textAlign` override.
 
 - [ ] **Step 2: Replace the two literal raw body H1s with imported adapter calls**
 
@@ -557,7 +560,7 @@ In `xanadu-patterns.mdx`, replace the raw H1 with:
 </BodyHeading1>
 ```
 
-The adapter supplies all former global H1/Title1 desktop and mobile styling. These calls deliberately contain only the source heading’s pre-existing local overrides; do not introduce a fixed H2 `fontSize`, font family, colour, max width, or media query.
+The adapter supplies responsive Title1 styling for these standalone raw-body calls. These calls deliberately contain only the source heading’s pre-existing local overrides; do not introduce a fixed H2 `fontSize`, font family, colour, max width, or media query here. The separate ComingSoon and Draft callouts retain their old fixed 2xl `fontSize` through their adapter props.
 
 Do not edit the raw Markdown `# Tada` in `greensock-react.mdx`: the adapter in Task 3 is the implementation for Markdown headings and makes it a Title1-styled H2 at render time.
 
