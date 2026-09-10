@@ -1,6 +1,9 @@
 import { getCollection } from "astro:content";
 import { slugifyTopic } from "./slugifyTopic";
 import { createPublicEntryManifest } from "./publication.mjs";
+import { collectTopics } from "./topicRoutes.mjs";
+
+export { collectTopics } from "./topicRoutes.mjs";
 
 /**
  * Fetch all content entries and return one canonical public manifest.
@@ -34,19 +37,7 @@ async function fetchAllContent() {
  */
 export async function getAllTopics() {
   const manifest = await fetchAllContent();
-  const allContent = manifest.canonicalEntries;
-
-  const topics = new Set<string>();
-  allContent.forEach((post) => {
-    if (post.data.topics) {
-      post.data.topics.forEach((topic: string) => topics.add(topic));
-    }
-  });
-
-  return Array.from(topics).map((topic) => ({
-    name: topic,
-    slug: slugifyTopic(topic),
-  }));
+  return collectTopics(manifest.canonicalEntries);
 }
 
 /**
