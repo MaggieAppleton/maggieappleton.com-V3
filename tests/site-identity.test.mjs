@@ -116,12 +116,12 @@ test("has one Layout-owned Site/Person JSON-LD script source", async () => {
     .map(([file]) => file)
     .sort();
 
-  assert.match(component, /import\s*\{[\s\S]*createSiteIdentityGraph[\s\S]*serializeJsonLd[\s\S]*\}\s*from\s*["']\.\.\/\.\.\/utils\/siteIdentity\.mjs["']/);
+  assert.match(component, /createStructuredDataGraph/);
   assert.equal((component.match(/application\/ld\+json/g) ?? []).length, 1);
   assert.match(component, /<script\s+is:inline\s+type=["']application\/ld\+json["']/);
-  assert.match(component, /set:html=\{serializeJsonLd\(createSiteIdentityGraph\(\)\)\}/);
+  assert.match(component, /set:html=\{serializeJsonLd\(createStructuredDataGraph\(pageNode\)\)\}/);
   assert.match(layout, /import\s+SiteIdentityJsonLd\s+from\s*["']\.\.\/components\/seo\/SiteIdentityJsonLd\.astro["'];/);
-  assert.equal((layout.match(/<SiteIdentityJsonLd\s*\/?\s*>/g) ?? []).length, 1);
+  assert.match(layout, /<SiteIdentityJsonLd\s+pageNode=\{pageNode\}\s*\/>/);
   assert.deepEqual(jsonLdScriptEmitters, ["src/components/seo/SiteIdentityJsonLd.astro"]);
   assert.deepEqual(pageComponentReferences, []);
   assert.doesNotMatch(diagramPreview, /SiteIdentityJsonLd|application\/ld\+json/);
