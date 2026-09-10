@@ -9,6 +9,7 @@ import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
 import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get the latest public version of each pattern
 const patterns = selectLatestPublicEntries(await getCollection("patterns"));
@@ -20,7 +21,7 @@ const sortedPatterns = patterns.sort(
 );
 ---
 
-<Layout title="Patterns by Maggie Appleton" pageMetadata="webpage">
+<Layout title="Patterns by Maggie Appleton" desc={PAGE_DESCRIPTIONS.patterns} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedPatterns}>

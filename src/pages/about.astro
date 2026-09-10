@@ -9,6 +9,7 @@ import { Image } from "astro:assets";
 import Stripe2 from "../images/general/Stripe2_1000.jpg";
 import Scarf from "../images/general/Scarf_1000.jpg";
 import Brown from "../images/general/Brown_1000.jpg";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 const photoSources = [Stripe2, Scarf, Brown];
 ---
@@ -25,7 +26,7 @@ const photoSources = [Stripe2, Scarf, Brown];
 	});
 </script>
 
-<Layout title="About Maggie Appleton" desc="Designer, anthropologist, and mediocre developer." pageMetadata="webpage">
+<Layout title="About Maggie Appleton" desc={PAGE_DESCRIPTIONS.about} pageMetadata="webpage">
 	<PageWrapper>
 		<div class="header-section">
 			<SmallCaps>About</SmallCaps>
