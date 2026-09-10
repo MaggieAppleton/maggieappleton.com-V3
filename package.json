@@ -10,6 +10,7 @@
     "astro": "astro",
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
+    "verify:html": "node src/scripts/verify-html.mjs",
     "smidgeon": "node scripts/create-smidgeon.js",
     "date": "node scripts/current-date.js"
   },
