@@ -12,13 +12,14 @@ import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionWarning from "../components/layouts/VersionWarning.astro";
 import VersionDropdown from "../components/layouts/VersionDropdown.astro";
-import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
+import { getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 import {
 	getPublicationBaseSlug,
 	selectLatestPublicEntries,
 	selectPublicEntries,
 } from "../utils/publication.mjs";
+import { getEntryCanonicalPath } from "../utils/canonical.mjs";
 
 type Props = {
 	frontmatter:
@@ -39,10 +40,7 @@ const { frontmatter, entry } = Astro.props;
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 
-// Calculate canonical URL for versioned content
-const canonicalURL = entry
-	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
-	: undefined;
+const canonicalPath = getEntryCanonicalPath(entry, Astro.url.pathname);
 
 // Get canonical dates for versioned content (consistent across all versions)
 let canonicalDates: { startDate: Date; updated?: Date } = {
@@ -95,7 +93,7 @@ const updatedISO =
 	desc={frontmatter.description}
 	type={frontmatter.type}
 	coverImage={coverImage}
-	canonicalURL={canonicalURL}
+	canonicalPath={canonicalPath}
 >
 	<header class="header-section">
 		<div class="above-title">

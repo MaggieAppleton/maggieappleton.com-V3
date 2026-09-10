@@ -8,16 +8,28 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
+const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
   { path: "/", kind: "html", title: "Maggie Appleton" },
   { path: "/about", kind: "html", title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
   { path: "/garden", kind: "html", title: "The Garden of Maggie Appleton" },
   { path: "/essays", kind: "html", title: "Essays by Maggie Appleton" },
   { path: "/notes", kind: "html", title: "Notes by Maggie Appleton" },
   { path: "/patterns", kind: "html", title: "Patterns by Maggie Appleton" },
   { path: "/topics/web-development", kind: "html" },
   { path: "/websecurity", kind: "html" },
-  { path: "/api", kind: "html" },
+  {
+    path: "/api",
+    kind: "html",
+    canonical: "https://maggieappleton.com/api",
+    ogUrl: "https://maggieappleton.com/api",
+    ogImagePath: "/og/api.png",
+  },
+  { path: "/now-2026-08", kind: "html", requireH1: false },
+  { path: "/2025-08-vibe-legacy-code", kind: "html" },
+  { path: "/diagram-preview", kind: "noindexHtml" },
+  { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
   { path: "/smidgeons.xml", kind: "xml" },
   { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" },
@@ -60,17 +72,160 @@ function assertSuccessfulResponse(route, response) {
   assert.equal(response.status, 200, `${route.path}: expected status 200, received ${response.status}`);
 }
 
+function extractTags(body, name) {
+  const tags = [];
+  const startPattern = new RegExp(`<${name}\\b`, "gi");
+  let match;
+  while ((match = startPattern.exec(body))) {
+    let quote;
+    for (let index = startPattern.lastIndex; index < body.length; index += 1) {
+      const character = body[index];
+      if (quote) {
+        if (character === quote) quote = undefined;
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === ">") {
+        tags.push(body.slice(match.index, index + 1));
+        startPattern.lastIndex = index + 1;
+        break;
+      }
+    }
+  }
+  return tags;
+}
+
+function parseTagAttributes(tag) {
+  const attributes = new Map();
+  let index = 1;
+  while (index < tag.length && !/[\s/>]/.test(tag[index])) index += 1;
+
+  while (index < tag.length) {
+    while (index < tag.length && /\s/.test(tag[index])) index += 1;
+    if (index >= tag.length || tag[index] === ">" || tag[index] === "/") break;
+
+    const nameStart = index;
+    while (index < tag.length && !/[\s=/>]/.test(tag[index])) index += 1;
+    const attributeName = tag.slice(nameStart, index).toLowerCase();
+    while (index < tag.length && /\s/.test(tag[index])) index += 1;
+
+    let value = "";
+    if (tag[index] === "=") {
+      index += 1;
+      while (index < tag.length && /\s/.test(tag[index])) index += 1;
+      const quote = tag[index];
+      if (quote === '"' || quote === "'") {
+        index += 1;
+        const valueStart = index;
+        while (index < tag.length && tag[index] !== quote) index += 1;
+        value = tag.slice(valueStart, index);
+        if (tag[index] === quote) index += 1;
+      } else {
+        const valueStart = index;
+        while (index < tag.length && !/[\s>]/.test(tag[index])) index += 1;
+        value = tag.slice(valueStart, index);
+      }
+    }
+    if (attributeName && !attributes.has(attributeName)) attributes.set(attributeName, value);
+  }
+  return attributes;
+}
+
+function getAttribute(tag, name) {
+  return parseTagAttributes(tag).get(name.toLowerCase());
+}
+
+function canonicalLinks(body) {
+  return extractTags(body, "link").filter((tag) =>
+    (getAttribute(tag, "rel") ?? "").split(/\s+/).some((token) => token.toLowerCase() === "canonical"),
+  );
+}
+
+function expectedCanonicalUrl(route) {
+  if (route.canonical) return route.canonical;
+  const url = new URL(route.path, CANONICAL_ORIGIN);
+  const pathname = url.pathname === "/" ? "/" : url.pathname.replace(/\/+$/, "");
+  return `${CANONICAL_ORIGIN}${pathname}`;
+}
+
+function assertCanonical(route, body) {
+  const links = canonicalLinks(body);
+  assert.equal(links.length, 1, `${route.path}: expected exactly one canonical link, received ${links.length}`);
+  const href = getAttribute(links[0], "href");
+  assert.ok(href, `${route.path}: canonical link must have an href`);
+
+  let url;
+  try {
+    url = new URL(href);
+  } catch {
+    assert.fail(`${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
+  }
+  assert.equal(url.protocol, "https:", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
+  assert.equal(url.hostname, "maggieappleton.com", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
+  assert.equal(url.port, "", `${route.path}: canonical link must be an absolute HTTPS canonical URL on maggieappleton.com`);
+  assert.equal(url.username, "", `${route.path}: canonical link must not contain a username or password`);
+  assert.equal(url.password, "", `${route.path}: canonical link must not contain a username or password`);
+  assert.equal(url.search, "", `${route.path}: canonical link must not contain a query or fragment`);
+  assert.equal(url.hash, "", `${route.path}: canonical link must not contain a query or fragment`);
+  if (url.pathname !== "/") {
+    assert.equal(url.pathname.endsWith("/"), false, `${route.path}: non-root canonical path must be slashless`);
+  }
+  assert.equal(href, expectedCanonicalUrl(route), `${route.path}: expected canonical URL ${expectedCanonicalUrl(route)}, received ${href}`);
+  return href;
+}
+
+function getMetaContent(body, property) {
+  const tags = extractTags(body, "meta").filter((tag) =>
+    (getAttribute(tag, "property") ?? "").toLowerCase() === property.toLowerCase(),
+  );
+  assert.equal(tags.length, 1, `expected exactly one ${property} meta tag, received ${tags.length}`);
+  const content = getAttribute(tags[0], "content");
+  assert.ok(content, `expected ${property} meta tag to have content`);
+  return content;
+}
+
 export function assertHTMLResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
   assert.match(body, /<main(?:\s|>)/i, `${route.path}: expected a main landmark`);
-  assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
-  assert.match(body, /<link\b[^>]*\brel=["']canonical["'][^>]*>/i, `${route.path}: expected a canonical link`);
+  if (route.requireH1 !== false) assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
+  const canonical = assertCanonical(route, body);
+  const ogUrl = getMetaContent(body, "og:url");
+  assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
+  if (route.ogUrl) assert.equal(ogUrl, route.ogUrl, `${route.path}: expected og:url ${route.ogUrl}, received ${ogUrl}`);
+  if (route.ogImagePath) {
+    const ogImage = getMetaContent(body, "og:image");
+    let ogImageUrl;
+    try {
+      ogImageUrl = new URL(ogImage);
+    } catch {
+      assert.fail(`${route.path}: og:image must be an absolute URL`);
+    }
+    assert.equal(ogImageUrl.pathname, route.ogImagePath, `${route.path}: expected og:image path ${route.ogImagePath}, received ${ogImageUrl.pathname}`);
+  }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
+}
+
+export function assertNoindexHTMLResponse(route, response, body) {
+  assertSuccessfulResponse(route, response);
+  assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
+  const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
+  assert.ok(title, `${route.path}: expected a non-empty title`);
+  const robots = extractTags(body, "meta").filter((tag) =>
+    (getAttribute(tag, "name") ?? "").toLowerCase() === "robots",
+  );
+  assert.equal(robots.length, 1, `${route.path}: expected exactly one robots meta tag, received ${robots.length}`);
+  assert.equal(getAttribute(robots[0], "content"), "noindex, nofollow", `${route.path}: expected robots content noindex, nofollow`);
+  assert.equal(canonicalLinks(body).length, 0, `${route.path}: expected no canonical link`);
+  assertExpectedBodyText(route, body);
+}
+
+export function assertAbsentResponse(route, response) {
+  assertNoRedirect(route, response);
+  assert.equal(response.status, 404, `${route.path}: expected status 404, received ${response.status}`);
 }
 
 export function assertXMLResponse(route, response, body) {
@@ -109,6 +264,8 @@ export async function verifyRoutes({ baseURL, routes = ROUTES, fetchImpl = globa
     assertNoRedirect(route, response);
     const body = await response.text();
     if (route.kind === "html") assertHTMLResponse(route, response, body);
+    else if (route.kind === "noindexHtml") assertNoindexHTMLResponse(route, response, body);
+    else if (route.kind === "absent") assertAbsentResponse(route, response);
     else if (route.kind === "xml") assertXMLResponse(route, response, body);
     else if (route.kind === "robots") assertRobotsResponse(route, response, body);
     else if (route.kind === "sitemap") assertSitemapResponse(route, response, body);
