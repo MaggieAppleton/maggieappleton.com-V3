@@ -13,11 +13,10 @@ import NowSection from "../components/layouts/NowSection.astro";
 import Footnote from "../components/mdx/Footnote.astro";
 import ResourceBook from "../components/mdx/ResourceBook.astro";
 import { Icon } from "astro-icon/components";
+import { selectPublicEntries } from "../utils/publication.mjs";
 
 // Get all now entries and sort by date
-const nowEntries = await getCollection("now", ({ data }) => {
-	return data.draft !== true;
-});
+const nowEntries = selectPublicEntries(await getCollection("now"));
 
 const sortedPosts = nowEntries.sort(
 	(a, b) => new Date(b.data.startDate).getTime() - new Date(a.data.startDate).getTime(),

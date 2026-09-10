@@ -14,6 +14,11 @@ import VersionWarning from "../components/layouts/VersionWarning.astro";
 import VersionDropdown from "../components/layouts/VersionDropdown.astro";
 import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
+import {
+	getPublicationBaseSlug,
+	selectLatestPublicEntries,
+	selectPublicEntries,
+} from "../utils/publication.mjs";
 
 type Props = {
 	frontmatter:
@@ -46,12 +51,19 @@ let canonicalDates: { startDate: Date; updated?: Date } = {
 };
 if (entry) {
 	// Fetch all entries from the same collection to resolve canonical dates across versions
-	const allEntries = (await getCollection(entry.collection)) as (typeof entry)[];
-	const versionedDates = getCanonicalDates(entry, allEntries);
-	canonicalDates = {
-		startDate: new Date(versionedDates.startDate),
-		updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
-	};
+	const allEntries = selectPublicEntries(await getCollection(entry.collection)) as (typeof entry)[];
+	const publicEntryForDates =
+		allEntries.find((candidate) => candidate.id === entry.id) ??
+		selectLatestPublicEntries(allEntries).find(
+			(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
+		);
+	if (publicEntryForDates) {
+		const versionedDates = getCanonicalDates(publicEntryForDates, allEntries);
+		canonicalDates = {
+			startDate: new Date(versionedDates.startDate),
+			updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
+		};
+	}
 }
 
 // Capitalise the content type for the back-link label (e.g. "essay" → "Essay")

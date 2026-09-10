@@ -20,8 +20,9 @@ import ResourceBook from "../components/mdx/ResourceBook.astro";
 import RemoteImage from "../components/mdx/RemoteImage.astro";
 import BasicImage from "../components/mdx/BasicImage.astro";
 import Spacer from "../components/mdx/Spacer.astro";
+import { selectPublicEntries } from "../utils/publication.mjs";
 
-const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
+const smidgeons = selectPublicEntries(await getCollection("smidgeons"));
 
 // Sort by date in reverse chronological order
 const sortedSmidgeons = smidgeons.sort(
