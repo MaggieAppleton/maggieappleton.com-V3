@@ -4,6 +4,7 @@
       "main": false
     }
   },
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
