@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import BodyHeading1 from "./typography/BodyHeading1.astro";
 ---
 
 <div class="draft-container">
@@ -12,7 +13,9 @@ import { Icon } from "astro-icon/components";
 				stroke-width="2"
 				stroke-dasharray="12,8"></path>
 		</svg>
-		<h1>Draft in Progress</h1>
+		<BodyHeading1 style={{ fontSize: "var(--font-size-2xl)", fontWeight: 600, margin: 0 }}>
+			Draft in Progress
+		</BodyHeading1>
 		<svg height={2}>
 			<path
 				d="M0,0 L150,0"
@@ -57,13 +60,6 @@ import { Icon } from "astro-icon/components";
 	.draft-container div svg {
 		position: relative;
 		top: 5px;
-	}
-
-	.draft-container div h1 {
-		margin: 0;
-		font-weight: 600;
-		line-height: var(--leading-tighter);
-		font-size: var(--font-size-2xl);
 	}
 
 	.draft-container p {

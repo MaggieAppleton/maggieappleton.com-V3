@@ -1,10 +1,12 @@
 ---
+import BodyHeading1 from "../mdx/typography/BodyHeading1.astro";
+
 const { sectionTitle } = Astro.props;
 ---
 
 <div class="main-layout">
 	<div class="inner-layout">
-		<h1>{sectionTitle}</h1>
+		<BodyHeading1 style={{ textAlign: "center" }}>{sectionTitle}</BodyHeading1>
 		<slot />
 	</div>
 </div>
@@ -21,7 +23,4 @@ const { sectionTitle } = Astro.props;
 		display: inline-block;
 	}
 
-	.inner-layout h1 {
-		text-align: center;
-	}
 </style>

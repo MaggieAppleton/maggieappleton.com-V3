@@ -28,8 +28,15 @@ export const ROUTES = Object.freeze([
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true, requireH1: false },
+  { path: "/now-2026-08", kind: "html", siteIdentity: true },
   { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true },
+  { path: "/now", kind: "html", siteIdentity: true },
+  { path: "/smidgeons", kind: "html", siteIdentity: true },
+  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true },
+  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true },
+  { path: "/still-cant-draw", kind: "html", siteIdentity: true },
+  { path: "/xanadu-patterns", kind: "html", siteIdentity: true },
+  { path: "/greensock-react", kind: "html", siteIdentity: true },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -160,6 +167,46 @@ function findTagEnd(body, start) {
     }
   }
   return -1;
+}
+
+export function countOpeningElements(body, tagName) {
+  const expectedName = tagName.toLowerCase();
+  let count = 0;
+  let index = 0;
+
+  while (index < body.length) {
+    if (body.startsWith("<!--", index)) {
+      const end = body.indexOf("-->", index + 4);
+      index = end < 0 ? body.length : end + 3;
+      continue;
+    }
+    if (body[index] !== "<" || body.startsWith("</", index) || body.startsWith("<!", index) || body.startsWith("<?", index)) {
+      index += 1;
+      continue;
+    }
+    const name = body.slice(index + 1).match(/^([A-Za-z][A-Za-z0-9:-]*)\b/)?.[1]?.toLowerCase();
+    if (!name) {
+      index += 1;
+      continue;
+    }
+    const end = findTagEnd(body, index + 1);
+    if (end < 0) break;
+    if (name === expectedName) count += 1;
+    const openingTag = body.slice(index, end + 1);
+    index = end + 1;
+    if ((name === "script" || name === "style") && !/\/\s*>$/.test(openingTag)) {
+      const closing = new RegExp(`</${name}\\s*>`, "ig");
+      closing.lastIndex = index;
+      const close = closing.exec(body);
+      index = close ? close.index + close[0].length : body.length;
+    }
+  }
+  return count;
+}
+
+function assertExactlyOneOpeningElement(route, body, tagName) {
+  const count = countOpeningElements(body, tagName);
+  assert.equal(count, 1, `${route.path}: expected exactly one ${tagName}, received ${count}`);
 }
 
 function closingScript(body, start) {
@@ -350,8 +397,8 @@ export function assertHTMLResponse(route, response, body) {
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
-  assert.match(body, /<main(?:\s|>)/i, `${route.path}: expected a main landmark`);
-  if (route.requireH1 !== false) assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
+  assertExactlyOneOpeningElement(route, body, "main");
+  assertExactlyOneOpeningElement(route, body, "h1");
   const canonical = assertCanonical(route, body);
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);

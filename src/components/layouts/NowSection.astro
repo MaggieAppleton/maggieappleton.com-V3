@@ -16,8 +16,14 @@ import ProseWrapper from "../layouts/ProseWrapper.astro";
 		margin-left: 0.5rem;
 	}
 
-	.now-section :global(h3) {
-		margin-top: -3.4rem;
+	.now-section :global(h2) {
+		font-family: var(--font-sans);
+		font-size: calc(var(--font-size-lg) / 1.1);
+		font-weight: 300;
+		line-height: var(--leading-base);
+		margin: -3.4rem 0 var(--space-s);
+		color: var(--color-black);
+		transition: none;
 	}
 
 	.now-section::before {

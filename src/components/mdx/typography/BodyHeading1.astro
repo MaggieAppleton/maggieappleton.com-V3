@@ -1,0 +1,11 @@
+---
+import Title1 from "./Title1.astro";
+
+interface Props {
+	style?: Record<string, string | number>;
+}
+
+const { style } = Astro.props;
+---
+
+<Title1 as="h2" style={style}><slot /></Title1>
