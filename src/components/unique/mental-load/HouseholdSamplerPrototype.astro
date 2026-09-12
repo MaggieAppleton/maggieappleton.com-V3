@@ -1,0 +1,78 @@
+---
+import respondents from "../../../../docs/research/mental-load/respondents.json";
+import published from "../../../../docs/research/mental-load/published-data.json";
+import { buildResponsibilityMaps } from "./responsibility-map-data.js";
+import { motif, householdIcon, taskRows, percent } from "./sampler-art.js";
+import "./household-sampler-prototype.css";
+
+const data = buildResponsibilityMaps(respondents.records, published.tasks);
+const initial = data.domains.find(domain => domain.id === "scheduling");
+const shortLabels = { cleaning: "Clean", scheduling: "Plans", childcare: "Care", social_relationships: "Social", food: "Food", maintenance: "Repairs", finances: "Money" };
+---
+
+<section class="sp" data-household-sampler aria-label="Household responsibility sampler">
+  <div class="sp-stage" data-sampler-stage>
+    <div class="sp-composition">
+      <div class="sp-overviews" aria-label="All seven domains">
+        {(["mothers", "fathers"]).map(gender => (
+          <section class={`sp-cloth sp-${gender}`} aria-labelledby={`sp-${gender}-title`}>
+            <h2 id={`sp-${gender}-title`}>{gender === "mothers" ? "Mothers" : "Fathers"}</h2>
+            {(["daily", "episodic"]).map(scope => (
+              <div class={`sp-scope sp-${scope}`}>
+                <h3>{scope === "daily" ? "Daily" : "Episodic"}</h3>
+                <div class="sp-domain-grid">
+                  {data.domains.filter(domain => domain.scope === scope).map(domain => (
+                    <button
+                      class="sp-domain"
+                      data-domain={domain.id}
+                      data-gender={gender}
+                      aria-pressed={domain.id === initial.id ? "true" : "false"}
+                      aria-controls="sp-detail"
+                      aria-label={`${domain.label}. ${gender}: ${percent(domain.values[gender].share)} average responsibility. Show three tasks.`}
+                    >
+                      <span class="sp-domain-art" set:html={motif(domain.values[gender].share, domain.id)} />
+                      <span class="sp-domain-label"><span class="sp-long-label">{domain.label}</span><span class="sp-short-label">{shortLabels[domain.id]}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+        ))}
+      </div>
+
+      <section class="sp-detail" id="sp-detail" aria-labelledby="sp-detail-title">
+        <header class="sp-detail-heading" data-detail-heading>
+          <span class="sp-detail-icon" data-detail-icon set:html={householdIcon(initial.id)} />
+          <div><span class="sp-detail-scope" data-detail-scope>Daily</span><h2 id="sp-detail-title" data-detail-title>{initial.label}</h2></div>
+        </header>
+        <div class="sp-task-key"><span></span><span class="sp-mother-ink">Mothers</span><span class="sp-father-ink">Fathers</span></div>
+        <div class="sp-task-list" data-task-list set:html={taskRows(initial)} />
+      </section>
+    </div>
+
+    <footer class="sp-footer">
+      <div class="sp-readout" data-readout aria-live="polite" aria-atomic="true">
+        <span class="sp-readout-caption" data-readout-caption>More coloured stitches, more responsibility.</span>
+        <span class="sp-readout-values" data-readout-values hidden><span class="sp-mother-ink" data-readout-mothers></span><span class="sp-father-ink" data-readout-fathers></span></span>
+      </div>
+      <div class="sp-summary" aria-label="Inspect overall averages">
+        <button data-summary="daily" aria-label="Daily average responsibility: mothers 79%, fathers 37%">Daily totals</button>
+        <button data-summary="episodic" aria-label="Episodic average responsibility: mothers 53%, fathers 65%">Episodic totals</button>
+      </div>
+    </footer>
+  </div>
+
+  <details class="sp-method">
+    <summary>About this sampler</summary>
+    <p>Each rosette has 100 stitch positions. The coloured count is the percentage of reported responsibility, rounded to the nearest whole percentage point. The central household drawing is decorative. Stitches represent percentage points, not individual parents, hours, frequency or effort.</p>
+    <p>For each respondent we divide tasks answered “mostly me” by the number of applicable tasks, then average. Parents with no applicable tasks in that domain are excluded. In a single-task comparison, the percentage is among respondents for whom that task applies. The pale stitches mean “not primarily me”, not necessarily “my partner”.</p>
+    <p>These are independent reports by 1,658 mothers and 1,342 fathers, not paired couples. The US survey took place in February–March 2023 and includes single parents and same-sex partnerships. Daily and episodic are the authors’ task groupings, not measured schedules.</p>
+    <p>Values are recalculated from public records. The paper’s original task table includes not-applicable answers in its denominator, so those task percentages differ from this applicable-task view. This is the full survey, not the follow-up paper’s restricted sample or income/employment models.</p>
+    <p><a href="https://doi.org/10.1111/jomf.13057" target="_blank" rel="noreferrer">Weeks & Ruppanner, 2025</a> · <a href="https://doi.org/10.7910/DVN/QR51A8" target="_blank" rel="noreferrer">Survey records, CC0</a></p>
+  </details>
+  <noscript><p class="sp-no-js">All domains and the scheduling breakdown are shown. Enable JavaScript to select another domain.</p></noscript>
+  <script is:inline type="application/json" data-sampler-data set:html={JSON.stringify(data).replace(/</g, "\u003c")} />
+</section>
+
+<script src="./household-sampler-prototype.js"></script>

@@ -1,0 +1,103 @@
+---
+import respondents from "../../../../docs/research/mental-load/respondents.json";
+import published from "../../../../docs/research/mental-load/published-data.json";
+import "./fingerprints-prototype.css";
+
+const data = {
+  records: respondents.records.map(record => record.slice(0, 3)),
+  tasks: published.tasks.map(({ id, domain, label, wording }) => ({ id, domain, label, wording })),
+};
+---
+
+<section class="fp" data-fingerprints aria-label="Responsibility fingerprints">
+  <div class="fp-toolbar">
+    <div class="fp-segment" role="group" aria-label="View scale">
+      <button data-view="one" aria-pressed="true">One parent</button>
+      <button data-view="all" aria-pressed="false">All 3,000</button>
+    </div>
+    <div class="fp-segment fp-scope" role="group" aria-label="Responsibilities to highlight">
+      <button data-scope="all" aria-pressed="true">All 21</button>
+      <button data-scope="daily" aria-pressed="false">Daily <span>15</span></button>
+      <button data-scope="episodic" aria-pressed="false">Episodic <span>6</span></button>
+    </div>
+  </div>
+
+  <div class="fp-key" aria-label="Response key">
+    <span><i class="fp-mark" data-code="1"></i>Mostly me</span>
+    <span><i class="fp-mark" data-code="3"></i>Shared equally</span>
+    <span><i class="fp-mark" data-code="2"></i>Mostly partner</span>
+    <span><i class="fp-mark" data-code="4"></i>Someone else</span>
+    <span><i class="fp-mark" data-code="0"></i>Not applicable</span>
+  </div>
+
+  <div class="fp-one" data-one>
+    <div class="fp-person-heading">
+      <div>
+        <p class="fp-small" data-example-id></p>
+        <h2 data-example-title>One parent’s account</h2>
+        <p class="fp-person-count" data-example-count></p>
+      </div>
+      <div class="fp-example-controls">
+        <div class="fp-segment" role="group" aria-label="Example respondent group">
+          <button data-example-group="mothers" aria-pressed="true">Mother</button>
+          <button data-example-group="fathers" aria-pressed="false">Father</button>
+        </div>
+        <button class="fp-text-button" data-another>Another parent <span aria-hidden="true">↗</span></button>
+      </div>
+    </div>
+    <div class="fp-anatomy" data-anatomy></div>
+    <div class="fp-expand-row">
+      <p>One mark per task. Seven domains of responsibility.</p>
+      <button class="fp-expand" data-expand>Pull back to all 3,000 <span aria-hidden="true">↗</span></button>
+    </div>
+  </div>
+
+  <div class="fp-population" data-population hidden>
+    <div class="fp-field-controls">
+      <p>One fingerprint = one parent</p>
+      <div>
+        <label>Order <select data-sort><option value="responsibility">By responsibility</option><option value="survey">Survey order</option></select></label>
+        <label class="fp-zoom">Zoom <input data-zoom type="range" min="1" max="3" step="0.5" value="1" aria-label="Fingerprint size" /></label>
+      </div>
+    </div>
+    <div class="fp-panels">
+      {(["mothers", "fathers"] as const).map(gender => (
+        <section class={`fp-panel fp-${gender}`} data-panel={gender} aria-label={`${gender} in the survey`}>
+          <div class="fp-panel-heading">
+            <div><h2>{gender === "mothers" ? "Mothers" : "Fathers"}</h2><p>{gender === "mothers" ? "1,658" : "1,342"} respondents</p></div>
+            <div class="fp-average"><strong data-average={gender}></strong><span>average responsibility<sup>*</sup></span></div>
+          </div>
+          <div class="fp-canvas-scroll">
+            <canvas data-canvas={gender} tabindex="0" role="button" aria-label={`Explore ${gender}' fingerprints. Arrow keys move between parents; Enter opens their answers.`} aria-describedby="fp-navigation-help"></canvas>
+          </div>
+          <div class="fp-under-field"><span data-field-summary={gender}></span><button class="fp-text-button" data-inspect-group={gender}>Inspect a parent ↗</button></div>
+        </section>
+      ))}
+    </div>
+    <p class="fp-method"><sup>*</sup>Average fraction of applicable <span data-scope-name>21</span> tasks each parent calls “mostly me”. Groups are different sizes; these are not paired couples.</p>
+    <p class="fp-sr-only" id="fp-navigation-help">Use the arrow keys to move between fingerprints, and Enter or Space to open all answers for that parent. Home and End jump to the first and last parent.</p>
+  </div>
+
+  <div class="fp-hover" data-hover hidden></div>
+  <div class="fp-sr-only" data-live aria-live="polite" aria-atomic="true"></div>
+
+  <details class="fp-sources">
+    <summary>About these fingerprints</summary>
+    <p>These are the answers of 3,000 individual US parents surveyed in February–March 2023. Every fingerprint uses an actual record. “Mostly me” measures perceived primary responsibility, not hours or effort. Daily and episodic are the study’s groupings; the survey did not measure how frequently each task occurs.</p>
+    <p>Task order stays fixed when you highlight a group. Sorting uses the number of highlighted tasks answered “mostly me”. Parents with no applicable tasks remain in the field but are excluded from its average. The enlarged example is illustrative, not a representative household.</p>
+    <p><a href="https://doi.org/10.1111/jomf.13057" target="_blank" rel="noreferrer">Weeks & Ruppanner, 2025</a> · <a href="https://doi.org/10.7910/DVN/QR51A8" target="_blank" rel="noreferrer">Public survey records, CC0</a></p>
+  </details>
+
+  <dialog class="fp-dialog" data-dialog aria-labelledby="fp-dialog-title">
+    <div class="fp-dialog-top"><span class="fp-small" data-dialog-id></span><button data-close aria-label="Close parent details">×</button></div>
+    <h2 id="fp-dialog-title" data-dialog-title></h2>
+    <p class="fp-person-count" data-dialog-count></p>
+    <div class="fp-dialog-glyph" data-dialog-glyph aria-hidden="true"></div>
+    <div class="fp-answer-list" data-answers></div>
+    <div class="fp-dialog-bottom"><button data-prev>← Previous parent</button><button data-next>Next parent →</button></div>
+  </dialog>
+  <script is:inline type="application/json" data-fingerprint-data set:html={JSON.stringify(data).replace(/</g, "\u003c")} />
+  <noscript><p>The interactive fingerprints need JavaScript. The study surveyed 3,000 individual parents; mothers reported primary responsibility for 79% of applicable daily tasks on average, compared with 37% for fathers.</p></noscript>
+</section>
+
+<script src="./fingerprints-prototype.js"></script>

@@ -1,0 +1,82 @@
+---
+import respondents from "../../../../docs/research/mental-load/respondents.json";
+import published from "../../../../docs/research/mental-load/published-data.json";
+import { buildResponsibilityMaps } from "./responsibility-map-data.js";
+import "./responsibility-maps-prototype.css";
+
+const data = buildResponsibilityMaps(respondents.records, published.tasks);
+const percent = share => share === null ? "—" : `${Math.round(share * 100)}%`;
+const genders = ["mothers", "fathers"];
+---
+
+<section class="rm" data-responsibility-maps aria-label="Average responsibility by domain">
+  <p class="rm-definition">Average share of applicable responsibilities reported as <q>mostly me</q>.</p>
+
+  <div class="rm-maps">
+    {genders.map(gender => (
+      <section class={`rm-map rm-${gender}`} aria-labelledby={`rm-${gender}-title`}>
+        <header class="rm-map-heading">
+          <h2 id={`rm-${gender}-title`}>{gender === "mothers" ? "Mothers" : "Fathers"}</h2>
+          <p>{data.groups[gender].toLocaleString()} respondents</p>
+        </header>
+        {(["daily", "episodic"]).map(scope => (
+          <div class={`rm-scope rm-${scope}`}>
+            <div class="rm-scope-heading">
+              <div><h3>{scope === "daily" ? "Daily" : "Episodic"}</h3><span>{data.scopes[scope].taskCount} responsibilities</span></div>
+              <strong data-summary={`${gender}-${scope}`} title={`${data.scopes[scope].values[gender].n.toLocaleString()} respondents with applicable tasks`}>{percent(data.scopes[scope].values[gender].share)}</strong>
+            </div>
+            <div class="rm-tiles">
+              {data.domains.filter(domain => domain.scope === scope).map(domain => (
+                <button
+                  class="rm-tile"
+                  data-domain={domain.id}
+                  data-gender={gender}
+                  aria-expanded="false"
+                  aria-controls="rm-domain-detail"
+                  aria-label={`${domain.label}: ${percent(domain.values[gender].share)} average responsibility reported by ${gender}. Show three tasks.`}
+                >
+                  <span class="rm-tile-face" style={`--share:${domain.values[gender].share ?? 0}`} aria-hidden="true">
+                    <span class="rm-tile-fill"></span>
+                    <span class="rm-tile-value">{percent(domain.values[gender].share)}</span>
+                  </span>
+                  <span class="rm-tile-label">{domain.label}<span class="rm-tile-plus" aria-hidden="true">+</span></span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+    ))}
+  </div>
+
+  <div class="rm-reading-key">
+    <div class="rm-fill-key" aria-hidden="true"><i style="--share:0"></i><i style="--share:.5"></i><i style="--share:1"></i></div>
+    <span>More filled = more responsibility</span>
+    <span class="rm-scale-note">Every tile uses the same 0–100% scale.</span>
+  </div>
+
+  <section class="rm-detail" id="rm-domain-detail" data-detail hidden aria-labelledby="rm-detail-title" tabindex="-1">
+    <header class="rm-detail-heading">
+      <div><p class="rm-eyebrow" data-detail-scope></p><h2 id="rm-detail-title" data-detail-title></h2></div>
+      <button data-close-detail aria-label="Close task comparison">×</button>
+    </header>
+    <p class="rm-detail-description">Parents who call each task <q>mostly me</q>, excluding those who said it did not apply.</p>
+    <div class="rm-task-headings"><span></span><span class="rm-mother-ink">Mothers</span><span class="rm-father-ink">Fathers</span></div>
+    <div data-task-comparison></div>
+  </section>
+  <p class="rm-sr-only" data-live aria-live="polite" aria-atomic="true"></p>
+
+  <p class="rm-caveat">These are separate groups’ reports, not two shares of the same household. Responsibility is not a measure of hours or effort.</p>
+  <details class="rm-method">
+    <summary>Data & how to read this</summary>
+    <p>Every domain has three surveyed tasks. Daily and episodic are the study’s groupings, not measured schedules: a task in Daily does not necessarily happen every day. Equal tile sizes do not imply equal amounts of work.</p>
+    <p>For each parent, we divide the number of applicable tasks answered “mostly me” by the number of applicable tasks, then average across parents. Those with no applicable tasks in a domain are excluded from that domain’s mean. Shared tasks and tasks assigned to a partner or someone else stay in the denominator. The unfilled area means “not primarily me”, not necessarily “my partner”.</p>
+    <p>Domain values and task details are recomputed from the public records using this applicable-task definition. The paper’s original task table instead uses all respondents, including not-applicable answers; its percentages will therefore differ. Daily and episodic headline values reproduce the published rounded means. A headline is not necessarily the simple average of its domain tiles.</p>
+    <p>3,000 US parents surveyed in February–March 2023, including single parents and same-sex partnerships. These are not matched couples. This prototype uses the full survey, not the follow-up paper’s restricted sample or employment/income models.</p>
+    <p><a href="https://doi.org/10.1111/jomf.13057" target="_blank" rel="noreferrer">Weeks & Ruppanner, 2025</a> · <a href="https://doi.org/10.7910/DVN/QR51A8" target="_blank" rel="noreferrer">Public survey data, CC0</a></p>
+  </details>
+  <noscript><p class="rm-caveat">The overview above works without JavaScript. Enable JavaScript to expand a domain into its three tasks.</p></noscript>
+  <script is:inline type="application/json" data-map-data set:html={JSON.stringify(data).replace(/</g, "\u003c")} />
+</section>
+
+<script src="./responsibility-maps-prototype.js"></script>

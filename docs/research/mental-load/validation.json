@@ -1,0 +1,74 @@
+{
+  "source_checksum_verified": true,
+  "source_shape": [
+    3000,
+    78
+  ],
+  "applicable_denominators_reproduced": 3000,
+  "supplied_all_task_shares_reproduced": 3000,
+  "headline_scale_means_match_at_published_precision": true,
+  "task_table_cells_matching_direct_rounding": 162,
+  "task_table_cells_total": 168,
+  "task_table_discrepancies": [
+    {
+      "task_id": 2,
+      "gender": "mothers",
+      "response": "shared_equally",
+      "published_percent": 8,
+      "recomputed_percent": 7.478890229191798,
+      "rounded_recomputed_percent": 7,
+      "round_to_tenths_then_whole": 8
+    },
+    {
+      "task_id": 7,
+      "gender": "mothers",
+      "response": "mostly_partner",
+      "published_percent": 4,
+      "recomputed_percent": 3.4981905910735827,
+      "rounded_recomputed_percent": 3,
+      "round_to_tenths_then_whole": 4
+    },
+    {
+      "task_id": 11,
+      "gender": "mothers",
+      "response": "shared_equally",
+      "published_percent": 15,
+      "recomputed_percent": 14.475271411338964,
+      "rounded_recomputed_percent": 14,
+      "round_to_tenths_then_whole": 15
+    },
+    {
+      "task_id": 17,
+      "gender": "mothers",
+      "response": "mostly_partner",
+      "published_percent": 5,
+      "recomputed_percent": 4.463208685162847,
+      "rounded_recomputed_percent": 4,
+      "round_to_tenths_then_whole": 5
+    },
+    {
+      "task_id": 20,
+      "gender": "mothers",
+      "response": "mostly_me",
+      "published_percent": 75,
+      "recomputed_percent": 74.48733413751508,
+      "rounded_recomputed_percent": 74,
+      "round_to_tenths_then_whole": 75
+    },
+    {
+      "task_id": 21,
+      "gender": "mothers",
+      "response": "other_or_not_applicable",
+      "published_percent": 4,
+      "recomputed_percent": 3.4981905910735827,
+      "rounded_recomputed_percent": 3,
+      "round_to_tenths_then_whole": 4
+    }
+  ],
+  "rounding_note": "All six one-point discrepancies are consistent with first rounding to one decimal place and then rounding to an integer. This explains their pattern but is not verified as the original table-generation method.",
+  "followup_sample": {
+    "published_n": 2133,
+    "archive_partner_1_lgbt_0_n": 2205,
+    "status": "Exact Socius analytic sample not reproduced; do not relabel this archive subset as the follow-up sample. Published Socius tables remain the source for its results."
+  }
+}

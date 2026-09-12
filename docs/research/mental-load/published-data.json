@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "retrieved": "2026-09-07",
+  "description": "Published numerical results transcribed for visual exploration. These are aggregate statistics, not respondent records. See survey-derived.json for independently recomputed results from the public survey archive.",
+  "sources": {
+    "typology": {
+      "title": "A typology of US parents' mental loads: Core and episodic cognitive labor",
+      "authors": ["Ana Catalano Weeks", "Leah Ruppanner"],
+      "publication_year": 2025,
+      "note": "Online-first PDF is dated 2024; journal issue is 2025, 87(3), 966-989.",
+      "doi": "10.1111/jomf.13057",
+      "url": "https://doi.org/10.1111/jomf.13057",
+      "pdf_url": "https://anacweeks.github.io/assets/pdf/Weeks_Ruppanner_2024_JMF.pdf",
+      "sample_n": 3000,
+      "sample": "Individual US parents, including single parents and same-sex partnerships; not matched couples.",
+      "fieldwork": "February-March 2023, Dynata quota survey",
+      "licence": "CC BY",
+      "task_source": "Tables 1-2, PDF pages 8-10",
+      "dimension_source": "Table 3, PDF page 14",
+      "summary_source": "Tables 4A-4B, PDF page 17",
+      "rounding": "Task response percentages are rounded to whole numbers. Response totals may be 99 or 101; do not silently normalise them."
+    },
+    "followup": {
+      "title": "Take a Load Off? Not for Mothers: Gender, Cognitive Labor, and the Limits of Time and Money",
+      "authors": ["Ana Catalano Weeks", "Helen Kowalewska", "Leah Ruppanner"],
+      "publication_year": 2025,
+      "doi": "10.1177/23780231251384527",
+      "url": "https://journals.sagepub.com/doi/10.1177/23780231251384527",
+      "sample_n": 2133,
+      "mothers_n": 1103,
+      "fathers_n": 1030,
+      "sample": "Partnered heterosexual US parents, restricted from the same 2023 survey. Not an independent replication or longitudinal follow-up.",
+      "licence": "CC BY 4.0",
+      "descriptive_source": "Table 1",
+      "model_source": "Table 2, first three predictor rows; Table 3, first three predictor rows",
+      "model": "Gender-specific negative binomial regressions; adjusted associations, not causal effects.",
+      "model_controls": ["education", "respondent age", "age of youngest child", "number of children", "race/ethnicity", "other listed employment/income predictors"],
+      "high_income_definition": "Personal annual salary including bonuses and commissions of at least US$100,000; not household income or pounds sterling.",
+      "care_definition": "Self-reported hours per week looking after family members, including children, elderly, ill or disabled family members; broader than childcare alone.",
+      "housework_definition": "Self-reported hours per week on household work such as cooking, cleaning and yard work, excluding childcare and leisure."
+    },
+    "survey_archive": {
+      "title": "Replication Data for: The Political Consequences of the Mental Load",
+      "author": "Weeks, Ana",
+      "doi": "10.7910/DVN/QR51A8",
+      "version": "1.0",
+      "url": "https://doi.org/10.7910/DVN/QR51A8",
+      "licence": "CC0 1.0",
+      "data_url": "https://dataverse.harvard.edu/api/access/datafile/11042239",
+      "code_url": "https://dataverse.harvard.edu/api/access/datafile/11042238",
+      "original_data_filename": "Replication_Data_ESR.RData",
+      "data_md5": "bba7e1e31ebe3665d927127f397da87d",
+      "data_sha256": "51bbdfc1fffaf0c8b2310b6ce405edefeedd8caa617ce22b9fbf212c38cad707",
+      "note": "Archive formally accompanies a third paper using the same survey. Validate variables and results against the two target papers; do not label this a replication package published for either target paper."
+    }
+  },
+  "response_order": ["mostly_me", "mostly_partner", "shared_equally", "other_or_not_applicable"],
+  "response_unit": "Percent of the specified respondent gender selecting each response. Other combines someone else and not applicable in published Table 2.",
+  "tasks": [
+    {"id":1,"domain":"cleaning","dimension":"daily","label":"Track sheets and towels","wording":"Keeping track of when sheets and towels need to be washed","mothers":[81,5,12,2],"fathers":[41,31,26,3]},
+    {"id":2,"domain":"cleaning","dimension":"daily","label":"Clear out outgrown clothes","wording":"Cleaning out kids' clothes that no longer fit","mothers":[85,3,8,5],"fathers":[30,45,19,5]},
+    {"id":3,"domain":"cleaning","dimension":"daily","label":"Notice tidying","wording":"Noticing when the house needs to be tidied","mothers":[76,4,17,2],"fathers":[40,24,34,2]},
+    {"id":4,"domain":"scheduling","dimension":"daily","label":"Track the family calendar","wording":"Keeping track of the family calendar, such as kids' medical appointments","mothers":[83,4,10,3],"fathers":[37,35,25,3]},
+    {"id":5,"domain":"scheduling","dimension":"daily","label":"Plan family events","wording":"Planning a family event, like a birthday party","mothers":[79,4,13,4],"fathers":[32,39,27,3]},
+    {"id":6,"domain":"scheduling","dimension":"daily","label":"Remember appointments","wording":"Remembering to schedule appointments, such as dentist appointments","mothers":[83,4,11,3],"fathers":[34,33,30,3]},
+    {"id":7,"domain":"childcare","dimension":"daily","label":"Research children's purchases","wording":"Researching options for new items children need, like school supplies or shoes","mothers":[80,4,12,4],"fathers":[36,27,32,4]},
+    {"id":8,"domain":"childcare","dimension":"daily","label":"Choose childcare","wording":"Deciding on a child care provider (e.g., babysitter, daycare, camp)","mothers":[62,3,17,19],"fathers":[28,25,32,15]},
+    {"id":9,"domain":"childcare","dimension":"daily","label":"Notice children's nails","wording":"Noticing when children's nails need to be cut","mothers":[75,4,11,10],"fathers":[31,36,26,8]},
+    {"id":10,"domain":"maintenance","dimension":"episodic","label":"Notice repairs","wording":"Noticing when something like a dishwasher or faucet needs repair","mothers":[52,21,21,6],"fathers":[69,11,18,3]},
+    {"id":11,"domain":"maintenance","dimension":"episodic","label":"Book repair professionals","wording":"Booking a repair professional like a plumber or mechanic","mothers":[45,28,15,12],"fathers":[65,15,15,6]},
+    {"id":12,"domain":"maintenance","dimension":"episodic","label":"Remember servicing","wording":"Remembering when items like a boiler or car need servicing","mothers":[42,30,21,8],"fathers":[69,10,17,4]},
+    {"id":13,"domain":"finances","dimension":"episodic","label":"Research financial products","wording":"Researching options for financial products like bank accounts or insurance","mothers":[55,18,24,4],"fathers":[66,10,22,2]},
+    {"id":14,"domain":"finances","dimension":"episodic","label":"Allocate money","wording":"Deciding how to allocate money (such as paying off credit cards or increasing savings)","mothers":[52,17,26,5],"fathers":[57,16,25,2]},
+    {"id":15,"domain":"finances","dimension":"episodic","label":"Track expenses","wording":"Keeping track of household expenses","mothers":[61,13,23,4],"fathers":[57,17,24,2]},
+    {"id":16,"domain":"social_relationships","dimension":"daily","label":"Find enrichment activities","wording":"Finding social options for children's enrichment (sports classes, clubs, etc.)","mothers":[68,5,18,9],"fathers":[38,26,31,5]},
+    {"id":17,"domain":"social_relationships","dimension":"daily","label":"Coordinate playdates","wording":"Coordinating a playdate","mothers":[68,5,12,16],"fathers":[30,38,22,11]},
+    {"id":18,"domain":"social_relationships","dimension":"daily","label":"Check in with family and friends","wording":"Checking in with family and friends","mothers":[64,3,27,5],"fathers":[35,23,39,3]},
+    {"id":19,"domain":"food","dimension":"daily","label":"Track groceries","wording":"Keeping track of which groceries need to be purchased","mothers":[77,5,16,2],"fathers":[48,22,28,2]},
+    {"id":20,"domain":"food","dimension":"daily","label":"Decide meals","wording":"Deciding what meals to cook","mothers":[75,6,17,3],"fathers":[39,31,28,3]},
+    {"id":21,"domain":"food","dimension":"daily","label":"Monitor food dates","wording":"Monitoring food for sell-by dates, or noticing when foods need to be thrown away","mothers":[77,4,15,4],"fathers":[45,22,30,3]}
+  ],
+  "typology_summary": {
+    "source":"typology Tables 4A-4B",
+    "unit":"Proportion, 0-1",
+    "rows":[
+      {"measure":"overall_self_estimate","items":1,"mothers":0.78,"fathers":0.61},
+      {"measure":"all_tasks_primary_responsibility","items":21,"mothers":0.71,"fathers":0.45},
+      {"measure":"daily_primary_responsibility","items":15,"mothers":0.79,"fathers":0.37},
+      {"measure":"episodic_primary_responsibility","items":6,"mothers":0.53,"fathers":0.65}
+    ],
+    "note":"Both the single-item and task-based measures are self-reports. Their difference is a measurement mismatch, not objective proof of exaggeration. The item-based proportions account for applicable tasks; they are not the simple average of the Table 2 percentages."
+  },
+  "followup_descriptive": {
+    "source":"followup Table 1",
+    "rows":[
+      {"measure":"all_cognitive_tasks","unit":"tasks","maximum":21,"mothers":13.72,"fathers":8.18,"difference_as_published":5.54,"relative_difference_percent_as_published":66.96},
+      {"measure":"physical_care","unit":"hours_per_week","mothers":47.86,"fathers":25.86,"difference_as_published":22.00,"relative_difference_percent_as_published":85.02},
+      {"measure":"other_housework","unit":"hours_per_week","mothers":25.02,"fathers":14.61,"difference_as_published":10.41,"relative_difference_percent_as_published":71.23},
+      {"measure":"childcare","unit":"tasks","maximum":3,"mothers":2.14,"fathers":0.77,"difference_as_published":1.37,"relative_difference_percent_as_published":177.92},
+      {"measure":"cleaning","unit":"tasks","maximum":3,"mothers":2.40,"fathers":0.90,"difference_as_published":1.50,"relative_difference_percent_as_published":166.67},
+      {"measure":"finances","unit":"tasks","maximum":3,"mothers":1.43,"fathers":1.71,"difference_as_published":-0.28,"relative_difference_percent_as_published":-16.37},
+      {"measure":"food","unit":"tasks","maximum":3,"mothers":2.24,"fathers":1.15,"difference_as_published":1.09,"relative_difference_percent_as_published":94.78},
+      {"measure":"maintenance","unit":"tasks","maximum":3,"mothers":1.12,"fathers":1.99,"difference_as_published":-0.87,"relative_difference_percent_as_published":-43.72},
+      {"measure":"scheduling","unit":"tasks","maximum":3,"mothers":2.44,"fathers":0.83,"difference_as_published":1.60,"relative_difference_percent_as_published":193.98},
+      {"measure":"social_relationships","unit":"tasks","maximum":3,"mothers":1.95,"fathers":0.83,"difference_as_published":1.11,"relative_difference_percent_as_published":133.73}
+    ],
+    "notes":["P values print as .00; this is rounding, not a zero probability. Exact p values are not supplied here.","The published 66.96 percent does not equal (13.72-8.18)/8.18*100, which is about 67.73 percent. Preserve the published value for audit; prefer the raw task counts in graphics.","Some published differences differ from subtraction of rounded means, e.g. scheduling 1.60 versus 1.61. Preserve both source precision and provenance."]
+  },
+  "followup_models": {
+    "source":"followup Table 2",
+    "unit":"incidence_rate_ratio",
+    "null":1,
+    "se_definition":"Published transformed standard error, computed by the delta method.",
+    "significance_key":{"":"not significant at .05","*":"p < .05","**":"p < .01","***":"p < .001"},
+    "comparison_definitions":{"employed":"Paid employment versus not in paid employment","high_income":"Personal salary >= US$100,000 versus lower salary","earns_more":"Higher income than partner versus not higher"},
+    "rows":[
+      {"predictor":"employed","outcome":"cognitive_task_count","gender":"mothers","model":1,"irr":1.00,"se":0.03,"significance":""},
+      {"predictor":"employed","outcome":"cognitive_task_count","gender":"fathers","model":2,"irr":0.71,"se":0.09,"significance":"***"},
+      {"predictor":"employed","outcome":"care_hours","gender":"mothers","model":3,"irr":0.83,"se":0.06,"significance":"**"},
+      {"predictor":"employed","outcome":"care_hours","gender":"fathers","model":4,"irr":0.74,"se":0.11,"significance":"**"},
+      {"predictor":"employed","outcome":"housework_hours","gender":"mothers","model":5,"irr":0.78,"se":0.06,"significance":"***"},
+      {"predictor":"employed","outcome":"housework_hours","gender":"fathers","model":6,"irr":0.70,"se":0.09,"significance":"***","note":"Publisher HTML shows three stars; indexed PDF shows two. Both indicate p < .01. Do not resolve this discrepancy by invention."},
+      {"predictor":"high_income","outcome":"cognitive_task_count","gender":"mothers","model":1,"irr":0.95,"se":0.04,"significance":""},
+      {"predictor":"high_income","outcome":"cognitive_task_count","gender":"fathers","model":2,"irr":1.17,"se":0.05,"significance":"**"},
+      {"predictor":"high_income","outcome":"care_hours","gender":"mothers","model":3,"irr":0.70,"se":0.09,"significance":"***"},
+      {"predictor":"high_income","outcome":"care_hours","gender":"fathers","model":4,"irr":0.92,"se":0.07,"significance":""},
+      {"predictor":"high_income","outcome":"housework_hours","gender":"mothers","model":5,"irr":0.83,"se":0.08,"significance":"*"},
+      {"predictor":"high_income","outcome":"housework_hours","gender":"fathers","model":6,"irr":0.97,"se":0.06,"significance":""},
+      {"predictor":"earns_more","outcome":"cognitive_task_count","gender":"mothers","model":1,"irr":1.03,"se":0.04,"significance":""},
+      {"predictor":"earns_more","outcome":"cognitive_task_count","gender":"fathers","model":2,"irr":1.21,"se":0.06,"significance":"***"},
+      {"predictor":"earns_more","outcome":"care_hours","gender":"mothers","model":3,"irr":1.00,"se":0.08,"significance":""},
+      {"predictor":"earns_more","outcome":"care_hours","gender":"fathers","model":4,"irr":0.88,"se":0.07,"significance":""},
+      {"predictor":"earns_more","outcome":"housework_hours","gender":"mothers","model":5,"irr":1.02,"se":0.07,"significance":""},
+      {"predictor":"earns_more","outcome":"housework_hours","gender":"fathers","model":6,"irr":0.98,"se":0.06,"significance":""}
+    ],
+    "notes":["Convert to relative percent difference with 100*(irr-1), not a percentage-point difference.","An insignificant estimate is not evidence of an exactly zero effect. Retain the 0.95 and 1.03 estimates rather than snapping them to 1.","Do not combine these separate comparisons into a salary slider or a simulated career progression. They are cross-sectional associations.","Reported standard errors and significance stars do not always agree under a naive Wald calculation. Preserve the published values; do not manufacture publication-quality confidence intervals from rounded entries."]
+  },
+  "fathers_dimension_models": {
+    "source":"followup Table 3",
+    "unit":"incidence_rate_ratio",
+    "rows":[
+      {"predictor":"employed","dimension":"daily","irr":0.64,"se":0.14,"significance":"**"},
+      {"predictor":"employed","dimension":"episodic","irr":0.81,"se":0.07,"significance":"**"},
+      {"predictor":"high_income","dimension":"daily","irr":1.27,"se":0.08,"significance":"**"},
+      {"predictor":"high_income","dimension":"episodic","irr":1.06,"se":0.04,"significance":""},
+      {"predictor":"earns_more","dimension":"daily","irr":1.14,"se":0.09,"significance":""},
+      {"predictor":"earns_more","dimension":"episodic","irr":1.28,"se":0.04,"significance":"***"}
+    ]
+  }
+}

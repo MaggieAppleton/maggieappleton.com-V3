@@ -1,0 +1,32 @@
+---
+// This research route has no production static paths.
+import Layout from "../../layouts/Layout.astro";
+import HouseholdSamplerPrototype from "../../components/unique/mental-load/HouseholdSamplerPrototype.astro";
+
+export function getStaticPaths() {
+  return import.meta.env.DEV ? [{ params: { prototype: "mental-load" } }] : [];
+}
+---
+
+<Layout title="The household sampler — working study">
+  <div class="prototype-page">
+    <header class="prototype-intro">
+      <a class="back" href="/mental-load/">← Machines for the Domestic Mental Load</a>
+      <h1>The work woven into a home</h1>
+    </header>
+    <HouseholdSamplerPrototype />
+  </div>
+</Layout>
+
+<style>
+  .prototype-page { width: min(1180px, calc(100% - 48px)); margin: 20px auto 70px; }
+  .prototype-intro { margin: 0 auto 22px; text-align: center; }
+  .back { font: 11px var(--font-sans); color: var(--color-gray-600); text-decoration: none; }
+  h1 { font-family: "Canela Deck", Georgia, serif; font-size: clamp(28px, 3vw, 38px); font-weight: 400; line-height: 1.1; margin: 14px 0 0; }
+  @media (max-width: 640px) {
+    .prototype-page { width: calc(100% - 24px); margin-top: 8px; }
+    .prototype-intro { margin-bottom: 18px; }
+    .back { font-size: 10px; }
+    h1 { margin-top: 10px; font-size: 28px; }
+  }
+</style>

@@ -1,0 +1,1615 @@
+{
+  "source": {
+    "title": "Replication Data for: The Political Consequences of the Mental Load",
+    "author": "Weeks, Ana",
+    "doi": "10.7910/DVN/QR51A8",
+    "version": "1.0",
+    "url": "https://doi.org/10.7910/DVN/QR51A8",
+    "licence": "CC0 1.0",
+    "data_url": "https://dataverse.harvard.edu/api/access/datafile/11042239",
+    "code_url": "https://dataverse.harvard.edu/api/access/datafile/11042238",
+    "original_data_filename": "Replication_Data_ESR.RData",
+    "data_md5": "bba7e1e31ebe3665d927127f397da87d",
+    "data_sha256": "51bbdfc1fffaf0c8b2310b6ce405edefeedd8caa617ce22b9fbf212c38cad707",
+    "note": "Archive formally accompanies a third paper using the same survey. Validate variables and results against the two target papers; do not label this a replication package published for either target paper."
+  },
+  "status": "Recomputed from public respondent data; not new published-paper results.",
+  "sample": {
+    "total": 3000,
+    "mothers": 1658,
+    "fathers": 1342
+  },
+  "notes": [
+    "Individual respondents, not paired couples.",
+    "Percentages retain source precision; round for display only.",
+    "The archive stores not-applicable responses as empty strings. Their tally exactly reproduces the supplied applicable-task denominator for all 3000 respondents.",
+    "Task response percentages use all respondents in a gender group. Scale means exclude people with no applicable tasks in that scale.",
+    "Task count is not hours, recurrence, effort, distress or total household burden."
+  ],
+  "task_responses": [
+    {
+      "task_id": 1,
+      "archive_variable": "Q41_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 15,
+        "1": 1349,
+        "2": 78,
+        "3": 192,
+        "4": 24
+      },
+      "percent_by_response_code": {
+        "0": 0.9047044632086853,
+        "1": 81.3630880579011,
+        "2": 4.704463208685163,
+        "3": 11.58021712907117,
+        "4": 1.4475271411338964
+      }
+    },
+    {
+      "task_id": 1,
+      "archive_variable": "Q41_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 9,
+        "1": 548,
+        "2": 411,
+        "3": 347,
+        "4": 27
+      },
+      "percent_by_response_code": {
+        "0": 0.6706408345752608,
+        "1": 40.83457526080477,
+        "2": 30.625931445603577,
+        "3": 25.85692995529061,
+        "4": 2.011922503725782
+      }
+    },
+    {
+      "task_id": 2,
+      "archive_variable": "Q41_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 33,
+        "1": 1413,
+        "2": 44,
+        "3": 124,
+        "4": 44
+      },
+      "percent_by_response_code": {
+        "0": 1.9903498190591074,
+        "1": 85.22316043425813,
+        "2": 2.6537997587454765,
+        "3": 7.478890229191798,
+        "4": 2.6537997587454765
+      }
+    },
+    {
+      "task_id": 2,
+      "archive_variable": "Q41_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 34,
+        "1": 404,
+        "2": 608,
+        "3": 258,
+        "4": 38
+      },
+      "percent_by_response_code": {
+        "0": 2.533532041728763,
+        "1": 30.104321907600596,
+        "2": 45.30551415797318,
+        "3": 19.225037257824145,
+        "4": 2.8315946348733236
+      }
+    },
+    {
+      "task_id": 3,
+      "archive_variable": "Q41_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 20,
+        "1": 1265,
+        "2": 70,
+        "3": 284,
+        "4": 19
+      },
+      "percent_by_response_code": {
+        "0": 1.2062726176115801,
+        "1": 76.29674306393245,
+        "2": 4.2219541616405305,
+        "3": 17.12907117008444,
+        "4": 1.1459589867310012
+      }
+    },
+    {
+      "task_id": 3,
+      "archive_variable": "Q41_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 14,
+        "1": 534,
+        "2": 320,
+        "3": 462,
+        "4": 12
+      },
+      "percent_by_response_code": {
+        "0": 1.0432190760059614,
+        "1": 39.79135618479881,
+        "2": 23.84500745156483,
+        "3": 34.42622950819672,
+        "4": 0.8941877794336811
+      }
+    },
+    {
+      "task_id": 4,
+      "archive_variable": "Q40_1.1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 23,
+        "1": 1380,
+        "2": 62,
+        "3": 170,
+        "4": 23
+      },
+      "percent_by_response_code": {
+        "0": 1.3872135102533172,
+        "1": 83.23281061519904,
+        "2": 3.739445114595899,
+        "3": 10.253317249698432,
+        "4": 1.3872135102533172
+      }
+    },
+    {
+      "task_id": 4,
+      "archive_variable": "Q40_1.1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 18,
+        "1": 500,
+        "2": 473,
+        "3": 329,
+        "4": 22
+      },
+      "percent_by_response_code": {
+        "0": 1.3412816691505216,
+        "1": 37.257824143070046,
+        "2": 35.24590163934426,
+        "3": 24.51564828614009,
+        "4": 1.639344262295082
+      }
+    },
+    {
+      "task_id": 5,
+      "archive_variable": "Q40_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 32,
+        "1": 1302,
+        "2": 68,
+        "3": 221,
+        "4": 35
+      },
+      "percent_by_response_code": {
+        "0": 1.9300361881785282,
+        "1": 78.52834740651387,
+        "2": 4.101326899879373,
+        "3": 13.329312424607961,
+        "4": 2.1109770808202653
+      }
+    },
+    {
+      "task_id": 5,
+      "archive_variable": "Q40_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 16,
+        "1": 425,
+        "2": 519,
+        "3": 359,
+        "4": 23
+      },
+      "percent_by_response_code": {
+        "0": 1.1922503725782414,
+        "1": 31.66915052160954,
+        "2": 38.67362146050671,
+        "3": 26.751117734724296,
+        "4": 1.713859910581222
+      }
+    },
+    {
+      "task_id": 6,
+      "archive_variable": "Q40_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 23,
+        "1": 1376,
+        "2": 63,
+        "3": 177,
+        "4": 19
+      },
+      "percent_by_response_code": {
+        "0": 1.3872135102533172,
+        "1": 82.99155609167673,
+        "2": 3.799758745476477,
+        "3": 10.675512665862485,
+        "4": 1.1459589867310012
+      }
+    },
+    {
+      "task_id": 6,
+      "archive_variable": "Q40_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 14,
+        "1": 457,
+        "2": 442,
+        "3": 404,
+        "4": 25
+      },
+      "percent_by_response_code": {
+        "0": 1.0432190760059614,
+        "1": 34.053651266766025,
+        "2": 32.93591654247392,
+        "3": 30.104321907600596,
+        "4": 1.8628912071535022
+      }
+    },
+    {
+      "task_id": 7,
+      "archive_variable": "Q37_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 46,
+        "1": 1324,
+        "2": 58,
+        "3": 204,
+        "4": 26
+      },
+      "percent_by_response_code": {
+        "0": 2.7744270205066344,
+        "1": 79.8552472858866,
+        "2": 3.4981905910735827,
+        "3": 12.30398069963812,
+        "4": 1.5681544028950543
+      }
+    },
+    {
+      "task_id": 7,
+      "archive_variable": "Q37_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 30,
+        "1": 488,
+        "2": 368,
+        "3": 430,
+        "4": 26
+      },
+      "percent_by_response_code": {
+        "0": 2.235469448584203,
+        "1": 36.36363636363637,
+        "2": 27.421758569299552,
+        "3": 32.04172876304024,
+        "4": 1.9374068554396422
+      }
+    },
+    {
+      "task_id": 8,
+      "archive_variable": "Q37_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 287,
+        "1": 1021,
+        "2": 44,
+        "3": 275,
+        "4": 31
+      },
+      "percent_by_response_code": {
+        "0": 17.310012062726177,
+        "1": 61.580217129071166,
+        "2": 2.6537997587454765,
+        "3": 16.58624849215923,
+        "4": 1.8697225572979495
+      }
+    },
+    {
+      "task_id": 8,
+      "archive_variable": "Q37_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 182,
+        "1": 373,
+        "2": 340,
+        "3": 423,
+        "4": 24
+      },
+      "percent_by_response_code": {
+        "0": 13.561847988077497,
+        "1": 27.794336810730254,
+        "2": 25.335320417287633,
+        "3": 31.520119225037256,
+        "4": 1.7883755588673622
+      }
+    },
+    {
+      "task_id": 9,
+      "archive_variable": "Q37_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 137,
+        "1": 1247,
+        "2": 70,
+        "3": 182,
+        "4": 22
+      },
+      "percent_by_response_code": {
+        "0": 8.262967430639325,
+        "1": 75.21109770808204,
+        "2": 4.2219541616405305,
+        "3": 10.97708082026538,
+        "4": 1.3268998793727382
+      }
+    },
+    {
+      "task_id": 9,
+      "archive_variable": "Q37_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 86,
+        "1": 413,
+        "2": 478,
+        "3": 343,
+        "4": 22
+      },
+      "percent_by_response_code": {
+        "0": 6.4083457526080485,
+        "1": 30.774962742175855,
+        "2": 35.61847988077496,
+        "3": 25.55886736214605,
+        "4": 1.639344262295082
+      }
+    },
+    {
+      "task_id": 10,
+      "archive_variable": "Q38_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 40,
+        "1": 869,
+        "2": 341,
+        "3": 351,
+        "4": 57
+      },
+      "percent_by_response_code": {
+        "0": 2.4125452352231602,
+        "1": 52.41254523522316,
+        "2": 20.566948130277442,
+        "3": 21.170084439083233,
+        "4": 3.4378769601930035
+      }
+    },
+    {
+      "task_id": 10,
+      "archive_variable": "Q38_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 17,
+        "1": 922,
+        "2": 145,
+        "3": 238,
+        "4": 20
+      },
+      "percent_by_response_code": {
+        "0": 1.2667660208643814,
+        "1": 68.70342771982116,
+        "2": 10.804769001490314,
+        "3": 17.73472429210134,
+        "4": 1.4903129657228018
+      }
+    },
+    {
+      "task_id": 11,
+      "archive_variable": "Q38_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 126,
+        "1": 745,
+        "2": 468,
+        "3": 240,
+        "4": 79
+      },
+      "percent_by_response_code": {
+        "0": 7.599517490952954,
+        "1": 44.933655006031366,
+        "2": 28.22677925211098,
+        "3": 14.475271411338964,
+        "4": 4.764776839565742
+      }
+    },
+    {
+      "task_id": 11,
+      "archive_variable": "Q38_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 52,
+        "1": 866,
+        "2": 200,
+        "3": 200,
+        "4": 24
+      },
+      "percent_by_response_code": {
+        "0": 3.8748137108792844,
+        "1": 64.53055141579732,
+        "2": 14.903129657228018,
+        "3": 14.903129657228018,
+        "4": 1.7883755588673622
+      }
+    },
+    {
+      "task_id": 12,
+      "archive_variable": "Q38_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 64,
+        "1": 692,
+        "2": 494,
+        "3": 345,
+        "4": 63
+      },
+      "percent_by_response_code": {
+        "0": 3.8600723763570564,
+        "1": 41.73703256936068,
+        "2": 29.794933655006034,
+        "3": 20.80820265379976,
+        "4": 3.799758745476477
+      }
+    },
+    {
+      "task_id": 12,
+      "archive_variable": "Q38_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 22,
+        "1": 932,
+        "2": 130,
+        "3": 228,
+        "4": 30
+      },
+      "percent_by_response_code": {
+        "0": 1.639344262295082,
+        "1": 69.44858420268257,
+        "2": 9.687034277198212,
+        "3": 16.98956780923994,
+        "4": 2.235469448584203
+      }
+    },
+    {
+      "task_id": 13,
+      "archive_variable": "Q36_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 41,
+        "1": 908,
+        "2": 294,
+        "3": 396,
+        "4": 19
+      },
+      "percent_by_response_code": {
+        "0": 2.4728588661037394,
+        "1": 54.76477683956574,
+        "2": 17.73220747889023,
+        "3": 23.88419782870929,
+        "4": 1.1459589867310012
+      }
+    },
+    {
+      "task_id": 13,
+      "archive_variable": "Q36_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 11,
+        "1": 886,
+        "2": 140,
+        "3": 293,
+        "4": 12
+      },
+      "percent_by_response_code": {
+        "0": 0.819672131147541,
+        "1": 66.02086438152011,
+        "2": 10.432190760059612,
+        "3": 21.833084947839048,
+        "4": 0.8941877794336811
+      }
+    },
+    {
+      "task_id": 14,
+      "archive_variable": "Q36_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 49,
+        "1": 867,
+        "2": 283,
+        "3": 429,
+        "4": 30
+      },
+      "percent_by_response_code": {
+        "0": 2.9553679131483714,
+        "1": 52.291917973462,
+        "2": 17.06875753920386,
+        "3": 25.8745476477684,
+        "4": 1.8094089264173705
+      }
+    },
+    {
+      "task_id": 14,
+      "archive_variable": "Q36_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 16,
+        "1": 762,
+        "2": 215,
+        "3": 338,
+        "4": 11
+      },
+      "percent_by_response_code": {
+        "0": 1.1922503725782414,
+        "1": 56.780923994038744,
+        "2": 16.02086438152012,
+        "3": 25.18628912071535,
+        "4": 0.819672131147541
+      }
+    },
+    {
+      "task_id": 15,
+      "archive_variable": "Q36_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 28,
+        "1": 1005,
+        "2": 216,
+        "3": 378,
+        "4": 31
+      },
+      "percent_by_response_code": {
+        "0": 1.6887816646562124,
+        "1": 60.615199034981906,
+        "2": 13.027744270205066,
+        "3": 22.798552472858866,
+        "4": 1.8697225572979495
+      }
+    },
+    {
+      "task_id": 15,
+      "archive_variable": "Q36_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 12,
+        "1": 769,
+        "2": 224,
+        "3": 317,
+        "4": 20
+      },
+      "percent_by_response_code": {
+        "0": 0.8941877794336811,
+        "1": 57.302533532041735,
+        "2": 16.691505216095383,
+        "3": 23.621460506706406,
+        "4": 1.4903129657228018
+      }
+    },
+    {
+      "task_id": 16,
+      "archive_variable": "Q39_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 129,
+        "1": 1133,
+        "2": 81,
+        "3": 292,
+        "4": 23
+      },
+      "percent_by_response_code": {
+        "0": 7.780458383594692,
+        "1": 68.33534378769602,
+        "2": 4.8854041013269,
+        "3": 17.61158021712907,
+        "4": 1.3872135102533172
+      }
+    },
+    {
+      "task_id": 16,
+      "archive_variable": "Q39_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 50,
+        "1": 511,
+        "2": 345,
+        "3": 418,
+        "4": 18
+      },
+      "percent_by_response_code": {
+        "0": 3.7257824143070044,
+        "1": 38.07749627421759,
+        "2": 25.70789865871833,
+        "3": 31.147540983606557,
+        "4": 1.3412816691505216
+      }
+    },
+    {
+      "task_id": 17,
+      "archive_variable": "Q39_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 225,
+        "1": 1130,
+        "2": 74,
+        "3": 194,
+        "4": 35
+      },
+      "percent_by_response_code": {
+        "0": 13.570566948130278,
+        "1": 68.15440289505428,
+        "2": 4.463208685162847,
+        "3": 11.700844390832328,
+        "4": 2.1109770808202653
+      }
+    },
+    {
+      "task_id": 17,
+      "archive_variable": "Q39_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 117,
+        "1": 398,
+        "2": 509,
+        "3": 289,
+        "4": 29
+      },
+      "percent_by_response_code": {
+        "0": 8.718330849478392,
+        "1": 29.657228017883757,
+        "2": 37.928464977645305,
+        "3": 21.535022354694487,
+        "4": 2.1609538002980626
+      }
+    },
+    {
+      "task_id": 18,
+      "archive_variable": "Q39_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 54,
+        "1": 1065,
+        "2": 57,
+        "3": 448,
+        "4": 34
+      },
+      "percent_by_response_code": {
+        "0": 3.2569360675512664,
+        "1": 64.23401688781665,
+        "2": 3.4378769601930035,
+        "3": 27.020506634499398,
+        "4": 2.0506634499396865
+      }
+    },
+    {
+      "task_id": 18,
+      "archive_variable": "Q39_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 17,
+        "1": 473,
+        "2": 303,
+        "3": 525,
+        "4": 24
+      },
+      "percent_by_response_code": {
+        "0": 1.2667660208643814,
+        "1": 35.24590163934426,
+        "2": 22.578241430700448,
+        "3": 39.12071535022355,
+        "4": 1.7883755588673622
+      }
+    },
+    {
+      "task_id": 19,
+      "archive_variable": "Q34_1",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 12,
+        "1": 1281,
+        "2": 85,
+        "3": 259,
+        "4": 21
+      },
+      "percent_by_response_code": {
+        "0": 0.7237635705669482,
+        "1": 77.26176115802171,
+        "2": 5.126658624849216,
+        "3": 15.621230398069963,
+        "4": 1.2665862484921593
+      }
+    },
+    {
+      "task_id": 19,
+      "archive_variable": "Q34_1",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 9,
+        "1": 642,
+        "2": 295,
+        "3": 375,
+        "4": 21
+      },
+      "percent_by_response_code": {
+        "0": 0.6706408345752608,
+        "1": 47.83904619970194,
+        "2": 21.982116244411326,
+        "3": 27.943368107302536,
+        "4": 1.564828614008942
+      }
+    },
+    {
+      "task_id": 20,
+      "archive_variable": "Q34_2",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 14,
+        "1": 1235,
+        "2": 105,
+        "3": 274,
+        "4": 30
+      },
+      "percent_by_response_code": {
+        "0": 0.8443908323281062,
+        "1": 74.48733413751508,
+        "2": 6.332931242460796,
+        "3": 16.52593486127865,
+        "4": 1.8094089264173705
+      }
+    },
+    {
+      "task_id": 20,
+      "archive_variable": "Q34_2",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 11,
+        "1": 521,
+        "2": 411,
+        "3": 374,
+        "4": 25
+      },
+      "percent_by_response_code": {
+        "0": 0.819672131147541,
+        "1": 38.822652757078984,
+        "2": 30.625931445603577,
+        "3": 27.86885245901639,
+        "4": 1.8628912071535022
+      }
+    },
+    {
+      "task_id": 21,
+      "archive_variable": "Q34_3",
+      "gender": "mothers",
+      "n": 1658,
+      "counts_by_response_code": {
+        "0": 29,
+        "1": 1283,
+        "2": 71,
+        "3": 246,
+        "4": 29
+      },
+      "percent_by_response_code": {
+        "0": 1.7490952955367913,
+        "1": 77.38238841978287,
+        "2": 4.28226779252111,
+        "3": 14.837153196622438,
+        "4": 1.7490952955367913
+      }
+    },
+    {
+      "task_id": 21,
+      "archive_variable": "Q34_3",
+      "gender": "fathers",
+      "n": 1342,
+      "counts_by_response_code": {
+        "0": 21,
+        "1": 602,
+        "2": 298,
+        "3": 405,
+        "4": 16
+      },
+      "percent_by_response_code": {
+        "0": 1.564828614008942,
+        "1": 44.85842026825633,
+        "2": 22.205663189269746,
+        "3": 30.178837555886734,
+        "4": 1.1922503725782414
+      }
+    }
+  ],
+  "scale_summaries": [
+    {
+      "scale": "all",
+      "gender": "mothers",
+      "maximum_tasks": 21,
+      "n": 1658,
+      "n_with_applicable_tasks": 1652,
+      "mean_primary_task_count": 14.408926417370326,
+      "mean_primary_share_of_applicable_tasks": 0.7135938179484234,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.5691964285714286,
+        "0.5": 0.7619047619047619,
+        "0.75": 0.9523809523809523,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 383
+    },
+    {
+      "scale": "all",
+      "gender": "fathers",
+      "maximum_tasks": 21,
+      "n": 1342,
+      "n_with_applicable_tasks": 1337,
+      "mean_primary_task_count": 9.259314456035767,
+      "mean_primary_share_of_applicable_tasks": 0.4519906144481519,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.2,
+        "0.5": 0.38095238095238093,
+        "0.75": 0.6666666666666666,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 156
+    },
+    {
+      "scale": "daily",
+      "gender": "mothers",
+      "maximum_tasks": 15,
+      "n": 1658,
+      "n_with_applicable_tasks": 1650,
+      "mean_primary_task_count": 11.341375150784078,
+      "mean_primary_share_of_applicable_tasks": 0.7889176093267002,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.6666666666666666,
+        "0.5": 0.9128787878787878,
+        "0.75": 1.0,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 636
+    },
+    {
+      "scale": "daily",
+      "gender": "fathers",
+      "maximum_tasks": 15,
+      "n": 1342,
+      "n_with_applicable_tasks": 1337,
+      "mean_primary_task_count": 5.431445603576751,
+      "mean_primary_share_of_applicable_tasks": 0.3714572845088926,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.06666666666666667,
+        "0.5": 0.26666666666666666,
+        "0.75": 0.6,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 166
+    },
+    {
+      "scale": "episodic",
+      "gender": "mothers",
+      "maximum_tasks": 6,
+      "n": 1658,
+      "n_with_applicable_tasks": 1647,
+      "mean_primary_task_count": 3.0675512665862485,
+      "mean_primary_share_of_applicable_tasks": 0.5282331511839709,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.16666666666666666,
+        "0.5": 0.5,
+        "0.75": 1.0,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 469
+    },
+    {
+      "scale": "episodic",
+      "gender": "fathers",
+      "maximum_tasks": 6,
+      "n": 1342,
+      "n_with_applicable_tasks": 1334,
+      "mean_primary_task_count": 3.8278688524590163,
+      "mean_primary_share_of_applicable_tasks": 0.6485007496251874,
+      "share_quantiles": {
+        "0": 0.0,
+        "0.25": 0.5,
+        "0.5": 0.6666666666666666,
+        "0.75": 1.0,
+        "1": 1.0
+      },
+      "n_primary_for_all_applicable": 452
+    }
+  ],
+  "domain_summaries": [
+    {
+      "domain": "cleaning",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 2.4288299155609168
+    },
+    {
+      "domain": "cleaning",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 1.1073025335320417
+    },
+    {
+      "domain": "scheduling",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 2.447527141133896
+    },
+    {
+      "domain": "scheduling",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 1.0298062593144561
+    },
+    {
+      "domain": "childcare",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 2.166465621230398
+    },
+    {
+      "domain": "childcare",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 0.9493293591654247
+    },
+    {
+      "domain": "maintenance",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 1.390832328106152
+    },
+    {
+      "domain": "maintenance",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 2.0268256333830106
+    },
+    {
+      "domain": "finances",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 1.6767189384800965
+    },
+    {
+      "domain": "finances",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 1.801043219076006
+    },
+    {
+      "domain": "social_relationships",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 2.0072376357056694
+    },
+    {
+      "domain": "social_relationships",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 1.0298062593144561
+    },
+    {
+      "domain": "food",
+      "gender": "mothers",
+      "maximum_tasks": 3,
+      "n": 1658,
+      "mean_primary_task_count": 2.291314837153197
+    },
+    {
+      "domain": "food",
+      "gender": "fathers",
+      "maximum_tasks": 3,
+      "n": 1342,
+      "mean_primary_task_count": 1.3152011922503726
+    }
+  ],
+  "distributions": [
+    {
+      "scale": "all",
+      "gender": "mothers",
+      "n": 1658,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 45
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 18
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 13
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 30
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 19
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 21
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 36
+        },
+        {
+          "primary_task_count": 7,
+          "respondents": 29
+        },
+        {
+          "primary_task_count": 8,
+          "respondents": 44
+        },
+        {
+          "primary_task_count": 9,
+          "respondents": 62
+        },
+        {
+          "primary_task_count": 10,
+          "respondents": 57
+        },
+        {
+          "primary_task_count": 11,
+          "respondents": 75
+        },
+        {
+          "primary_task_count": 12,
+          "respondents": 80
+        },
+        {
+          "primary_task_count": 13,
+          "respondents": 105
+        },
+        {
+          "primary_task_count": 14,
+          "respondents": 110
+        },
+        {
+          "primary_task_count": 15,
+          "respondents": 112
+        },
+        {
+          "primary_task_count": 16,
+          "respondents": 97
+        },
+        {
+          "primary_task_count": 17,
+          "respondents": 97
+        },
+        {
+          "primary_task_count": 18,
+          "respondents": 124
+        },
+        {
+          "primary_task_count": 19,
+          "respondents": 91
+        },
+        {
+          "primary_task_count": 20,
+          "respondents": 109
+        },
+        {
+          "primary_task_count": 21,
+          "respondents": 284
+        }
+      ]
+    },
+    {
+      "scale": "all",
+      "gender": "fathers",
+      "n": 1342,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 86
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 41
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 51
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 95
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 83
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 78
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 113
+        },
+        {
+          "primary_task_count": 7,
+          "respondents": 97
+        },
+        {
+          "primary_task_count": 8,
+          "respondents": 84
+        },
+        {
+          "primary_task_count": 9,
+          "respondents": 88
+        },
+        {
+          "primary_task_count": 10,
+          "respondents": 60
+        },
+        {
+          "primary_task_count": 11,
+          "respondents": 35
+        },
+        {
+          "primary_task_count": 12,
+          "respondents": 42
+        },
+        {
+          "primary_task_count": 13,
+          "respondents": 39
+        },
+        {
+          "primary_task_count": 14,
+          "respondents": 46
+        },
+        {
+          "primary_task_count": 15,
+          "respondents": 32
+        },
+        {
+          "primary_task_count": 16,
+          "respondents": 19
+        },
+        {
+          "primary_task_count": 17,
+          "respondents": 28
+        },
+        {
+          "primary_task_count": 18,
+          "respondents": 24
+        },
+        {
+          "primary_task_count": 19,
+          "respondents": 31
+        },
+        {
+          "primary_task_count": 20,
+          "respondents": 36
+        },
+        {
+          "primary_task_count": 21,
+          "respondents": 134
+        }
+      ]
+    },
+    {
+      "scale": "daily",
+      "gender": "mothers",
+      "n": 1658,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 51
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 18
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 17
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 35
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 30
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 40
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 38
+        },
+        {
+          "primary_task_count": 7,
+          "respondents": 48
+        },
+        {
+          "primary_task_count": 8,
+          "respondents": 55
+        },
+        {
+          "primary_task_count": 9,
+          "respondents": 92
+        },
+        {
+          "primary_task_count": 10,
+          "respondents": 108
+        },
+        {
+          "primary_task_count": 11,
+          "respondents": 121
+        },
+        {
+          "primary_task_count": 12,
+          "respondents": 172
+        },
+        {
+          "primary_task_count": 13,
+          "respondents": 142
+        },
+        {
+          "primary_task_count": 14,
+          "respondents": 191
+        },
+        {
+          "primary_task_count": 15,
+          "respondents": 500
+        }
+      ]
+    },
+    {
+      "scale": "daily",
+      "gender": "fathers",
+      "n": 1342,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 290
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 125
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 115
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 109
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 83
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 83
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 75
+        },
+        {
+          "primary_task_count": 7,
+          "respondents": 52
+        },
+        {
+          "primary_task_count": 8,
+          "respondents": 36
+        },
+        {
+          "primary_task_count": 9,
+          "respondents": 52
+        },
+        {
+          "primary_task_count": 10,
+          "respondents": 45
+        },
+        {
+          "primary_task_count": 11,
+          "respondents": 29
+        },
+        {
+          "primary_task_count": 12,
+          "respondents": 31
+        },
+        {
+          "primary_task_count": 13,
+          "respondents": 34
+        },
+        {
+          "primary_task_count": 14,
+          "respondents": 38
+        },
+        {
+          "primary_task_count": 15,
+          "respondents": 145
+        }
+      ]
+    },
+    {
+      "scale": "episodic",
+      "gender": "mothers",
+      "n": 1658,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 339
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 206
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 148
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 259
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 154
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 121
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 431
+        }
+      ]
+    },
+    {
+      "scale": "episodic",
+      "gender": "fathers",
+      "n": 1342,
+      "unit": "respondents by number of tasks answered Mostly me",
+      "bins": [
+        {
+          "primary_task_count": 0,
+          "respondents": 129
+        },
+        {
+          "primary_task_count": 1,
+          "respondents": 94
+        },
+        {
+          "primary_task_count": 2,
+          "respondents": 114
+        },
+        {
+          "primary_task_count": 3,
+          "respondents": 232
+        },
+        {
+          "primary_task_count": 4,
+          "respondents": 173
+        },
+        {
+          "primary_task_count": 5,
+          "respondents": 173
+        },
+        {
+          "primary_task_count": 6,
+          "respondents": 427
+        }
+      ]
+    }
+  ],
+  "descriptive_subgroups": [
+    {
+      "archive_indicator": "partner",
+      "level": 0,
+      "gender": "mothers",
+      "n": 417,
+      "mean_primary_task_count": 16.74820143884892,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "partner",
+      "level": 0,
+      "gender": "fathers",
+      "n": 228,
+      "mean_primary_task_count": 14.293859649122806,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "partner",
+      "level": 1,
+      "gender": "mothers",
+      "n": 1241,
+      "mean_primary_task_count": 13.622884770346495,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "partner",
+      "level": 1,
+      "gender": "fathers",
+      "n": 1114,
+      "mean_primary_task_count": 8.228904847396768,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "employed",
+      "level": 0,
+      "gender": "mothers",
+      "n": 773,
+      "mean_primary_task_count": 13.946959896507115,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "employed",
+      "level": 0,
+      "gender": "fathers",
+      "n": 182,
+      "mean_primary_task_count": 9.648351648351648,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "employed",
+      "level": 1,
+      "gender": "mothers",
+      "n": 885,
+      "mean_primary_task_count": 14.812429378531073,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "employed",
+      "level": 1,
+      "gender": "fathers",
+      "n": 1160,
+      "mean_primary_task_count": 9.198275862068966,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "income_high",
+      "level": 0,
+      "gender": "mothers",
+      "n": 1506,
+      "mean_primary_task_count": 14.43758300132802,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "income_high",
+      "level": 0,
+      "gender": "fathers",
+      "n": 859,
+      "mean_primary_task_count": 9.139697322467986,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "income_high",
+      "level": 1,
+      "gender": "mothers",
+      "n": 152,
+      "mean_primary_task_count": 14.125,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "income_high",
+      "level": 1,
+      "gender": "fathers",
+      "n": 483,
+      "mean_primary_task_count": 9.472049689440993,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "relative_income",
+      "level": 0,
+      "gender": "mothers",
+      "n": 1481,
+      "mean_primary_task_count": 14.51046590141796,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "relative_income",
+      "level": 0,
+      "gender": "fathers",
+      "n": 760,
+      "mean_primary_task_count": 9.79078947368421,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "relative_income",
+      "level": 1,
+      "gender": "mothers",
+      "n": 177,
+      "mean_primary_task_count": 13.559322033898304,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    },
+    {
+      "archive_indicator": "relative_income",
+      "level": 1,
+      "gender": "fathers",
+      "n": 582,
+      "mean_primary_task_count": 8.565292096219931,
+      "note": "Unadjusted, full archive. Do not substitute for the follow-up's adjusted model estimates."
+    }
+  ]
+}
