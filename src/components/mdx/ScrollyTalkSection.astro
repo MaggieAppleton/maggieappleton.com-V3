@@ -2,11 +2,20 @@
 import { Picture } from "astro:assets";
 import type { ImageMetadata } from "astro";
 
+type ImageEntry = string | { src: string; background?: string };
+
 interface Props {
-	images: string[];
+	images: ImageEntry[];
 }
 
 const { images } = Astro.props;
+
+// An entry can be a bare src, or an object with a `background` colour. Giving a
+// background makes that slide fill the full 16:9 frame and letterbox onto the
+// colour, rather than the frame hugging the media's own aspect ratio.
+const entries = images.map((entry) =>
+	typeof entry === "string" ? { src: entry, background: undefined } : entry,
+);
 
 // Generate unique ID
 const sectionId = `scrolly-${Math.random().toString(36).slice(2, 9)}`;
@@ -24,23 +33,28 @@ const imageGlobs = import.meta.glob<{ default: ImageMetadata }>(
 );
 
 const resolvedImages = await Promise.all(
-	images.map(async (src) => {
+	entries.map(async ({ src, background }) => {
 		if (isVideo(src)) {
-			return { src, isRemote: true, resolved: null, isVideo: true };
+			return { src, background, isRemote: true, resolved: null, isVideo: true };
 		}
 		const isRemote = src.startsWith("http://") || src.startsWith("https://");
 		if (isRemote) {
-			return { src, isRemote: true, resolved: null, isVideo: false };
+			return { src, background, isRemote: true, resolved: null, isVideo: false };
 		}
 		const globKey = "/src" + src;
 		if (!imageGlobs[globKey]) {
 			console.warn(`ScrollyTalkSection: Image not found: ${src}`);
-			return { src, isRemote: true, resolved: null, isVideo: false };
+			return { src, background, isRemote: true, resolved: null, isVideo: false };
 		}
 		const resolved = (await imageGlobs[globKey]()).default;
-		return { src, isRemote: false, resolved, isVideo: false };
+		return { src, background, isRemote: false, resolved, isVideo: false };
 	}),
 );
+
+const matteAttrs = (background?: string) =>
+	background
+		? { "data-matte": "", style: `background-color: ${background}` }
+		: {};
 
 const widths = [600, 900, 1200];
 ---
@@ -55,6 +69,7 @@ const widths = [600, 900, 1200];
 						<video
 							class={`scrolly-img scrolly-video ${i === 0 ? "active" : ""}`}
 							data-img-index={i}
+							{...matteAttrs(img.background)}
 							src={img.src}
 							poster={getPosterUrl(img.src)}
 							muted
@@ -67,6 +82,7 @@ const widths = [600, 900, 1200];
 						<img
 							class={`scrolly-img ${i === 0 ? "active" : ""}`}
 							data-img-index={i}
+							{...matteAttrs(img.background)}
 							src={img.src}
 							alt=""
 							loading="lazy"
@@ -75,6 +91,7 @@ const widths = [600, 900, 1200];
 						<Picture
 							class={`scrolly-img ${i === 0 ? "active" : ""}`}
 							data-img-index={i}
+							{...matteAttrs(img.background)}
 							src={img.resolved}
 							alt=""
 							widths={widths}
@@ -93,6 +110,7 @@ const widths = [600, 900, 1200];
 				<div class="mobile-image" data-for-slide={i} style={`order: ${i * 2}`}>
 					{img.isVideo ? (
 						<video
+							{...matteAttrs(img.background)}
 							src={img.src}
 							poster={getPosterUrl(img.src)}
 							muted
@@ -102,9 +120,10 @@ const widths = [600, 900, 1200];
 							preload="none"
 						/>
 					) : img.isRemote || !img.resolved ? (
-						<img src={img.src} alt="" loading="lazy" />
+						<img {...matteAttrs(img.background)} src={img.src} alt="" loading="lazy" />
 					) : (
 						<Picture
+							{...matteAttrs(img.background)}
 							src={img.resolved}
 							alt=""
 							widths={widths}
@@ -212,35 +231,48 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		margin-top: -160px;
 	}
 
-	.scrolly-img,
 	.image-stack :global(picture) {
 		position: absolute;
 		inset: 0;
-		width: 100%;
-		height: 100%;
 	}
 
-	.scrolly-img {
-		object-fit: contain;
+	/* Media sits centred in the 16:9 stack at its own aspect ratio rather than
+	   being stretched to fill it, so the border and shadow hug the actual pixels.
+	   Slide images are all 16:9, but the videos are not. */
+	.scrolly-img,
+	.image-stack :global(picture img) {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: auto;
+		height: auto;
+		max-width: 100%;
+		max-height: 100%;
 		border-radius: var(--border-radius-sm);
 		border: 1px solid var(--color-gray-100);
 		box-shadow: var(--box-shadow-sm);
+	}
+
+	/* Entries given a `background` fill the whole 16:9 frame and letterbox onto
+	   that colour, so the border and shadow wrap the frame rather than the media. */
+	.scrolly-img[data-matte],
+	.image-stack :global(picture img[data-matte]) {
+		top: 0;
+		left: 0;
+		transform: none;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.scrolly-img {
 		opacity: 0;
 		transition: opacity 0.6s ease-out;
 	}
 
 	.scrolly-img.active {
 		opacity: 1;
-	}
-
-	/* Make img inside <picture> fill the container */
-	.image-stack :global(picture img) {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		border-radius: var(--border-radius-sm);
-		border: 1px solid var(--color-gray-100);
-		box-shadow: var(--box-shadow-sm);
 	}
 
 	/* --- Right: scrolling text --- */
@@ -283,6 +315,12 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		border-radius: var(--border-radius-sm);
 		border: 1px solid var(--color-gray-100);
 		box-shadow: var(--box-shadow-sm);
+	}
+
+	.mobile-image :global([data-matte]) {
+		aspect-ratio: 16 / 9;
+		height: auto;
+		object-fit: contain;
 	}
 
 	/* === Mobile: stacked layout === */
