@@ -362,6 +362,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 			justify-content: flex-start;
 			padding-top: 0;
 		}
+
+		.scrolly-text :global([data-slide] p) {
+			line-height: var(--leading-loose);
+		}
 	}
     
 	@media (max-width: 768px) {
