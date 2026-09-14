@@ -86,14 +86,14 @@ const { slug, title, date, preview } = Astro.props;
 		color: var(--color-sea-blue);
 	}
 
-	a:is(:hover, :focus) .smidgeon-card {
+	a:is(:hover, :focus-visible) .smidgeon-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus) .smidgeon-card h3 {
+	a:is(:hover, :focus-visible) .smidgeon-card h3 {
 		color: var(--color-crimson);
 	}
 

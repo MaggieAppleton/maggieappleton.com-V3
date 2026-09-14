@@ -86,14 +86,14 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		flex-shrink: 0;
 	}
 
-	a:is(:hover, :focus) .note-card {
+	a:is(:hover, :focus-visible) .note-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus) .note-card h3 {
+	a:is(:hover, :focus-visible) .note-card h3 {
 		color: var(--color-crimson);
 	}
 </style>
