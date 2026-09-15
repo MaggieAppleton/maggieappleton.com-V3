@@ -1,5 +1,5 @@
 {
-  "lastFetched": "2026-07-19T00:29:38.561Z",
+  "lastFetched": "2026-09-15T02:40:39.204Z",
   "children": [
     {
       "type": "entry",
@@ -91672,6 +91672,69 @@
       "wm-target": "https://maggieappleton.com/zero-alignment",
       "wm-protocol": "webmention",
       "like-of": "https://maggieappleton.com/zero-alignment",
+      "wm-property": "like-of",
+      "wm-private": false
+    },
+    {
+      "type": "entry",
+      "author": {
+        "type": "card",
+        "name": "Spine Surgery",
+        "photo": "https://cdn.bsky.app/img/avatar/plain/did:plc:trzvz4ggy4wfd7exy6ddigkb/bafkreia6h66rg4ugr4ok2t2t7ijhcqeazvr7pfhczcypzfio3ee4ocijpi",
+        "url": "https://bsky.app/profile/julianamayumiz.bsky.social"
+      },
+      "url": "https://bsky.app/profile/maggieappleton.com/post/3mqz5oz3exk2e#liked_by_did:plc:trzvz4ggy4wfd7exy6ddigkb",
+      "published": null,
+      "published_ts": null,
+      "wm-received": "2026-09-14T15:34:34Z",
+      "wm-id": 2032055,
+      "wm-source": "https://brid.gy/like/bluesky/did:plc:zos5kmlm4vle7b4xntem6sat/at%253A%252F%252Fdid%253Aplc%253Azos5kmlm4vle7b4xntem6sat%252Fapp.bsky.feed.post%252F3mqz5oz3exk2e/did%253Aplc%253Atrzvz4ggy4wfd7exy6ddigkb",
+      "wm-target": "https://maggieappleton.com/in-memoriam",
+      "wm-protocol": "webmention",
+      "like-of": "https://maggieappleton.com/in-memoriam",
+      "wm-property": "like-of",
+      "wm-private": false
+    },
+    {
+      "type": "entry",
+      "author": {
+        "type": "card",
+        "name": "Spine Surgery",
+        "photo": "https://cdn.bsky.app/img/avatar/plain/did:plc:trzvz4ggy4wfd7exy6ddigkb/bafkreia6h66rg4ugr4ok2t2t7ijhcqeazvr7pfhczcypzfio3ee4ocijpi",
+        "url": "https://bsky.app/profile/julianamayumiz.bsky.social"
+      },
+      "url": "https://bsky.app/profile/julianamayumiz.bsky.social/post/3mvif5dnikz2f",
+      "published": "2026-09-14T15:06:16+00:00",
+      "published_ts": 1789398376,
+      "wm-received": "2026-09-14T15:34:32Z",
+      "wm-id": 2032054,
+      "wm-source": "https://brid.gy/comment/bluesky/did:plc:zos5kmlm4vle7b4xntem6sat/at%253A%252F%252Fdid%253Aplc%253Azos5kmlm4vle7b4xntem6sat%252Fapp.bsky.feed.post%252F3mqz5oz3exk2e/at%253A%252F%252Fdid%253Aplc%253Atrzvz4ggy4wfd7exy6ddigkb%252Fapp.bsky.feed.post%252F3mvif5dnikz2f",
+      "wm-target": "https://maggieappleton.com/in-memoriam",
+      "wm-protocol": "webmention",
+      "content": {
+        "text": "This perspective really resonated with me today. Thank you for posting this."
+      },
+      "in-reply-to": "https://maggieappleton.com/in-memoriam",
+      "wm-property": "in-reply-to",
+      "wm-private": false
+    },
+    {
+      "type": "entry",
+      "author": {
+        "type": "card",
+        "name": "Elections/Voting Legislation Bills Tracker by Govbot",
+        "photo": "https://cdn.bsky.app/img/avatar/plain/did:plc:koq665lnk5ejzcvqq7hnkf3a/bafkreigidwig4ix6ysa5hq3e3wa47iija2zxapgg3pcsztbyblmqkpyzau",
+        "url": "https://bsky.app/profile/govbotelections.bsky.social"
+      },
+      "url": "https://bsky.app/profile/maggieappleton.com/post/3mqz5oz3exk2e#liked_by_did:plc:koq665lnk5ejzcvqq7hnkf3a",
+      "published": null,
+      "published_ts": null,
+      "wm-received": "2026-09-07T23:57:57Z",
+      "wm-id": 2030272,
+      "wm-source": "https://brid.gy/like/bluesky/did:plc:zos5kmlm4vle7b4xntem6sat/at%253A%252F%252Fdid%253Aplc%253Azos5kmlm4vle7b4xntem6sat%252Fapp.bsky.feed.post%252F3mqz5oz3exk2e/did%253Aplc%253Akoq665lnk5ejzcvqq7hnkf3a",
+      "wm-target": "https://maggieappleton.com/in-memoriam",
+      "wm-protocol": "webmention",
+      "like-of": "https://maggieappleton.com/in-memoriam",
       "wm-property": "like-of",
       "wm-private": false
     }

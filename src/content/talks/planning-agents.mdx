@@ -4,7 +4,7 @@ description: "Why we need richer, thicker interfaces and better boundary objects
 type: "talk"
 growthStage: "budding"
 topics: ["Artificial Intelligence", "Design", "Anthropology"]
-updated: "2026-09-14"
+updated: "2026-09-15"
 startDate: "2026-09-14"
 conferences:
   [
@@ -14,6 +14,12 @@ cover: "../../images/covers/talk-planning-agents@2x.jpeg"
 ---
 
 import ScrollyTalkSection from "../../components/mdx/ScrollyTalkSection.astro";
+
+<IntroParagraph>I've been thinking a lot about planning lately. With agents. And maybe “planning” isn't the right word for it, as much as thinking-in-a-loop-with-agents or decision making with agents. Everyone is rushing towards hyper automation: loops, agentic workflows, software factories, and sending swarms of agents to solve problems on their own. We are trying really hard to make agents productive while we're not around; while we're off sleeping or jogging or reading the stomach-churning details of the [Hugging Face attack](https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/).</IntroParagraph>
+
+But in order for all those agent tokens to produce something _useful_, we need to hand them an excellent plan. We need to clearly lay out our desires and vision in exacting detail. The moments when we are awake, paying attention, and in the loop with the agent are precious. And the way we “plan” with them now – meaning the way we think through specific problems and make decisions with them – feels quaint and computationally rudimentary.<Footnote id={1}>Yes I wrote this emdash myself and you cannot take it away.</Footnote>
+
+So I wrote this talk as a way to wander into the swamp of problems and start to feel for the shapes of solutions. It turns out I have some theories about what's wrong with our planning systems and interfaces. I just presented the first verion of this talk at an internal Microsoft conference, though I plan to keep developing it and hopefully share on some bigger stages.
 
 <ScrollyTalkSection images={[
   "/images/posts/planning-agents/planning-agents.001.jpeg",
@@ -84,7 +90,7 @@ import ScrollyTalkSection from "../../components/mdx/ScrollyTalkSection.astro";
 ]}>
 <div data-slide="0">
 
-This talk is about collaborative planning with agents: divided worlds, boundary objects, and thicker interfaces
+This talk is about collaborative planning with agents: divided worlds, boundary objects, and thicker interfaces.
 
 </div>
 <div data-slide="1">
@@ -190,15 +196,15 @@ It’s also strangely private. My coworkers and I are all making plans separatel
 </div>
 <div data-slide="15">
 
-This is not a sophisticated process
-This is not a good process
+This is not a sophisticated process.
+This is not a good process.
 
 So, aside from my surface-level gripes about CLIs, what’s really wrong with this system?
 
 </div>
 <div data-slide="16">
 
-The first problem is our European navigator approach
+The first problem is our European navigator approach.
 
 </div>
 <div data-slide="17">
@@ -209,7 +215,7 @@ But we have the unhelpful twist that the planner and the traveller are not the s
 
 And it will need to make ad hoc decisions and take situated actions, but without the human there to help with judgement calls.
 
-Which is hard because for the outcome to be good/useful, the human’s intent and desires need to closely align with the agent’s situated actions.
+Which is hard because for the outcome to be good or useful, the human’s intent and desires need to closely align with the agent’s situated actions.
 
 </div>
 <div data-slide="18">
@@ -230,7 +236,7 @@ They’re trying to make hard choices all day while swamped in dense, hard-to-us
 </div>
 <div data-slide="20">
 
-A lot about why this is a difficult problem to solve boils down to humans and agents being very different kinds of beings, with very different worlds, that are only partially legible to one another.
+A lot of why this is a difficult problem to solve boils down to humans and agents being very different kinds of beings, with very different worlds, that are only partially legible to one another.
 
 </div>
 <div data-slide="21">
@@ -239,7 +245,7 @@ Let’s go back to Suchman’s research for a second.
 
 She did a [famous study](https://www.youtube.com/watch?v=DUwXN01ARYg) where she videotaped two PhD researchers trying to use a [Xerox PARC copier](https://en.wikipedia.org/wiki/Xerox_PARC) that had an “intelligent expert help system” built into it. What we would now think of as primitive AI.
 
-And they of course spend forever trying to make copies according to the instructions and fail to do so.
+And they, of course, spent forever trying to make copies according to the instructions and failed to do so.
 
 </div>
 <div data-slide="22">
@@ -249,7 +255,7 @@ It's a story about what information is available to the humans versus the machin
 
 Suchman pointed out that the copier didn't have access to most of the information about what was going on in the human world, such as the researchers hesitating, debating, looking at instructions, making gestures, and stating their expectations of what was happening.
 
-It could only see button presses or them opening the paper tray. And in the same way, the humans could only see messages printed on the screen, but not the internal state of the machine or programme design.
+It could only see button presses or them opening the paper tray. And in the same way, the humans could only see messages printed on the screen, but not the internal state of the machine or program design.
 
 </div>
 <div data-slide="23">
@@ -271,10 +277,10 @@ Humans live in this world of embodiment and physical space and rich visuals, col
 
 And agents live in a world of vectors and weights and rewards and statistical probability and gradient descent.
 
-And both of these worlds are rich and complex in their own right, but neither of them is fully legible to the other. _We_ struggle to understand what's happening inside agentic systems. Interpretability is not solved.
+And both of these worlds are rich and complex in their own right, but neither of them is fully legible to the other. _We_ struggle to understand what's happening inside agentic systems. Interpretability is not a solved problem.
 
-Agents _can_ get more than text from us
-They can understand and create images and audio and video
+I should acknowledge agents can get more than text from us.
+They can understand and create images and audio and video.
 But the _language_ model part of agents is still the dominant medium. And we know language doesn't fully capture human knowledge.
 
 Which is why plenty of people are currently trying to teach agents to build world models and interpret physical reality.
@@ -377,7 +383,7 @@ Our current boundary objects with agents are things like plans, prompts, skills,
 
 …but they’re mostly designed for the agent’s way of seeing the world; they optimise the agent’s performance.
 
-We currently show humans and agents the exact same Markdown files and expect it to work equally well for both of us.
+We currently show humans and agents the exact same Markdown files and expect them to work equally well for both of us.
 Agents can happily consume walls of text, stacks of tool calls, and debug logs. But for humans, reading all of that is slow, tiring, and expensive.
 
 We are making humans adapt to the agent’s ideal ways of working, rather than making objects that adapt to both sides.
@@ -433,12 +439,12 @@ Each representation reveals a different kind of structure. And software engineer
 </div>
 <div data-slide="43">
 
-For example, state machines
+For example, state machines.
 
 </div>
 <div data-slide="44">
 
-And architecture diagrams
+And architecture diagrams.
 
 </div>
 <div data-slide="45">
@@ -537,13 +543,14 @@ This is a good example of when we can just have subagents split up onto separate
 </div>
 <div data-slide="55">
 
-So I had the agent try all three and then make an interactive report on how each would work at every call site and perform.
+So I had the agent try all three and then make an interactive report on some key metrics like how well the solutions fit each call site and the blast radius.
 
-Option A covers all 60. Most changes are mechanical, but eight need a judgement call.
-Option B also covers all 60, but 16 silently change their behaviour.
-Option C initially seems promising because it's only 14 changes and they're all mechanical, but that's only when you realise the other 46 call sites are unsupported.
+And the visualisation of these options reveals so much more. 
+It shows that option A covers all 60 call sites. Most changes are mechanical, but eight need a judgement call.
+Option B also covers all 60 call sites, but 16 silently change their behaviour.
+And option C initially seems promising because it's only 14 changes and they're all mechanical. Until you realise the other 46 call sites are unsupported.
 
-It's also given us some measurable metrics like the recovery P95 and the amplification that can help inform this decision. These will help us see that Option A is clearly the right choice.
+It also gave me some measurable metrics like the recovery P95 and the amplification that can help inform this decision. These all help us see that Option A is clearly the right choice.
 
 The challenge between us and this more beautiful world of working in these rich interfaces is that agents aren't good at making visual explanations right now.
 Certainly not without a lot of hand-holding from me and essentially designing all of these examples myself.
@@ -584,9 +591,7 @@ So let’s wrap up and review what we learnt:
 <div data-slide="60">
 
 Things to ask yourself in whatever you’re building:
-
 - Where am I exposing a human to an agent’s way of seeing? What translation layers could the agent build to solve that?
-
 - How can I optimise the environment for human understanding and deep thinking?
 
 </div>
