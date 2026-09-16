@@ -1,0 +1,202 @@
+---
+title: "Agent Time and Human Time"
+description: "How agents should work around the rhythms, limits, and precious attention of humans"
+startDate: "2026-09-16"
+updated: "2026-09-16"
+type: "note"
+topics: ["Artificial Intelligence", "Design"]
+growthStage: "seedling"
+draft: true
+---
+
+## Core tension
+
+- Agents and humans experience time in fundamentally different ways.
+- Agents can work continuously for days, churning away on things. Humans can't.
+- Humans need frequent breaks – perhaps every hour or every few hours – to stay focused, create cognitive space, and avoid burnout.
+- This is partly about working around human cognitive constraints and designing environments in which humans can do their best thinking. Those environments need to account for how humans experience time.
+- The relevant human timescales include:
+  - The rise and fall of attention and energy across a few hours.
+  - The physical and social rhythms of a 24-hour day.
+  - Days, weeks, and months as containers for commitments, deadlines, rest, and recovery.
+  - Weekdays and weekends.
+- Agent interfaces rarely reflect these rhythms. They behave as if every prompt calls for an immediate response and every moment is interchangeable.
+
+## Human cognitive time
+
+- If I sit with an agent making plans, decisions, and prototypes for four hours straight, my cognitive ability will degrade – probably after an hour or two.
+- If I start at 9 a.m. and it is now 3 p.m., I am going to be more tired. The agent should understand how long I have been working and focusing, and recognise when I need a break.
+- Humans need to log off and sleep, eat, shower, take care of children, move around, and attend to other physical and social needs.
+- The 8/8/8 split is a useful rough model: eight hours of work, eight hours of leisure, and eight hours of sleep.
+- Agents should have a built-in understanding that humans will take time during the day to attend to other matters and physical needs.
+- This is not an inconvenience to route around. It is the basic shape of human life.
+
+## Burnout and the pressure to keep up
+
+- People already feel burnout and cognitive overwhelm when working with agents.
+- There is cultural pressure to keep up, try every new model, and push harder. This leads people to work long hours.
+- Agents often lack any built-in conception that the human should take a break or go to sleep.
+- We should design our working time together around the assumption that humans need to log off and rest.
+- Possible agent behaviours:
+  - Notice how long a person has been actively thinking and making decisions.
+  - Suggest a break after a sustained period of demanding work.
+  - Recognise late-night sessions and help the person reach a useful stopping point.
+  - Preserve context and make it easy to resume after an hour, a night, or a weekend away.
+
+## Human-on time is precious
+
+- When a human sits down at the computer, that is precious time.
+- This is when the human can be in the loop: making decisions, expressing desires, defining success, exercising judgement, and thinking with the agent.
+- We should optimise this time for:
+  - Decision-making.
+  - Planning and problem-solving.
+  - Thought partnership.
+  - Prototyping and comparing possibilities.
+  - Giving direction and expressing preferences.
+  - Reviewing interfaces, artefacts, and insights.
+- We should not spend most of this time watching long implementation runs. Anything the agent can do independently should happen overnight, asynchronously, or while the human is on a break.
+
+## On-time and off-time
+
+- Agent work needs a concept of on-time and off-time.
+- **Human on-time:**
+  - Focus on giving the human the interfaces and information they need to make decisions, plan, and use their judgement.
+  - Surface the important questions and trade-offs.
+  - Make choices tangible through prototypes and artefacts.
+  - Pace the interaction around the human's attention and energy.
+- **Human off-time:**
+  - Grind on implementation.
+  - Proactively investigate open questions.
+  - Run slower or more thorough processes.
+  - Prepare interfaces, artefacts, and insights for the human's return.
+  - Leave the work in a legible state that is easy to review.
+- When the human returns after a break or sleep, the agent should have something useful to present that helps them make the next set of decisions.
+- Proactive work matters because the person should not return to an empty chat and have to prompt the agent back into motion.
+
+## A daily rhythm for human-agent work
+
+- **Morning:** review the work agents completed overnight.
+- Use fresh attention to inspect artefacts, make decisions, solve hard problems, and define success.
+- Line up the work agents can do independently during the next off-time period.
+- **Across the day:** alternate periods of human judgement with breaks and independent agent work.
+- **Evening:** reach a clear hand-off point. Give agents enough context, constraints, and tests of success to work overnight.
+- **Overnight:** agents handle implementation and longer-running work, then prepare a concise, reviewable return package for the morning.
+
+## Human energy as interface context
+
+- Agents should adjust their interface, effort level, skills, and focus depending on the human's mood, energy, and enthusiasm.
+- Current interfaces do not reflect agents having different modes, models, and behaviours depending on where the human is, what they are doing, or how tired they are.
+- We do not want people to report an energy score every day. That would become onerous self-tracking.
+- A lighter interaction could ask what kind of work feels possible right now:
+  - Hard thinking and consequential decisions.
+  - Generative exploration and prototyping.
+  - Reviewing prepared work.
+  - Lighter administrative tasks.
+  - Setting up work for the agent to do independently.
+- The agent could also infer context carefully from session length, time of day, pace of interaction, and the kind of work the human chooses – without pretending it can diagnose the person's internal state.
+
+## Global rhythms of inference demand
+
+- A person who manages inference and data centre capacity at Microsoft said demand surges during working hours and falls sharply over the weekend, especially for enterprise-focused AI.
+- Demand follows the sun as different regions wake up and start using services.
+- There are hours when fewer people are awake and working, and therefore more inference capacity may be available.
+- This creates a relationship between two rhythms:
+  - A person's need to rest and step away.
+  - A data centre's periods of lower demand and spare capacity.
+- Overnight and weekend time could be useful for proactive agent runs.
+- The exact demand patterns, differences between consumer and enterprise use, and available capacity need evidence beyond this anecdote.
+
+## Scheduling agent work around deadlines
+
+- Agent work should be sensitive to when it needs to be finished. It should not always run immediately after a prompt is sent.
+- People should be able to specify that something is needed within two days or within a week, then let the system schedule it during periods of lower demand.
+- This turns agent scheduling into a load-balancing problem.
+- There is a parallel with the electrical grid: electricity tends to be cheaper overnight and during off-peak periods.
+- Inference could also be cheaper when demand is low. Perhaps a job costs two or three times less if someone is willing to run it at 2 a.m. on a Sunday.
+- Product possibilities:
+  - **Run now:** fast response at the current price.
+  - **Run tonight:** finish by morning using spare capacity.
+  - **Run by a deadline:** schedule any time before a chosen day or hour.
+  - **Run when cheapest:** wait for low demand within an acceptable window.
+- Deadlines become part of the prompt and part of model routing, rather than an external project-management detail.
+
+## Different models for different moments
+
+- Cheaper, slower models make sense overnight when nobody needs an immediate response.
+- Fast, responsive models are more valuable while the human is present and making decisions.
+- The day's interaction can focus on lining up overnight work: defining the problem, setting constraints, providing references, and agreeing on what success looks like.
+- Final implementation can happen asynchronously when the agent has enough information to work independently.
+- Agent systems could change model, effort, tool access, and review depth based on:
+  - Whether the human is present.
+  - The deadline.
+  - The cost preference.
+  - The reversibility or consequence of the work.
+  - Whether the next step needs human judgement.
+
+## Interface and product proposals
+
+- Show whether the system thinks the human is currently in on-time or off-time, with an easy way to override it.
+- Let people set a deadline and cost preference rather than only choosing a model.
+- Make overnight hand-offs explicit: what the agent will do, what it will avoid, and what it will bring back.
+- Prepare a morning return package with:
+  - A short account of what changed.
+  - The artefacts or interfaces to inspect first.
+  - Decisions that need human judgement.
+  - Surprises, uncertainties, and failed paths.
+  - A recommended next move.
+- Offer modes based on the kind of attention the human has available, rather than demanding a daily energy report.
+- Track active collaboration time so agents can notice extended sessions and offer stopping points.
+- Make resuming after sleep or a weekend feel natural: preserve open questions, reasoning, references, and the state of unfinished work.
+
+## Research threads
+
+- What does the science say about sustained attention, cognitive fatigue, rest, and the quality of decision-making over a working day?
+- How strong is the evidence for breaks every hour or every few hours? How much does this vary by person and task?
+- What happens to judgement after several continuous hours of human-agent collaboration?
+- Is the 8/8/8 split descriptively accurate, historically useful, or simply a memorable organising device?
+- What do public data and cloud providers reveal about inference demand across hours, regions, weekdays, and weekends?
+- How different are the demand curves for enterprise and consumer AI?
+- Does inference actually become cheaper during off-peak periods, or is the electricity-grid parallel too simple?
+- What infrastructure, batching, latency, and model-routing constraints affect deferred jobs?
+- How should agents infer fatigue or available attention without becoming invasive, paternalistic, or confidently wrong?
+- When should an agent interrupt with a suggestion to rest, and when would that feel annoying?
+- What must be true for an agent to work safely and usefully while the human is away?
+
+## Conceptual image-generation prompts
+
+### The sun moving across inference demand
+
+- **Purpose:** Show demand following the sun as regions wake, work, and sleep, while highlighting the quieter windows available for deferred agent work.
+- **Prompt:** A wide editorial data visualisation of the Earth unwrapped into a horizontal band of time zones over 24 hours. A warm pool of daylight moves from east to west, lighting up clusters of office buildings and data centres as local working hours begin. A demand curve rises beneath the daylight and softens in darkness, with overlapping regional peaks rather than one single wave. Quiet overnight troughs contain small autonomous agents working beside sleeping homes. Restrained palette, dark blue night, pale cream daylight, fine hand-drawn lines, clear time-zone labels, calm and analytical rather than futuristic.
+
+### Human attention beside agent runtime
+
+- **Purpose:** Contrast a human's uneven, embodied day with an agent's ability to keep running continuously.
+- **Prompt:** A paired 24-hour timeline. The upper line follows a human through waking, focused work, meals, a walk, childcare, showering, evening fatigue, and sleep; attention rises and falls in soft irregular waves. The lower line shows an agent runtime continuing steadily through the full day, with heavier implementation work moving into the hours when the human is absent. Mark short overlap windows as precious human-in-the-loop time for decisions and judgement. Editorial diagram, intimate and humane, hand-drawn figures and small domestic details, no robot clichés, muted colours with one bright accent for overlap.
+
+### On-time and off-time hand-off loop
+
+- **Purpose:** Make the daily exchange between human judgement and independent agent work legible.
+- **Prompt:** A circular daily workflow divided into morning, day, evening, and overnight. Morning contains review and decisions; daytime contains thought partnership, planning, and prototypes; evening contains a clear hand-off; overnight contains implementation, research, and preparation. Artefacts accumulate overnight and arrive as a neat review package at sunrise. Use a simple radial diagram with a human presence shown only where judgement is needed, small icons for prototypes, decisions, code, research notes, and sleep, with arrows showing an ongoing daily rhythm.
+
+### Data centre capacity as an off-peak landscape
+
+- **Purpose:** Connect human rest with lower infrastructure demand and the possibility of cheaper deferred work.
+- **Prompt:** An editorial cutaway of a data centre across one week, with server capacity represented as rows of illuminated windows. Weekday working hours glow intensely and leave little spare room; nights and the weekend become darker, quieter valleys where queued agent jobs flow into unused capacity. Include a small price line that falls in the quiet periods and deadlines attached to jobs waiting in a queue. Precise but slightly hand-made information graphic, graphite texture, soft blue and amber lights, no glossy science-fiction aesthetic.
+
+### An interface for available human attention
+
+- **Purpose:** Explore an agent interface that adapts to the kind of work a human can do without asking for a quantified energy score.
+- **Prompt:** A calm desktop interface at the beginning of a work session asking what kind of attention is available now. Present four tactile choices: hard thinking, explore possibilities, review prepared work, and set up independent work. The rest of the interface subtly changes after a selection: fewer consequential questions for light-work mode, comparison tools for review mode, and prototypes for exploration mode. Warm, spare product design, human language, no wellness-dashboard metrics, no mood scores, no gamification.
+
+## Possible narrative structure
+
+1. **The mismatch:** agents can churn continuously; humans live in bodies and experience attention in uneven hours, days, and weeks.
+2. **The consequence:** current agent culture and interfaces encourage cognitive overwhelm, long sessions, and pressure to keep up.
+3. **The scarce resource:** human-in-the-loop time is precious because it contains judgement, desire, and decisions.
+4. **The proposed rhythm:** use on-time for thinking together and off-time for implementation, investigation, and preparation.
+5. **The larger system:** human sleep and weekends may align with lower global inference demand, making deferred work a load-balancing opportunity.
+6. **The incentives:** deadlines, off-peak pricing, and slower overnight models could move independent work into quieter periods.
+7. **The interface question:** how should an agent change its behaviour around presence, energy, enthusiasm, and available attention without making the human constantly report their state?
+8. **The daily practice:** review at sunrise, decide while fresh, hand off clearly, then return to useful artefacts after rest.
+
