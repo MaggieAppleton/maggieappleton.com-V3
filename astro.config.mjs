@@ -9,6 +9,7 @@ import { remarkLongBlockquote } from "./src/plugins/remark-long-blockquote";
 // https://astro.build/config
 export default defineConfig({
   site: "https://maggieappleton.com",
+  trailingSlash: "never",
   image: {
     domains: ["res.cloudinary.com"],
   },
