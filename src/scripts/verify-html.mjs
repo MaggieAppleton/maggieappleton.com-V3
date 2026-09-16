@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -10,24 +11,25 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", title: "Maggie Appleton" },
-  { path: "/about", kind: "html", title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html" },
-  { path: "/websecurity", kind: "html" },
+  { path: "/", kind: "html", siteIdentity: true, title: "Maggie Appleton" },
+  { path: "/about", kind: "html", siteIdentity: true, title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", siteIdentity: true, title: "The Garden of Maggie Appleton" },
+  { path: "/essays", kind: "html", siteIdentity: true, title: "Essays by Maggie Appleton" },
+  { path: "/notes", kind: "html", siteIdentity: true, title: "Notes by Maggie Appleton" },
+  { path: "/patterns", kind: "html", siteIdentity: true, title: "Patterns by Maggie Appleton" },
+  { path: "/topics/web-development", kind: "html", siteIdentity: true },
+  { path: "/websecurity", kind: "html", siteIdentity: true },
   {
     path: "/api",
     kind: "html",
+    siteIdentity: true,
     canonical: "https://maggieappleton.com/api",
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", requireH1: false },
-  { path: "/2025-08-vibe-legacy-code", kind: "html" },
+  { path: "/now-2026-08", kind: "html", siteIdentity: true, requireH1: false },
+  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -44,7 +46,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -145,6 +147,155 @@ function getAttribute(tag, name) {
   return parseTagAttributes(tag).get(name.toLowerCase());
 }
 
+function findTagEnd(body, start) {
+  let quote;
+  for (let index = start; index < body.length; index += 1) {
+    const character = body[index];
+    if (quote) {
+      if (character === quote) quote = undefined;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === ">") {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function closingScript(body, start) {
+  return body.slice(start).match(/<\/script\s*>/i);
+}
+
+function assertNoDuplicateJsonKeys(source, routePath) {
+  let index = 0;
+  const skipWhitespace = () => {
+    while (/\s/.test(source[index] ?? "")) index += 1;
+  };
+  const readString = () => {
+    const start = index;
+    index += 1;
+    while (index < source.length) {
+      if (source[index] === "\\") {
+        index += source[index + 1] === "u" ? 6 : 2;
+      } else if (source[index] === '"') {
+        index += 1;
+        return JSON.parse(source.slice(start, index));
+      } else {
+        index += 1;
+      }
+    }
+    return JSON.parse(source.slice(start, index));
+  };
+  const readValue = () => {
+    skipWhitespace();
+    if (source[index] === "{") return readObject();
+    if (source[index] === "[") return readArray();
+    if (source[index] === '"') {
+      readString();
+      return;
+    }
+    while (index < source.length && !/[\s,\]}]/.test(source[index])) index += 1;
+  };
+  const readObject = () => {
+    index += 1;
+    const keys = new Set();
+    skipWhitespace();
+    if (source[index] === "}") {
+      index += 1;
+      return;
+    }
+    while (index < source.length) {
+      skipWhitespace();
+      const key = readString();
+      if (keys.has(key)) throw new Error(`${routePath}: duplicate JSON-LD object key ${JSON.stringify(key)}`);
+      keys.add(key);
+      skipWhitespace();
+      index += 1;
+      readValue();
+      skipWhitespace();
+      if (source[index] === "}") {
+        index += 1;
+        return;
+      }
+      index += 1;
+    }
+  };
+  const readArray = () => {
+    index += 1;
+    skipWhitespace();
+    if (source[index] === "]") {
+      index += 1;
+      return;
+    }
+    while (index < source.length) {
+      readValue();
+      skipWhitespace();
+      if (source[index] === "]") {
+        index += 1;
+        return;
+      }
+      index += 1;
+    }
+  };
+  readValue();
+}
+
+export function extractJsonLdScripts(body, routePath) {
+  if (typeof routePath !== "string") {
+    throw new TypeError("extractJsonLdScripts requires a routePath string");
+  }
+  const documents = [];
+  let index = 0;
+  while (index < body.length) {
+    if (body.startsWith("<!--", index)) {
+      const commentEnd = body.indexOf("-->", index + 4);
+      if (commentEnd < 0) return documents;
+      index = commentEnd + 3;
+      continue;
+    }
+    if (body[index] !== "<") {
+      index += 1;
+      continue;
+    }
+    if (body.startsWith("</", index)) {
+      index += 2;
+      continue;
+    }
+    const tagEnd = findTagEnd(body, index + 1);
+    if (tagEnd < 0) {
+      const tagName = body.slice(index + 1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
+      if (tagName === "script") throw new Error(`${routePath}: unclosed script opening tag`);
+      return documents;
+    }
+    const tag = body.slice(index, tagEnd + 1);
+    const tagName = tag.slice(1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
+    index = tagEnd + 1;
+    if (tagName !== "script") continue;
+
+    const closing = closingScript(body, index);
+    if (!closing) {
+      if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
+        throw new Error(`${routePath}: unclosed JSON-LD script`);
+      }
+      return documents;
+    }
+    const closingIndex = index + closing.index;
+    if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
+      const source = body.slice(index, closingIndex).trim();
+      let document;
+      try {
+        document = JSON.parse(source);
+      } catch (error) {
+        throw new Error(`${routePath}: invalid JSON-LD: ${error.message}`);
+      }
+      assertNoDuplicateJsonKeys(source, routePath);
+      documents.push(document);
+    }
+    index = closingIndex + closing[0].length;
+  }
+  return documents;
+}
+
 function canonicalLinks(body) {
   return extractTags(body, "link").filter((tag) =>
     (getAttribute(tag, "rel") ?? "").split(/\s+/).some((token) => token.toLowerCase() === "canonical"),
@@ -217,6 +368,7 @@ export function assertHTMLResponse(route, response, body) {
   }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
+  if (route.siteIdentity === true) assertSiteIdentityJSONLD(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
 }
 
@@ -231,6 +383,7 @@ export function assertNoindexHTMLResponse(route, response, body) {
   assert.equal(robots.length, 1, `${route.path}: expected exactly one robots meta tag, received ${robots.length}`);
   assert.equal(getAttribute(robots[0], "content"), "noindex, nofollow", `${route.path}: expected robots content noindex, nofollow`);
   assert.equal(canonicalLinks(body).length, 0, `${route.path}: expected no canonical link`);
+  assert.equal(extractJsonLdScripts(body, route.path).length, 0, `${route.path}: expected no JSON-LD`);
   assertExpectedBodyText(route, body);
 }
 
@@ -370,10 +523,22 @@ export function assertSitemapResponse(route, response, body) {
   }
 }
 
+export function assertSiteIdentityJSONLD(route, body) {
+  const scripts = extractJsonLdScripts(body, route.path);
+  assert.equal(scripts.length, 1, `${route.path}: expected exactly one JSON-LD script`);
+  const document = scripts[0];
+  assert.equal(document?.["@context"], "https://schema.org", `${route.path}: expected JSON-LD @context https://schema.org`);
+  assert.ok(Array.isArray(document?.["@graph"]), `${route.path}: expected JSON-LD @graph array`);
+  assert.ok(document["@graph"].every((node) => node && typeof node === "object" && !Array.isArray(node)), `${route.path}: JSON-LD graph nodes must be plain objects`);
+  const ids = document["@graph"].map((node) => node["@id"]);
+  assert.equal(new Set(ids).size, ids.length, `${route.path}: duplicate JSON-LD graph @id`);
+  assert.equal(document["@graph"].length, 2, `${route.path}: expected exactly two JSON-LD graph nodes`);
+  assert.deepEqual(document, createSiteIdentityGraph(), `${route.path}: unexpected Site/Person JSON-LD graph`);
+}
+
 export function assertJSONLD(route, body) {
-  const scripts = [...body.matchAll(/<script\b(?=[^>]*\btype=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi)];
+  const scripts = extractJsonLdScripts(body, route.path);
   assert.ok(scripts.length, `${route.path}: expected JSON-LD`);
-  for (const [, source] of scripts) JSON.parse(source.trim());
 }
 
 export async function verifyRoutes({ baseURL, routes = ROUTES, fetchImpl = globalThis.fetch }) {

@@ -1,0 +1,5 @@
+---
+import { createSiteIdentityGraph, serializeJsonLd } from "../../utils/siteIdentity.mjs";
+---
+
+<script is:inline type="application/ld+json" set:html={serializeJsonLd(createSiteIdentityGraph())} />
