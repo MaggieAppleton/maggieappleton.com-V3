@@ -8,9 +8,10 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
 
-// Get all essays that aren't drafts
-const essays = await getCollection("essays", ({ data }) => !data.draft);
+// Get the latest public version of each essay
+const essays = selectLatestPublicEntries(await getCollection("essays"));
 
 // Sort essays by date
 const sortedEssays = essays.sort(

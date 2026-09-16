@@ -12,10 +12,13 @@ import UnderlineHoverLink from "../components/mdx/UnderlineHoverLink.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
 
-const essays = await getCollection("essays", ({ data }) => data.featured === true && !data.draft);
-const notes = await getCollection("notes", ({ data }) => !data.draft);
-const patterns = await getCollection("patterns", ({ data }) => !data.draft);
+const essays = selectLatestPublicEntries(await getCollection("essays")).filter(
+	({ data }) => data.featured === true,
+);
+const notes = selectLatestPublicEntries(await getCollection("notes"));
+const patterns = selectLatestPublicEntries(await getCollection("patterns"));
 const books = await getCollection("books");
 
 const sortedEssays = essays
@@ -101,7 +104,7 @@ const sortedPatterns = patterns
 				</div>
 				{
 					sortedNotes.slice(0, 12).map((note) => (
-						<a href={`/${note.id}`} class="index-note-link">
+						<a href={`/${extractBaseSlug(note.id)}`} class="index-note-link">
 							<div class="index-note-card">
 								{note.data.growthStage && (
 									<div class="icon">
