@@ -6,30 +6,30 @@ interface Props {
 const { class: className } = Astro.props;
 ---
 
-<main class={className}>
+<div class:list={["page-wrapper", className]}>
 	<slot />
-</main>
+</div>
 
 <style>
-	main {
+	.page-wrapper {
 		max-width: 1420px;
 		margin: var(--space-l) auto var(--space-3xl);
 		padding: 0 var(--space-l);
 	}
 	/* 14" and 13" MacBook Pro screens (1280–1512px logical width) need extra side breathing room */
 	@media (min-width: 769px) and (max-width: 1512px) {
-		main {
+		.page-wrapper {
 			padding: 0 calc(var(--space-l) + 2rem);
 		}
 	}
 	@media (max-width: 768px) {
-		main {
+		.page-wrapper {
 			margin: var(--space-s) auto var(--space-2xl);
 			padding: 0 var(--space-m);
 		}
 	}
 	@media (max-width: 576px) {
-		main {
+		.page-wrapper {
 			margin: var(--space-xs) auto var(--space-xl);
 			padding: 0 var(--space-xs);
 		}

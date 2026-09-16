@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import Title1 from "../components/mdx/typography/Title1.astro";
+import BodyHeading1 from "../components/mdx/typography/BodyHeading1.astro";
 import Title2 from "../components/mdx/typography/Title2.astro";
 import Title3 from "../components/mdx/typography/Title3.astro";
 import Title4 from "../components/mdx/typography/Title4.astro";
@@ -31,7 +32,7 @@ const renderedPosts = await Promise.all(
 );
 
 const components = {
-	h1: Title1,
+	h1: BodyHeading1,
 	h2: Title2,
 	h3: Title3,
 	h4: Title4,
@@ -58,20 +59,20 @@ const components = {
 				A sporadically updated log of what I'm reading, exploring, and thinking about
 			</Title2>
 		</header>
-		<main>
+		<div class="now-feed">
 			{
 				renderedPosts.map(({ Content, post }) => (
 					<NowSection>
-						<h3>
+						<h2>
 							<a href={`/now-${post.id}`} class="post-title-link">
 								{post.data.title}
 							</a>
-						</h3>
+						</h2>
 						<Content components={components} />
 					</NowSection>
 				))
 			}
-		</main>
+		</div>
 	</PageWrapper>
 </Layout>
 
@@ -81,7 +82,7 @@ const components = {
 		max-width: 800px;
 	}
 
-	main {
+	.now-feed {
 		margin: 6rem auto var(--space-2xl);
 		max-width: 800px;
 	}
@@ -97,7 +98,7 @@ const components = {
 			margin: var(--space-s) 0;
 			max-width: 100%;
 		}
-		main {
+		.now-feed {
 			max-width: 100%;
 		}
 	}

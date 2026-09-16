@@ -12,6 +12,8 @@ type Props = {
 
 const { frontmatter } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+const primaryTitle =
+	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
 ---
 
 <Layout title={frontmatter.title} type="smidgeon">
@@ -45,6 +47,9 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		</div>
 
 		<div class="content">
+			{!frontmatter.external && !frontmatter.citation && (
+				<h1 class="content-header">{primaryTitle}</h1>
+			)}
 			{/* External Link Format */}
 			{
 				frontmatter.external && (
@@ -71,10 +76,17 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 					<a href={frontmatter.citation.url} target="_blank" rel="noopener noreferrer">
 						<div class="reference-card">
 							<div class="citation-header">
-								<h1 class="content-header">
-									{frontmatter.citation.title}
-									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-								</h1>
+								{frontmatter.external && frontmatter.citation ? (
+									<h2 class="content-header">
+										{frontmatter.citation.title}
+										<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+									</h2>
+								) : (
+									<h1 class="content-header">
+										{frontmatter.citation.title}
+										<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+									</h1>
+								)}
 								<div class="citation-metadata">
 									<p class="byline">
 										<Icon name="heroicons:users" size={14} />
@@ -119,6 +131,7 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		font-size: var(--font-size-base);
 		font-weight: 400;
 		line-height: var(--leading-tight);
+		color: inherit;
 		margin: 0;
 		margin-bottom: var(--space-2xs);
 		padding: 0;
