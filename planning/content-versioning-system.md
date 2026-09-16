@@ -104,11 +104,11 @@ versionSummary: "Major revision with new examples and conclusion" # What changed
 ### Phase 3: Integration & Polish ✅ COMPLETED
 
 1. **Link Processing Updates** ✅
-   - Wiki-style `[[internal links]]` resolve to canonical URLs via `getCanonicalUrlFromEntry()`
+   - Wiki-style `[[internal links]]` resolve through the shared publication identity and routing helpers
    - Version-specific linking handled through base slug extraction
 
 2. **SEO Optimization** ✅
-   - Canonical tags implemented pointing to latest version via `getCanonicalUrl()`
+   - Canonical tags point to the latest folder-version identity via `getEntryCanonicalPath()` in `PostLayout` and `buildCanonicalUrl()` in `Layout`
    - Proper meta descriptions and titles maintained
    - Consistent dating across versions with `getCanonicalDates()`
 
@@ -242,7 +242,7 @@ versionSummary: "Major revision with new examples and conclusion" # What changed
 
 ### Integration ✅ COMPLETED
 - [x] Update wiki-link processing (canonical URL resolution)
-- [x] Add canonical tag support (`getCanonicalUrl()`)
+- [x] Add canonical tag support through `getEntryCanonicalPath()` and `buildCanonicalUrl()`
 - [x] Update sitemap generation (latest versions only)
 - [x] Test with existing features (search, topics, etc.)
 - [x] Consistent date handling across versions
