@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
+import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -11,32 +12,34 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", siteIdentity: true, title: "Maggie Appleton" },
-  { path: "/about", kind: "html", siteIdentity: true, title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", siteIdentity: true, title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", siteIdentity: true, title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", siteIdentity: true, title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", siteIdentity: true, title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html", siteIdentity: true },
-  { path: "/websecurity", kind: "html", siteIdentity: true },
+  { path: "/", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Maggie Appleton" },
+  { path: "/about", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "The Garden of Maggie Appleton" },
+  { path: "/essays", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Essays by Maggie Appleton" },
+  { path: "/notes", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Notes by Maggie Appleton" },
+  { path: "/patterns", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Patterns by Maggie Appleton" },
+  { path: "/topics/web-development", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/websecurity", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-02-08", dateModified: "2020-02-08", description: "Illustrated notes on the essentials of web security" } },
   {
     path: "/api",
     kind: "html",
     siteIdentity: true,
+    pageMetadata: "article",
+    article: { datePublished: "2019-04-10", dateModified: "2019-06-30", description: "Everything you need to know about what API's are and how they work", hasImage: true },
     canonical: "https://maggieappleton.com/api",
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true },
-  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true },
-  { path: "/now", kind: "html", siteIdentity: true },
-  { path: "/smidgeons", kind: "html", siteIdentity: true },
-  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true },
-  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true },
-  { path: "/still-cant-draw", kind: "html", siteIdentity: true },
-  { path: "/xanadu-patterns", kind: "html", siteIdentity: true },
-  { path: "/greensock-react", kind: "html", siteIdentity: true },
+  { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/now", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/smidgeons", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
+  { path: "/still-cant-draw", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-08-18", dateModified: "2023-12-12", description: "The failure of drawing materials without mediums and meat", hasImage: true } },
+  { path: "/xanadu-patterns", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-07-10", dateModified: "2021-12-20", description: "Project Xanadu as a pattern language, rather than a failed software project", hasImage: true } },
+  { path: "/greensock-react", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-09-27", dateModified: "2020-09-27", description: "How to use the Greensock animation library inside React using React hooks" } },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -53,7 +56,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -392,6 +395,68 @@ function getMetaContent(body, property) {
   return content;
 }
 
+function metaProperties(body, prefix) {
+  return extractTags(body, "meta")
+    .filter((tag) => (getAttribute(tag, "property") ?? "").toLowerCase().startsWith(prefix))
+    .map((tag) => getAttribute(tag, "property").toLowerCase());
+}
+
+function assertPageNode(route, document, canonical) {
+  const descriptor = route.pageMetadata;
+  const identity = createSiteIdentityGraph();
+  assert.deepEqual(document["@graph"].slice(0, 2), identity["@graph"], `${route.path}: unexpected P5 identity graph drift`);
+  const expectedLength = descriptor ? 3 : 2;
+  assert.equal(document["@graph"].length, expectedLength, descriptor
+    ? `${route.path}: expected exactly three graph nodes`
+    : `${route.path}: expected exactly two graph nodes`);
+  if (!descriptor) {
+    assert.deepEqual(document, identity, `${route.path}: unexpected page metadata graph`);
+    return;
+  }
+  const node = document["@graph"][2];
+  const expectedType = descriptor === "article" ? "Article" : "WebPage";
+  assert.equal(node["@type"], expectedType, `${route.path}: unexpected page node type`);
+  assert.equal(node["@id"], `${canonical}#${descriptor === "article" ? "article" : "webpage"}`, `${route.path}: unexpected page node id`);
+  assert.equal(node.url, canonical, `${route.path}: page node URL must be canonical`);
+  assert.deepEqual(node.isPartOf, { "@id": "https://maggieappleton.com/#website" }, `${route.path}: page node must reference WebSite`);
+  const allowed = descriptor === "article"
+    ? ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished", "dateModified", "description", "image"]
+    : ["@id", "@type", "url", "name", "isPartOf", "datePublished", "description"];
+  for (const key of Object.keys(node)) {
+    assert.ok(allowed.includes(key), `${route.path}: unsupported page node property ${key}`);
+  }
+  if (descriptor === "article") {
+    const required = ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished"];
+    for (const field of required) assert.equal(Object.hasOwn(node, field), true, `${route.path}: Article missing ${field}`);
+    assert.equal(typeof node.headline, "string");
+    assert.deepEqual(node.author, { "@id": "https://maggieappleton.com/#person" });
+    assert.deepEqual(node.publisher, { "@id": "https://maggieappleton.com/#person" });
+    assert.match(node.datePublished, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(toCalendarDate(node.datePublished), node.datePublished, `${route.path}: Article datePublished must be a valid calendar date`);
+    const expected = route.article ?? {};
+    assert.equal(node.datePublished, expected.datePublished, `${route.path}: wrong Article datePublished`);
+    if (expected.dateModified) assert.equal(node.dateModified, expected.dateModified, `${route.path}: wrong Article dateModified`);
+    else assert.equal(Object.hasOwn(node, "dateModified"), false, `${route.path}: unexpected Article dateModified`);
+    if (expected.description) assert.equal(node.description, expected.description, `${route.path}: wrong Article description`);
+    else assert.equal(Object.hasOwn(node, "description"), false);
+    if (node.image !== undefined) {
+      assert.match(node.image, /^https:\/\//, `${route.path}: Article image must be HTTPS`);
+      assert.notEqual(node.image.trim(), "...");
+    }
+    if (expected.hasImage) assert.match(node.image ?? "", /^https:\/\/maggieappleton\.com\//, `${route.path}: expected a canonical-origin HTTPS Article image`);
+    if (!expected.hasImage && !expected.image) assert.equal(Object.hasOwn(node, "image"), false, `${route.path}: unexpected Article image`);
+    if (expected.image) assert.equal(node.image, expected.image, `${route.path}: wrong Article image`);
+  } else {
+    assert.equal(typeof node.name, "string");
+    if (node.datePublished !== undefined) {
+      assert.match(node.datePublished, /^\d{4}-\d{2}-\d{2}$/);
+      assert.equal(toCalendarDate(node.datePublished), node.datePublished);
+    }
+    for (const field of ["author", "publisher", "headline", "image", "dateModified"]) assert.equal(Object.hasOwn(node, field), false, `${route.path}: WebPage has Article-only ${field}`);
+    if (node.description !== undefined) assert.ok(node.description.trim() && node.description.trim() !== "...");
+  }
+}
+
 export function assertHTMLResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
@@ -402,6 +467,26 @@ export function assertHTMLResponse(route, response, body) {
   const canonical = assertCanonical(route, body);
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
+  const ogType = getMetaContent(body, "og:type");
+  const isArticle = route.pageMetadata === "article";
+  assert.equal(ogType, isArticle ? "article" : "website", `${route.path}: unexpected og:type`);
+  const articleMeta = metaProperties(body, "article:");
+  if (!isArticle) {
+    assert.deepEqual(articleMeta, [], `${route.path}: WebPage must not emit article:* metadata`);
+  } else {
+    const allowedArticleMeta = new Set(["article:published_time", "article:author", "article:modified_time"]);
+    for (const property of articleMeta) assert.equal(allowedArticleMeta.has(property), true, `${route.path}: unsupported Article Open Graph property ${property}`);
+    assert.equal(articleMeta.filter((property) => property === "article:published_time").length, 1, `${route.path}: expected exactly one article:published_time`);
+    assert.equal(articleMeta.filter((property) => property === "article:author").length, 1, `${route.path}: expected exactly one article:author`);
+    assert.ok(articleMeta.filter((property) => property === "article:modified_time").length <= 1, `${route.path}: expected at most one article:modified_time`);
+    assert.equal(getMetaContent(body, "article:published_time"), route.article?.datePublished, `${route.path}: wrong article:published_time`);
+    assert.equal(getMetaContent(body, "article:author"), "https://maggieappleton.com/about", `${route.path}: wrong article:author`);
+    if (route.article?.dateModified) assert.equal(getMetaContent(body, "article:modified_time"), route.article.dateModified, `${route.path}: wrong article:modified_time`);
+    else assert.equal(articleMeta.includes("article:modified_time"), false, `${route.path}: unexpected article:modified_time`);
+    for (const field of articleMeta) {
+      if (field.endsWith("published_time") || field.endsWith("modified_time")) assert.match(getMetaContent(body, field), /^\d{4}-\d{2}-\d{2}$/);
+    }
+  }
   if (route.ogUrl) assert.equal(ogUrl, route.ogUrl, `${route.path}: expected og:url ${route.ogUrl}, received ${ogUrl}`);
   if (route.ogImagePath) {
     const ogImage = getMetaContent(body, "og:image");
@@ -579,8 +664,7 @@ export function assertSiteIdentityJSONLD(route, body) {
   assert.ok(document["@graph"].every((node) => node && typeof node === "object" && !Array.isArray(node)), `${route.path}: JSON-LD graph nodes must be plain objects`);
   const ids = document["@graph"].map((node) => node["@id"]);
   assert.equal(new Set(ids).size, ids.length, `${route.path}: duplicate JSON-LD graph @id`);
-  assert.equal(document["@graph"].length, 2, `${route.path}: expected exactly two JSON-LD graph nodes`);
-  assert.deepEqual(document, createSiteIdentityGraph(), `${route.path}: unexpected Site/Person JSON-LD graph`);
+  assertPageNode(route, document, expectedCanonicalUrl(route));
 }
 
 export function assertJSONLD(route, body) {
