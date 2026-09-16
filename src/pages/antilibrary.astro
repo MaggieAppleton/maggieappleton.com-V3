@@ -5,11 +5,12 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import BookCard from "../components/cards/BookCard.astro";
 import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import { getCollection } from "astro:content";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 const antiBookData = await getCollection("antibooks");
 ---
 
-<Layout title="Antilibrary of Maggie Appleton" pageMetadata="webpage">
+<Layout title="Antilibrary of Maggie Appleton" desc={PAGE_DESCRIPTIONS.antilibrary} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
 			<TitleWithCount posts={antiBookData}>

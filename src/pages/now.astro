@@ -15,6 +15,7 @@ import Footnote from "../components/mdx/Footnote.astro";
 import ResourceBook from "../components/mdx/ResourceBook.astro";
 import { Icon } from "astro-icon/components";
 import { selectPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 // Get all now entries and sort by date
 const nowEntries = selectPublicEntries(await getCollection("now"));
@@ -45,7 +46,7 @@ const components = {
 };
 ---
 
-<Layout title="Now | Maggie Appleton" pageMetadata="webpage">
+<Layout title="Now | Maggie Appleton" desc={PAGE_DESCRIPTIONS.now} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="header">
 			<div class="back-link" slot="header-right">
