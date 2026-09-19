@@ -11,12 +11,16 @@
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
     "smidgeon": "node scripts/create-smidgeon.js",
-    "date": "node scripts/current-date.js"
+    "date": "node scripts/current-date.js",
+    "jev:generate": "node scripts/jev/generate.js",
+    "jev:check": "node scripts/jev/check.js",
+    "test:jev": "node --import tsx --test tests/jev*.test.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",
     "@astrojs/react": "^4.0.0",
     "@astrojs/rss": "^4.0.10",
+    "@astrojs/vercel": "^8.2.11",
     "@iconify-json/heroicons": "^1.2.1",
     "@iconify-json/lucide": "^1.2.62",
     "@types/react": "^18.3.12",

@@ -27,3 +27,4 @@ pnpm-debug.log*
 .claude/worktrees/
 .vscode
 .env*.local
+.cache/jev/

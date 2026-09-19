@@ -1,0 +1,19 @@
+---
+import Experiments from './Experiments.jsx';
+import snapshot from '../../../data/jev/garden.json';
+---
+
+<div class="jev-mount"><Experiments snapshot={snapshot} client:load /></div>
+
+<style>
+  .jev-mount {
+    grid-column: 1 / -1 !important;
+    justify-self: center;
+    width: min(960px, calc(100vw - 48px));
+    max-width: 100%;
+    margin-inline: auto;
+  }
+  @media (max-width: 600px) {
+    .jev-mount { width: calc(100vw - 36px); }
+  }
+</style>
