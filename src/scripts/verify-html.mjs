@@ -164,7 +164,7 @@ export function waitForExit(child, timeoutMs = 2_000, {
   setTimeoutImpl = setTimeout,
   clearTimeoutImpl = clearTimeout,
 } = {}) {
-  if (child.exitCode !== null) return true;
+  if (child.exitCode !== null || child.signalCode != null) return true;
   return new Promise((resolve) => {
     let timer;
     const finish = (result) => {
@@ -178,20 +178,44 @@ export function waitForExit(child, timeoutMs = 2_000, {
   });
 }
 
-export function waitForChildReady(child) {
+export function waitForChildReady(child, {
+  timeoutMs = 30_000,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout,
+} = {}) {
   return new Promise((resolve, reject) => {
     const streams = [child.stdout, child.stderr].filter(Boolean);
     if (!streams.length) {
       reject(new Error("Astro dev did not expose an output stream for readiness"));
       return;
     }
-    const cleanup = () => streams.forEach((stream) => stream.removeListener("data", onData));
+    let output = "";
+    let timer;
+    const cleanup = () => {
+      streams.forEach((stream) => stream.removeListener("data", onData));
+      clearTimeoutImpl(timer);
+    };
     const onData = (chunk) => {
-      if (!/\bready in\b/i.test(String(chunk))) return;
+      output = `${output}${String(chunk)}`.slice(-256);
+      if (!/\bready in\b/i.test(output)) return;
       cleanup();
       resolve();
     };
     streams.forEach((stream) => stream.on("data", onData));
+    timer = setTimeoutImpl(() => {
+      cleanup();
+      reject(new Error(`Astro dev did not report readiness within ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+}
+
+export function killWindowsProcessTree(pid, force = false, spawnImpl = spawn) {
+  return new Promise((resolve, reject) => {
+    const args = ["/pid", String(pid), "/T"];
+    if (force) args.push("/F");
+    const taskkill = spawnImpl("taskkill.exe", args, { stdio: "ignore", windowsHide: true });
+    taskkill.once("error", reject);
+    taskkill.once("exit", (code) => resolve(code === 0));
   });
 }
 
@@ -218,17 +242,19 @@ function watchChildFailure(child) {
 export async function stopDevServer(child, {
   platform = process.platform,
   killImpl = process.kill,
+  killTreeImpl = killWindowsProcessTree,
   waitForExitImpl = waitForExit,
 } = {}) {
-  if (!child || child.exitCode !== null) return;
-  const signal = (name) => {
-    if (platform !== "win32" && child.pid) killImpl(-child.pid, name);
+  if (!child || child.exitCode !== null || child.signalCode != null) return;
+  const signal = async (name) => {
+    if (platform === "win32" && child.pid) await killTreeImpl(child.pid, name === "SIGKILL");
+    else if (child.pid) killImpl(-child.pid, name);
     else child.kill(name);
   };
-  try { signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  try { await signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
   if (await waitForExitImpl(child, 2_000)) return;
-  try { signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
-  await waitForExitImpl(child, 2_000);
+  try { await signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  if (!await waitForExitImpl(child, 2_000)) throw new Error("Astro dev process tree did not exit after forced termination");
 }
 
 export async function runVerifier({
