@@ -1,22 +1,31 @@
 import { getCollection } from "astro:content";
 import { slugifyTopic } from "./slugifyTopic";
+import { createPublicEntryManifest } from "./publication.mjs";
 
 /**
- * Fetch all content entries that can carry topics, excluding drafts where applicable.
+ * Fetch all content entries and return one canonical public manifest.
  */
 async function fetchAllContent() {
   const [essays, notes, patterns, talks, podcasts, now, smidgeons] =
     await Promise.all([
-      getCollection("essays", ({ data }) => !data.draft),
-      getCollection("notes", ({ data }) => !data.draft),
-      getCollection("patterns", ({ data }) => !data.draft),
-      getCollection("talks", ({ data }) => !data.draft),
+      getCollection("essays"),
+      getCollection("notes"),
+      getCollection("patterns"),
+      getCollection("talks"),
       getCollection("podcasts"),
       getCollection("now"),
-      getCollection("smidgeons", ({ data }) => !data.draft),
+      getCollection("smidgeons"),
     ]);
 
-  return [...essays, ...notes, ...patterns, ...talks, ...podcasts, ...now, ...smidgeons];
+  return createPublicEntryManifest({
+    essays,
+    notes,
+    patterns,
+    talks,
+    podcasts,
+    now,
+    smidgeons,
+  });
 }
 
 /**
@@ -24,12 +33,13 @@ async function fetchAllContent() {
  * original display name and its URL slug.
  */
 export async function getAllTopics() {
-  const allContent = await fetchAllContent();
+  const manifest = await fetchAllContent();
+  const allContent = manifest.canonicalEntries;
 
   const topics = new Set<string>();
   allContent.forEach((post) => {
     if (post.data.topics) {
-      post.data.topics.forEach((topic) => topics.add(topic));
+      post.data.topics.forEach((topic: string) => topics.add(topic));
     }
   });
 
@@ -45,10 +55,11 @@ export async function getAllTopics() {
  * insensitive to spacing and capitalisation differences.
  */
 export async function getPostsForTopic(topicSlug: string) {
-  const allContent = await fetchAllContent();
+  const manifest = await fetchAllContent();
+  const allContent = manifest.canonicalEntries;
 
   return allContent.filter((post) => {
     if (!post.data.topics) return false;
-    return post.data.topics.some((t) => slugifyTopic(t) === topicSlug);
+    return post.data.topics.some((t: string) => slugifyTopic(t) === topicSlug);
   });
 }

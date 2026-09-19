@@ -6,19 +6,38 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import GardenFiltersAndHits from "../components/search/GardenFiltersAndHits.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractPreview } from "../utils/extractPreview";
+import { createPublicEntryManifest } from "../utils/publication.mjs";
 
 // Get all content collections
-const essays = await getCollection("essays", ({ data }) => !data.draft);
-const notes = await getCollection("notes", ({ data }) => !data.draft);
-const patterns = await getCollection("patterns", ({ data }) => !data.draft);
-const talks = await getCollection("talks", ({ data }) => !data.draft);
+const essays = await getCollection("essays");
+const notes = await getCollection("notes");
+const patterns = await getCollection("patterns");
+const talks = await getCollection("talks");
 const podcasts = await getCollection("podcasts");
-const nowPosts = await getCollection("now", ({ data }) => !data.draft);
-const smidgeons = await getCollection("smidgeons", ({ data }) => !data.draft);
+const nowPosts = await getCollection("now");
+const smidgeons = await getCollection("smidgeons");
+const manifest = createPublicEntryManifest({
+	essays,
+	notes,
+	patterns,
+	talks,
+	podcasts,
+	now: nowPosts,
+	smidgeons,
+});
+const { canonicalByCollection } = manifest;
+
+const canonicalEssays = canonicalByCollection.essays;
+const canonicalNotes = canonicalByCollection.notes;
+const canonicalPatterns = canonicalByCollection.patterns;
+const canonicalTalks = canonicalByCollection.talks;
+const canonicalPodcasts = canonicalByCollection.podcasts;
+const canonicalNowPosts = canonicalByCollection.now;
+const canonicalSmidgeons = canonicalByCollection.smidgeons;
 
 // Pre-process Now posts to extract body content for preview
 const processedNowPosts = await Promise.all(
-	nowPosts.map(async (post) => {
+	canonicalNowPosts.map(async (post) => {
 		try {
 			// Use the post.body property directly, which contains the raw markdown
 			const preview = extractPreview(post.body || "");
@@ -32,7 +51,7 @@ const processedNowPosts = await Promise.all(
 
 // Pre-process Smidgeons to extract preview content
 const processedSmidgeons = await Promise.all(
-	smidgeons.map(async (post) => {
+	canonicalSmidgeons.map(async (post) => {
 		try {
 			// For all smidgeons, extract preview from body content
 			const preview = extractPreview(post.body || "");
@@ -46,11 +65,11 @@ const processedSmidgeons = await Promise.all(
 
 // Combine all content into one array
 const allPosts = [
-	...essays,
-	...notes,
-	...patterns,
-	...talks,
-	...podcasts,
+	...canonicalEssays,
+	...canonicalNotes,
+	...canonicalPatterns,
+	...canonicalTalks,
+	...canonicalPodcasts,
 	...processedNowPosts,
 	...processedSmidgeons,
 ];

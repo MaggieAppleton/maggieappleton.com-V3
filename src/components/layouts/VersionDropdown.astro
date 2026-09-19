@@ -1,8 +1,18 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
-import { getVersionInfo, hasMultipleVersions, getVersionFromEntry } from "../../utils/versionUtils";
+import {
+	getVersionInfo,
+	getVersionFromEntry,
+} from "../../utils/versionUtils";
 import { getCollection } from "astro:content";
+import {
+	getPublicationBaseSlug,
+	getPublicationVersion,
+	getPublicationVersionEntries,
+	isVersionedPublicationEntry,
+	selectPublicEntries,
+} from "../../utils/publication.mjs";
 import RelativeDate from "./RelativeDate.astro";
 
 type VersionedContent =
@@ -21,21 +31,31 @@ const { entry } = Astro.props;
 let allEntries: VersionedContent[] = [];
 switch (entry.collection) {
 	case "essays":
-		allEntries = (await getCollection("essays")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("essays")) as VersionedContent[];
 		break;
 	case "notes":
-		allEntries = (await getCollection("notes")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("notes")) as VersionedContent[];
 		break;
 	case "patterns":
-		allEntries = (await getCollection("patterns")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("patterns")) as VersionedContent[];
 		break;
 	case "talks":
-		allEntries = (await getCollection("talks")) as VersionedContent[];
+		allEntries = selectPublicEntries(await getCollection("talks")) as VersionedContent[];
 		break;
 }
 
-const versionInfo = getVersionInfo(entry, allEntries);
-const multipleVersions = hasMultipleVersions(versionInfo.baseSlug, allEntries);
+const publicEntry = allEntries.find((candidate) => candidate.id === entry.id);
+const baseSlug = getPublicationBaseSlug(entry);
+const versionEntries = getPublicationVersionEntries(entry, allEntries) as VersionedContent[];
+const versionInfo = publicEntry && isVersionedPublicationEntry(entry)
+	? getVersionInfo(publicEntry, versionEntries)
+	: {
+			baseSlug,
+			version: getPublicationVersion(entry),
+			isLatest: false,
+			allVersions: versionEntries,
+		};
+const multipleVersions = !entry.data.draft && versionEntries.length > 1;
 
 // Initialize variables for all cases
 const currentVersion = versionInfo.version;
