@@ -93,23 +93,10 @@ function assertSuccessfulResponse(route, response) {
 
 function extractTags(body, name) {
   const tags = [];
-  const startPattern = new RegExp(`<${name}\\b`, "gi");
-  let match;
-  while ((match = startPattern.exec(body))) {
-    let quote;
-    for (let index = startPattern.lastIndex; index < body.length; index += 1) {
-      const character = body[index];
-      if (quote) {
-        if (character === quote) quote = undefined;
-      } else if (character === '"' || character === "'") {
-        quote = character;
-      } else if (character === ">") {
-        tags.push(body.slice(match.index, index + 1));
-        startPattern.lastIndex = index + 1;
-        break;
-      }
-    }
-  }
+  const expectedName = name.toLowerCase();
+  forEachOpeningElement(body, (element) => {
+    if (element.name === expectedName) tags.push(element.tag);
+  });
   return tags;
 }
 
@@ -168,9 +155,7 @@ function findTagEnd(body, start) {
   return -1;
 }
 
-export function countOpeningElements(body, tagName) {
-  const expectedName = tagName.toLowerCase();
-  let count = 0;
+function forEachOpeningElement(body, visitor, { routePath } = {}) {
   let index = 0;
 
   while (index < body.length) {
@@ -189,17 +174,34 @@ export function countOpeningElements(body, tagName) {
       continue;
     }
     const end = findTagEnd(body, index + 1);
-    if (end < 0) break;
-    if (name === expectedName) count += 1;
+    if (end < 0) {
+      if (name === "script" && routePath) throw new Error(`${routePath}: unclosed script opening tag`);
+      return;
+    }
     const openingTag = body.slice(index, end + 1);
     index = end + 1;
     if ((name === "script" || name === "style") && !/\/\s*>$/.test(openingTag)) {
       const closing = new RegExp(`</${name}\\s*>`, "ig");
       closing.lastIndex = index;
       const close = closing.exec(body);
-      index = close ? close.index + close[0].length : body.length;
+      if (!close) {
+        visitor({ name, tag: openingTag, content: body.slice(index), closed: false });
+        return;
+      }
+      visitor({ name, tag: openingTag, content: body.slice(index, close.index), closed: true });
+      index = close.index + close[0].length;
+      continue;
     }
+    visitor({ name, tag: openingTag, content: "", closed: true });
   }
+}
+
+export function countOpeningElements(body, tagName) {
+  const expectedName = tagName.toLowerCase();
+  let count = 0;
+  forEachOpeningElement(body, ({ name }) => {
+    if (name === expectedName) count += 1;
+  });
   return count;
 }
 
@@ -208,52 +210,21 @@ function assertExactlyOneOpeningElement(route, body, tagName) {
   assert.equal(count, 1, `${route.path}: expected exactly one ${tagName}, received ${count}`);
 }
 
-function closingScript(body, start) {
-  return body.slice(start).match(/<\/script\s*>/i);
-}
-
 export function extractJsonLdScripts(body, routePath) {
   if (typeof routePath !== "string") {
     throw new TypeError("extractJsonLdScripts requires a routePath string");
   }
   const documents = [];
-  let index = 0;
-  while (index < body.length) {
-    if (body.startsWith("<!--", index)) {
-      const commentEnd = body.indexOf("-->", index + 4);
-      if (commentEnd < 0) return documents;
-      index = commentEnd + 3;
-      continue;
-    }
-    if (body[index] !== "<") {
-      index += 1;
-      continue;
-    }
-    if (body.startsWith("</", index)) {
-      index += 2;
-      continue;
-    }
-    const tagEnd = findTagEnd(body, index + 1);
-    if (tagEnd < 0) {
-      const tagName = body.slice(index + 1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
-      if (tagName === "script") throw new Error(`${routePath}: unclosed script opening tag`);
-      return documents;
-    }
-    const tag = body.slice(index, tagEnd + 1);
-    const tagName = tag.slice(1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
-    index = tagEnd + 1;
-    if (tagName !== "script") continue;
-
-    const closing = closingScript(body, index);
-    if (!closing) {
+  forEachOpeningElement(body, ({ name, tag, content, closed }) => {
+    if (name !== "script") return;
+    if (!closed) {
       if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
         throw new Error(`${routePath}: unclosed JSON-LD script`);
       }
-      return documents;
+      return;
     }
-    const closingIndex = index + closing.index;
     if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
-      const source = body.slice(index, closingIndex).trim();
+      const source = content.trim();
       let document;
       try {
         document = JSON.parse(source);
@@ -262,8 +233,7 @@ export function extractJsonLdScripts(body, routePath) {
       }
       documents.push(document);
     }
-    index = closingIndex + closing[0].length;
-  }
+  }, { routePath });
   return documents;
 }
 

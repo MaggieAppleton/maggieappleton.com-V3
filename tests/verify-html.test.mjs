@@ -308,6 +308,16 @@ test("does not mistake prefixed attributes or rel lookalikes for canonical metad
   assert.throws(() => assertHTMLResponse(route, response(quotedFakeHref), quotedFakeHref), /must have an href/);
 });
 
+test("ignores metadata-shaped tags inside comments and raw script/style text", () => {
+  const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
+  const fakeMetadata = `
+    <!-- <link rel="canonical" href="https://evil.test/comment"> -->
+    <script>const fake = '<link rel="canonical" href="https://evil.test/script"><meta property="og:url" content="https://evil.test/script">';</script>
+    <style>.example::before { content: '<meta property="og:url" content="https://evil.test/style">'; }</style>`;
+  const body = withIdentity(html("About")).replace("</head>", `${fakeMetadata}</head>`);
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+});
+
 test("uses the browser-effective first duplicate metadata attribute", () => {
   const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
   const evilHrefFirst = html("About").replace(
