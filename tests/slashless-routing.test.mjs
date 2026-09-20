@@ -31,6 +31,33 @@ async function readAstroConfig() {
   );
 }
 
+async function loadFeedEndpoint(path, { collections, buildItems }) {
+  const source = await readFile(fromRoot(path), "utf8");
+  const executableSource = source
+    .replace(/^import[^\n]*\n/gm, "")
+    .replace(/^export async function GET/m, "async function GET");
+  let rssOptions;
+  const rss = (options) => {
+    rssOptions = options;
+    return options;
+  };
+  const getCollection = async (name) => collections[name] ?? [];
+  const createPublicEntryManifest = (manifest) => manifest;
+  const buildPublicationFeedItems = () => buildItems;
+  const buildSmidgeonFeedItems = () => buildItems;
+  const GET = new Function(
+    "rss",
+    "getCollection",
+    "createPublicEntryManifest",
+    "buildPublicationFeedItems",
+    "buildSmidgeonFeedItems",
+    `${executableSource}\nreturn GET;`,
+  )(rss, getCollection, createPublicEntryManifest, buildPublicationFeedItems, buildSmidgeonFeedItems);
+
+  await GET({ site: "https://example.test" });
+  return rssOptions;
+}
+
 test("declares Astro's slashless route-generation contract", async () => {
   const config = await readAstroConfig();
 
@@ -124,10 +151,13 @@ test("keeps RSS channel, link, and guid URLs slashless when configured", async (
   ]);
 });
 
-test("configures both feed endpoints to preserve slashless serialization", async () => {
+test("passes trailingSlash: false to both feed serializers", async () => {
   for (const path of ["src/pages/rss.xml.js", "src/pages/smidgeons.xml.js"]) {
-    const source = await readFile(fromRoot(path), "utf8");
-    assert.equal((source.match(/\btrailingSlash\s*:\s*false\b/g) ?? []).length, 1, `${path} must configure RSS trailingSlash: false`);
+    const options = await loadFeedEndpoint(path, {
+      collections: {},
+      buildItems: [],
+    });
+    assert.equal(options.trailingSlash, false, `${path} must configure RSS trailingSlash: false`);
   }
 });
 
