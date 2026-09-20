@@ -6,7 +6,7 @@ import {
   DESCRIPTION_MAX_LENGTH,
   DESCRIPTION_MIN_LENGTH,
   PAGE_DESCRIPTIONS,
-  assertP8DescriptionLength,
+  assertDescriptionLength,
   describeNow,
   describeSmidgeon,
   describeTopic,
@@ -40,7 +40,7 @@ test("publishes the approved shared descriptions with P8 length policy", async (
     assert.equal(isMeaningfulDescription(value, SITE_IDENTITY.websiteDescription), true, key);
     assert.ok([...value].length >= DESCRIPTION_MIN_LENGTH, key);
     assert.ok([...value].length <= DESCRIPTION_MAX_LENGTH, key);
-    assert.equal(assertP8DescriptionLength(value, key), value);
+    assert.equal(assertDescriptionLength(value, key), value);
   }
   assert.equal(PAGE_DESCRIPTIONS.about, "Designer, anthropologist, and mediocre developer.");
   assert.equal(isMeaningfulDescription(PAGE_DESCRIPTIONS.about, SITE_IDENTITY.websiteDescription), true);
@@ -84,9 +84,9 @@ test("requires explicit meaningful page metadata and enforces Unicode bounds", (
     );
   }
   assert.equal(requirePageDescription("  A useful description.  ", "ctx", "generic"), "A useful description.");
-  assert.throws(() => assertP8DescriptionLength("x".repeat(79), "short"), RangeError);
-  assert.throws(() => assertP8DescriptionLength("x".repeat(161), "long"), RangeError);
-  assert.equal(assertP8DescriptionLength("🙂".repeat(80), "unicode"), "🙂".repeat(80));
+  assert.throws(() => assertDescriptionLength("x".repeat(79), "short"), RangeError);
+  assert.throws(() => assertDescriptionLength("x".repeat(161), "long"), RangeError);
+  assert.equal(assertDescriptionLength("🙂".repeat(80), "unicode"), "🙂".repeat(80));
 });
 
 test("uses the P5 Site identity as the only generic description source", async () => {
@@ -188,7 +188,7 @@ test("public Article frontmatter is meaningful, unique, and contains only the fo
   for (const [relative, expected] of Object.entries(repairs)) {
     const source = await readFile(new URL(`../${relative}`, import.meta.url), "utf8");
     assert.equal(parseFrontmatter(source).description, expected, relative);
-    assertP8DescriptionLength(expected, relative);
+    assertDescriptionLength(expected, relative);
   }
   assert.equal(parseFrontmatter(await readFile(new URL("../src/content/notes/ai-profilepics.mdx", import.meta.url), "utf8")).draft, "true");
   assert.equal(parseFrontmatter(await readFile(new URL("../src/content/notes/post-pull-request.mdx", import.meta.url), "utf8")).draft, "true");

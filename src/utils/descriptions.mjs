@@ -31,7 +31,7 @@ export function requirePageDescription(value, context, genericDescription) {
   return value.trim();
 }
 
-export function assertP8DescriptionLength(value, context) {
+export function assertDescriptionLength(value, context) {
   const length = [...value].length;
   if (length < DESCRIPTION_MIN_LENGTH || length > DESCRIPTION_MAX_LENGTH) {
     throw new RangeError(context + ": description must be 80-160 characters");
@@ -45,7 +45,7 @@ function requireInterpolatedTitle(value, context) {
 
 export function describeTopic(topicName) {
   const topic = requireInterpolatedTitle(topicName, "describeTopic topicName");
-  return assertP8DescriptionLength(
+  return assertDescriptionLength(
     `Essays, notes, patterns, and Smidgeons related to ${topic}, gathered from Maggie Appleton's digital garden.`,
     "describeTopic",
   );
@@ -53,7 +53,7 @@ export function describeTopic(topicName) {
 
 export function describeNow(title) {
   const value = requireInterpolatedTitle(title, "describeNow title");
-  return assertP8DescriptionLength(
+  return assertDescriptionLength(
     `A snapshot of what Maggie Appleton was reading, exploring, and thinking about in ${value}.`,
     "describeNow",
   );
@@ -61,7 +61,7 @@ export function describeNow(title) {
 
 export function describeSmidgeon(title) {
   const value = requireInterpolatedTitle(title, "describeSmidgeon title");
-  return assertP8DescriptionLength(
+  return assertDescriptionLength(
     `A smidgeon from Maggie Appleton's reading stream – an interesting link, paper, or tiny thought: ${value}.`,
     "describeSmidgeon",
   );

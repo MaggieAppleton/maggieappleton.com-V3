@@ -94,13 +94,13 @@ export const PAGE_DESCRIPTIONS = Object.freeze({
 
 export function isMeaningfulDescription(value, genericDescription)
 export function requirePageDescription(value, context, genericDescription)
-export function assertP8DescriptionLength(value, context)
+export function assertDescriptionLength(value, context)
 export function describeTopic(topicName)
 export function describeNow(title)
 export function describeSmidgeon(title)
 ~~~
 
-isMeaningfulDescription accepts only a trimmed nonempty string that is neither exactly ... nor the passed generic string. It does not shorten, normalise punctuation, or manufacture copy. requirePageDescription returns the trimmed value or throws TypeError naming the context. assertP8DescriptionLength counts Unicode code points, returns its original value only inside the inclusive range, otherwise throws RangeError. Each interpolation function requires meaningful supplied fields, returns the exact template above, and checks its own P8 length.
+isMeaningfulDescription accepts only a trimmed nonempty string that is neither exactly ... nor the passed generic string. It does not shorten, normalise punctuation, or manufacture copy. requirePageDescription returns the trimmed value or throws TypeError naming the context. assertDescriptionLength counts Unicode code points, returns its original value only inside the inclusive range, otherwise throws RangeError. Each interpolation function requires meaningful supplied fields, returns the exact template above, and checks its own P8 length.
 
 ### Task 1: Add pure copy policy and prove the approved descriptions
 
@@ -160,7 +160,7 @@ export function requirePageDescription(value, context, genericDescription) {
   return value.trim();
 }
 
-export function assertP8DescriptionLength(value, context) {
+export function assertDescriptionLength(value, context) {
   const length = [...value].length;
   if (length < DESCRIPTION_MIN_LENGTH || length > DESCRIPTION_MAX_LENGTH) {
     throw new RangeError(context + ": description must be 80-160 characters");
