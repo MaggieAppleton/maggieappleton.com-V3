@@ -1,6 +1,13 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { file } from "astro/loaders";
+import { hasValidCalendarDatePrefix } from "../utils/calendarDate.mjs";
+
+// Validate authored strings before Date coercion can normalize invalid days.
+const contentDate = z.unknown().refine(
+  (value) => typeof value !== "string" || hasValidCalendarDatePrefix(value),
+  "Invalid authored calendar date",
+).pipe(z.coerce.date());
 
 const notesCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/notes" }),
@@ -9,8 +16,8 @@ const notesCollection = defineCollection({
       title: z.string(),
       description: z.string().optional(),
       aliases: z.array(z.string()).optional(),
-      startDate: z.coerce.date(),
-      updated: z.coerce.date(),
+      startDate: contentDate,
+      updated: contentDate,
       type: z.literal("note"),
       topics: z.array(z.string()).optional(),
       growthStage: z.string(),
@@ -27,8 +34,8 @@ const essaysCollection = defineCollection({
     z.object({
       title: z.string(),
       description: z.string(),
-      updated: z.coerce.date(),
-      startDate: z.coerce.date(),
+      updated: contentDate,
+      startDate: contentDate,
       type: z.literal("essay"),
       cover: image(),
       topics: z.array(z.string()).optional(),
@@ -48,8 +55,8 @@ const patternsCollection = defineCollection({
     z.object({
       title: z.string(),
       description: z.string(),
-      updated: z.coerce.date(),
-      startDate: z.coerce.date(),
+      updated: contentDate,
+      startDate: contentDate,
       type: z.literal("pattern"),
       topics: z.array(z.string()).optional(),
       growthStage: z.string(),
@@ -66,8 +73,8 @@ const talksCollection = defineCollection({
     z.object({
       title: z.string(),
       description: z.string(),
-      startDate: z.coerce.date(),
-      updated: z.coerce.date(),
+      startDate: contentDate,
+      updated: contentDate,
       type: z.literal("talk"),
       topics: z.array(z.string()),
       growthStage: z.string(),
@@ -91,7 +98,7 @@ const podcastsCollection = defineCollection({
     z.object({
       podcastName: z.string(),
       episodeName: z.string(),
-      updated: z.coerce.date(),
+      updated: contentDate,
       url: z.string().url(),
       coverImage: image(),
       topics: z.array(z.string()).optional(),
@@ -130,7 +137,7 @@ const nowCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/now" }),
   schema: z.object({
     title: z.string(),
-    startDate: z.coerce.date(),
+    startDate: contentDate,
     type: z.literal("now"),
     topics: z.array(z.string()).optional(),
     growthStage: z.string().default("evergreen"),
@@ -143,7 +150,7 @@ const smidgeonsCollection = defineCollection({
   schema: () =>
     z.object({
       title: z.string(),
-      startDate: z.coerce.date(),
+      startDate: contentDate,
       type: z.literal("smidgeon"),
       topics: z.array(z.string()).optional(),
       draft: z.boolean().optional(),
@@ -172,8 +179,8 @@ const pagesCollection = defineCollection({
     z.object({
       title: z.string(),
       description: z.string().optional(),
-      updated: z.coerce.date().optional(),
-      startDate: z.coerce.date().optional(),
+      updated: contentDate.optional(),
+      startDate: contentDate.optional(),
       type: z.literal("page"),
     }),
 });

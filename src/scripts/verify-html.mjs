@@ -276,11 +276,21 @@ function decodeXmlEntities(value) {
   })[entity]);
 }
 
+const XML_DECLARATION = new RegExp(
+  String.raw`^<\?xml[ \t\r\n]+version[ \t\r\n]*=[ \t\r\n]*(["'])1\.0\1` +
+  String.raw`(?:[ \t\r\n]+encoding[ \t\r\n]*=[ \t\r\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?` +
+  String.raw`(?:[ \t\r\n]+standalone[ \t\r\n]*=[ \t\r\n]*(["'])(?:yes|no)\3)?[ \t\r\n]*\?>`,
+);
+
 function parseSitemapDocument(route, body) {
   const fail = (message) => assert.fail(`${route.path}: ${message}`);
-  let index = 0;
+  if (/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/u.test(body)) {
+    fail("sitemap contains a forbidden XML character");
+  }
+  const documentStart = body.startsWith("\uFEFF") ? 1 : 0;
+  let index = documentStart;
   const skipWhitespace = () => {
-    while (index < body.length && /\s/.test(body[index])) index += 1;
+    while (index < body.length && /[ \t\r\n]/.test(body[index])) index += 1;
   };
   const consume = (pattern, message) => {
     const match = body.slice(index).match(pattern);
@@ -291,13 +301,12 @@ function parseSitemapDocument(route, body) {
 
   skipWhitespace();
   if (body.startsWith("<?xml", index)) {
-    const declarationEnd = body.indexOf("?>", index + 5);
-    if (declarationEnd < 0) fail("sitemap XML declaration is unclosed");
-    index = declarationEnd + 2;
+    if (index !== documentStart) fail("sitemap XML declaration must be at the document start");
+    consume(XML_DECLARATION, "sitemap XML declaration is malformed");
     skipWhitespace();
   }
   consume(
-    /^<urlset\s+xmlns\s*=\s*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1\s*>/,
+    /^<urlset[ \t\r\n]+xmlns[ \t\r\n]*=[ \t\r\n]*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1[ \t\r\n]*>/,
     "sitemap must contain exactly one urlset with the sitemap namespace",
   );
 
@@ -309,31 +318,31 @@ function parseSitemapDocument(route, body) {
       index += "</urlset>".length;
       break;
     }
-    consume(/^<url\s*>/, "sitemap must contain complete url blocks");
+    consume(/^<url[ \t\r\n]*>/, "sitemap must contain complete url blocks");
     urlCount += 1;
     skipWhitespace();
-    consume(/^<loc\s*>/, "each sitemap url must contain exactly one loc");
+    consume(/^<loc[ \t\r\n]*>/, "each sitemap url must contain exactly one loc");
     const locEnd = body.indexOf("</loc>", index);
     if (locEnd < 0) fail("sitemap loc is unclosed");
     const rawLocation = body.slice(index, locEnd);
-    if (rawLocation.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
+    if (rawLocation.includes("<") || rawLocation.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
       fail("sitemap loc contains malformed XML text");
     }
     locations.push(decodeXmlEntities(rawLocation));
     index = locEnd + "</loc>".length;
     skipWhitespace();
-    if (body.slice(index).match(/^<lastmod\s*>/)) {
-      consume(/^<lastmod\s*>/, "sitemap lastmod is malformed");
+    if (body.slice(index).match(/^<lastmod[ \t\r\n]*>/)) {
+      consume(/^<lastmod[ \t\r\n]*>/, "sitemap lastmod is malformed");
       const lastmodEnd = body.indexOf("</lastmod>", index);
       if (lastmodEnd < 0) fail("sitemap lastmod is unclosed");
       const rawLastmod = body.slice(index, lastmodEnd);
-      if (rawLastmod.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
+      if (rawLastmod.includes("<") || rawLastmod.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
         fail("sitemap lastmod contains malformed XML text");
       }
       index = lastmodEnd + "</lastmod>".length;
       skipWhitespace();
     }
-    consume(/^<\/url\s*>/, "sitemap url is unclosed or contains extra elements");
+    consume(/^<\/url[ \t\r\n]*>/, "sitemap url is unclosed or contains extra elements");
   }
   skipWhitespace();
   if (index !== body.length) fail("sitemap document contains stray content");

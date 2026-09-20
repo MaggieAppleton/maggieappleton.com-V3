@@ -274,6 +274,46 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertSitemapResponse(sitemap, response(body, contentType, status), body), message);
 });
 
+test("requires a valid XML 1.0 declaration when a sitemap supplies one", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/</loc></url></urlset>';
+  for (const declaration of ["", '<?xml version="1.0"?>', "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"]) {
+    const xml = `${declaration}${body}`;
+    assert.doesNotThrow(() => assertSitemapResponse(route, response(xml, "application/xml"), xml));
+  }
+  for (const declaration of [
+    "<?xml rubbish?>",
+    '<?xml encoding="UTF-8"?>',
+    '<?xml version="1.0" version="1.0"?>',
+    '<?xml version="1.0" encoding="UTF-8\'?>',
+    '<?xml version="1.0" standalone="maybe"?>',
+    '<?xml version="1.0" unknown="value"?>',
+    ' <?xml version="1.0"?>',
+  ]) {
+    const xml = `${declaration}${body}`;
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML declaration/, declaration);
+  }
+});
+
+test("rejects forbidden sitemap XML characters and malformed character data", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/garden</loc><lastmod>2026-02-28</lastmod></url></urlset>';
+  for (const character of ["\0", "\x01", "\x0B", "\x0C", "\x1F", "\uD800", "\uDC00", "\uFFFE", "\uFFFF"]) {
+    for (const xml of [
+      body.replace("garden", `garden${character}`),
+      body.replace("2026-02-28", `2026-02-28${character}`),
+    ]) assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML character/);
+  }
+  for (const xml of [body.replace("garden", "garden]]>"), body.replace("2026-02-28", "2026-02-28]]>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /malformed XML text/);
+  }
+  for (const xml of [body.replace("<url>", "<url\u00A0>"), body.replace("<url>", "\u00A0<url>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /complete url blocks/);
+  }
+  const valid = body.replace("garden", "garden-\u{1F331}").replace("<url>", "\t\r\n<url>");
+  assert.doesNotThrow(() => assertSitemapResponse(route, response(valid, "application/xml"), valid));
+});
+
 test("verifies routes in order without fetching image URLs", async () => {
   const requested = [];
   const routes = [

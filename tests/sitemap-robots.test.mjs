@@ -50,9 +50,9 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
       { id: "essay/essay-v3.mdx", collection: "essays", data: { version: 3, draft: true, updated: "2026-03-03" } },
       { id: "api-v1.mdx", collection: "essays", data: { updated: "2026-02-04" } },
     ],
-    notes: [],
-    patterns: [],
-    talks: [],
+    notes: [{ id: "note.mdx", collection: "notes", data: { updated: "2026-02-05" } }],
+    patterns: [{ id: "pattern.mdx", collection: "patterns", data: { updated: "2026-02-06" } }],
+    talks: [{ id: "talk.mdx", collection: "talks", data: { updated: "2026-02-07" } }],
     smidgeons: [
       { id: "nested/entry.mdx", collection: "smidgeons", data: { startDate: "2026-04-01" } },
       { id: "2025-08-thought.mdx", collection: "smidgeons", data: { updated: "not-a-date", startDate: "2025-08-02" } },
@@ -80,6 +80,9 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
     { loc: "https://maggieappleton.com/colophon" },
     { loc: "https://maggieappleton.com/essay", lastmod: "2026-02-03" },
     { loc: "https://maggieappleton.com/api-v1", lastmod: "2026-02-04" },
+    { loc: "https://maggieappleton.com/note", lastmod: "2026-02-05" },
+    { loc: "https://maggieappleton.com/pattern", lastmod: "2026-02-06" },
+    { loc: "https://maggieappleton.com/talk", lastmod: "2026-02-07" },
     { loc: "https://maggieappleton.com/nested/entry" },
     { loc: "https://maggieappleton.com/2025-08-thought" },
     { loc: "https://maggieappleton.com/now-2026-08" },
@@ -156,7 +159,8 @@ test("shared loader owns collection reads and sitemap uses its manifest", () => 
   assert.match(sitemapSource, /import\s+\{\s*fetchPublicEntryManifest\s*\}\s+from\s+["']\.\.\/utils\/publicEntryManifest["']/);
   assert.match(sitemapSource, /createSitemapRecordsFromManifest\(manifest\)/);
   assert.match(sitemapSource, /serializeSitemapXml/);
-  assert.equal((loaderSource.match(/getCollection\("(?:essays|notes|patterns|talks|podcasts|now|smidgeons)"\)/g) ?? []).length, 7);
+  const loadedCollections = [...loaderSource.matchAll(/getCollection\("([^"]+)"\)/g)].map(([, name]) => name);
+  assert.deepEqual(loadedCollections.sort(), ["essays", "notes", "now", "patterns", "podcasts", "smidgeons", "talks"]);
   assert.equal((loaderSource.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
   assert.doesNotMatch(sitemapSource, /getCollection\(/);
   assert.doesNotMatch(sitemapSource, /createPublicEntryManifest/);
