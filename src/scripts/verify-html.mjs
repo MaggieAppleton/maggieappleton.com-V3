@@ -183,11 +183,16 @@ function getMetaContent(body, property) {
   return content;
 }
 
-export function assertHTMLResponse(route, response, body) {
+function assertHTMLDocumentResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
+  return title;
+}
+
+export function assertHTMLResponse(route, response, body) {
+  const title = assertHTMLDocumentResponse(route, response, body);
   assert.match(body, /<main(?:\s|>)/i, `${route.path}: expected a main landmark`);
   if (route.requireH1 !== false) assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
   const canonical = assertCanonical(route, body);
@@ -210,10 +215,7 @@ export function assertHTMLResponse(route, response, body) {
 }
 
 export function assertNoindexHTMLResponse(route, response, body) {
-  assertSuccessfulResponse(route, response);
-  assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
-  const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
-  assert.ok(title, `${route.path}: expected a non-empty title`);
+  assertHTMLDocumentResponse(route, response, body);
   const robots = extractTags(body, "meta").filter((tag) =>
     (getAttribute(tag, "name") ?? "").toLowerCase() === "robots",
   );
