@@ -5,8 +5,9 @@ import { Icon } from "astro-icon/components";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import Topics from "../components/layouts/Topics.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
+import CalendarDate from "../components/layouts/CalendarDate.astro";
 import { isPublicEntry } from "../utils/publication.mjs";
-import { toCalendarDate } from "../utils/pageMetadata.mjs";
+import { createDatedWebPageMetadata } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
@@ -15,21 +16,19 @@ type Props = {
 
 const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
-const startDateCalendar = toCalendarDate(frontmatter.startDate);
 const primaryTitle =
 	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
+const pageMetadata = createDatedWebPageMetadata({
+	isPublic: isPublicEntry(entry),
+	name: frontmatter.title,
+	datePublished: frontmatter.startDate,
+});
 ---
 
 <Layout
 	title={frontmatter.title}
 	type="smidgeon"
-	pageMetadata={isPublicEntry(entry)
-		? {
-				type: "webpage",
-				name: frontmatter.title,
-				...(startDateCalendar ? { datePublished: startDateCalendar } : {}),
-			}
-		: false}
+	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -47,16 +46,7 @@ const primaryTitle =
 	<div class="smidgeon-layout">
 		<div class="metadata">
 			<div class="date-permalink">
-				{startDateCalendar && <time datetime={startDateCalendar}>
-					{
-						frontmatter.startDate.toLocaleDateString("en-US", {
-							year: "numeric",
-							month: "long",
-							day: "numeric",
-							timeZone: "UTC",
-						})
-					}
-				</time>}
+				<CalendarDate value={frontmatter.startDate} />
 			</div>
 			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 		</div>
@@ -208,12 +198,6 @@ const primaryTitle =
 		display: flex;
 		align-items: center;
 		gap: var(--space-2xs);
-	}
-
-	time {
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
-		font-family: var(--font-sans);
 	}
 
 	.content {

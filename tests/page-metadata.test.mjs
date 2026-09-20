@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  createDatedWebPageMetadata,
   createPageMetadataNode,
   createStructuredDataGraph,
   isCanonicalPublicArticle,
@@ -151,6 +152,31 @@ test("normalizes authored calendar dates without timezone ambiguity", () => {
   assert.throws(() => createPageMetadataNode({ type: "article", canonicalUrl: "/x", name: "X", datePublished: "2023-02-29" }), /datePublished/);
 });
 
+test("builds dated WebPage metadata only for public entries", () => {
+  assert.deepEqual(createDatedWebPageMetadata({
+    isPublic: true,
+    name: "August 2026",
+    datePublished: new Date("2026-08-01T00:00:00.000Z"),
+  }), {
+    type: "webpage",
+    name: "August 2026",
+    datePublished: "2026-08-01",
+  });
+  assert.deepEqual(createDatedWebPageMetadata({
+    isPublic: true,
+    name: "Undated page",
+    datePublished: "not-a-date",
+  }), {
+    type: "webpage",
+    name: "Undated page",
+  });
+  assert.equal(createDatedWebPageMetadata({
+    isPublic: false,
+    name: "Draft page",
+    datePublished: new Date("2026-08-01T00:00:00.000Z"),
+  }), false);
+});
+
 test("accepts only canonical-origin or HTTPS images and omits unsafe values", () => {
   const accepted = createPageMetadataNode({
     type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10",
@@ -229,12 +255,15 @@ test("detail layouts use guarded canonical metadata and calendar time values", a
   const nowDetail = await read("src/pages/now-[slug]/[...rest].astro");
   const smidgeonLayout = await read("src/layouts/SmidgeonLayout.astro");
   for (const source of [nowDetail, smidgeonLayout]) {
-    assert.match(source, /pageMetadata\s*=\s*\{\s*isPublicEntry\(entry\)/s);
-    assert.match(source, /type:\s*["']webpage["']/);
-    assert.match(source, /startDateCalendar/);
-    assert.match(source, /datetime=\{startDateCalendar\}/);
-    assert.match(source, /timeZone:\s*["']UTC["']/);
+    assert.match(source, /createDatedWebPageMetadata\s*\(\s*\{/);
+    assert.match(source, /isPublic:\s*isPublicEntry\(entry\)/);
+    assert.match(source, /pageMetadata=\{pageMetadata\}/);
+    assert.match(source, /<CalendarDate\s+value=\{/);
+    assert.doesNotMatch(source, /toLocaleDateString|<time\s/);
   }
+  const calendarDate = await read("src/components/layouts/CalendarDate.astro");
+  assert.match(calendarDate, /datetime=\{calendarDate\}/);
+  assert.match(calendarDate, /timeZone:\s*["']UTC["']/);
 });
 
 test("authored date frontmatter uses calendar dates or UTC timestamps before schema coercion", async () => {
