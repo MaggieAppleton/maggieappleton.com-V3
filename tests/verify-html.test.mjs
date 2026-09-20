@@ -28,6 +28,8 @@ import {
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
 import { expectedSiteIdentity } from "./fixtures/site-identity.mjs";
+import { PAGE_DESCRIPTIONS, describeNow, describeSmidgeon } from "../src/utils/descriptions.mjs";
+import { SITE_IDENTITY } from "../src/utils/siteIdentity.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -62,10 +64,10 @@ test("parses only unprivileged TCP ports", () => {
 
 test("defines unique non-image routes with supported kinds", () => {
   assert.equal(ROUTES.length, 26);
-  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", pageMetadata: false, bodyIncludes: "Draft Posts" });
+  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
-    { path: "/drafts", kind: "html", pageMetadata: false, bodyIncludes: "Draft Posts" },
+    { path: "/drafts", kind: "html", pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" },
   );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   assert.deepEqual(
@@ -82,10 +84,10 @@ test("defines unique non-image routes with supported kinds", () => {
   );
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/about?source=verify"),
-    { path: "/about?source=verify", kind: "html", pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+    { path: "/about?source=verify", kind: "html", pageMetadata: "webpage", title: "About Maggie Appleton", description: PAGE_DESCRIPTIONS.about, canonical: "https://maggieappleton.com/about" },
   );
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", pageMetadata: "webpage" });
-  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", pageMetadata: "webpage" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", pageMetadata: "webpage", description: describeNow("August 2026") });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", pageMetadata: "webpage", description: describeSmidgeon("Vibe Code is Legacy Code") });
   for (const path of [
     "/now",
     "/smidgeons",
@@ -198,10 +200,12 @@ test("derives the identity requirement from the HTML route kind", () => {
 });
 
 test("enforces exact Article Open Graph properties and cardinality", () => {
-  const route = { path: "/api", kind: "html", pageMetadata: "article", canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10" } };
+  const route = { path: "/api", kind: "html", pageMetadata: "article", description: PAGE_DESCRIPTIONS.home, canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10", description: PAGE_DESCRIPTIONS.home } };
   const articleHead = '<meta content="article" property="og:type"><meta content="2019-04-10" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">';
   const valid = withIdentity(
-    html("API", { canonical: route.canonical, ogUrl: route.canonical }).replace('<meta content="website" property="og:type">', articleHead),
+    html("API", { canonical: route.canonical, ogUrl: route.canonical })
+      .replace("</head>", `<meta name="description" content="${route.description}"><meta property="og:description" content="${route.description}"></head>`)
+      .replace('<meta content="website" property="og:type">', articleHead),
     fixtureIdentity(route),
   );
   assert.doesNotThrow(() => assertHTMLResponse(route, response(valid), valid));
@@ -544,6 +548,7 @@ function fixtureIdentity(route) {
     : {
         "@id": `${canonical}#webpage`, "@type": "WebPage", url: canonical, name: "Fixture",
         isPartOf: { "@id": "https://maggieappleton.com/#website" },
+        ...(route.description ? { description: route.description } : {}),
       };
   return { ...expectedSiteIdentity, "@graph": [...expectedSiteIdentity["@graph"], node] };
 }
@@ -561,6 +566,10 @@ function routeFixture(route) {
   const title = route.bodyIncludes ?? route.title ?? "Fixture";
   const options = { canonical, ogUrl: canonical, ogImage: route.ogImagePath ? `https://maggieappleton.com${route.ogImagePath}` : "https://maggieappleton.com/og.png" };
   let body = html(title, options);
+  const expectedDescription = route.description ?? route.article?.description;
+  if (expectedDescription !== undefined) {
+    body = body.replace("</head>", `<meta name="description" content="${expectedDescription}"><meta property="og:description" content="${expectedDescription}"></head>`);
+  }
   if (route.pageMetadata === "article") {
     const tags = `<meta content="article" property="og:type"><meta content="${route.article.datePublished}" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">${route.article.dateModified ? `<meta content="${route.article.dateModified}" property="article:modified_time">` : ""}`;
     body = body.replace('<meta content="website" property="og:type">', tags);
@@ -580,7 +589,57 @@ test("verifies the exact default 26-route manifest without fetching image URLs",
   });
   assert.equal(results.length, ROUTES.length);
   assert.equal(requested.length, ROUTES.length);
+  assert.deepEqual(requested, ROUTES.map(({ path }) => buildURL("http://127.0.0.1:4322", path)));
   assert.ok(requested.every((url) => !/(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$))/i.test(url)));
+});
+
+test("requires standard, Open Graph, and JSON-LD descriptions to align", async () => {
+  const route = {
+    path: "/description-fixture",
+    kind: "html",
+    pageMetadata: "webpage",
+    description: PAGE_DESCRIPTIONS.home,
+  };
+  const validResponse = routeFixture(route);
+  const valid = await validResponse.text();
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(valid), valid));
+  const cases = [
+    [valid.replace(/<meta name="description"[^>]*>/, ""), /exactly one description meta tag/],
+    [valid.replace("</head>", `<meta name="description" content="duplicate"></head>`), /exactly one description meta tag/],
+    [valid.replace(/<meta property="og:description"[^>]*>/, ""), /exactly one og:description meta tag/],
+    [valid.replace(/(<meta property="og:description"[^>]*content=")[^"]+/, "$1wrong"), /wrong og:description/],
+    [valid.replace(/(<meta name="description"[^>]*content=")[^"]+/, "$1wrong"), /wrong meta description/],
+    [valid.replace(`"description":"${PAGE_DESCRIPTIONS.home}"`, `"description":"wrong"`), /wrong WebPage description/],
+  ];
+  for (const [body, message] of cases) {
+    assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+  }
+});
+
+test("rejects blank, placeholder, and P5-generic descriptions on enabled routes", async () => {
+  const baseRoute = {
+    path: "/description-policy-fixture",
+    kind: "html",
+    pageMetadata: "webpage",
+  };
+  for (const description of ["", "   ", "...", SITE_IDENTITY.websiteDescription]) {
+    const route = { ...baseRoute, description };
+    const body = await routeFixture(route).text();
+    assert.throws(
+      () => assertHTMLResponse(route, response(body), body),
+      /meaningful description/,
+      JSON.stringify(description),
+    );
+  }
+  const draftRoute = {
+    path: "/drafts",
+    kind: "html",
+    pageMetadata: false,
+    description: SITE_IDENTITY.websiteDescription,
+    bodyIncludes: "Draft Posts",
+  };
+  const draftBody = await routeFixture(draftRoute).text();
+  assert.doesNotThrow(() => assertHTMLResponse(draftRoute, response(draftBody), draftBody));
 });
 
 test("verifies noindex and absent routes without relaxing redirect handling", async () => {
