@@ -149,20 +149,18 @@ test("serializes XML with the declaration, namespace, and all XML escapes", () =
   assert.doesNotMatch(xml, /<lastmod><\/lastmod>/);
 });
 
-test("endpoint delegates sitemap membership to the manifest boundary", () => {
-  const source = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
-  assert.match(source, /createPublicEntryManifest/);
-  assert.match(source, /createSitemapRecordsFromManifest\(manifest\)/);
-  assert.match(source, /serializeSitemapXml/);
-  assert.equal((source.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
-  assert.match(source, /getCollection\("essays"\)/);
-  assert.match(source, /getCollection\("notes"\)/);
-  assert.match(source, /getCollection\("patterns"\)/);
-  assert.match(source, /getCollection\("talks"\)/);
-  assert.match(source, /getCollection\("smidgeons"\)/);
-  assert.match(source, /getCollection\("now"\)/);
-  assert.match(source, /getCollection\("podcasts"\)/);
-  assert.doesNotMatch(source, /const\s+entries\s*=/);
+test("shared loader owns collection reads and sitemap uses its manifest", () => {
+  const sitemapSource = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
+  const loaderSource = readFileSync(`${repoRoot}/src/utils/publicEntryManifest.ts`, "utf8");
+
+  assert.match(sitemapSource, /import\s+\{\s*fetchPublicEntryManifest\s*\}\s+from\s+["']\.\.\/utils\/publicEntryManifest["']/);
+  assert.match(sitemapSource, /createSitemapRecordsFromManifest\(manifest\)/);
+  assert.match(sitemapSource, /serializeSitemapXml/);
+  assert.equal((loaderSource.match(/getCollection\("(?:essays|notes|patterns|talks|podcasts|now|smidgeons)"\)/g) ?? []).length, 7);
+  assert.equal((loaderSource.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
+  assert.doesNotMatch(sitemapSource, /getCollection\(/);
+  assert.doesNotMatch(sitemapSource, /createPublicEntryManifest/);
+  assert.doesNotMatch(sitemapSource, /const\s+entries\s*=/);
 });
 
 test("robots declares exactly one absolute sitemap and keeps the crawler allow policy", () => {
