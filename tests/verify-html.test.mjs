@@ -49,7 +49,7 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
-  assert.equal(ROUTES.length, 18);
+  assert.equal(ROUTES.length, 19);
   assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
@@ -74,6 +74,17 @@ test("defines unique non-image routes with supported kinds", () => {
   assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/colophon/colophon-content"), { path: "/colophon/colophon-content", kind: "absent" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/sitemap.xml"), {
+    path: "/sitemap.xml",
+    kind: "sitemap",
+    requiredLocations: [
+      "https://maggieappleton.com/",
+      "https://maggieappleton.com/about",
+      "https://maggieappleton.com/api",
+      "https://maggieappleton.com/now-2026-08",
+      "https://maggieappleton.com/topics/web-development",
+    ],
+  });
   assert.equal(ROUTES.some(({ path }) => path === "/api-v1"), false);
   for (const route of ROUTES) {
     assert.match(route.path, /^\//);
@@ -196,9 +207,20 @@ test("accepts RSS XML and rejects invalid XML responses", () => {
 });
 
 test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
-  const robots = { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" };
-  assert.doesNotThrow(() => assertRobotsResponse(robots, response("User-agent: *\nAllow: /", "text/plain"), "User-agent: *\nAllow: /"));
-  assert.throws(() => assertRobotsResponse(robots, response("Allow: /", "text/plain"), "Allow: /"), /User-agent/);
+  const robots = { path: "/robots.txt", kind: "robots" };
+  const robotsBody = "User-agent: *\nAllow: /\n\nSitemap: https://maggieappleton.com/sitemap.xml";
+  assert.doesNotThrow(() => assertRobotsResponse(robots, response(robotsBody, "text/plain"), robotsBody));
+  const paddedRobotsBody = `${robotsBody.split("\n\n")[0]}\n  Sitemap: https://maggieappleton.com/sitemap.xml  `;
+  assert.doesNotThrow(() => assertRobotsResponse(robots, response(paddedRobotsBody, "text/plain"), paddedRobotsBody));
+  for (const body of [
+    "User-agent: *\nAllow: /",
+    `${robotsBody}\nSitemap: https://maggieappleton.com/sitemap.xml`,
+    "User-agent: *\nAllow: /\nSitemap: /sitemap.xml",
+    "User-agent: *\nAllow: /\nSitemap: http://maggieappleton.com/sitemap.xml",
+    "User-agent: *\nAllow: /\nSitemap: https://example.test/sitemap.xml",
+    "User-agent: *\nAllow: /\nsitemap: https://maggieappleton.com/sitemap.xml",
+    `${robotsBody}\n Sitemap: https://example.test/evil.xml `,
+  ]) assert.throws(() => assertRobotsResponse(robots, response(body, "text/plain"), body), /Sitemap/);
 
   const schemaRoute = { path: "/schema", kind: "html", jsonLD: true, bodyIncludes: "Useful body text" };
   const schemaBody = html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
@@ -207,10 +229,89 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   assert.throws(() => assertHTMLResponse(schemaRoute, response(invalidSchema), invalidSchema), /JSON|Unexpected/);
   assert.throws(() => assertHTMLResponse(schemaRoute, response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), /Useful body text/);
 
-  const sitemap = { path: "/sitemap.xml", kind: "sitemap" };
-  const sitemapBody = "<?xml version=\"1.0\"?><urlset><url><loc>https://maggieappleton.com/</loc></url></urlset>";
+  const sitemap = {
+    path: "/sitemap.xml",
+    kind: "sitemap",
+    requiredLocations: [
+      "https://maggieappleton.com/",
+      "https://maggieappleton.com/about",
+      "https://maggieappleton.com/api",
+      "https://maggieappleton.com/now-2026-08",
+      "https://maggieappleton.com/topics/web-development",
+    ],
+  };
+  const sitemapBody = "<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://maggieappleton.com/</loc></url><url><loc>https://maggieappleton.com/about</loc></url><url><loc>https://maggieappleton.com/api</loc></url><url><loc>https://maggieappleton.com/now-2026-08</loc></url><url><loc>https://maggieappleton.com/topics/web-development</loc></url></urlset>";
   assert.doesNotThrow(() => assertSitemapResponse(sitemap, response(sitemapBody, "application/xml"), sitemapBody));
-  assert.throws(() => assertSitemapResponse(sitemap, response("<urlset />", "application/xml"), "<urlset />"), /url/);
+  const datedSitemapBody = sitemapBody.replace(
+    "<url><loc>https://maggieappleton.com/api</loc></url>",
+    "<url><loc>https://maggieappleton.com/api</loc><lastmod>2026-02-03</lastmod></url>",
+  );
+  assert.doesNotThrow(() => assertSitemapResponse(sitemap, response(datedSitemapBody, "application/xml"), datedSitemapBody));
+  const escapedPathBody = sitemapBody.replace("</urlset>", "<url><loc>https://maggieappleton.com/a&amp;b</loc></url></urlset>");
+  assert.doesNotThrow(() => assertSitemapResponse(sitemap, response(escapedPathBody, "application/xml"), escapedPathBody));
+  for (const [body, contentType, status, message] of [
+    ["<urlset />", "application/xml", 200, /url/],
+    [sitemapBody, "text/plain", 200, /xml/],
+    [sitemapBody, "application/xml", 404, /status 200/],
+    [sitemapBody.replace("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">", "<rss>"), "application/xml", 200, /urlset|url/],
+    [sitemapBody.replace("<url><loc>https://maggieappleton.com/about</loc></url>", ""), "application/xml", 200, /required representative/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://example.test/api"), "application/xml", 200, /canonical|origin/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "http://maggieappleton.com/api"), "application/xml", 200, /HTTPS|canonical/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "/api"), "application/xml", 200, /absolute|canonical/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://maggieappleton.com/api/"), "application/xml", 200, /slashless/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://maggieappleton.com/api?source=verify"), "application/xml", 200, /query|canonical/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://user:pass@maggieappleton.com/api"), "application/xml", 200, /canonical|origin|credentials/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://maggieappleton.com:443/api"), "application/xml", 200, /port|canonical/],
+    [sitemapBody.replace("https://maggieappleton.com/api", "https://maggieappleton.com/api#section"), "application/xml", 200, /fragment|canonical/],
+    [sitemapBody.replace("https://maggieappleton.com/api</loc>", "https://maggieappleton.com/api</loc></url><url><loc>https://maggieappleton.com/api</loc>"), "application/xml", 200, /duplicate/],
+    [sitemapBody.replace("xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"", "xmlns=\"http://example.test/sitemap\""), "application/xml", 200, /namespace/],
+    [sitemapBody.replace("</urlset>", "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"), "application/xml", 200, /urlset|url/],
+    [sitemapBody.replace("</urlset>", "</urlset><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://maggieappleton.com/extra</loc></url></urlset>"), "application/xml", 200, /urlset|stray/],
+    [sitemapBody.replace("<url><loc>https://maggieappleton.com/about</loc></url>", "<url><loc>https://maggieappleton.com/about</loc>"), "application/xml", 200, /url|document/],
+    [sitemapBody.replace("<url><loc>https://maggieappleton.com/about</loc></url>", "<url><loc>https://maggieappleton.com/about</url></urlset>"), "application/xml", 200, /loc|document/],
+    [`stray ${sitemapBody}`, "application/xml", 200, /urlset|document|stray/],
+    [`${sitemapBody} stray`, "application/xml", 200, /urlset|document|stray/],
+  ]) assert.throws(() => assertSitemapResponse(sitemap, response(body, contentType, status), body), message);
+});
+
+test("requires a valid XML 1.0 declaration when a sitemap supplies one", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/</loc></url></urlset>';
+  for (const declaration of ["", '<?xml version="1.0"?>', "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"]) {
+    const xml = `${declaration}${body}`;
+    assert.doesNotThrow(() => assertSitemapResponse(route, response(xml, "application/xml"), xml));
+  }
+  for (const declaration of [
+    "<?xml rubbish?>",
+    '<?xml encoding="UTF-8"?>',
+    '<?xml version="1.0" version="1.0"?>',
+    '<?xml version="1.0" encoding="UTF-8\'?>',
+    '<?xml version="1.0" standalone="maybe"?>',
+    '<?xml version="1.0" unknown="value"?>',
+    ' <?xml version="1.0"?>',
+  ]) {
+    const xml = `${declaration}${body}`;
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML declaration/, declaration);
+  }
+});
+
+test("rejects forbidden sitemap XML characters and malformed character data", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/garden</loc><lastmod>2026-02-28</lastmod></url></urlset>';
+  for (const character of ["\0", "\x01", "\x0B", "\x0C", "\x1F", "\uD800", "\uDC00", "\uFFFE", "\uFFFF"]) {
+    for (const xml of [
+      body.replace("garden", `garden${character}`),
+      body.replace("2026-02-28", `2026-02-28${character}`),
+    ]) assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML character/);
+  }
+  for (const xml of [body.replace("garden", "garden]]>"), body.replace("2026-02-28", "2026-02-28]]>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /malformed XML text/);
+  }
+  for (const xml of [body.replace("<url>", "<url\u00A0>"), body.replace("<url>", "\u00A0<url>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /complete url blocks/);
+  }
+  const valid = body.replace("garden", "garden-\u{1F331}").replace("<url>", "\t\r\n<url>");
+  assert.doesNotThrow(() => assertSitemapResponse(route, response(valid, "application/xml"), valid));
 });
 
 test("verifies routes in order without fetching image URLs", async () => {

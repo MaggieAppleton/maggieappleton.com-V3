@@ -1,52 +1,16 @@
-import { getCollection } from "astro:content";
 import { slugifyTopic } from "./slugifyTopic";
-import { createPublicEntryManifest } from "./publication.mjs";
+import { fetchPublicEntryManifest } from "./publicEntryManifest";
+import { collectTopics } from "./topicRoutes.mjs";
 
-/**
- * Fetch all content entries and return one canonical public manifest.
- */
-async function fetchAllContent() {
-  const [essays, notes, patterns, talks, podcasts, now, smidgeons] =
-    await Promise.all([
-      getCollection("essays"),
-      getCollection("notes"),
-      getCollection("patterns"),
-      getCollection("talks"),
-      getCollection("podcasts"),
-      getCollection("now"),
-      getCollection("smidgeons"),
-    ]);
-
-  return createPublicEntryManifest({
-    essays,
-    notes,
-    patterns,
-    talks,
-    podcasts,
-    now,
-    smidgeons,
-  });
-}
+export { collectTopics } from "./topicRoutes.mjs";
 
 /**
  * Return every unique topic across all content collections, with both the
  * original display name and its URL slug.
  */
 export async function getAllTopics() {
-  const manifest = await fetchAllContent();
-  const allContent = manifest.canonicalEntries;
-
-  const topics = new Set<string>();
-  allContent.forEach((post) => {
-    if (post.data.topics) {
-      post.data.topics.forEach((topic: string) => topics.add(topic));
-    }
-  });
-
-  return Array.from(topics).map((topic) => ({
-    name: topic,
-    slug: slugifyTopic(topic),
-  }));
+  const manifest = await fetchPublicEntryManifest();
+  return collectTopics(manifest.canonicalEntries);
 }
 
 /**
@@ -55,7 +19,7 @@ export async function getAllTopics() {
  * insensitive to spacing and capitalisation differences.
  */
 export async function getPostsForTopic(topicSlug: string) {
-  const manifest = await fetchAllContent();
+  const manifest = await fetchPublicEntryManifest();
   const allContent = manifest.canonicalEntries;
 
   return allContent.filter((post) => {

@@ -32,7 +32,18 @@ export const ROUTES = Object.freeze([
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
   { path: "/smidgeons.xml", kind: "xml" },
-  { path: "/robots.txt", kind: "robots", bodyIncludes: "User-agent:" },
+  { path: "/robots.txt", kind: "robots" },
+  {
+    path: "/sitemap.xml",
+    kind: "sitemap",
+    requiredLocations: [
+      "https://maggieappleton.com/",
+      "https://maggieappleton.com/about",
+      "https://maggieappleton.com/api",
+      "https://maggieappleton.com/now-2026-08",
+      "https://maggieappleton.com/topics/web-development",
+    ],
+  },
   { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
 ]);
 
@@ -238,18 +249,136 @@ export function assertXMLResponse(route, response, body) {
   assertExpectedBodyText(route, body);
 }
 
+export function parseSitemapDirectives(body) {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^sitemap\s*:/i.test(line));
+}
+
 export function assertRobotsResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/plain/i, `${route.path}: expected text/plain`);
-  assertExpectedBodyText(route, body);
+  assert.match(body, /^User-agent: \*$/m, `${route.path}: expected User-agent: *`);
+  assert.match(body, /^Allow: \/$/m, `${route.path}: expected Allow: /`);
+  const sitemapDirectives = parseSitemapDirectives(body);
+  assert.equal(sitemapDirectives.length, 1, `${route.path}: expected exactly one Sitemap directive`);
+  assert.equal(sitemapDirectives[0], "Sitemap: https://maggieappleton.com/sitemap.xml", `${route.path}: Sitemap directive must be exact`);
+}
+
+function decodeXmlEntities(value) {
+  return value.replace(/&(amp|lt|gt|quot|apos);/g, (_, entity) => ({
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+  })[entity]);
+}
+
+const XML_DECLARATION = new RegExp(
+  String.raw`^<\?xml[ \t\r\n]+version[ \t\r\n]*=[ \t\r\n]*(["'])1\.0\1` +
+  String.raw`(?:[ \t\r\n]+encoding[ \t\r\n]*=[ \t\r\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?` +
+  String.raw`(?:[ \t\r\n]+standalone[ \t\r\n]*=[ \t\r\n]*(["'])(?:yes|no)\3)?[ \t\r\n]*\?>`,
+);
+
+function parseSitemapDocument(route, body) {
+  const fail = (message) => assert.fail(`${route.path}: ${message}`);
+  if (/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/u.test(body)) {
+    fail("sitemap contains a forbidden XML character");
+  }
+  const documentStart = body.startsWith("\uFEFF") ? 1 : 0;
+  let index = documentStart;
+  const skipWhitespace = () => {
+    while (index < body.length && /[ \t\r\n]/.test(body[index])) index += 1;
+  };
+  const consume = (pattern, message) => {
+    const match = body.slice(index).match(pattern);
+    if (!match) fail(message);
+    index += match[0].length;
+    return match;
+  };
+
+  skipWhitespace();
+  if (body.startsWith("<?xml", index)) {
+    if (index !== documentStart) fail("sitemap XML declaration must be at the document start");
+    consume(XML_DECLARATION, "sitemap XML declaration is malformed");
+    skipWhitespace();
+  }
+  consume(
+    /^<urlset[ \t\r\n]+xmlns[ \t\r\n]*=[ \t\r\n]*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1[ \t\r\n]*>/,
+    "sitemap must contain exactly one urlset with the sitemap namespace",
+  );
+
+  const locations = [];
+  let urlCount = 0;
+  while (true) {
+    skipWhitespace();
+    if (body.startsWith("</urlset>", index)) {
+      index += "</urlset>".length;
+      break;
+    }
+    consume(/^<url[ \t\r\n]*>/, "sitemap must contain complete url blocks");
+    urlCount += 1;
+    skipWhitespace();
+    consume(/^<loc[ \t\r\n]*>/, "each sitemap url must contain exactly one loc");
+    const locEnd = body.indexOf("</loc>", index);
+    if (locEnd < 0) fail("sitemap loc is unclosed");
+    const rawLocation = body.slice(index, locEnd);
+    if (rawLocation.includes("<") || rawLocation.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
+      fail("sitemap loc contains malformed XML text");
+    }
+    locations.push(decodeXmlEntities(rawLocation));
+    index = locEnd + "</loc>".length;
+    skipWhitespace();
+    if (body.slice(index).match(/^<lastmod[ \t\r\n]*>/)) {
+      consume(/^<lastmod[ \t\r\n]*>/, "sitemap lastmod is malformed");
+      const lastmodEnd = body.indexOf("</lastmod>", index);
+      if (lastmodEnd < 0) fail("sitemap lastmod is unclosed");
+      const rawLastmod = body.slice(index, lastmodEnd);
+      if (rawLastmod.includes("<") || rawLastmod.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
+        fail("sitemap lastmod contains malformed XML text");
+      }
+      index = lastmodEnd + "</lastmod>".length;
+      skipWhitespace();
+    }
+    consume(/^<\/url[ \t\r\n]*>/, "sitemap url is unclosed or contains extra elements");
+  }
+  skipWhitespace();
+  if (index !== body.length) fail("sitemap document contains stray content");
+  if (urlCount === 0) fail("expected at least one url");
+  return locations;
 }
 
 export function assertSitemapResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /xml/i, `${route.path}: expected an XML content type`);
-  assert.match(body, /<urlset(?:\s|>)/i, `${route.path}: expected a urlset element`);
-  assert.match(body, /<url(?:\s|>)/i, `${route.path}: expected at least one url`);
-  assertExpectedBodyText(route, body);
+  const locations = parseSitemapDocument(route, body);
+  const seen = new Set();
+  for (const location of locations) {
+    let url;
+    try {
+      url = new URL(location);
+    } catch {
+      assert.fail(`${route.path}: sitemap loc must be an absolute canonical URL`);
+    }
+    assert.equal(url.protocol, "https:", `${route.path}: sitemap loc must use HTTPS`);
+    assert.equal(url.origin, CANONICAL_ORIGIN, `${route.path}: sitemap loc must use the canonical origin`);
+    assert.equal(url.username, "", `${route.path}: sitemap loc must not contain credentials`);
+    assert.equal(url.password, "", `${route.path}: sitemap loc must not contain credentials`);
+    const authority = location.slice("https://".length).split(/[/?#]/, 1)[0];
+    assert.equal(authority, "maggieappleton.com", `${route.path}: sitemap loc must not contain a port or credentials`);
+    assert.equal(url.search, "", `${route.path}: sitemap loc must not contain a query`);
+    assert.equal(url.hash, "", `${route.path}: sitemap loc must not contain a fragment`);
+    if (url.pathname !== "/") {
+      assert.equal(url.pathname.endsWith("/"), false, `${route.path}: sitemap loc must be slashless`);
+    }
+    assert.equal(seen.has(location), false, `${route.path}: duplicate sitemap loc ${location}`);
+    seen.add(location);
+  }
+  for (const requiredLocation of route.requiredLocations ?? []) {
+    assert.ok(seen.has(requiredLocation), `${route.path}: missing required representative ${requiredLocation}`);
+  }
 }
 
 export function assertJSONLD(route, body) {

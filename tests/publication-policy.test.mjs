@@ -728,19 +728,12 @@ test("garden builds one canonical manifest from all seven publication collection
 test("topic collection uses one canonical manifest as the sole topic input", () => {
   const source = readSource("src/utils/getTopics.ts");
 
-  assert.ok(source.includes('from "./publication.mjs"'));
-  assert.match(source, /const manifest\s*=\s*await fetchAllContent\(\)/);
+  assert.ok(source.includes('from "./publicEntryManifest"'));
+  assert.match(source, /const manifest\s*=\s*await fetchPublicEntryManifest\(\)/);
   assert.equal((source.match(/manifest\.canonicalEntries/g) ?? []).length, 2);
 
-  for (const collection of PUBLICATION_COLLECTIONS) {
-    assert.equal(
-      (source.match(new RegExp(`getCollection\\(\\"${collection}\\"\\)`, "g")) ?? []).length,
-      1,
-      `getTopics must fetch ${collection} once without an inline callback`,
-    );
-  }
-
-  assert.doesNotMatch(source, /getCollection\([^)]*,/);
+  assert.doesNotMatch(source, /getCollection\(/);
+  assert.doesNotMatch(source, /createPublicEntryManifest/);
   assert.doesNotMatch(source, /data\.draft/);
 });
 
