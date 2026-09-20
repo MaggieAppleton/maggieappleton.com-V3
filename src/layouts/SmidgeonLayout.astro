@@ -5,18 +5,32 @@ import { Icon } from "astro-icon/components";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import Topics from "../components/layouts/Topics.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
+import { isPublicEntry } from "../utils/publication.mjs";
+import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
+	entry: CollectionEntry<"smidgeons">;
 };
 
-const { frontmatter } = Astro.props;
+const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+const startDateCalendar = toCalendarDate(frontmatter.startDate);
 const primaryTitle =
 	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
 ---
 
-<Layout title={frontmatter.title} type="smidgeon">
+<Layout
+	title={frontmatter.title}
+	type="smidgeon"
+	pageMetadata={isPublicEntry(entry)
+		? {
+				type: "webpage",
+				name: frontmatter.title,
+				...(startDateCalendar ? { datePublished: startDateCalendar } : {}),
+			}
+		: false}
+>
 	<header class="header-section">
 		<div class="above-title">
 			<div class="back-link">
@@ -33,15 +47,16 @@ const primaryTitle =
 	<div class="smidgeon-layout">
 		<div class="metadata">
 			<div class="date-permalink">
-				<time datetime={frontmatter.startDate.toISOString()}>
+				{startDateCalendar && <time datetime={startDateCalendar}>
 					{
 						frontmatter.startDate.toLocaleDateString("en-US", {
 							year: "numeric",
 							month: "long",
 							day: "numeric",
+							timeZone: "UTC",
 						})
 					}
-				</time>
+				</time>}
 			</div>
 			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 		</div>
