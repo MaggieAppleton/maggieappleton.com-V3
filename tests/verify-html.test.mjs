@@ -16,6 +16,7 @@ import {
   assertSitemapResponse,
   assertXMLResponse,
   buildURL,
+  killWindowsProcessTree,
   extractJsonLdScripts,
   parsePort,
   runVerifier,
@@ -428,6 +429,46 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertSitemapResponse(sitemap, response(body, contentType, status), body), message);
 });
 
+test("requires a valid XML 1.0 declaration when a sitemap supplies one", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/</loc></url></urlset>';
+  for (const declaration of ["", '<?xml version="1.0"?>', "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"]) {
+    const xml = `${declaration}${body}`;
+    assert.doesNotThrow(() => assertSitemapResponse(route, response(xml, "application/xml"), xml));
+  }
+  for (const declaration of [
+    "<?xml rubbish?>",
+    '<?xml encoding="UTF-8"?>',
+    '<?xml version="1.0" version="1.0"?>',
+    '<?xml version="1.0" encoding="UTF-8\'?>',
+    '<?xml version="1.0" standalone="maybe"?>',
+    '<?xml version="1.0" unknown="value"?>',
+    ' <?xml version="1.0"?>',
+  ]) {
+    const xml = `${declaration}${body}`;
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML declaration/, declaration);
+  }
+});
+
+test("rejects forbidden sitemap XML characters and malformed character data", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/garden</loc><lastmod>2026-02-28</lastmod></url></urlset>';
+  for (const character of ["\0", "\x01", "\x0B", "\x0C", "\x1F", "\uD800", "\uDC00", "\uFFFE", "\uFFFF"]) {
+    for (const xml of [
+      body.replace("garden", `garden${character}`),
+      body.replace("2026-02-28", `2026-02-28${character}`),
+    ]) assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML character/);
+  }
+  for (const xml of [body.replace("garden", "garden]]>"), body.replace("2026-02-28", "2026-02-28]]>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /malformed XML text/);
+  }
+  for (const xml of [body.replace("<url>", "<url\u00A0>"), body.replace("<url>", "\u00A0<url>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /complete url blocks/);
+  }
+  const valid = body.replace("garden", "garden-\u{1F331}").replace("<url>", "\t\r\n<url>");
+  assert.doesNotThrow(() => assertSitemapResponse(route, response(valid, "application/xml"), valid));
+});
+
 test("verifies routes in order without fetching image URLs", async () => {
   const requested = [];
   const routes = [
@@ -610,13 +651,18 @@ test("cleans wait-for-exit listeners and timers on exit and timeout", async () =
   }
 });
 
-test("resolves owned-child readiness from Astro output", async () => {
+test("resolves owned-child readiness when Astro output spans chunks", async () => {
   const child = new EventEmitter();
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
   const ready = waitForChildReady(child);
-  child.stdout.emit("data", Buffer.from("astro v5 ready in 42 ms\n"));
-  await ready;
+  child.stdout.emit("data", Buffer.from("astro v5 rea"));
+  child.stdout.emit("data", Buffer.from("dy in 42 ms\n"));
+  const result = await Promise.race([
+    ready.then(() => "ready"),
+    new Promise((resolve) => setTimeout(() => resolve("timed out"), 20)),
+  ]);
+  assert.equal(result, "ready");
   assert.equal(child.stdout.listenerCount("data"), 0);
   assert.equal(child.stderr.listenerCount("data"), 0);
 });
@@ -627,26 +673,56 @@ test("stops a Unix process group and escalates only when needed", async () => {
   child.exitCode = null;
   child.kill = () => assert.fail("group signalling should be used on Unix");
   const signals = [];
+  const exitResults = [false, true];
   await stopDevServer(child, {
     platform: "darwin",
     killImpl: (pid, signal) => signals.push([pid, signal]),
-    waitForExitImpl: async () => false,
+    waitForExitImpl: async () => exitResults.shift(),
   });
   assert.deepEqual(signals, [[-99, "SIGTERM"], [-99, "SIGKILL"]]);
 });
 
-test("uses child.kill when Windows cannot signal a process group", async () => {
+test("stops the full Windows process tree and escalates only when needed", async () => {
   const child = new EventEmitter();
   child.pid = 99;
   child.exitCode = null;
-  const signals = [];
-  child.kill = (signal) => signals.push(signal);
+  child.kill = () => assert.fail("Windows cleanup should terminate the process tree");
+  const treeKills = [];
+  const exitResults = [false, true];
   await stopDevServer(child, {
     platform: "win32",
     killImpl: () => assert.fail("Windows should use child.kill"),
-    waitForExitImpl: async () => true,
+    killTreeImpl: async (pid, force) => treeKills.push([pid, force]),
+    waitForExitImpl: async () => exitResults.shift(),
   });
-  assert.deepEqual(signals, ["SIGTERM"]);
+  assert.deepEqual(treeKills, [[99, false], [99, true]]);
+});
+
+test("runs taskkill against the full Windows process tree", async () => {
+  const taskkill = new EventEmitter();
+  let spawnCall;
+  const killed = killWindowsProcessTree(99, true, (...args) => {
+    spawnCall = args;
+    return taskkill;
+  });
+  taskkill.emit("exit", 0);
+  assert.equal(await killed, true);
+  assert.deepEqual(spawnCall, [
+    "taskkill.exe",
+    ["/pid", "99", "/T", "/F"],
+    { stdio: "ignore", windowsHide: true },
+  ]);
+});
+
+test("fails cleanup when the process tree survives forced termination", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  await assert.rejects(() => stopDevServer(child, {
+    platform: "win32",
+    killTreeImpl: async () => {},
+    waitForExitImpl: async () => false,
+  }), /did not exit/);
 });
 
 test("runs the verifier with its manifest and reports every result", async () => {

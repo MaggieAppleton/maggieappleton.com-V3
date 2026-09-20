@@ -16,6 +16,7 @@ import { getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 import {
 	getPublicationBaseSlug,
+	isVersionedPublicationEntry,
 	selectLatestPublicEntries,
 	selectPublicEntries,
 } from "../utils/publication.mjs";
@@ -52,9 +53,11 @@ if (entry) {
 	const allEntries = selectPublicEntries(await getCollection(entry.collection)) as (typeof entry)[];
 	const publicEntryForDates =
 		allEntries.find((candidate) => candidate.id === entry.id) ??
-		selectLatestPublicEntries(allEntries).find(
-			(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
-		);
+		(isVersionedPublicationEntry(entry)
+			? selectLatestPublicEntries(allEntries).find(
+					(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
+				)
+			: undefined);
 	if (publicEntryForDates) {
 		const versionedDates = getCanonicalDates(publicEntryForDates, allEntries);
 		canonicalDates = {

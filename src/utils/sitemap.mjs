@@ -1,4 +1,6 @@
 import { buildCanonicalUrl, getEntryCanonicalPath } from "./canonical.mjs";
+import { hasValidCalendarDatePrefix } from "./calendarDate.mjs";
+import { collectTopics } from "./topicRoutes.mjs";
 
 export const STATIC_SITEMAP_PATHS = Object.freeze([
   "/",
@@ -38,6 +40,9 @@ function entryLastmod(entry) {
   if (updated === undefined || updated === null || (typeof updated !== "string" && !(updated instanceof Date))) {
     throw new Error(`Invalid sitemap updated date for ${entry.collection}:${entry.id}`);
   }
+  if (typeof updated === "string" && !hasValidCalendarDatePrefix(updated)) {
+    throw new Error(`Invalid sitemap updated date for ${entry.collection}:${entry.id}`);
+  }
   const date = new Date(updated);
   if (Number.isNaN(date.getTime())) {
     throw new Error(`Invalid sitemap updated date for ${entry.collection}:${entry.id}`);
@@ -72,6 +77,21 @@ export function createSitemapRecords({ staticPaths = STATIC_SITEMAP_PATHS, entri
     add(`/topics/${slug}`);
   });
   return records;
+}
+
+export function createSitemapRecordsFromManifest(manifest) {
+  const entries = [
+    ...manifest.canonicalByCollection.essays,
+    ...manifest.canonicalByCollection.notes,
+    ...manifest.canonicalByCollection.patterns,
+    ...manifest.canonicalByCollection.talks,
+    ...manifest.canonicalByCollection.smidgeons,
+    ...manifest.publicByCollection.now,
+  ];
+  return createSitemapRecords({
+    entries,
+    topics: collectTopics(manifest.canonicalEntries),
+  });
 }
 
 export function serializeSitemapXml(records) {

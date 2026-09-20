@@ -345,11 +345,16 @@ function getMetaContent(body, property) {
   return content;
 }
 
-export function assertHTMLResponse(route, response, body) {
+function assertHTMLDocumentResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
+  return title;
+}
+
+export function assertHTMLResponse(route, response, body) {
+  const title = assertHTMLDocumentResponse(route, response, body);
   assert.match(body, /<main(?:\s|>)/i, `${route.path}: expected a main landmark`);
   if (route.requireH1 !== false) assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
   const canonical = assertCanonical(route, body);
@@ -373,10 +378,7 @@ export function assertHTMLResponse(route, response, body) {
 }
 
 export function assertNoindexHTMLResponse(route, response, body) {
-  assertSuccessfulResponse(route, response);
-  assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
-  const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
-  assert.ok(title, `${route.path}: expected a non-empty title`);
+  assertHTMLDocumentResponse(route, response, body);
   const robots = extractTags(body, "meta").filter((tag) =>
     (getAttribute(tag, "name") ?? "").toLowerCase() === "robots",
   );
@@ -427,11 +429,21 @@ function decodeXmlEntities(value) {
   })[entity]);
 }
 
+const XML_DECLARATION = new RegExp(
+  String.raw`^<\?xml[ \t\r\n]+version[ \t\r\n]*=[ \t\r\n]*(["'])1\.0\1` +
+  String.raw`(?:[ \t\r\n]+encoding[ \t\r\n]*=[ \t\r\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?` +
+  String.raw`(?:[ \t\r\n]+standalone[ \t\r\n]*=[ \t\r\n]*(["'])(?:yes|no)\3)?[ \t\r\n]*\?>`,
+);
+
 function parseSitemapDocument(route, body) {
   const fail = (message) => assert.fail(`${route.path}: ${message}`);
-  let index = 0;
+  if (/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/u.test(body)) {
+    fail("sitemap contains a forbidden XML character");
+  }
+  const documentStart = body.startsWith("\uFEFF") ? 1 : 0;
+  let index = documentStart;
   const skipWhitespace = () => {
-    while (index < body.length && /\s/.test(body[index])) index += 1;
+    while (index < body.length && /[ \t\r\n]/.test(body[index])) index += 1;
   };
   const consume = (pattern, message) => {
     const match = body.slice(index).match(pattern);
@@ -442,13 +454,12 @@ function parseSitemapDocument(route, body) {
 
   skipWhitespace();
   if (body.startsWith("<?xml", index)) {
-    const declarationEnd = body.indexOf("?>", index + 5);
-    if (declarationEnd < 0) fail("sitemap XML declaration is unclosed");
-    index = declarationEnd + 2;
+    if (index !== documentStart) fail("sitemap XML declaration must be at the document start");
+    consume(XML_DECLARATION, "sitemap XML declaration is malformed");
     skipWhitespace();
   }
   consume(
-    /^<urlset\s+xmlns\s*=\s*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1\s*>/,
+    /^<urlset[ \t\r\n]+xmlns[ \t\r\n]*=[ \t\r\n]*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1[ \t\r\n]*>/,
     "sitemap must contain exactly one urlset with the sitemap namespace",
   );
 
@@ -460,31 +471,31 @@ function parseSitemapDocument(route, body) {
       index += "</urlset>".length;
       break;
     }
-    consume(/^<url\s*>/, "sitemap must contain complete url blocks");
+    consume(/^<url[ \t\r\n]*>/, "sitemap must contain complete url blocks");
     urlCount += 1;
     skipWhitespace();
-    consume(/^<loc\s*>/, "each sitemap url must contain exactly one loc");
+    consume(/^<loc[ \t\r\n]*>/, "each sitemap url must contain exactly one loc");
     const locEnd = body.indexOf("</loc>", index);
     if (locEnd < 0) fail("sitemap loc is unclosed");
     const rawLocation = body.slice(index, locEnd);
-    if (rawLocation.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
+    if (rawLocation.includes("<") || rawLocation.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
       fail("sitemap loc contains malformed XML text");
     }
     locations.push(decodeXmlEntities(rawLocation));
     index = locEnd + "</loc>".length;
     skipWhitespace();
-    if (body.slice(index).match(/^<lastmod\s*>/)) {
-      consume(/^<lastmod\s*>/, "sitemap lastmod is malformed");
+    if (body.slice(index).match(/^<lastmod[ \t\r\n]*>/)) {
+      consume(/^<lastmod[ \t\r\n]*>/, "sitemap lastmod is malformed");
       const lastmodEnd = body.indexOf("</lastmod>", index);
       if (lastmodEnd < 0) fail("sitemap lastmod is unclosed");
       const rawLastmod = body.slice(index, lastmodEnd);
-      if (rawLastmod.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
+      if (rawLastmod.includes("<") || rawLastmod.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
         fail("sitemap lastmod contains malformed XML text");
       }
       index = lastmodEnd + "</lastmod>".length;
       skipWhitespace();
     }
-    consume(/^<\/url\s*>/, "sitemap url is unclosed or contains extra elements");
+    consume(/^<\/url[ \t\r\n]*>/, "sitemap url is unclosed or contains extra elements");
   }
   skipWhitespace();
   if (index !== body.length) fail("sitemap document contains stray content");
@@ -607,7 +618,7 @@ export function waitForExit(child, timeoutMs = 2_000, {
   setTimeoutImpl = setTimeout,
   clearTimeoutImpl = clearTimeout,
 } = {}) {
-  if (child.exitCode !== null) return true;
+  if (child.exitCode !== null || child.signalCode != null) return true;
   return new Promise((resolve) => {
     let timer;
     const finish = (result) => {
@@ -621,20 +632,44 @@ export function waitForExit(child, timeoutMs = 2_000, {
   });
 }
 
-export function waitForChildReady(child) {
+export function waitForChildReady(child, {
+  timeoutMs = 30_000,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout,
+} = {}) {
   return new Promise((resolve, reject) => {
     const streams = [child.stdout, child.stderr].filter(Boolean);
     if (!streams.length) {
       reject(new Error("Astro dev did not expose an output stream for readiness"));
       return;
     }
-    const cleanup = () => streams.forEach((stream) => stream.removeListener("data", onData));
+    let output = "";
+    let timer;
+    const cleanup = () => {
+      streams.forEach((stream) => stream.removeListener("data", onData));
+      clearTimeoutImpl(timer);
+    };
     const onData = (chunk) => {
-      if (!/\bready in\b/i.test(String(chunk))) return;
+      output = `${output}${String(chunk)}`.slice(-256);
+      if (!/\bready in\b/i.test(output)) return;
       cleanup();
       resolve();
     };
     streams.forEach((stream) => stream.on("data", onData));
+    timer = setTimeoutImpl(() => {
+      cleanup();
+      reject(new Error(`Astro dev did not report readiness within ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+}
+
+export function killWindowsProcessTree(pid, force = false, spawnImpl = spawn) {
+  return new Promise((resolve, reject) => {
+    const args = ["/pid", String(pid), "/T"];
+    if (force) args.push("/F");
+    const taskkill = spawnImpl("taskkill.exe", args, { stdio: "ignore", windowsHide: true });
+    taskkill.once("error", reject);
+    taskkill.once("exit", (code) => resolve(code === 0));
   });
 }
 
@@ -661,17 +696,19 @@ function watchChildFailure(child) {
 export async function stopDevServer(child, {
   platform = process.platform,
   killImpl = process.kill,
+  killTreeImpl = killWindowsProcessTree,
   waitForExitImpl = waitForExit,
 } = {}) {
-  if (!child || child.exitCode !== null) return;
-  const signal = (name) => {
-    if (platform !== "win32" && child.pid) killImpl(-child.pid, name);
+  if (!child || child.exitCode !== null || child.signalCode != null) return;
+  const signal = async (name) => {
+    if (platform === "win32" && child.pid) await killTreeImpl(child.pid, name === "SIGKILL");
+    else if (child.pid) killImpl(-child.pid, name);
     else child.kill(name);
   };
-  try { signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  try { await signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
   if (await waitForExitImpl(child, 2_000)) return;
-  try { signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
-  await waitForExitImpl(child, 2_000);
+  try { await signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  if (!await waitForExitImpl(child, 2_000)) throw new Error("Astro dev process tree did not exit after forced termination");
 }
 
 export async function runVerifier({
