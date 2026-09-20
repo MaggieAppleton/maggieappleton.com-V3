@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax. One implementer owns this serial change; a separate reviewer checks the finished diff and acceptance evidence.
 
-**Goal:** Give every indexable landing page and canonical public Article an explicit, concise, unique description, while giving public Now and Smidgeon details honest collection-specific descriptions without changing their conservative P7 types.
+**Goal:** Give every indexable landing page an explicit, concise, unique description, while giving public Now and Smidgeon details honest collection-specific descriptions without changing their conservative P7 types or authored content frontmatter.
 
 **Architecture:** Add one small pure descriptions module as the source of approved static, topic, Now, and Smidgeon metadata wording plus narrow validation. Layout resolves one description value and sends that exact value to standard metadata, Open Graph, and the P7 JSON-LD page node; an enabled page node without an explicit meaningful description fails closed. Existing visible landing/index/topic subtitles remain byte-for-byte unchanged. Canonical Article details continue to use reviewed frontmatter; no body extraction or generated-image behaviour is added.
 
@@ -18,10 +18,10 @@
 - Preserve P6's sole ordinary-page main, one visible H1, styling, view transitions, exact ordered 26-route manifest, and route.siteIdentity true if and only if route.kind is html.
 - Preserve P7's public/canonical Article gate, canonical-version/date rules, Article-only Open Graph fields, conservative Now/Smidgeon WebPage nodes, and archive/draft/dev/noindex/non-HTML exclusions.
 - Each pageMetadata opt-in must receive explicit meaningful desc. Empty, whitespace, exactly ..., and P5's generic site description are invalid. That generic description remains allowed only as standard/OG fallback for an intentionally no-page-metadata draft or development surface.
-- Use 80--160 Unicode code points inclusive for every new shared description, public Now/Smidgeon interpolation result, the existing Hire Me frontmatter description, and the four approved repairs. The range is long enough to state a subject and short enough to avoid boilerplate. The current About description, Designer, anthropologist, and mediocre developer., is the one approved pre-existing 49-character exception; retain it byte-for-byte rather than inventing biography.
-- Check all public Article frontmatter descriptions for meaningfulness, non-generic value, and uniqueness, but do not mechanically pad older reviewed descriptions to 80 characters. P8 repairs three known draft defects and one public duplicate only.
+- Use 80--160 Unicode code points inclusive for every new shared description, public Now/Smidgeon interpolation result, and the existing Hire Me frontmatter description. The range is long enough to state a subject and short enough to avoid boilerplate. The current About description, Designer, anthropologist, and mediocre developer., is the one approved pre-existing 49-character exception; retain it byte-for-byte rather than inventing biography.
+- Preserve Article frontmatter descriptions byte-for-byte. P8 does not repair, rewrite, pad, or deduplicate authored content copy.
 - Do not generate a description from truncated MDX/body text, external citation/author data, card previews, URL paths, or an image. Now/Smidgeon functions use only their local title; P7 owns their machine-readable calendar dates and native time elements.
-- Keep every existing visible landing/index/topic subtitle byte-for-byte unchanged. P8 changes visible text only through the four reviewed frontmatter scalars: the three drafts remain non-public and the public talk description continues to appear in its existing PostLayout header.
+- Keep every existing visible landing/index/topic subtitle and content description byte-for-byte unchanged.
 - Do not modify astro.config.mjs, package manifests/lockfiles, feeds, sitemap policy, robots, routing, image/OG endpoints, deployment/Vercel config, or P5/P6/P7 plans.
 - Do not run build, build:local, preview, deployment/Vercel, push, merge, or PR commands. node --test tests/*.test.mjs and npm run verify:html are allowed; the verifier may read returned local HTML/XML/text only and must never request images, OG assets, stylesheets, external URLs, or other assets.
 
@@ -49,16 +49,7 @@ src/utils/descriptions.mjs owns the following literal text. Use ASCII apostrophe
 | describeNow(title) | A snapshot of what Maggie Appleton was reading, exploring, and thinking about in {title}. | Metadata only; P7 keeps date in JSON-LD and time. |
 | describeSmidgeon(title) | A smidgeon from Maggie Appleton's reading stream – an interesting link, paper, or tiny thought: {title}. | Metadata only; do not attribute external/citation work to Maggie. |
 
-Apply only these four frontmatter values:
-
-| File | Exact description |
-| --- | --- |
-| src/content/notes/ai-profilepics.mdx | An illustrated note on novelty oil paintings, cheap aesthetics, and the effect of generative AI on portraiture. |
-| src/content/notes/post-pull-request.mdx | A sketch of agentic software work beyond pull requests, with lighter review checkpoints, richer context, and an audit trail. |
-| src/content/patterns/visual-expressions.mdx | A design pattern for making formulas and expressions easier to read and edit through labelled visual structure. |
-| src/content/talks/tools-thought-talk.mdx | A talk about tools for thought as cultural practices: their history, social assumptions, and what designers build around them. |
-
-The first three retain draft: true. The talk is public and replaces the current duplicate of essays/tools-for-thought.mdx; leave the essay unchanged.
+Content entries under essays, notes, patterns, and talks are out of scope. Preserve their existing frontmatter descriptions unchanged.
 
 ## Files and Interfaces
 
@@ -66,9 +57,8 @@ The first three retain draft: true. The talk is public and replaces the current 
 - Modify src/layouts/Layout.astro — resolve one description and require explicit page-metadata copy.
 - Modify src/pages/index.astro, about.astro, garden.astro, essays.astro, notes.astro, patterns.astro, talks.astro, podcasts.astro, now.astro, smidgeons.astro, library.astro, antilibrary.astro, hire-me.astro, colophon/index.astro, and topics/[topic].astro — shared static/topic metadata copy while retaining current visible text.
 - Modify src/pages/now-[slug]/[...rest].astro and src/layouts/SmidgeonLayout.astro — public-only fallback descriptions.
-- Modify the four exact MDX files above — description lines only.
 - Modify src/scripts/verify-html.mjs and tests/verify-html.test.mjs — standard/OG/JSON-LD alignment in the unchanged 26-route verifier.
-- Create tests/descriptions.test.mjs — pure values, length, source wiring, and frontmatter policy.
+- Create tests/descriptions.test.mjs — pure values, length, source wiring, and public-frontmatter compatibility.
 - Modify tests/page-metadata.test.mjs only if that is the least duplicative location for the Layout source assertion; do not weaken P5/P7 coverage.
 
 The module exports exactly:
@@ -285,36 +275,32 @@ Run: node --test tests/descriptions.test.mjs tests/page-metadata.test.mjs tests/
 
 Expected: PASS except only sandbox-denied loopback listener cases, if the runtime prohibits binding 127.0.0.1; do not weaken those tests.
 
-### Task 4: Add public Now/Smidgeon fallbacks and repair reviewed content
+### Task 4: Add public Now/Smidgeon fallbacks without changing authored content
 
 **Files:**
 
 - Modify: src/pages/now-[slug]/[...rest].astro
 - Modify: src/layouts/SmidgeonLayout.astro
 - Inspect: src/layouts/PostLayout.astro
-- Modify: src/content/notes/ai-profilepics.mdx
-- Modify: src/content/notes/post-pull-request.mdx
-- Modify: src/content/patterns/visual-expressions.mdx
-- Modify: src/content/talks/tools-thought-talk.mdx
 - Modify: tests/descriptions.test.mjs
 
 **Consumes:** Task 1 functions and P7 isPublicEntry, toCalendarDate, Article gate, and WebPage policy.
 
-**Produces:** Public-only Now/Smidgeon descriptions and clean reviewed Article frontmatter.
+**Produces:** Public-only Now/Smidgeon descriptions while existing Article frontmatter remains untouched.
 
-- [ ] **Step 1: Write failing detail and frontmatter policy tests.**
+- [ ] **Step 1: Write failing detail tests and preserve public-frontmatter compatibility.**
 
 Require Now detail to import describeNow, derive description from entry.data.title only, and pass desc only for isPublicEntry(entry). Require SmidgeonLayout to import describeSmidgeon, derive from frontmatter.title, and pass desc only for public entries. In both sources assert P7 node type remains webpage with local datePublished and does not gain Article type, external/citation author, image, or dateModified. Assert P7's existing startDateCalendar still supplies only its JSON-LD/time date behaviour, not prose.
 
 Also assert PostLayout retains desc={frontmatter.description} on its existing Layout call. This proves canonical public Article descriptions continue to originate in reviewed frontmatter rather than acquiring a P8 fallback.
 
-Recursively read only the initial YAML fence of every MDX file under essays, notes, patterns, and talks. Each public Article needs a present meaningful, non-generic, unique description; report both paths for duplicates. Require the four exact repair strings above and range-check only those repairs. Give the parser a synthetic MDX body containing description: "..." to prove it reads frontmatter only.
+Recursively read only the initial YAML fence of every MDX file under essays, notes, patterns, and talks. Existing public Articles must continue to provide a meaningful, non-generic description. Draft content is outside this metadata policy and no content description is rewritten. Give the parser a synthetic MDX body containing description: "..." to prove it reads frontmatter only.
 
 - [ ] **Step 2: Run the test to establish failure.**
 
 Run: node --test tests/descriptions.test.mjs
 
-Expected: FAIL because details lack desc, the three known repairs are bad, and tools-thought-talk duplicates the essay.
+Expected: FAIL because Now and Smidgeon details lack desc.
 
 - [ ] **Step 3: Implement public-only fallback wiring.**
 
@@ -338,9 +324,9 @@ const description = isPublicEntry(entry)
 
 Pass it as Layout desc. Do not use external/citation title, add Article metadata, change the H1 decision, or alter card/link CSS. Drafts remain no-page and generic fallback applies only there.
 
-- [ ] **Step 4: Apply four scalar frontmatter repairs only.**
+- [ ] **Step 4: Confirm authored content remains unchanged.**
 
-Replace only the description scalar in the four listed files. Preserve dates, drafts, types, topics, covers, headings, and MDX body. In particular retain draft: true for the three drafts.
+Do not edit description scalars under essays, notes, patterns, or talks. These are authored content, not metadata copy owned by P8.
 
 - [ ] **Step 5: Run P7/P8 focused tests.**
 
@@ -431,7 +417,7 @@ Give reviewer d786639...HEAD, this plan, and P8 spec. Require verification of:
 1. All static/index/topic routes use central metadata copy; every visible landing/index/topic subtitle is byte-for-byte unchanged, and home is metadata-only.
 2. P5 identity description is byte-for-byte intact; no metadata route can use it; only no-page draft/dev fallback can.
 3. Layout uses one resolved value for standard, OG, and JSON-LD without changing canonical, graph, date, image, or Article-only OG policy.
-4. Canonical public Articles have meaningful unique frontmatter; tools-thought-talk no longer duplicates the essay; three repaired entries remain drafts.
+4. Canonical public Articles keep using their existing frontmatter descriptions; P8 does not rewrite authored content.
 5. Now/Smidgeon descriptions use only local titles; their existing P7 dates remain solely in JSON-LD and native time. Both remain WebPages and gain no external/citation/Article facts.
 6. P6 scanner, exact 26 order, identity iff HTML, diagram noindex/no-JSON-LD, and non-HTML contracts stay intact.
 7. No image fetch, build, build:local, preview, Vercel/deployment, push, or PR publication occurred.
@@ -453,12 +439,12 @@ Expected: no unrelated files, generated artefacts, whitespace errors, or P5/P6/P
 | Requirement | Plan coverage |
 | --- | --- |
 | Unique concise landing descriptions | Task 1 literal/range policy; Task 3 complete static/topic metadata source map while preserving subtitles; Task 5 rendered manifest subset. |
-| Reviewed Article frontmatter | Task 4 fenced-frontmatter policy and four exact edits. |
+| Existing Article frontmatter | Task 4 compatibility check with no authored copy edits. |
 | Explicit Now/Smidgeon policy | Tasks 1 and 4 public-only functions/wiring with WebPage assertions. |
 | No blank, placeholder, generic, or body-derived copy | Global constraints; Tasks 1, 2, 4, and 5 adversarial tests. |
 | Standard, OG, and JSON-LD alignment | Task 2 resolved Layout value; Task 5 cardinality/equality test. |
 | P5/P6/P7/no-image preservation | Global constraints; Tasks 4--6 and unchanged verifier manifest/fetch loop. |
-| No unreviewed visible copy change | Task 3 byte-for-byte subtitle assertions; Task 4 only four approved frontmatter scalar edits. |
+| No unreviewed visible copy change | Task 3 byte-for-byte subtitle assertions; Task 4 preserves authored content frontmatter. |
 
 Before handoff, scan this plan for TBD, TODO, implement later, appropriate error handling, similar to Task, build, preview, deploy, and Vercel instructions. The only deliberate short copy is the established About line; preserving it is more honest than padding it with a fabricated fact.
 

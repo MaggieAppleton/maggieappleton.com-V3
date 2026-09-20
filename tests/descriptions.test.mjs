@@ -166,14 +166,7 @@ async function contentFiles(collection) {
   return names.filter((name) => name.endsWith(".mdx")).map((name) => join(root.pathname, name));
 }
 
-test("public Article frontmatter is meaningful, unique, and contains only the four approved repairs", async () => {
-  const repairs = {
-    "src/content/notes/ai-profilepics.mdx": "An illustrated note on novelty oil paintings, cheap aesthetics, and the effect of generative AI on portraiture.",
-    "src/content/notes/post-pull-request.mdx": "A sketch of agentic software work beyond pull requests, with lighter review checkpoints, richer context, and an audit trail.",
-    "src/content/patterns/visual-expressions.mdx": "A design pattern for making formulas and expressions easier to read and edit through labelled visual structure.",
-    "src/content/talks/tools-thought-talk.mdx": "A talk about tools for thought as cultural practices: their history, social assumptions, and what designers build around them.",
-  };
-  const seen = new Map();
+test("public Article frontmatter remains meaningful while drafts stay out of policy", async () => {
   for (const collection of ["essays", "notes", "patterns", "talks"]) {
     for (const path of await contentFiles(collection)) {
       const source = await readFile(path, "utf8");
@@ -181,14 +174,7 @@ test("public Article frontmatter is meaningful, unique, and contains only the fo
       if (data.draft === "true") continue;
       assert.equal(isMeaningfulDescription(data.description, SITE_IDENTITY.websiteDescription), true, path);
       assert.ok(data.description, path);
-      if (seen.has(data.description)) assert.fail(`duplicate description: ${path} and ${seen.get(data.description)}`);
-      seen.set(data.description, path);
     }
-  }
-  for (const [relative, expected] of Object.entries(repairs)) {
-    const source = await readFile(new URL(`../${relative}`, import.meta.url), "utf8");
-    assert.equal(parseFrontmatter(source).description, expected, relative);
-    assertDescriptionLength(expected, relative);
   }
   assert.equal(parseFrontmatter(await readFile(new URL("../src/content/notes/ai-profilepics.mdx", import.meta.url), "utf8")).draft, "true");
   assert.equal(parseFrontmatter(await readFile(new URL("../src/content/notes/post-pull-request.mdx", import.meta.url), "utf8")).draft, "true");
