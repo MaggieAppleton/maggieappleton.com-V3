@@ -22,4 +22,3 @@ Update the focused structural test to require one normalization point and four
 helper call sites. Existing behavioral tests must continue to prove the exact
 slashless links, folder-version handling, filename-version preservation, RSS
 serialization, draft filtering, and ordering.
-
