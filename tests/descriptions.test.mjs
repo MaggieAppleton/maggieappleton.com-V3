@@ -143,7 +143,7 @@ test("Now and Smidgeon detail layouts use public-only local-title descriptions",
   assert.match(smidgeon, /const description\s*=\s*isPublicEntry\(entry\)[\s\S]*describeSmidgeon\(frontmatter\.title\)/);
   assert.match(smidgeon, /desc=\{description\}/);
   for (const source of [now, smidgeon]) {
-    assert.match(source, /type:\s*["']webpage["']/);
+    assert.match(source, /createDatedWebPageMetadata\(\{/);
     assert.doesNotMatch(source, /type:\s*["']article["']/);
   }
   const post = await readFile(new URL("../src/layouts/PostLayout.astro", import.meta.url), "utf8");
