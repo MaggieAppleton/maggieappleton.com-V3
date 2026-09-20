@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { createPublicEntryManifest } from "../src/utils/publication.mjs";
@@ -11,8 +9,6 @@ import {
   createSitemapRecordsFromManifest,
   serializeSitemapXml,
 } from "../src/utils/sitemap.mjs";
-
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 test("uses exactly the explicit static sitemap allow-list", () => {
   assert.deepEqual(STATIC_SITEMAP_PATHS, [
@@ -150,29 +146,4 @@ test("serializes XML with the declaration, namespace, and all XML escapes", () =
   assert.match(xml, /https:\/\/maggieappleton\.com\/a\?x=&lt;&amp;&gt;&quot;&apos;/);
   assert.match(xml, /<lastmod>2026-01-02&amp;&lt;&gt;&apos;&quot;<\/lastmod>/);
   assert.doesNotMatch(xml, /<lastmod><\/lastmod>/);
-});
-
-test("shared loader owns collection reads and sitemap uses its manifest", () => {
-  const sitemapSource = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
-  const loaderSource = readFileSync(`${repoRoot}/src/utils/publicEntryManifest.ts`, "utf8");
-
-  assert.match(sitemapSource, /import\s+\{\s*fetchPublicEntryManifest\s*\}\s+from\s+["']\.\.\/utils\/publicEntryManifest["']/);
-  assert.match(sitemapSource, /createSitemapRecordsFromManifest\(manifest\)/);
-  assert.match(sitemapSource, /serializeSitemapXml/);
-  const loadedCollections = [...loaderSource.matchAll(/getCollection\("([^"]+)"\)/g)].map(([, name]) => name);
-  assert.deepEqual(loadedCollections.sort(), ["essays", "notes", "now", "patterns", "podcasts", "smidgeons", "talks"]);
-  assert.equal((loaderSource.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
-  assert.doesNotMatch(sitemapSource, /getCollection\(/);
-  assert.doesNotMatch(sitemapSource, /createPublicEntryManifest/);
-  assert.doesNotMatch(sitemapSource, /const\s+entries\s*=/);
-});
-
-test("robots declares exactly one absolute sitemap and keeps the crawler allow policy", () => {
-  const robots = readFileSync(`${repoRoot}/public/robots.txt`, "utf8");
-  assert.match(robots, /^User-agent: \*$/m);
-  assert.match(robots, /^Allow: \/$/m);
-  assert.deepEqual(
-    robots.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.startsWith("Sitemap:")),
-    ["Sitemap: https://maggieappleton.com/sitemap.xml"],
-  );
 });

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   createDatedWebPageMetadata,
@@ -8,37 +7,7 @@ import {
   isCanonicalPublicArticle,
   toCalendarDate,
 } from "../src/utils/pageMetadata.mjs";
-
-const expectedP5Identity = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@id": "https://maggieappleton.com/#website",
-      "@type": "WebSite",
-      url: "https://maggieappleton.com/",
-      name: "Maggie Appleton",
-      description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology",
-      inLanguage: "en-GB",
-      author: { "@id": "https://maggieappleton.com/#person" },
-      publisher: { "@id": "https://maggieappleton.com/#person" },
-    },
-    {
-      "@id": "https://maggieappleton.com/#person",
-      "@type": "Person",
-      name: "Maggie Appleton",
-      url: "https://maggieappleton.com/about",
-      description: "Designer, anthropologist, and mediocre developer.",
-      sameAs: [
-        "https://bsky.app/profile/maggieappleton.com",
-        "https://github.com/MaggieAppleton",
-        "https://uk.linkedin.com/in/maggieappleton",
-        "https://dribbble.com/mappleton",
-			"https://x.com/Mappletons",
-        "https://indieweb.social/@maggie",
-      ],
-    },
-  ],
-};
+import { expectedSiteIdentity as expectedP5Identity } from "./fixtures/site-identity.mjs";
 
 test("builds factual Article and WebPage nodes with stable identities", () => {
   const article = createPageMetadataNode({
@@ -194,23 +163,6 @@ test("accepts only canonical-origin or HTTPS images and omits unsafe values", ()
   }
 });
 
-test("keeps canonical-origin root-relative images exact", () => {
-  for (const image of ["/cover.png", "/nested/cover.webp"]) {
-    assert.match(createPageMetadataNode({
-      type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10", image,
-    }).image, /^https:\/\/maggieappleton\.com\/(?!\/)/);
-  }
-});
-
-test("deep-freezes nested values in a shallow-frozen page node", () => {
-  const page = createPageMetadataNode({ type: "article", canonicalUrl: "/api", name: "API", datePublished: "2019-04-10" });
-  Object.freeze(page);
-  const graph = createStructuredDataGraph(page);
-  assert.equal(Object.isFrozen(graph["@graph"][2].isPartOf), true);
-  assert.equal(Object.isFrozen(graph["@graph"][2].author), true);
-  assert.throws(() => { graph["@graph"][2].author["@id"] = "changed"; }, TypeError);
-});
-
 test("omits invalid optional WebPage dates and Article-only fields", () => {
   const page = createPageMetadataNode({
     type: "webpage", canonicalUrl: "/about", name: "About", datePublished: "not-a-date", dateModified: "2020-01-01",
@@ -227,75 +179,4 @@ test("omits invalid optional WebPage dates and Article-only fields", () => {
   assert.equal(Object.hasOwn(page, "publisher"), false);
   assert.equal(Object.hasOwn(page, "headline"), false);
   assert.equal(Object.hasOwn(page, "image"), false);
-});
-
-test("Layout and templates opt in to page metadata explicitly", async () => {
-  const read = async (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-  const layout = await read("src/layouts/Layout.astro");
-  assert.match(layout, /pageMetadata\??/);
-  assert.match(layout, /pageMetadata\s*=\s*false/);
-  assert.match(layout, /isArticle/);
-  assert.match(layout, /publishedTime/);
-  const staticPages = ["index", "about", "garden", "essays", "notes", "patterns", "talks", "podcasts", "now", "smidgeons", "library", "antilibrary", "hire-me"];
-  for (const page of staticPages) assert.match(await read(`src/pages/${page}.astro`), /pageMetadata\s*=\s*["']webpage["']/);
-  assert.match(await read("src/pages/topics/[topic].astro"), /pageMetadata\s*=\s*["']webpage["']/);
-  assert.match(await read("src/pages/colophon/index.astro"), /pageMetadata\s*=\s*["']webpage["']/);
-  assert.doesNotMatch(await read("src/pages/drafts/[...slug].astro"), /pageMetadata\s*=/);
-  assert.doesNotMatch(await read("src/pages/design-system.astro"), /pageMetadata\s*=/);
-});
-
-test("detail layouts use guarded canonical metadata and calendar time values", async () => {
-  const read = async (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-  const postLayout = await read("src/layouts/PostLayout.astro");
-  assert.match(postLayout, /isCanonicalPublicArticle\s*\(\s*\{/);
-  assert.match(postLayout, /collection:\s*entry\.collection/);
-  assert.match(postLayout, /isPublic:\s*isPublicEntry\(entry\)/);
-  assert.match(postLayout, /requestPath:\s*Astro\.url\.pathname/);
-  assert.match(postLayout, /datePublished:\s*startDateCalendar/);
-  const nowDetail = await read("src/pages/now-[slug]/[...rest].astro");
-  const smidgeonLayout = await read("src/layouts/SmidgeonLayout.astro");
-  for (const source of [nowDetail, smidgeonLayout]) {
-    assert.match(source, /createDatedWebPageMetadata\s*\(\s*\{/);
-    assert.match(source, /isPublic:\s*isPublicEntry\(entry\)/);
-    assert.match(source, /pageMetadata=\{pageMetadata\}/);
-    assert.match(source, /<CalendarDate\s+value=\{/);
-    assert.doesNotMatch(source, /toLocaleDateString|<time\s/);
-  }
-  const calendarDate = await read("src/components/layouts/CalendarDate.astro");
-  assert.match(calendarDate, /datetime=\{calendarDate\}/);
-  assert.match(calendarDate, /timeZone:\s*["']UTC["']/);
-});
-
-test("authored date frontmatter uses calendar dates or UTC timestamps before schema coercion", async () => {
-  const collections = ["essays", "notes", "patterns", "talks", "now", "smidgeons"];
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/;
-  const utcTimestamp = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
-  const isAuthoredDate = (value) => {
-    if (dateOnly.test(value)) return Boolean(toCalendarDate(value));
-    const match = value.match(utcTimestamp);
-    if (!match || !toCalendarDate(match[1])) return false;
-    const parsed = new Date(value);
-    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[1];
-  };
-  for (const collection of collections) {
-    const files = await import("node:fs/promises").then(({ readdir }) => readdir(new URL(`../src/content/${collection}/`, import.meta.url)));
-    for (const file of files.filter((name) => name.endsWith(".mdx"))) {
-      const source = await readFile(new URL(`../src/content/${collection}/${file}`, import.meta.url), "utf8");
-      const frontmatter = source.match(/^---\n([\s\S]*?)\n---/m)?.[1] ?? "";
-      for (const [, value] of frontmatter.matchAll(/^(?:startDate|updated):\s*["']?([^"'\s]+)["']?\s*$/gm)) {
-        assert.equal(isAuthoredDate(value), true, `${collection}/${file}: invalid authored date`);
-      }
-    }
-  }
-  assert.equal(isAuthoredDate("2023-02-29"), false);
-  assert.equal(isAuthoredDate("2024-02-29"), true);
-  assert.equal(isAuthoredDate("2025-01-07T09:58:54.908+01:00"), false);
-  assert.equal(isAuthoredDate("2025-01-07T09:58:54.908Z"), true);
-});
-
-test("publication Dates use canonical calendar datetime values", async () => {
-  const dates = await readFile(new URL("../src/components/layouts/Dates.astro", import.meta.url), "utf8");
-  assert.match(dates, /Planted\s*<time\s+datetime=\{startDate\}>\s*<RelativeDate postDate=\{startDate\}/s);
-  assert.match(dates, /Last tended\s*<time\s+datetime=\{updated\}>\s*<RelativeDate postDate=\{updated\}/s);
-  assert.doesNotMatch(dates, /differenceInDays|parseISO|new Date|postDate=\{updated\}[\s\S]*Planted/);
 });

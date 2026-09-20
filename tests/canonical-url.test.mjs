@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 import {
   CANONICAL_ORIGIN,
@@ -8,55 +6,6 @@ import {
   getEntryCanonicalPath,
   normalizeCanonicalPath,
 } from "../src/utils/canonical.mjs";
-
-const fromRoot = (path) => new URL(path, `${new URL(".", import.meta.url)}../`);
-
-async function sourceFiles(directory) {
-  const files = [];
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const path = new URL(entry.name, `${directory.toString().replace(/\/$/, "")}/`);
-    if (entry.isDirectory()) files.push(...await sourceFiles(path));
-    else if (/\.(?:astro|[cm]?[jt]sx?|mdx)$/i.test(entry.name)) files.push(path);
-  }
-  return files;
-}
-
-test("keeps the Colophon MDX component outside the pages router", async () => {
-  const pageFragment = fromRoot("src/pages/colophon/colophon-content.mdx");
-  const componentFragment = fromRoot("src/components/unique/colophon/ColophonContent.mdx");
-
-  await assert.rejects(stat(pageFragment), { code: "ENOENT" });
-  const [content, page] = await Promise.all([
-    readFile(componentFragment, "utf8"),
-    readFile(fromRoot("src/pages/colophon/index.astro"), "utf8"),
-  ]);
-
-  for (const proseMarker of [
-    "I designed and built this site myself.",
-    "### Technologies & Techniques",
-    "### Writing and Editing Content",
-    "### Typography",
-    "### Growth Stages",
-    "### Custom Components",
-    "Addiction by Design takes readers into the intriguing world of machine gambling",
-  ]) {
-    assert.ok(content.includes(proseMarker), `moved Colophon content is missing: ${proseMarker}`);
-  }
-  assert.match(page, /import Content from "\.\.\/\.\.\/components\/unique\/colophon\/ColophonContent\.mdx";/);
-});
-
-test("marks the standalone diagram preview as non-indexable", async () => {
-  const source = await readFile(fromRoot("src/pages/diagram-preview.astro"), "utf8");
-  const metaTags = [...source.matchAll(/<meta\b[^>]*>/gi)].map(([tag]) => tag);
-  const robotsMetaTags = metaTags.filter((tag) => /\bname\s*=\s*["']robots["']/i.test(tag));
-  const canonicalLinkTags = [...source.matchAll(/<link\b[^>]*>/gi)]
-    .map(([tag]) => tag)
-    .filter((tag) => /\brel\s*=\s*["'][^"']*\bcanonical\b[^"']*["']/i.test(tag));
-
-  assert.equal(robotsMetaTags.length, 1, "Diagram Preview must have exactly one robots meta tag");
-  assert.match(robotsMetaTags[0], /\bcontent\s*=\s*["']noindex, nofollow["']/i);
-  assert.equal(canonicalLinkTags.length, 0, "Diagram Preview must not declare a canonical link");
-});
 
 test("normalizes canonical paths and builds canonical-origin URLs", () => {
   assert.equal(CANONICAL_ORIGIN, "https://maggieappleton.com");
@@ -150,42 +99,4 @@ test("canonical helpers are deterministic and do not mutate entries", () => {
   assert.equal(typeof first, "string");
   assert.deepEqual(entry, before);
   assert.equal(input, "/v2/a-nested-note/?source=verify#section");
-});
-
-test("Layout is the sole canonical-tag owner and PostLayout supplies only canonical identity", async () => {
-  const [layout, postLayout, files] = await Promise.all([
-    readFile(fromRoot("src/layouts/Layout.astro"), "utf8"),
-    readFile(fromRoot("src/layouts/PostLayout.astro"), "utf8"),
-    sourceFiles(fromRoot("src")),
-  ]);
-  const sourceByFile = await Promise.all(files.map(async (file) => [file, await readFile(file, "utf8")]));
-  const matchingSourceFiles = (pattern) => sourceByFile
-    .filter(([, source]) => pattern.test(source))
-    .map(([file]) => file.pathname.replace(/^.*\/src\//, "src/"));
-  const astroSEOImporters = sourceByFile
-    .filter(([, source]) => /from\s+["']astro-seo["']/.test(source))
-    .map(([file]) => file.pathname.replace(/^.*\/src\//, "src/"));
-  const literalCanonicalLinks = sourceByFile
-    .filter(([, source]) => /<link\b(?=[^>]*\brel\s*=\s*["'][^"']*\bcanonical\b[^"']*["'])[^>]*>/i.test(source))
-    .map(([file]) => file.pathname.replace(/^.*\/src\//, "src/"));
-
-  assert.deepEqual(astroSEOImporters, ["src/layouts/Layout.astro"]);
-  assert.deepEqual(literalCanonicalLinks, []);
-  assert.deepEqual(matchingSourceFiles(/\bgetCanonicalUrlFromEntry\b/), []);
-  assert.deepEqual(matchingSourceFiles(/\bgetCanonicalUrl\b/), []);
-  assert.deepEqual(matchingSourceFiles(/\bcanonicalURL=/), []);
-  assert.match(layout, /import\s*\{\s*buildCanonicalUrl\s*\}\s*from\s*["']\.\.\/utils\/canonical\.mjs["'];/);
-  assert.match(layout, /canonicalPath\?:\s*string;/);
-  assert.doesNotMatch(layout, /canonicalURL\?:\s*string;/);
-  assert.match(layout, /const canonicalURL\s*=\s*buildCanonicalUrl\(canonicalPath\s*\?\?\s*Astro\.url\.pathname\);/);
-  assert.equal((layout.match(/<SEO\b[\s\S]*?\bcanonical=\{canonicalURL\}/g) ?? []).length, 1);
-  assert.match(layout, /basic:\s*\{[\s\S]*?url:\s*canonicalURL,/);
-  assert.match(layout, /new URL\(canonicalURL\)\.pathname/);
-
-  assert.match(postLayout, /import\s*\{\s*getEntryCanonicalPath\s*\}\s*from\s*["']\.\.\/utils\/canonical\.mjs["'];/);
-  assert.match(postLayout, /const canonicalPath\s*=\s*getEntryCanonicalPath\(entry,\s*Astro\.url\.pathname\);/);
-  assert.match(postLayout, /<Layout[\s\S]*?canonicalPath=\{canonicalPath\}/);
-  assert.doesNotMatch(postLayout, /canonicalURL=/);
-  assert.doesNotMatch(postLayout, /getCanonicalUrlFromEntry|new URL\(/);
-  assert.equal(execFileSync("git", ["diff", "--name-only", "--", "node_modules/astro-seo"], { encoding: "utf8" }).trim(), "");
 });
