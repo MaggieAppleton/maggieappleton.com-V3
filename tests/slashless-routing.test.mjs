@@ -66,7 +66,9 @@ test("normalizes only the four internal feed-item link builders", async () => {
   const source = await readFile(fromRoot("src/utils/feedPublication.mjs"), "utf8");
 
   assert.match(source, /import\s*\{\s*normalizeCanonicalPath\s*\}\s*from\s*["']\.\/canonical\.mjs["'];/);
-  assert.equal((source.match(/link:\s*normalizeCanonicalPath\(/g) ?? []).length, 4);
+  assert.match(source, /function\s+toFeedPath\(slug\)/);
+  assert.equal((source.match(/normalizeCanonicalPath\(/g) ?? []).length, 1);
+  assert.equal((source.match(/link:\s*toFeedPath\(/g) ?? []).length, 4);
 });
 
 const xmlElementContents = (xml, element) => [
