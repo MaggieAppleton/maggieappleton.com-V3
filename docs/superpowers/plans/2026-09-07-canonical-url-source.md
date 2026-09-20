@@ -392,3 +392,15 @@ Suggested title: `SEO: centralize canonical URLs`
 - [ ] P3/P4/P5/P7 behavior is unchanged.
 - [ ] Two independent final reviews are clean.
 - [ ] Stacked PR is open; nothing is merged or deployed.
+
+## Review-fix design (2026-09-20)
+
+Canonical inputs containing literal or percent-encoded `.` or `..` path
+segments are rejected before `URL` parsing. This prevents the platform parser
+from silently collapsing distinct supplied paths while retaining the existing
+strict canonical-input contract. Regression tests exercise the public
+`normalizeCanonicalPath` and `buildCanonicalUrl` seams.
+
+The HTML verifier's shared successful-response, content-type, and title checks
+move into one internal helper. Route-specific canonical, landmark, robots, and
+absence contracts remain unchanged.
