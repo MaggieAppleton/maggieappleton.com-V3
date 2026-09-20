@@ -72,6 +72,7 @@ test("normalizes canonical paths and builds canonical-origin URLs", () => {
     ["/now-2026-08", "/now-2026-08", "https://maggieappleton.com/now-2026-08"],
     ["/now/archive/2026-08/", "/now/archive/2026-08", "https://maggieappleton.com/now/archive/2026-08"],
     ["https://maggieappleton.com/about/?source=verify#section", "/about", "https://maggieappleton.com/about"],
+    ["https://maggieappleton.com/about?next=/a/../b", "/about", "https://maggieappleton.com/about"],
     ["https://maggieappleton.com:443/nested/path/?source=verify#section", "/nested/path", "https://maggieappleton.com/nested/path"],
   ]) {
     assert.equal(normalizeCanonicalPath(input), expectedPath, input);
@@ -95,6 +96,12 @@ test("rejects inputs outside the canonical path contract", () => {
     "ftp://maggieappleton.com/about",
     "mailto:maggie@example.test",
     "/about\\path",
+    "/a/./b",
+    "/a/../b",
+    "/a/%2e/b",
+    "/a/%2E%2E/b",
+    "https://maggieappleton.com/a/../b",
+    "https://maggieappleton.com/a/%2e%2e/b",
     "/about\u0000",
     "https://maggieappleton.com/about\n",
   ]) {

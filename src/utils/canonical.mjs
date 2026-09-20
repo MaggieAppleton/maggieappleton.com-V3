@@ -6,9 +6,18 @@ import {
 export const CANONICAL_ORIGIN = "https://maggieappleton.com";
 
 const CONTROL_CHARACTER = /[\u0000-\u001F\u007F]/;
+const DOT_PATH_SEGMENT = /^(?:\.|%2e){1,2}$/i;
 
 function invalidCanonicalInput(input) {
   throw new TypeError(`Canonical URL input must be a root-relative path or a ${CANONICAL_ORIGIN} URL: ${String(input)}`);
+}
+
+function hasDotPathSegment(input) {
+  const inputWithoutQueryOrHash = input.split(/[?#]/, 1)[0];
+  const pathname = input.startsWith("/")
+    ? inputWithoutQueryOrHash
+    : inputWithoutQueryOrHash.replace(/^[a-z][a-z\d+.-]*:\/\/[^/]*/i, "") || "/";
+  return pathname.split("/").some((segment) => DOT_PATH_SEGMENT.test(segment));
 }
 
 function parseCanonicalInput(input) {
@@ -20,7 +29,7 @@ function parseCanonicalInput(input) {
     CONTROL_CHARACTER.test(input)
   ) invalidCanonicalInput(input);
 
-  if (input.startsWith("//")) invalidCanonicalInput(input);
+  if (input.startsWith("//") || hasDotPathSegment(input)) invalidCanonicalInput(input);
 
   if (input.startsWith("/")) return new URL(input, CANONICAL_ORIGIN);
 

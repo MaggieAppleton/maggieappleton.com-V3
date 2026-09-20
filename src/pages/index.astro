@@ -13,6 +13,7 @@ import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractBaseSlug } from "../utils/versionUtils";
 import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { getPublicRouteSlug } from "../utils/publicationRoutes.mjs";
 
 const essays = selectLatestPublicEntries(await getCollection("essays")).filter(
 	({ data }) => data.featured === true,
@@ -104,7 +105,7 @@ const sortedPatterns = patterns
 				</div>
 				{
 					sortedNotes.slice(0, 12).map((note) => (
-						<a href={`/${extractBaseSlug(note.id)}`} class="index-note-link">
+						<a href={`/${getPublicRouteSlug(note)}`} class="index-note-link">
 							<div class="index-note-card">
 								{note.data.growthStage && (
 									<div class="icon">

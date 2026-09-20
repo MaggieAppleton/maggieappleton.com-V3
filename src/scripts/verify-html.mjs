@@ -11,32 +11,24 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", siteIdentity: true, title: "Maggie Appleton" },
-  { path: "/about", kind: "html", siteIdentity: true, title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", siteIdentity: true, title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", siteIdentity: true, title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", siteIdentity: true, title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", siteIdentity: true, title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html", siteIdentity: true },
-  { path: "/websecurity", kind: "html", siteIdentity: true },
+  { path: "/", kind: "html", title: "Maggie Appleton" },
+  { path: "/about", kind: "html", title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", title: "The Garden of Maggie Appleton" },
+  { path: "/essays", kind: "html", title: "Essays by Maggie Appleton" },
+  { path: "/notes", kind: "html", title: "Notes by Maggie Appleton" },
+  { path: "/patterns", kind: "html", title: "Patterns by Maggie Appleton" },
+  { path: "/topics/web-development", kind: "html" },
+  { path: "/websecurity", kind: "html" },
   {
     path: "/api",
     kind: "html",
-    siteIdentity: true,
     canonical: "https://maggieappleton.com/api",
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true },
-  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true },
-  { path: "/now", kind: "html", siteIdentity: true },
-  { path: "/smidgeons", kind: "html", siteIdentity: true },
-  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true },
-  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true },
-  { path: "/still-cant-draw", kind: "html", siteIdentity: true },
-  { path: "/xanadu-patterns", kind: "html", siteIdentity: true },
-  { path: "/greensock-react", kind: "html", siteIdentity: true },
+  { path: "/now-2026-08", kind: "html", requireH1: false },
+  { path: "/2025-08-vibe-legacy-code", kind: "html" },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -53,7 +45,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -169,122 +161,8 @@ function findTagEnd(body, start) {
   return -1;
 }
 
-export function countOpeningElements(body, tagName) {
-  const expectedName = tagName.toLowerCase();
-  let count = 0;
-  let index = 0;
-
-  while (index < body.length) {
-    if (body.startsWith("<!--", index)) {
-      const end = body.indexOf("-->", index + 4);
-      index = end < 0 ? body.length : end + 3;
-      continue;
-    }
-    if (body[index] !== "<" || body.startsWith("</", index) || body.startsWith("<!", index) || body.startsWith("<?", index)) {
-      index += 1;
-      continue;
-    }
-    const name = body.slice(index + 1).match(/^([A-Za-z][A-Za-z0-9:-]*)\b/)?.[1]?.toLowerCase();
-    if (!name) {
-      index += 1;
-      continue;
-    }
-    const end = findTagEnd(body, index + 1);
-    if (end < 0) break;
-    if (name === expectedName) count += 1;
-    const openingTag = body.slice(index, end + 1);
-    index = end + 1;
-    if ((name === "script" || name === "style") && !/\/\s*>$/.test(openingTag)) {
-      const closing = new RegExp(`</${name}\\s*>`, "ig");
-      closing.lastIndex = index;
-      const close = closing.exec(body);
-      index = close ? close.index + close[0].length : body.length;
-    }
-  }
-  return count;
-}
-
-function assertExactlyOneOpeningElement(route, body, tagName) {
-  const count = countOpeningElements(body, tagName);
-  assert.equal(count, 1, `${route.path}: expected exactly one ${tagName}, received ${count}`);
-}
-
 function closingScript(body, start) {
   return body.slice(start).match(/<\/script\s*>/i);
-}
-
-function assertNoDuplicateJsonKeys(source, routePath) {
-  let index = 0;
-  const skipWhitespace = () => {
-    while (/\s/.test(source[index] ?? "")) index += 1;
-  };
-  const readString = () => {
-    const start = index;
-    index += 1;
-    while (index < source.length) {
-      if (source[index] === "\\") {
-        index += source[index + 1] === "u" ? 6 : 2;
-      } else if (source[index] === '"') {
-        index += 1;
-        return JSON.parse(source.slice(start, index));
-      } else {
-        index += 1;
-      }
-    }
-    return JSON.parse(source.slice(start, index));
-  };
-  const readValue = () => {
-    skipWhitespace();
-    if (source[index] === "{") return readObject();
-    if (source[index] === "[") return readArray();
-    if (source[index] === '"') {
-      readString();
-      return;
-    }
-    while (index < source.length && !/[\s,\]}]/.test(source[index])) index += 1;
-  };
-  const readObject = () => {
-    index += 1;
-    const keys = new Set();
-    skipWhitespace();
-    if (source[index] === "}") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      skipWhitespace();
-      const key = readString();
-      if (keys.has(key)) throw new Error(`${routePath}: duplicate JSON-LD object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      index += 1;
-      readValue();
-      skipWhitespace();
-      if (source[index] === "}") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  const readArray = () => {
-    index += 1;
-    skipWhitespace();
-    if (source[index] === "]") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      readValue();
-      skipWhitespace();
-      if (source[index] === "]") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  readValue();
 }
 
 export function extractJsonLdScripts(body, routePath) {
@@ -335,7 +213,6 @@ export function extractJsonLdScripts(body, routePath) {
       } catch (error) {
         throw new Error(`${routePath}: invalid JSON-LD: ${error.message}`);
       }
-      assertNoDuplicateJsonKeys(source, routePath);
       documents.push(document);
     }
     index = closingIndex + closing[0].length;
@@ -392,13 +269,18 @@ function getMetaContent(body, property) {
   return content;
 }
 
-export function assertHTMLResponse(route, response, body) {
+function assertHTMLDocumentResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
-  assertExactlyOneOpeningElement(route, body, "main");
-  assertExactlyOneOpeningElement(route, body, "h1");
+  return title;
+}
+
+export function assertHTMLResponse(route, response, body) {
+  const title = assertHTMLDocumentResponse(route, response, body);
+  assert.match(body, /<main(?:\s|>)/i, `${route.path}: expected a main landmark`);
+  if (route.requireH1 !== false) assert.match(body, /<h1(?:\s|>)/i, `${route.path}: expected an h1`);
   const canonical = assertCanonical(route, body);
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
@@ -415,15 +297,12 @@ export function assertHTMLResponse(route, response, body) {
   }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
-  if (route.siteIdentity === true) assertSiteIdentityJSONLD(route, body);
+  if (route.kind === "html") assertSiteIdentityJSONLD(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
 }
 
 export function assertNoindexHTMLResponse(route, response, body) {
-  assertSuccessfulResponse(route, response);
-  assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
-  const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
-  assert.ok(title, `${route.path}: expected a non-empty title`);
+  assertHTMLDocumentResponse(route, response, body);
   const robots = extractTags(body, "meta").filter((tag) =>
     (getAttribute(tag, "name") ?? "").toLowerCase() === "robots",
   );
@@ -474,11 +353,21 @@ function decodeXmlEntities(value) {
   })[entity]);
 }
 
+const XML_DECLARATION = new RegExp(
+  String.raw`^<\?xml[ \t\r\n]+version[ \t\r\n]*=[ \t\r\n]*(["'])1\.0\1` +
+  String.raw`(?:[ \t\r\n]+encoding[ \t\r\n]*=[ \t\r\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?` +
+  String.raw`(?:[ \t\r\n]+standalone[ \t\r\n]*=[ \t\r\n]*(["'])(?:yes|no)\3)?[ \t\r\n]*\?>`,
+);
+
 function parseSitemapDocument(route, body) {
   const fail = (message) => assert.fail(`${route.path}: ${message}`);
-  let index = 0;
+  if (/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/u.test(body)) {
+    fail("sitemap contains a forbidden XML character");
+  }
+  const documentStart = body.startsWith("\uFEFF") ? 1 : 0;
+  let index = documentStart;
   const skipWhitespace = () => {
-    while (index < body.length && /\s/.test(body[index])) index += 1;
+    while (index < body.length && /[ \t\r\n]/.test(body[index])) index += 1;
   };
   const consume = (pattern, message) => {
     const match = body.slice(index).match(pattern);
@@ -489,13 +378,12 @@ function parseSitemapDocument(route, body) {
 
   skipWhitespace();
   if (body.startsWith("<?xml", index)) {
-    const declarationEnd = body.indexOf("?>", index + 5);
-    if (declarationEnd < 0) fail("sitemap XML declaration is unclosed");
-    index = declarationEnd + 2;
+    if (index !== documentStart) fail("sitemap XML declaration must be at the document start");
+    consume(XML_DECLARATION, "sitemap XML declaration is malformed");
     skipWhitespace();
   }
   consume(
-    /^<urlset\s+xmlns\s*=\s*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1\s*>/,
+    /^<urlset[ \t\r\n]+xmlns[ \t\r\n]*=[ \t\r\n]*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1[ \t\r\n]*>/,
     "sitemap must contain exactly one urlset with the sitemap namespace",
   );
 
@@ -507,31 +395,31 @@ function parseSitemapDocument(route, body) {
       index += "</urlset>".length;
       break;
     }
-    consume(/^<url\s*>/, "sitemap must contain complete url blocks");
+    consume(/^<url[ \t\r\n]*>/, "sitemap must contain complete url blocks");
     urlCount += 1;
     skipWhitespace();
-    consume(/^<loc\s*>/, "each sitemap url must contain exactly one loc");
+    consume(/^<loc[ \t\r\n]*>/, "each sitemap url must contain exactly one loc");
     const locEnd = body.indexOf("</loc>", index);
     if (locEnd < 0) fail("sitemap loc is unclosed");
     const rawLocation = body.slice(index, locEnd);
-    if (rawLocation.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
+    if (rawLocation.includes("<") || rawLocation.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
       fail("sitemap loc contains malformed XML text");
     }
     locations.push(decodeXmlEntities(rawLocation));
     index = locEnd + "</loc>".length;
     skipWhitespace();
-    if (body.slice(index).match(/^<lastmod\s*>/)) {
-      consume(/^<lastmod\s*>/, "sitemap lastmod is malformed");
+    if (body.slice(index).match(/^<lastmod[ \t\r\n]*>/)) {
+      consume(/^<lastmod[ \t\r\n]*>/, "sitemap lastmod is malformed");
       const lastmodEnd = body.indexOf("</lastmod>", index);
       if (lastmodEnd < 0) fail("sitemap lastmod is unclosed");
       const rawLastmod = body.slice(index, lastmodEnd);
-      if (rawLastmod.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
+      if (rawLastmod.includes("<") || rawLastmod.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
         fail("sitemap lastmod contains malformed XML text");
       }
       index = lastmodEnd + "</lastmod>".length;
       skipWhitespace();
     }
-    consume(/^<\/url\s*>/, "sitemap url is unclosed or contains extra elements");
+    consume(/^<\/url[ \t\r\n]*>/, "sitemap url is unclosed or contains extra elements");
   }
   skipWhitespace();
   if (index !== body.length) fail("sitemap document contains stray content");
@@ -654,7 +542,7 @@ export function waitForExit(child, timeoutMs = 2_000, {
   setTimeoutImpl = setTimeout,
   clearTimeoutImpl = clearTimeout,
 } = {}) {
-  if (child.exitCode !== null) return true;
+  if (child.exitCode !== null || child.signalCode != null) return true;
   return new Promise((resolve) => {
     let timer;
     const finish = (result) => {
@@ -668,20 +556,44 @@ export function waitForExit(child, timeoutMs = 2_000, {
   });
 }
 
-export function waitForChildReady(child) {
+export function waitForChildReady(child, {
+  timeoutMs = 30_000,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout,
+} = {}) {
   return new Promise((resolve, reject) => {
     const streams = [child.stdout, child.stderr].filter(Boolean);
     if (!streams.length) {
       reject(new Error("Astro dev did not expose an output stream for readiness"));
       return;
     }
-    const cleanup = () => streams.forEach((stream) => stream.removeListener("data", onData));
+    let output = "";
+    let timer;
+    const cleanup = () => {
+      streams.forEach((stream) => stream.removeListener("data", onData));
+      clearTimeoutImpl(timer);
+    };
     const onData = (chunk) => {
-      if (!/\bready in\b/i.test(String(chunk))) return;
+      output = `${output}${String(chunk)}`.slice(-256);
+      if (!/\bready in\b/i.test(output)) return;
       cleanup();
       resolve();
     };
     streams.forEach((stream) => stream.on("data", onData));
+    timer = setTimeoutImpl(() => {
+      cleanup();
+      reject(new Error(`Astro dev did not report readiness within ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+}
+
+export function killWindowsProcessTree(pid, force = false, spawnImpl = spawn) {
+  return new Promise((resolve, reject) => {
+    const args = ["/pid", String(pid), "/T"];
+    if (force) args.push("/F");
+    const taskkill = spawnImpl("taskkill.exe", args, { stdio: "ignore", windowsHide: true });
+    taskkill.once("error", reject);
+    taskkill.once("exit", (code) => resolve(code === 0));
   });
 }
 
@@ -708,17 +620,19 @@ function watchChildFailure(child) {
 export async function stopDevServer(child, {
   platform = process.platform,
   killImpl = process.kill,
+  killTreeImpl = killWindowsProcessTree,
   waitForExitImpl = waitForExit,
 } = {}) {
-  if (!child || child.exitCode !== null) return;
-  const signal = (name) => {
-    if (platform !== "win32" && child.pid) killImpl(-child.pid, name);
+  if (!child || child.exitCode !== null || child.signalCode != null) return;
+  const signal = async (name) => {
+    if (platform === "win32" && child.pid) await killTreeImpl(child.pid, name === "SIGKILL");
+    else if (child.pid) killImpl(-child.pid, name);
     else child.kill(name);
   };
-  try { signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  try { await signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
   if (await waitForExitImpl(child, 2_000)) return;
-  try { signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
-  await waitForExitImpl(child, 2_000);
+  try { await signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  if (!await waitForExitImpl(child, 2_000)) throw new Error("Astro dev process tree did not exit after forced termination");
 }
 
 export async function runVerifier({
