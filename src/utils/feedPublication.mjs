@@ -1,5 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 import MarkdownIt from "markdown-it";
+import { normalizeCanonicalPath } from "./canonical.mjs";
 import {
   getPublicationBaseSlug,
   isVersionedPublicationEntry,
@@ -169,6 +170,10 @@ function getFeedSlug(entry) {
   return entry.id.replace(/\.mdx?$/i, "");
 }
 
+function toFeedPath(slug) {
+  return normalizeCanonicalPath(`/${slug}/`);
+}
+
 /**
  * @param {PublicationFeedEntry} post
  * @returns {PublicationFeedItem}
@@ -178,7 +183,7 @@ function createPostItem(post) {
     title: post.data.title,
     pubDate: post.data.startDate,
     description: post.data.description,
-    link: `/${getFeedSlug(post)}/`,
+    link: toFeedPath(getFeedSlug(post)),
   };
 }
 
@@ -192,7 +197,7 @@ function createNowItem(post, siteUrl) {
   return {
     title: post.data.title,
     pubDate: post.data.startDate,
-    link: `/now-${post.id}/`,
+    link: toFeedPath(`now-${post.id}`),
     content: sanitizeContent(fixImagePaths(renderedHtml, siteUrl)),
   };
 }
@@ -219,7 +224,7 @@ function createMainSmidgeonItem(post, siteUrl) {
       : post.data.citation
         ? `${post.data.citation.title} by ${post.data.citation.authors.join(", ")}`
         : stripMarkdown(firstLine || ""),
-    link: `/${getFeedSlug(post)}/`,
+    link: toFeedPath(getFeedSlug(post)),
     content: sanitizeContent(fixImagePaths(prefix + renderedHtml, siteUrl)),
   };
 }
@@ -247,7 +252,7 @@ function createStandaloneSmidgeonItem(post) {
       : post.data.citation
         ? `${post.data.citation.title} by ${post.data.citation.authors.join(", ")}`
         : stripMarkdown(firstLine || ""),
-    link: `/${getFeedSlug(post)}/`,
+    link: toFeedPath(getFeedSlug(post)),
     content: sanitizeContent(prefix + renderedHtml),
   };
 }
