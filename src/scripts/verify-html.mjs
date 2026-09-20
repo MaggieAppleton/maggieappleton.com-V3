@@ -11,25 +11,24 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", siteIdentity: true, title: "Maggie Appleton" },
-  { path: "/about", kind: "html", siteIdentity: true, title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", siteIdentity: true, title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", siteIdentity: true, title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", siteIdentity: true, title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", siteIdentity: true, title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", siteIdentity: true, title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html", siteIdentity: true },
-  { path: "/websecurity", kind: "html", siteIdentity: true },
+  { path: "/", kind: "html", title: "Maggie Appleton" },
+  { path: "/about", kind: "html", title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", title: "The Garden of Maggie Appleton" },
+  { path: "/essays", kind: "html", title: "Essays by Maggie Appleton" },
+  { path: "/notes", kind: "html", title: "Notes by Maggie Appleton" },
+  { path: "/patterns", kind: "html", title: "Patterns by Maggie Appleton" },
+  { path: "/topics/web-development", kind: "html" },
+  { path: "/websecurity", kind: "html" },
   {
     path: "/api",
     kind: "html",
-    siteIdentity: true,
     canonical: "https://maggieappleton.com/api",
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true, requireH1: false },
-  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true },
+  { path: "/now-2026-08", kind: "html", requireH1: false },
+  { path: "/2025-08-vibe-legacy-code", kind: "html" },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -46,7 +45,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", siteIdentity: true, bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -166,80 +165,6 @@ function closingScript(body, start) {
   return body.slice(start).match(/<\/script\s*>/i);
 }
 
-function assertNoDuplicateJsonKeys(source, routePath) {
-  let index = 0;
-  const skipWhitespace = () => {
-    while (/\s/.test(source[index] ?? "")) index += 1;
-  };
-  const readString = () => {
-    const start = index;
-    index += 1;
-    while (index < source.length) {
-      if (source[index] === "\\") {
-        index += source[index + 1] === "u" ? 6 : 2;
-      } else if (source[index] === '"') {
-        index += 1;
-        return JSON.parse(source.slice(start, index));
-      } else {
-        index += 1;
-      }
-    }
-    return JSON.parse(source.slice(start, index));
-  };
-  const readValue = () => {
-    skipWhitespace();
-    if (source[index] === "{") return readObject();
-    if (source[index] === "[") return readArray();
-    if (source[index] === '"') {
-      readString();
-      return;
-    }
-    while (index < source.length && !/[\s,\]}]/.test(source[index])) index += 1;
-  };
-  const readObject = () => {
-    index += 1;
-    const keys = new Set();
-    skipWhitespace();
-    if (source[index] === "}") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      skipWhitespace();
-      const key = readString();
-      if (keys.has(key)) throw new Error(`${routePath}: duplicate JSON-LD object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      index += 1;
-      readValue();
-      skipWhitespace();
-      if (source[index] === "}") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  const readArray = () => {
-    index += 1;
-    skipWhitespace();
-    if (source[index] === "]") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      readValue();
-      skipWhitespace();
-      if (source[index] === "]") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  readValue();
-}
-
 export function extractJsonLdScripts(body, routePath) {
   if (typeof routePath !== "string") {
     throw new TypeError("extractJsonLdScripts requires a routePath string");
@@ -288,7 +213,6 @@ export function extractJsonLdScripts(body, routePath) {
       } catch (error) {
         throw new Error(`${routePath}: invalid JSON-LD: ${error.message}`);
       }
-      assertNoDuplicateJsonKeys(source, routePath);
       documents.push(document);
     }
     index = closingIndex + closing[0].length;
@@ -373,7 +297,7 @@ export function assertHTMLResponse(route, response, body) {
   }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
-  if (route.siteIdentity === true) assertSiteIdentityJSONLD(route, body);
+  if (route.kind === "html") assertSiteIdentityJSONLD(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
 }
 

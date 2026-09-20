@@ -52,8 +52,9 @@ const PERSON_SAME_AS = [
 - Create `src/utils/siteIdentity.mjs`: one source of truth for immutable identity constants, the exact two-node graph factory, recursive freezing, and safe JSON serialization. It has no Astro dependency and does not derive facts from route data.
 - Create `src/components/seo/SiteIdentityJsonLd.astro`: the sole script-emitting component; it imports the graph factory and serializer and emits their result once.
 - Modify `src/layouts/Layout.astro`: import and render that component once inside the document `<head>`, adjacent to other document metadata.
+- Create `tests/fixtures/site-identity.mjs`: one independent expected-identity literal shared by both identity test files.
 - Create `tests/site-identity.test.mjs`: pure utility tests plus source-level one-owner and footer-evidence contracts. It does not start Astro.
-- Modify `src/scripts/verify-html.mjs`: parse JSON-LD script elements safely enough for generated HTML, then assert the complete P5 graph for routes that declare `siteIdentity: true`.
+- Modify `src/scripts/verify-html.mjs`: parse JSON-LD script elements safely enough for generated HTML, then assert the complete P5 graph for every `kind === "html"` route.
 - Modify `tests/verify-html.test.mjs`: TDD coverage for valid identity markup and malformed, absent, duplicate, conflicting, or over-specified variants.
 
 No `src/pages/**`, content, social-image, canonical helper, Footer, package, sitemap, or route-manifest path additions are in scope.
@@ -66,6 +67,7 @@ No `src/pages/**`, content, social-image, canonical helper, Footer, package, sit
 
 **Files:**
 
+- Create: `tests/fixtures/site-identity.mjs`
 - Create: `tests/site-identity.test.mjs`
 - Create: `src/utils/siteIdentity.mjs`
 
@@ -77,20 +79,11 @@ No `src/pages/**`, content, social-image, canonical helper, Footer, package, sit
 
 - [ ] **Step 1: Write failing exact-graph, immutability, and serializer tests**
 
-Create `tests/site-identity.test.mjs`. Keep the expected object literal in the test independent of the implementation so it detects invented, omitted, renamed, duplicate, or extra facts:
+Create `tests/fixtures/site-identity.mjs` with the independent expected object literal exported as `expectedSiteIdentity`, then import it into `tests/site-identity.test.mjs`. The shared test fixture remains independent of the implementation so both identity test files detect invented, omitted, renamed, duplicate, or extra facts without duplicating the literal:
 
 ```js
-import assert from "node:assert/strict";
-import test from "node:test";
-import {
-  PERSON_ID,
-  SITE_IDENTITY,
-  WEBSITE_ID,
-  createSiteIdentityGraph,
-  serializeJsonLd,
-} from "../src/utils/siteIdentity.mjs";
-
-const expectedGraph = {
+// tests/fixtures/site-identity.mjs
+export const expectedSiteIdentity = {
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -121,10 +114,22 @@ const expectedGraph = {
   ],
 };
 
+// tests/site-identity.test.mjs
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  PERSON_ID,
+  SITE_IDENTITY,
+  WEBSITE_ID,
+  createSiteIdentityGraph,
+  serializeJsonLd,
+} from "../src/utils/siteIdentity.mjs";
+import { expectedSiteIdentity } from "./fixtures/site-identity.mjs";
+
 test("creates only the stable, minimal Site and Person identity graph", () => {
-  assert.equal(WEBSITE_ID, expectedGraph["@graph"][0]["@id"]);
-  assert.equal(PERSON_ID, expectedGraph["@graph"][1]["@id"]);
-  assert.deepEqual(createSiteIdentityGraph(), expectedGraph);
+  assert.equal(WEBSITE_ID, expectedSiteIdentity["@graph"][0]["@id"]);
+  assert.equal(PERSON_ID, expectedSiteIdentity["@graph"][1]["@id"]);
+  assert.deepEqual(createSiteIdentityGraph(), expectedSiteIdentity);
 });
 
 test("freezes identity facts and every graph level", () => {
@@ -133,7 +138,7 @@ test("freezes identity facts and every graph level", () => {
     assert.equal(Object.isFrozen(value), true);
   }
   assert.throws(() => { graph["@graph"][1].name = "Invented"; }, TypeError);
-  assert.deepEqual(createSiteIdentityGraph(), expectedGraph);
+  assert.deepEqual(createSiteIdentityGraph(), expectedSiteIdentity);
 });
 
 test("serializes safe, parseable JSON-LD", () => {
@@ -317,16 +322,16 @@ Expected: PASS. The only JSON-LD script source is the shared component; Layout i
 
 - Produces `extractJsonLdScripts(body, routePath)` and `assertSiteIdentityJSONLD(route, body)` from `src/scripts/verify-html.mjs` in addition to the existing verifier exports.
 - `extractJsonLdScripts(body, routePath)` requires a route-path string and returns parsed documents for script tags whose effective first `type` attribute is exactly `application/ld+json` case-insensitively, or throws a `routePath`-prefixed parsing error for malformed JSON. All callers pass their route's `path`; there is no context-free overload.
-- `assertSiteIdentityJSONLD(route, body)` requires exactly one JSON-LD script and exactly the frozen P5 document contract. `assertHTMLResponse` calls it only when `route.siteIdentity === true`.
-- Every existing representative `kind: "html"` Layout route in `ROUTES` gets `siteIdentity: true`; `noindexHtml`, `xml`, `robots`, `sitemap`, and `absent` entries do not. Do not add, remove, rename, or reorder route paths: the path manifest remains the P4 route set.
+- `assertSiteIdentityJSONLD(route, body)` requires exactly one JSON-LD script and exactly the frozen P5 document contract. `assertHTMLResponse` calls it whenever `route.kind === "html"`.
+- Identity enforcement is derived from route kind; no route has a `siteIdentity` property. Do not add, remove, rename, or reorder route paths: the path manifest remains the P4 route set.
 
 - [ ] **Step 1: Write failing verifier tests for the complete identity contract**
 
-In `tests/verify-html.test.mjs`, add a compact fixture using the literal P5 object from Task 1 and a helper that places it in the HTML `<head>`. Add assertions that `assertHTMLResponse({ path: "/about", kind: "html", siteIdentity: true }, ...)` accepts only that object. Cover each failure separately:
+In `tests/verify-html.test.mjs`, import `expectedSiteIdentity` from the shared fixture created in Task 1 and add a helper that places it in the HTML `<head>`. Add assertions that `assertHTMLResponse({ path: "/about", kind: "html" }, ...)` accepts only that object. Cover each failure separately:
 
 ```js
 test("requires exactly one complete Site/Person JSON-LD graph", () => {
-  const route = { path: "/about", kind: "html", siteIdentity: true };
+  const route = { path: "/about", kind: "html" };
   const duplicatePerson = {
     ...expected["@graph"][1],
     sameAs: [...expected["@graph"][1].sameAs],
@@ -350,7 +355,7 @@ Add adversarial scanner fixtures containing `<script type="application/ld+json">
 
 Extend the existing noindex fixtures so `assertNoindexHTMLResponse({ path: "/diagram-preview", kind: "noindexHtml" }, ...)` accepts the current noindex HTML only when it has zero selected JSON-LD scripts. It must reject a valid Site/Person JSON-LD insertion with an `expected no JSON-LD` error and reject malformed selected JSON-LD with the `/diagram-preview` parser error. This makes the standalone preview's zero-JSON-LD boundary executable rather than merely source-scanned.
 
-Add a manifest test that snapshots the existing path order/count and checks all/only `kind: "html"` routes have `siteIdentity: true`; it must confirm `/diagram-preview` does not. Use this exact unchanged 19-path list so a P5 edit cannot silently add, remove, reorder, or retarget a verifier route:
+Add a manifest test that snapshots the existing path order/count and checks the obsolete `siteIdentity` property is absent from every route. Direct `assertHTMLResponse` coverage proves that `kind: "html"` derives the identity requirement. Use this exact unchanged 19-path list so a P5 edit cannot silently add, remove, reorder, or retarget a verifier route:
 
 ```js
 assert.deepEqual(ROUTES.map(({ path }) => path), [
@@ -360,31 +365,29 @@ assert.deepEqual(ROUTES.map(({ path }) => path), [
   "/rss.xml", "/smidgeons.xml", "/robots.txt", "/sitemap.xml", "/drafts",
 ]);
 assert.equal(ROUTES.length, 19);
-for (const route of ROUTES) {
-  assert.equal(route.siteIdentity === true, route.kind === "html", route.path);
-}
+for (const route of ROUTES) assert.equal(Object.hasOwn(route, "siteIdentity"), false, route.path);
 ```
 
 - [ ] **Step 2: Run the focused verifier tests to prove the current parser is insufficient**
 
 Run: `node --test tests/verify-html.test.mjs`
 
-Expected: FAIL because `siteIdentity` is not recognised and the current generic `assertJSONLD` only tests whether one or more scripts can be parsed.
+Expected: FAIL because ordinary HTML identity enforcement is still flag-gated and the generic extractor rejects duplicate object keys instead of using native JSON semantics.
 
 - [ ] **Step 3: Implement an exact, adversarially checked JSON-LD parser and assertion**
 
-In `src/scripts/verify-html.mjs`, import `createSiteIdentityGraph` from `../utils/siteIdentity.mjs`; production verification compares rendered JSON-LD to this one production identity source of truth. Keep the test fixtures as independent hard-coded literals, so a changed utility fact still fails the tests.
+In `src/scripts/verify-html.mjs`, import `createSiteIdentityGraph` from `../utils/siteIdentity.mjs`; production verification compares rendered JSON-LD to this one production identity source of truth. Keep the shared test fixture as an independent hard-coded literal, so a changed utility fact still fails the tests.
 
 Reuse the existing quote-aware opening-tag/first-attribute parsing approach rather than relying on a loose regex that can be fooled by quoted text, comments, or duplicate attributes. Add a context-aware `extractJsonLdScripts(body, routePath)` scanner that walks the HTML left-to-right and:
 
 1. When it reaches `<!--`, skips through the matching `-->`; an unclosed comment consumes the remainder, so fake tags in it are never parsed.
 2. When it reaches any opening tag, scans to its `>` while respecting quoted attribute values, then advances past that whole opening tag. Consequently a `<script` string inside `data-note="…"` or `data-note='…'` is not a candidate.
 3. Treats only an actual `script` start tag as a script candidate, feeds that complete opening tag to existing `getAttribute`, and therefore uses the effective first duplicate `type` value.
-4. For selected `type="application/ld+json"` tags, finds the matching closing `</script>` case-insensitively, rejects an unclosed selected script with a `routePath`-prefixed error, parses trimmed contents with `JSON.parse`, and resumes only after that closing tag. Non-JSON-LD script contents are skipped to their closing tag without JSON parsing.
+4. For selected `type="application/ld+json"` tags, finds the matching closing `</script>` case-insensitively, rejects an unclosed selected script with a `routePath`-prefixed error, parses trimmed contents with native `JSON.parse` semantics (including last-value-wins duplicate keys), and resumes only after that closing tag. Non-JSON-LD script contents are skipped to their closing tag without JSON parsing and do not satisfy the required identity script.
 
 Implement `assertSiteIdentityJSONLD(route, body)` by calling `extractJsonLdScripts(body, route.path)`. It must first require one parsed JSON-LD document, validate `@context === "https://schema.org"`, validate `@graph` is an array of exactly two plain-object nodes, reject repeated `@id`, then deep-compare the complete document to `createSiteIdentityGraph()`. The comparison deliberately rejects conflicting IDs, unsupported properties, omitted references, and every identity drift. Continue to retain the existing generic `assertJSONLD` for later P7 callers, but have it call `extractJsonLdScripts(body, route.path)` so malformed selected JSON-LD is caught consistently.
 
-In `assertHTMLResponse`, call the P5 assertion only for `route.siteIdentity === true`. In `assertNoindexHTMLResponse`, call `extractJsonLdScripts(body, route.path)` and require its result length to be zero. Mark the unchanged HTML route paths in `ROUTES` with the boolean; leave every non-HTML/noindex entry unmarked. Do not make any request for an image, OG, or external URL.
+In `assertHTMLResponse`, call the P5 assertion when `route.kind === "html"`. In `assertNoindexHTMLResponse`, call `extractJsonLdScripts(body, route.path)` and require its result length to be zero. Keep the unchanged route manifest free of an identity flag. Coverage includes missing `author`, missing `publisher`, a relative Person URL, and HTML containing only a non-JSON script. Do not make any request for an image, OG, or external URL.
 
 - [ ] **Step 4: Run focused verifier tests, then the real fast HTML verifier**
 
@@ -402,7 +405,7 @@ Expected: PASS. Each representative ordinary Layout route has exactly one parsea
 
 **Files:**
 
-- Verify only: `src/utils/siteIdentity.mjs`, `src/components/seo/SiteIdentityJsonLd.astro`, `src/layouts/Layout.astro`, `src/scripts/verify-html.mjs`, `tests/site-identity.test.mjs`, `tests/verify-html.test.mjs`
+- Verify only: `src/utils/siteIdentity.mjs`, `src/components/seo/SiteIdentityJsonLd.astro`, `src/layouts/Layout.astro`, `src/scripts/verify-html.mjs`, `tests/fixtures/site-identity.mjs`, `tests/site-identity.test.mjs`, `tests/verify-html.test.mjs`
 
 **Interfaces:**
 
