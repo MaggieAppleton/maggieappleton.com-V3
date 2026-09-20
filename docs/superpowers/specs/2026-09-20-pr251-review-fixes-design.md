@@ -6,7 +6,7 @@ Make the P5 Site/Person JSON-LD change merge safely after PR #249, reduce verifi
 
 ## Integration
 
-Merge the current `codex/seo-aeo-sitemap-robots` branch into PR #251. This preserves published history and avoids a force-push. Resolve the overlapping verifier and test files by retaining both P4's sitemap/XML hardening and P5's JSON-LD checks.
+Merge the current `origin/main` into PR #251 now that PR #249 is merged. This preserves published history and avoids a force-push. Resolve the overlapping verifier and test files by retaining both P4's sitemap/XML hardening and P5's JSON-LD checks.
 
 ## Verifier design
 
