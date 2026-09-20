@@ -1,4 +1,5 @@
 import { buildCanonicalUrl, getEntryCanonicalPath } from "./canonical.mjs";
+import { collectTopics } from "./topicRoutes.mjs";
 
 export const STATIC_SITEMAP_PATHS = Object.freeze([
   "/",
@@ -87,6 +88,21 @@ export function createSitemapRecords({ staticPaths = STATIC_SITEMAP_PATHS, entri
     add(`/topics/${slug}`);
   });
   return records;
+}
+
+export function createSitemapRecordsFromManifest(manifest) {
+  const entries = [
+    ...manifest.canonicalByCollection.essays,
+    ...manifest.canonicalByCollection.notes,
+    ...manifest.canonicalByCollection.patterns,
+    ...manifest.canonicalByCollection.talks,
+    ...manifest.canonicalByCollection.smidgeons,
+    ...manifest.publicByCollection.now,
+  ];
+  return createSitemapRecords({
+    entries,
+    topics: collectTopics(manifest.canonicalEntries),
+  });
 }
 
 export function serializeSitemapXml(records) {

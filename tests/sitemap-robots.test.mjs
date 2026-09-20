@@ -8,6 +8,7 @@ import { collectTopics } from "../src/utils/topicRoutes.mjs";
 import {
   STATIC_SITEMAP_PATHS,
   createSitemapRecords,
+  createSitemapRecordsFromManifest,
   serializeSitemapXml,
 } from "../src/utils/sitemap.mjs";
 
@@ -60,14 +61,7 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
     podcasts: [{ id: "episode-1", collection: "podcasts", data: { topics: ["Podcast-only Topic"] } }],
   });
 
-  const records = createSitemapRecords({
-    entries: [
-      ...manifest.canonicalByCollection.essays,
-      ...manifest.canonicalByCollection.smidgeons,
-      ...manifest.publicByCollection.now,
-    ],
-    topics: collectTopics(manifest.canonicalEntries),
-  });
+  const records = createSitemapRecordsFromManifest(manifest);
 
   assert.deepEqual(records, [
     { loc: "https://maggieappleton.com/" },
@@ -155,11 +149,10 @@ test("serializes XML with the declaration, namespace, and all XML escapes", () =
   assert.doesNotMatch(xml, /<lastmod><\/lastmod>/);
 });
 
-test("endpoint wires one manifest, the shared topic collector, and no podcast sitemap entries", () => {
+test("endpoint delegates sitemap membership to the manifest boundary", () => {
   const source = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
-  assert.match(source, /import\s+\{\s*collectTopics\s*\}\s+from\s+["']\.\.\/utils\/topicRoutes\.mjs["']/);
   assert.match(source, /createPublicEntryManifest/);
-  assert.match(source, /createSitemapRecords/);
+  assert.match(source, /createSitemapRecordsFromManifest\(manifest\)/);
   assert.match(source, /serializeSitemapXml/);
   assert.equal((source.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
   assert.match(source, /getCollection\("essays"\)/);
@@ -169,14 +162,7 @@ test("endpoint wires one manifest, the shared topic collector, and no podcast si
   assert.match(source, /getCollection\("smidgeons"\)/);
   assert.match(source, /getCollection\("now"\)/);
   assert.match(source, /getCollection\("podcasts"\)/);
-  assert.match(source, /canonicalByCollection\.essays/);
-  assert.match(source, /canonicalByCollection\.notes/);
-  assert.match(source, /canonicalByCollection\.patterns/);
-  assert.match(source, /canonicalByCollection\.talks/);
-  assert.match(source, /canonicalByCollection\.smidgeons/);
-  assert.match(source, /publicByCollection\.now/);
-  assert.match(source, /collectTopics\(manifest\.canonicalEntries\)/);
-  assert.equal(source.includes("canonicalByCollection.podcasts"), false);
+  assert.doesNotMatch(source, /const\s+entries\s*=/);
 });
 
 test("robots declares exactly one absolute sitemap and keeps the crawler allow policy", () => {
