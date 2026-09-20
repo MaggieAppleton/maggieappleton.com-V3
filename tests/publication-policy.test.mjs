@@ -21,6 +21,7 @@ import {
 import {
   getDraftPreviewSlug,
   getNowRoutePathSlug,
+  getPublicRouteSlug,
   getSocialImageSlug,
   mergePublicationPaths,
   toNowRouteParams,
@@ -94,6 +95,19 @@ test("isVersionedPublicationEntry requires a versioned collection and a folder",
     isVersionedPublicationEntry(entry({ id: "nested/now.mdx", collection: "now", version: 2 })),
     false,
   );
+});
+
+test("public route slugs collapse folder versions but preserve ordinary version-like IDs", () => {
+  assert.equal(
+    getPublicRouteSlug(entry({
+      id: "guide/guide-v2.mdx",
+      collection: "notes",
+      version: 2,
+    })),
+    "guide",
+  );
+  assert.equal(getPublicRouteSlug(entry({ id: "api-v1.mdx", collection: "notes" })), "api-v1");
+  assert.equal(getPublicRouteSlug(entry({ id: "api-v2.mdx", collection: "notes" })), "api-v2");
 });
 
 test("getPublicationVersion defaults invalid and absent versions to one", () => {
@@ -565,6 +579,7 @@ test("production version paths and metadata consume public entries rather than r
     "src/layouts/PostLayout.astro": [
       /getCanonicalDates\(publicEntryForDates, allEntries\)/,
       /const allEntries = selectPublicEntries\(await getCollection\(entry\.collection\)\)/,
+      /isVersionedPublicationEntry\(entry\)\s*\?\s*selectLatestPublicEntries\(allEntries\)\.find/,
     ],
     "src/components/layouts/VersionDropdown.astro": [
       /getVersionInfo\(publicEntry, versionEntries\)/,
@@ -690,8 +705,8 @@ test("discovery pages consume canonical public entries through the shared policy
   }
 
   const homepage = readSource("src/pages/index.astro");
-  assert.match(homepage, /href=\{`\/\$\{extractBaseSlug\(note\.id\)\}`\}/);
-  assert.doesNotMatch(homepage, /href=\{`\/\$\{note\.id\}`\}/);
+  assert.match(homepage, /href=\{`\/\$\{getPublicRouteSlug\(note\)\}`\}/);
+  assert.doesNotMatch(homepage, /href=\{`\/\$\{extractBaseSlug\(note\.id\)\}`\}/);
 });
 
 test("garden builds one canonical manifest from all seven publication collections", () => {
@@ -713,19 +728,12 @@ test("garden builds one canonical manifest from all seven publication collection
 test("topic collection uses one canonical manifest as the sole topic input", () => {
   const source = readSource("src/utils/getTopics.ts");
 
-  assert.ok(source.includes('from "./publication.mjs"'));
-  assert.match(source, /const manifest\s*=\s*await fetchAllContent\(\)/);
+  assert.ok(source.includes('from "./publicEntryManifest"'));
+  assert.match(source, /const manifest\s*=\s*await fetchPublicEntryManifest\(\)/);
   assert.equal((source.match(/manifest\.canonicalEntries/g) ?? []).length, 2);
 
-  for (const collection of PUBLICATION_COLLECTIONS) {
-    assert.equal(
-      (source.match(new RegExp(`getCollection\\(\\"${collection}\\"\\)`, "g")) ?? []).length,
-      1,
-      `getTopics must fetch ${collection} once without an inline callback`,
-    );
-  }
-
-  assert.doesNotMatch(source, /getCollection\([^)]*,/);
+  assert.doesNotMatch(source, /getCollection\(/);
+  assert.doesNotMatch(source, /createPublicEntryManifest/);
   assert.doesNotMatch(source, /data\.draft/);
 });
 

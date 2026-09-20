@@ -11,12 +11,12 @@ import TooltipLink from "../../components/mdx/TooltipLink.astro";
 import BasicImage from "../../components/mdx/BasicImage.astro";
 import InternalTooltipLink from "../../components/mdx/InternalTooltipLink.astro";
 import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
+import CalendarDate from "../../components/layouts/CalendarDate.astro";
 import Footnote from "../../components/mdx/Footnote.astro";
 import ResourceBook from "../../components/mdx/ResourceBook.astro";
 import Spacer from "../../components/mdx/Spacer.astro";
 import { Icon } from "astro-icon/components";
-import { toCalendarDate } from "../../utils/pageMetadata.mjs";
-import { describeNow } from "../../utils/descriptions.mjs";
+import { createDatedWebPageMetadata } from "../../utils/pageMetadata.mjs";
 
 export async function getStaticPaths() {
 	const nowEntries = await getCollection("now");
@@ -42,8 +42,11 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const startDateCalendar = toCalendarDate(entry.data.startDate);
-const description = isPublicEntry(entry) ? describeNow(entry.data.title) : undefined;
+const pageMetadata = createDatedWebPageMetadata({
+	isPublic: isPublicEntry(entry),
+	name: entry.data.title,
+	datePublished: entry.data.startDate,
+});
 
 const components = {
 	h1: BodyHeading1,
@@ -63,14 +66,7 @@ const components = {
 <Layout
 	title={`${entry.data.title} | Maggie Appleton`}
 	type="now"
-	desc={description}
-	pageMetadata={isPublicEntry(entry)
-		? {
-				type: "webpage",
-				name: entry.data.title,
-				...(startDateCalendar ? { datePublished: startDateCalendar } : {}),
-			}
-		: false}
+	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -85,16 +81,7 @@ const components = {
 		<div class="now-layout">
 			<div class="metadata">
 				<div class="date-permalink">
-					{startDateCalendar && <time datetime={startDateCalendar}>
-						{
-							entry.data.startDate.toLocaleDateString("en-US", {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-								timeZone: "UTC",
-							})
-						}
-					</time>}
+					<CalendarDate value={entry.data.startDate} />
 				</div>
 			</div>
 
@@ -145,12 +132,6 @@ const components = {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2xs);
-	}
-
-	time {
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
-		font-family: var(--font-sans);
 	}
 
 	.content {

@@ -28,6 +28,20 @@ export const toCalendarDate = (value) => {
     : value;
 };
 
+/**
+ * @param {{ isPublic?: boolean, name?: string, datePublished?: string | Date }} [options]
+ * @returns {false | { type: "webpage", name?: string, datePublished?: string }}
+ */
+export function createDatedWebPageMetadata({ isPublic, name, datePublished } = {}) {
+  if (isPublic !== true) return false;
+  const calendarDate = toCalendarDate(datePublished);
+  return {
+    type: "webpage",
+    name,
+    ...(calendarDate ? { datePublished: calendarDate } : {}),
+  };
+}
+
 function optionalHttpsImageUrl(value) {
   const source = meaningfulText(value);
   if (!source) return undefined;

@@ -22,7 +22,7 @@ export const SITE_IDENTITY = deepFreeze({
     "https://github.com/MaggieAppleton",
     "https://uk.linkedin.com/in/maggieappleton",
     "https://dribbble.com/mappleton",
-    "https://twitter.com/Mappletons",
+    "https://x.com/Mappletons",
     "https://indieweb.social/@maggie",
   ],
 });
