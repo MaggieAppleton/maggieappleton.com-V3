@@ -50,14 +50,6 @@ export function isArchivedVersion(entry: VersionedContent, allEntries: Versioned
 }
 
 /**
- * Get canonical URL for an entry (always points to the latest version)
- */
-export function getCanonicalUrlFromEntry(entry: VersionedContent): string {
-  const baseSlug = extractBaseSlug(entry.id);
-  return `/${baseSlug}`;
-}
-
-/**
  * Get all versions of a post by base slug
  */
 export function getAllVersionsForPost(baseSlug: string, allEntries: VersionedContent[]): VersionedContent[] {
@@ -132,14 +124,6 @@ export function generateVersionedPaths(entries: VersionedContent[]): Array<{ slu
   }
   
   return paths;
-}
-
-/**
- * Get canonical URL with full base URL
- */
-export function getCanonicalUrl(entry: VersionedContent, baseUrl: string): string {
-  const baseSlug = extractBaseSlug(entry.id);
-  return new URL(`/${baseSlug}`, baseUrl).toString();
 }
 
 /**
