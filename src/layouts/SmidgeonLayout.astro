@@ -5,18 +5,31 @@ import { Icon } from "astro-icon/components";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import Topics from "../components/layouts/Topics.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
+import CalendarDate from "../components/layouts/CalendarDate.astro";
+import { isPublicEntry } from "../utils/publication.mjs";
+import { createDatedWebPageMetadata } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
+	entry: CollectionEntry<"smidgeons">;
 };
 
-const { frontmatter } = Astro.props;
+const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 const primaryTitle =
 	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
+const pageMetadata = createDatedWebPageMetadata({
+	isPublic: isPublicEntry(entry),
+	name: frontmatter.title,
+	datePublished: frontmatter.startDate,
+});
 ---
 
-<Layout title={frontmatter.title} type="smidgeon">
+<Layout
+	title={frontmatter.title}
+	type="smidgeon"
+	pageMetadata={pageMetadata}
+>
 	<header class="header-section">
 		<div class="above-title">
 			<div class="back-link">
@@ -33,15 +46,7 @@ const primaryTitle =
 	<div class="smidgeon-layout">
 		<div class="metadata">
 			<div class="date-permalink">
-				<time datetime={frontmatter.startDate.toISOString()}>
-					{
-						frontmatter.startDate.toLocaleDateString("en-US", {
-							year: "numeric",
-							month: "long",
-							day: "numeric",
-						})
-					}
-				</time>
+				<CalendarDate value={frontmatter.startDate} />
 			</div>
 			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 		</div>
@@ -193,12 +198,6 @@ const primaryTitle =
 		display: flex;
 		align-items: center;
 		gap: var(--space-2xs);
-	}
-
-	time {
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
-		font-family: var(--font-sans);
 	}
 
 	.content {
