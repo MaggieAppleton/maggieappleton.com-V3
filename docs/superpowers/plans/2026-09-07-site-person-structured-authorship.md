@@ -35,7 +35,7 @@ const PERSON_SAME_AS = [
   "https://github.com/MaggieAppleton",
   "https://uk.linkedin.com/in/maggieappleton",
   "https://dribbble.com/mappleton",
-  "https://twitter.com/Mappletons",
+  "https://x.com/Mappletons",
   "https://indieweb.social/@maggie",
 ];
 ```
@@ -107,7 +107,7 @@ export const expectedSiteIdentity = {
         "https://github.com/MaggieAppleton",
         "https://uk.linkedin.com/in/maggieappleton",
         "https://dribbble.com/mappleton",
-        "https://twitter.com/Mappletons",
+        "https://x.com/Mappletons",
         "https://indieweb.social/@maggie",
       ],
     },
