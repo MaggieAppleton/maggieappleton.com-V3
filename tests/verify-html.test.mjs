@@ -17,6 +17,7 @@ import {
   assertXMLResponse,
   buildURL,
   killWindowsProcessTree,
+  extractJsonLdScripts,
   parsePort,
   runVerifier,
   stopDevServer,
@@ -25,6 +26,7 @@ import {
   waitForExit,
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
+import { expectedSiteIdentity } from "./fixtures/site-identity.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -39,6 +41,15 @@ const noindexHtml = (title = "Diagram Preview", robots = "noindex, nofollow") =>
   `<!doctype html><html><head><title>${title}</title><meta content="${robots}" name="robots"></head><body><h2>${title}</h2></body></html>`;
 const response = (body, contentType = "text/html", status = 200) =>
   new Response(body, { status, headers: { "content-type": contentType } });
+
+const identityScript = (document = expectedSiteIdentity) =>
+  `<script type="application/ld+json">${typeof document === "string" ? document : JSON.stringify(document)}</script>`;
+const withIdentity = (body, source = expectedSiteIdentity) =>
+  body.replace("</head>", `${identityScript(source)}</head>`);
+const htmlWithIdentity = (source = expectedSiteIdentity) =>
+  withIdentity(html("About Maggie Appleton"), source);
+const htmlWithIdentityDocument = (document) => htmlWithIdentity(JSON.stringify(document));
+const htmlWithTwoIdentityScripts = () => htmlWithIdentity().replace("</body>", `${identityScript()}</body>`);
 
 test("parses only unprivileged TCP ports", () => {
   assert.equal(parsePort(undefined), DEFAULT_PORT);
@@ -93,13 +104,25 @@ test("defines unique non-image routes with supported kinds", () => {
   }
 });
 
+test("keeps the P4 route manifest and derives identity from ordinary HTML routes", () => {
+  assert.deepEqual(ROUTES.map(({ path }) => path), [
+    "/", "/about", "/about?source=verify", "/garden", "/essays", "/notes",
+    "/patterns", "/topics/web-development", "/websecurity", "/api", "/now-2026-08",
+    "/2025-08-vibe-legacy-code", "/diagram-preview", "/colophon/colophon-content",
+    "/rss.xml", "/smidgeons.xml", "/robots.txt", "/sitemap.xml", "/drafts",
+  ]);
+  assert.equal(ROUTES.length, 19);
+  for (const route of ROUTES) assert.equal(Object.hasOwn(route, "siteIdentity"), false, route.path);
+});
+
 test("joins route paths to one base URL", () => {
   assert.equal(buildURL("http://127.0.0.1:4322/", "/about"), "http://127.0.0.1:4322/about");
 });
 
 test("accepts valid HTML and rejects each missing contract", async () => {
   const route = { path: "/about", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" };
-  assert.doesNotThrow(() => assertHTMLResponse(route, response(html(route.title)), html(route.title)));
+  const validBody = withIdentity(html(route.title));
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(validBody), validBody));
   assert.throws(() => assertHTMLResponse(route, response("no", "text/plain"), "no"), /text\/html/);
   assert.throws(() => assertHTMLResponse(route, response(html(), "text/html", 404), html()), /status 200/);
   for (const [body, message] of [
@@ -118,6 +141,112 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html(route.title, { canonical: "https://maggieappleton.com/about/" }), /slashless/],
     [html(route.title, { ogUrl: "https://maggieappleton.com/wrong" }), /og:url to equal/],
   ]) assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+});
+
+test("derives the identity requirement from the HTML route kind", () => {
+  const route = { path: "/about", kind: "html" };
+  assert.throws(
+    () => assertHTMLResponse(route, response(html("About")), html("About")),
+    /exactly one JSON-LD script/,
+  );
+});
+
+test("requires exactly one complete Site/Person JSON-LD graph", () => {
+  const route = { path: "/about", kind: "html" };
+  const duplicatePerson = {
+    ...expectedSiteIdentity["@graph"][1],
+    sameAs: [...expectedSiteIdentity["@graph"][1].sameAs],
+  };
+  const duplicateIdDocument = {
+    ...expectedSiteIdentity,
+    "@graph": [...expectedSiteIdentity["@graph"], duplicatePerson],
+  };
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(htmlWithIdentity()), htmlWithIdentity()));
+  assert.throws(() => assertHTMLResponse(route, response(html("About")), html("About")), /exactly one JSON-LD script/);
+  const nonJsonBody = html("About").replace("</head>", '<script type="application/json">{}</script></head>');
+  assert.throws(() => assertHTMLResponse(route, response(nonJsonBody), nonJsonBody), /exactly one JSON-LD script/);
+  assert.throws(() => assertHTMLResponse(route, response(htmlWithIdentity("{")), htmlWithIdentity("{")), /invalid JSON-LD/);
+  assert.throws(() => assertHTMLResponse(route, response(htmlWithTwoIdentityScripts()), htmlWithTwoIdentityScripts()), /exactly one JSON-LD script/);
+  const duplicateIdBody = htmlWithIdentityDocument(duplicateIdDocument);
+  assert.throws(() => assertHTMLResponse(route, response(duplicateIdBody), duplicateIdBody), /duplicate.*@id/);
+});
+
+test("rejects every identity graph drift and unsupported fact", () => {
+  const route = { path: "/about", kind: "html" };
+  const cases = [
+    ["@context", (document) => { delete document["@context"]; }, /@context/],
+    ["graph type", (document) => { document["@graph"] = {}; }, /@graph array/],
+    ["extra node", (document) => { document["@graph"].push({ "@id": "https://example.test/extra" }); }, /exactly two/],
+    ["Website property", (document) => { document["@graph"][0].extra = true; }, /unexpected|extra/],
+    ["Person property", (document) => { document["@graph"][1].image = "https://example.test/image"; }, /unexpected|extra/],
+    ["Website id", (document) => { document["@graph"][0]["@id"] = "https://example.test/#website"; }, /unexpected|id/],
+    ["Website URL", (document) => { document["@graph"][0].url = "https://example.test/"; }, /unexpected|url/],
+    ["Website name", (document) => { document["@graph"][0].name = "Other"; }, /unexpected|name/],
+    ["Website description", (document) => { document["@graph"][0].description = "Other"; }, /unexpected|description/],
+    ["language", (document) => { document["@graph"][0].inLanguage = "en-US"; }, /unexpected|language/],
+    ["author missing", (document) => { delete document["@graph"][0].author; }, /unexpected|author/],
+    ["author", (document) => { document["@graph"][0].author = { "@id": "https://example.test/#person" }; }, /unexpected|author/],
+    ["publisher missing", (document) => { delete document["@graph"][0].publisher; }, /unexpected|publisher/],
+    ["publisher", (document) => { document["@graph"][0].publisher = {}; }, /unexpected|publisher/],
+    ["Person type", (document) => { document["@graph"][1]["@type"] = "Thing"; }, /unexpected|type/],
+    ["Person name", (document) => { document["@graph"][1].name = "Other"; }, /unexpected|name/],
+    ["Person relative URL", (document) => { document["@graph"][1].url = "/about"; }, /unexpected|url/],
+    ["Person URL", (document) => { document["@graph"][1].url = "https://maggieappleton.com/about/"; }, /unexpected|url/],
+    ["Person description", (document) => { document["@graph"][1].description = "Other"; }, /unexpected|description/],
+    ["sameAs missing", (document) => { document["@graph"][1].sameAs.pop(); }, /unexpected|sameAs/],
+    ["sameAs reordered", (document) => { document["@graph"][1].sameAs.reverse(); }, /unexpected|sameAs/],
+    ["sameAs duplicated", (document) => { document["@graph"][1].sameAs[1] = document["@graph"][1].sameAs[0]; }, /unexpected|sameAs/],
+    ["sameAs extra", (document) => { document["@graph"][1].sameAs.push("https://example.test/maggie"); }, /unexpected|sameAs/],
+  ];
+  for (const [name, mutate, message] of cases) {
+    const document = structuredClone(expectedSiteIdentity);
+    mutate(document);
+    const body = htmlWithIdentityDocument(document);
+    assert.throws(() => assertHTMLResponse(route, response(body), body), message, name);
+  }
+
+  const duplicateGraphId = structuredClone(expectedSiteIdentity);
+  duplicateGraphId["@graph"][1]["@id"] = duplicateGraphId["@graph"][0]["@id"];
+  const duplicateGraphIdBody = htmlWithIdentityDocument(duplicateGraphId);
+  assert.throws(() => assertHTMLResponse(route, response(duplicateGraphIdBody), duplicateGraphIdBody), /duplicate.*@id/);
+
+  const wrongType = structuredClone(expectedSiteIdentity);
+  wrongType["@graph"][0]["@type"] = "Thing";
+  const wrongTypeBody = htmlWithIdentityDocument(wrongType);
+  assert.throws(() => assertHTMLResponse(route, response(wrongTypeBody), wrongTypeBody), /unexpected|type/);
+});
+
+test("extracts only actual JSON-LD scripts with the effective first type attribute", () => {
+  const valid = JSON.stringify(expectedSiteIdentity);
+  const body = `<!doctype html><html><head><div data-note='<script type="application/ld+json">{}</script>'></div><!-- <script type="application/ld+json">{</script> --><script TYPE="application/ld+json">${valid}</script></head></html>`;
+  assert.deepEqual(extractJsonLdScripts(body, "/fixture"), [expectedSiteIdentity]);
+
+  const firstTypeNotJson = `<script type="text/plain" type="application/ld+json">${valid}</script>`;
+  assert.deepEqual(extractJsonLdScripts(firstTypeNotJson, "/fixture"), []);
+  assert.throws(() => extractJsonLdScripts(`<script type="application/ld+json">{</script>`, "/fixture"), /\/fixture: invalid JSON-LD/);
+  assert.throws(() => extractJsonLdScripts(`<script type="application/ld+json">{`, "/fixture"), /\/fixture: unclosed JSON-LD script/);
+  assert.deepEqual(extractJsonLdScripts("<!-- <script type=\"application/ld+json\">{", "/fixture"), []);
+  assert.throws(() => extractJsonLdScripts(`<script type="application/ld+json">{</script>`, undefined), /requires a routePath/);
+});
+
+test("uses native JSON parsing semantics in the generic extractor", () => {
+  const source = '{"name":"first","name":"last"}';
+  assert.deepEqual(
+    extractJsonLdScripts(`<script type="application/ld+json">${source}</script>`, "/fixture"),
+    [{ name: "last" }],
+  );
+});
+
+test("fails closed on an unclosed script opening tag but ignores malformed non-script tags", () => {
+  const malformedScript = '<script type="application/ld+json" data-x="unterminated';
+  assert.throws(() => extractJsonLdScripts(malformedScript, "/fixture"), /\/fixture: unclosed script opening tag/);
+  assert.deepEqual(extractJsonLdScripts('<div data-x="unterminated', "/fixture"), []);
+  const noindexRoute = { path: "/diagram-preview", kind: "noindexHtml" };
+  const noindexMalformedScript = noindexHtml().replace("</head>", `${malformedScript}</head>`);
+  assert.throws(
+    () => assertNoindexHTMLResponse(noindexRoute, response(noindexMalformedScript), noindexMalformedScript),
+    /\/diagram-preview: unclosed script opening tag/,
+  );
 });
 
 test("does not mistake prefixed attributes or rel lookalikes for canonical metadata", () => {
@@ -154,7 +283,7 @@ test("uses the browser-effective first duplicate metadata attribute", () => {
   );
   assert.throws(() => assertHTMLResponse(route, response(evilOgContentFirst), evilOgContentFirst), /og:url to equal/);
 
-  const goodHrefFirst = html("About").replace(
+  const goodHrefFirst = withIdentity(html("About")).replace(
     'HREF="https://maggieappleton.com/about"',
     'HREF="https://maggieappleton.com/about" href="https://evil.test/about"',
   ).replace(
@@ -182,7 +311,7 @@ test("checks the configured API social-image pathname", () => {
 
 test("allows an explicitly H1-free page while enforcing exact canonical and Open Graph metadata", () => {
   const route = { path: "/now-2026-08", kind: "html", requireH1: false };
-  const body = html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" })
+  const body = withIdentity(html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" }))
     .replace(/<h1>[\s\S]*?<\/h1>/, "");
   assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
 });
@@ -190,6 +319,10 @@ test("allows an explicitly H1-free page while enforcing exact canonical and Open
 test("requires noindex utility and absent-route contracts without generic page landmarks", () => {
   const noindexRoute = { path: "/diagram-preview", kind: "noindexHtml" };
   assert.doesNotThrow(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml()), noindexHtml()));
+  const noindexWithIdentity = noindexHtml().replace("</head>", `${identityScript()}</head>`);
+  assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexWithIdentity), noindexWithIdentity), /expected no JSON-LD/);
+  const noindexWithMalformedIdentity = noindexHtml().replace("</head>", '<script type="application/ld+json">{</script></head>');
+  assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexWithMalformedIdentity), noindexWithMalformedIdentity), /\/diagram-preview: invalid JSON-LD/);
   assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml("Diagram Preview", "index, follow")), noindexHtml("Diagram Preview", "index, follow")), /noindex, nofollow/);
   assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml().replace("</head>", '<meta name="robots" content="noindex, nofollow"></head>')), noindexHtml().replace("</head>", '<meta name="robots" content="noindex, nofollow"></head>')), /exactly one robots/);
   assert.throws(() => assertNoindexHTMLResponse(noindexRoute, response(noindexHtml().replace("</head>", '<link rel="canonical" href="https://maggieappleton.com/diagram-preview"></head>')), noindexHtml().replace("</head>", '<link rel="canonical" href="https://maggieappleton.com/diagram-preview"></head>')), /canonical/);
@@ -223,9 +356,9 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertRobotsResponse(robots, response(body, "text/plain"), body), /Sitemap/);
 
   const schemaRoute = { path: "/schema", kind: "html", jsonLD: true, bodyIncludes: "Useful body text" };
-  const schemaBody = html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
+  const schemaBody = withIdentity(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p></body>"));
   assert.doesNotThrow(() => assertHTMLResponse(schemaRoute, response(schemaBody), schemaBody));
-  const invalidSchema = schemaBody.replace("{\"@context\":\"https://schema.org\"}", "{");
+  const invalidSchema = schemaBody.replace(JSON.stringify(expectedSiteIdentity), "{");
   assert.throws(() => assertHTMLResponse(schemaRoute, response(invalidSchema), invalidSchema), /JSON|Unexpected/);
   assert.throws(() => assertHTMLResponse(schemaRoute, response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), /Useful body text/);
 
@@ -327,7 +460,7 @@ test("verifies routes in order without fetching image URLs", async () => {
       requested.push(url);
       return url.endsWith(".xml")
         ? response("<rss><channel><item /></channel></rss>", "application/xml")
-        : response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/", ogUrl: "https://maggieappleton.com/" }));
+        : response(withIdentity(html("Maggie Appleton", { canonical: "https://maggieappleton.com/", ogUrl: "https://maggieappleton.com/" })));
     },
   });
   assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
@@ -394,7 +527,7 @@ test("uses manual redirect handling for readiness and route requests", async () 
     routes: [{ path: "/about", kind: "html" }],
     fetchImpl: async (_, requestOptions) => {
       options.push(requestOptions);
-      return response(html());
+      return response(htmlWithIdentity());
     },
   });
   assert.deepEqual(options.map(({ redirect }) => redirect), ["manual", "manual"]);

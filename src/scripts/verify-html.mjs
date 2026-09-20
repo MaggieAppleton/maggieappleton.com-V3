@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -145,6 +146,80 @@ function getAttribute(tag, name) {
   return parseTagAttributes(tag).get(name.toLowerCase());
 }
 
+function findTagEnd(body, start) {
+  let quote;
+  for (let index = start; index < body.length; index += 1) {
+    const character = body[index];
+    if (quote) {
+      if (character === quote) quote = undefined;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === ">") {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function closingScript(body, start) {
+  return body.slice(start).match(/<\/script\s*>/i);
+}
+
+export function extractJsonLdScripts(body, routePath) {
+  if (typeof routePath !== "string") {
+    throw new TypeError("extractJsonLdScripts requires a routePath string");
+  }
+  const documents = [];
+  let index = 0;
+  while (index < body.length) {
+    if (body.startsWith("<!--", index)) {
+      const commentEnd = body.indexOf("-->", index + 4);
+      if (commentEnd < 0) return documents;
+      index = commentEnd + 3;
+      continue;
+    }
+    if (body[index] !== "<") {
+      index += 1;
+      continue;
+    }
+    if (body.startsWith("</", index)) {
+      index += 2;
+      continue;
+    }
+    const tagEnd = findTagEnd(body, index + 1);
+    if (tagEnd < 0) {
+      const tagName = body.slice(index + 1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
+      if (tagName === "script") throw new Error(`${routePath}: unclosed script opening tag`);
+      return documents;
+    }
+    const tag = body.slice(index, tagEnd + 1);
+    const tagName = tag.slice(1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
+    index = tagEnd + 1;
+    if (tagName !== "script") continue;
+
+    const closing = closingScript(body, index);
+    if (!closing) {
+      if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
+        throw new Error(`${routePath}: unclosed JSON-LD script`);
+      }
+      return documents;
+    }
+    const closingIndex = index + closing.index;
+    if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
+      const source = body.slice(index, closingIndex).trim();
+      let document;
+      try {
+        document = JSON.parse(source);
+      } catch (error) {
+        throw new Error(`${routePath}: invalid JSON-LD: ${error.message}`);
+      }
+      documents.push(document);
+    }
+    index = closingIndex + closing[0].length;
+  }
+  return documents;
+}
+
 function canonicalLinks(body) {
   return extractTags(body, "link").filter((tag) =>
     (getAttribute(tag, "rel") ?? "").split(/\s+/).some((token) => token.toLowerCase() === "canonical"),
@@ -222,6 +297,7 @@ export function assertHTMLResponse(route, response, body) {
   }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
+  if (route.kind === "html") assertSiteIdentityJSONLD(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
 }
 
@@ -233,6 +309,7 @@ export function assertNoindexHTMLResponse(route, response, body) {
   assert.equal(robots.length, 1, `${route.path}: expected exactly one robots meta tag, received ${robots.length}`);
   assert.equal(getAttribute(robots[0], "content"), "noindex, nofollow", `${route.path}: expected robots content noindex, nofollow`);
   assert.equal(canonicalLinks(body).length, 0, `${route.path}: expected no canonical link`);
+  assert.equal(extractJsonLdScripts(body, route.path).length, 0, `${route.path}: expected no JSON-LD`);
   assertExpectedBodyText(route, body);
 }
 
@@ -381,10 +458,22 @@ export function assertSitemapResponse(route, response, body) {
   }
 }
 
+export function assertSiteIdentityJSONLD(route, body) {
+  const scripts = extractJsonLdScripts(body, route.path);
+  assert.equal(scripts.length, 1, `${route.path}: expected exactly one JSON-LD script`);
+  const document = scripts[0];
+  assert.equal(document?.["@context"], "https://schema.org", `${route.path}: expected JSON-LD @context https://schema.org`);
+  assert.ok(Array.isArray(document?.["@graph"]), `${route.path}: expected JSON-LD @graph array`);
+  assert.ok(document["@graph"].every((node) => node && typeof node === "object" && !Array.isArray(node)), `${route.path}: JSON-LD graph nodes must be plain objects`);
+  const ids = document["@graph"].map((node) => node["@id"]);
+  assert.equal(new Set(ids).size, ids.length, `${route.path}: duplicate JSON-LD graph @id`);
+  assert.equal(document["@graph"].length, 2, `${route.path}: expected exactly two JSON-LD graph nodes`);
+  assert.deepEqual(document, createSiteIdentityGraph(), `${route.path}: unexpected Site/Person JSON-LD graph`);
+}
+
 export function assertJSONLD(route, body) {
-  const scripts = [...body.matchAll(/<script\b(?=[^>]*\btype=["']application\/ld\+json["'])[^>]*>([\s\S]*?)<\/script>/gi)];
+  const scripts = extractJsonLdScripts(body, route.path);
   assert.ok(scripts.length, `${route.path}: expected JSON-LD`);
-  for (const [, source] of scripts) JSON.parse(source.trim());
 }
 
 export async function verifyRoutes({ baseURL, routes = ROUTES, fetchImpl = globalThis.fetch }) {
