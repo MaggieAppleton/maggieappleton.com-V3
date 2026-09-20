@@ -131,6 +131,12 @@ test("only dated collections emit valid updated dates as lastmod", () => {
     () => createSitemapRecords({ entries: [{ collection: "notes", id: "invalid-date", data: { updated: "not-a-date" } }] }),
     /Invalid sitemap updated date.*notes:invalid-date/,
   );
+  assert.throws(
+    () => createSitemapRecords({
+      entries: [{ collection: "essays", id: "rollover-date", data: { updated: "2026-02-31" } }],
+    }),
+    /Invalid sitemap updated date.*essays:rollover-date/,
+  );
 });
 
 test("rejects duplicate absolute locations", () => {
