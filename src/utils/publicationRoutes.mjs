@@ -17,6 +17,18 @@ export function getDraftPreviewSlug(entry) {
 }
 
 /**
+ * Returns the public detail-route slug without collapsing ordinary `*-vN` IDs.
+ *
+ * @param {{id: string, collection?: string, data?: any}} entry
+ * @returns {string}
+ */
+export function getPublicRouteSlug(entry) {
+  return isVersionedPublicationEntry(entry)
+    ? getPublicationBaseSlug(entry)
+    : entry.id.replace(/\.mdx?$/i, "");
+}
+
+/**
  * Returns the content-derived portion of a social-image route.
  *
  * Versioned entries always share an image at their canonical base slug. Other

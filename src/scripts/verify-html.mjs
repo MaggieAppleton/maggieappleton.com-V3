@@ -3,7 +3,6 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createSiteIdentityGraph } from "../utils/siteIdentity.mjs";
-import { toCalendarDate } from "../utils/pageMetadata.mjs";
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -12,34 +11,31 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4322;
 const CANONICAL_ORIGIN = "https://maggieappleton.com";
 export const ROUTES = Object.freeze([
-  { path: "/", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Maggie Appleton" },
-  { path: "/about", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton" },
-  { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
-  { path: "/garden", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "The Garden of Maggie Appleton" },
-  { path: "/essays", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Essays by Maggie Appleton" },
-  { path: "/notes", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Notes by Maggie Appleton" },
-  { path: "/patterns", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "Patterns by Maggie Appleton" },
-  { path: "/topics/web-development", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/websecurity", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-02-08", dateModified: "2020-02-08", description: "Illustrated notes on the essentials of web security" } },
+  { path: "/", kind: "html", title: "Maggie Appleton" },
+  { path: "/about", kind: "html", title: "About Maggie Appleton" },
+  { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+  { path: "/garden", kind: "html", title: "The Garden of Maggie Appleton" },
+  { path: "/essays", kind: "html", title: "Essays by Maggie Appleton" },
+  { path: "/notes", kind: "html", title: "Notes by Maggie Appleton" },
+  { path: "/patterns", kind: "html", title: "Patterns by Maggie Appleton" },
+  { path: "/topics/web-development", kind: "html" },
+  { path: "/websecurity", kind: "html" },
   {
     path: "/api",
     kind: "html",
-    siteIdentity: true,
-    pageMetadata: "article",
-    article: { datePublished: "2019-04-10", dateModified: "2019-06-30", description: "Everything you need to know about what API's are and how they work", hasImage: true },
     canonical: "https://maggieappleton.com/api",
     ogUrl: "https://maggieappleton.com/api",
     ogImagePath: "/og/api.png",
   },
-  { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/now", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/smidgeons", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-01-deepseek", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/2025-01-common-misconceptions", kind: "html", siteIdentity: true, pageMetadata: "webpage" },
-  { path: "/still-cant-draw", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-08-18", dateModified: "2023-12-12", description: "The failure of drawing materials without mediums and meat", hasImage: true } },
-  { path: "/xanadu-patterns", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-07-10", dateModified: "2021-12-20", description: "Project Xanadu as a pattern language, rather than a failed software project", hasImage: true } },
-  { path: "/greensock-react", kind: "html", siteIdentity: true, pageMetadata: "article", article: { datePublished: "2020-09-27", dateModified: "2020-09-27", description: "How to use the Greensock animation library inside React using React hooks" } },
+  { path: "/now-2026-08", kind: "html" },
+  { path: "/2025-08-vibe-legacy-code", kind: "html" },
+  { path: "/now", kind: "html" },
+  { path: "/smidgeons", kind: "html" },
+  { path: "/2025-01-deepseek", kind: "html" },
+  { path: "/2025-01-common-misconceptions", kind: "html" },
+  { path: "/still-cant-draw", kind: "html" },
+  { path: "/xanadu-patterns", kind: "html" },
+  { path: "/greensock-react", kind: "html" },
   { path: "/diagram-preview", kind: "noindexHtml" },
   { path: "/colophon/colophon-content", kind: "absent" },
   { path: "/rss.xml", kind: "xml" },
@@ -56,7 +52,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
 ]);
 
 export function parsePort(value) {
@@ -97,23 +93,10 @@ function assertSuccessfulResponse(route, response) {
 
 function extractTags(body, name) {
   const tags = [];
-  const startPattern = new RegExp(`<${name}\\b`, "gi");
-  let match;
-  while ((match = startPattern.exec(body))) {
-    let quote;
-    for (let index = startPattern.lastIndex; index < body.length; index += 1) {
-      const character = body[index];
-      if (quote) {
-        if (character === quote) quote = undefined;
-      } else if (character === '"' || character === "'") {
-        quote = character;
-      } else if (character === ">") {
-        tags.push(body.slice(match.index, index + 1));
-        startPattern.lastIndex = index + 1;
-        break;
-      }
-    }
-  }
+  const expectedName = name.toLowerCase();
+  forEachOpeningElement(body, (element) => {
+    if (element.name === expectedName) tags.push(element.tag);
+  });
   return tags;
 }
 
@@ -172,9 +155,7 @@ function findTagEnd(body, start) {
   return -1;
 }
 
-export function countOpeningElements(body, tagName) {
-  const expectedName = tagName.toLowerCase();
-  let count = 0;
+function forEachOpeningElement(body, visitor, { routePath } = {}) {
   let index = 0;
 
   while (index < body.length) {
@@ -193,17 +174,34 @@ export function countOpeningElements(body, tagName) {
       continue;
     }
     const end = findTagEnd(body, index + 1);
-    if (end < 0) break;
-    if (name === expectedName) count += 1;
+    if (end < 0) {
+      if (name === "script" && routePath) throw new Error(`${routePath}: unclosed script opening tag`);
+      return;
+    }
     const openingTag = body.slice(index, end + 1);
     index = end + 1;
     if ((name === "script" || name === "style") && !/\/\s*>$/.test(openingTag)) {
       const closing = new RegExp(`</${name}\\s*>`, "ig");
       closing.lastIndex = index;
       const close = closing.exec(body);
-      index = close ? close.index + close[0].length : body.length;
+      if (!close) {
+        visitor({ name, tag: openingTag, content: body.slice(index), closed: false });
+        return;
+      }
+      visitor({ name, tag: openingTag, content: body.slice(index, close.index), closed: true });
+      index = close.index + close[0].length;
+      continue;
     }
+    visitor({ name, tag: openingTag, content: "", closed: true });
   }
+}
+
+export function countOpeningElements(body, tagName) {
+  const expectedName = tagName.toLowerCase();
+  let count = 0;
+  forEachOpeningElement(body, ({ name }) => {
+    if (name === expectedName) count += 1;
+  });
   return count;
 }
 
@@ -212,137 +210,30 @@ function assertExactlyOneOpeningElement(route, body, tagName) {
   assert.equal(count, 1, `${route.path}: expected exactly one ${tagName}, received ${count}`);
 }
 
-function closingScript(body, start) {
-  return body.slice(start).match(/<\/script\s*>/i);
-}
-
-function assertNoDuplicateJsonKeys(source, routePath) {
-  let index = 0;
-  const skipWhitespace = () => {
-    while (/\s/.test(source[index] ?? "")) index += 1;
-  };
-  const readString = () => {
-    const start = index;
-    index += 1;
-    while (index < source.length) {
-      if (source[index] === "\\") {
-        index += source[index + 1] === "u" ? 6 : 2;
-      } else if (source[index] === '"') {
-        index += 1;
-        return JSON.parse(source.slice(start, index));
-      } else {
-        index += 1;
-      }
-    }
-    return JSON.parse(source.slice(start, index));
-  };
-  const readValue = () => {
-    skipWhitespace();
-    if (source[index] === "{") return readObject();
-    if (source[index] === "[") return readArray();
-    if (source[index] === '"') {
-      readString();
-      return;
-    }
-    while (index < source.length && !/[\s,\]}]/.test(source[index])) index += 1;
-  };
-  const readObject = () => {
-    index += 1;
-    const keys = new Set();
-    skipWhitespace();
-    if (source[index] === "}") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      skipWhitespace();
-      const key = readString();
-      if (keys.has(key)) throw new Error(`${routePath}: duplicate JSON-LD object key ${JSON.stringify(key)}`);
-      keys.add(key);
-      skipWhitespace();
-      index += 1;
-      readValue();
-      skipWhitespace();
-      if (source[index] === "}") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  const readArray = () => {
-    index += 1;
-    skipWhitespace();
-    if (source[index] === "]") {
-      index += 1;
-      return;
-    }
-    while (index < source.length) {
-      readValue();
-      skipWhitespace();
-      if (source[index] === "]") {
-        index += 1;
-        return;
-      }
-      index += 1;
-    }
-  };
-  readValue();
-}
-
 export function extractJsonLdScripts(body, routePath) {
   if (typeof routePath !== "string") {
     throw new TypeError("extractJsonLdScripts requires a routePath string");
   }
   const documents = [];
-  let index = 0;
-  while (index < body.length) {
-    if (body.startsWith("<!--", index)) {
-      const commentEnd = body.indexOf("-->", index + 4);
-      if (commentEnd < 0) return documents;
-      index = commentEnd + 3;
-      continue;
-    }
-    if (body[index] !== "<") {
-      index += 1;
-      continue;
-    }
-    if (body.startsWith("</", index)) {
-      index += 2;
-      continue;
-    }
-    const tagEnd = findTagEnd(body, index + 1);
-    if (tagEnd < 0) {
-      const tagName = body.slice(index + 1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
-      if (tagName === "script") throw new Error(`${routePath}: unclosed script opening tag`);
-      return documents;
-    }
-    const tag = body.slice(index, tagEnd + 1);
-    const tagName = tag.slice(1).match(/^([^\s/>]+)/)?.[1]?.toLowerCase();
-    index = tagEnd + 1;
-    if (tagName !== "script") continue;
-
-    const closing = closingScript(body, index);
-    if (!closing) {
+  forEachOpeningElement(body, ({ name, tag, content, closed }) => {
+    if (name !== "script") return;
+    if (!closed) {
       if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
         throw new Error(`${routePath}: unclosed JSON-LD script`);
       }
-      return documents;
+      return;
     }
-    const closingIndex = index + closing.index;
     if ((getAttribute(tag, "type") ?? "").toLowerCase() === "application/ld+json") {
-      const source = body.slice(index, closingIndex).trim();
+      const source = content.trim();
       let document;
       try {
         document = JSON.parse(source);
       } catch (error) {
         throw new Error(`${routePath}: invalid JSON-LD: ${error.message}`);
       }
-      assertNoDuplicateJsonKeys(source, routePath);
       documents.push(document);
     }
-    index = closingIndex + closing[0].length;
-  }
+  }, { routePath });
   return documents;
 }
 
@@ -395,98 +286,21 @@ function getMetaContent(body, property) {
   return content;
 }
 
-function metaProperties(body, prefix) {
-  return extractTags(body, "meta")
-    .filter((tag) => (getAttribute(tag, "property") ?? "").toLowerCase().startsWith(prefix))
-    .map((tag) => getAttribute(tag, "property").toLowerCase());
-}
-
-function assertPageNode(route, document, canonical) {
-  const descriptor = route.pageMetadata;
-  const identity = createSiteIdentityGraph();
-  assert.deepEqual(document["@graph"].slice(0, 2), identity["@graph"], `${route.path}: unexpected P5 identity graph drift`);
-  const expectedLength = descriptor ? 3 : 2;
-  assert.equal(document["@graph"].length, expectedLength, descriptor
-    ? `${route.path}: expected exactly three graph nodes`
-    : `${route.path}: expected exactly two graph nodes`);
-  if (!descriptor) {
-    assert.deepEqual(document, identity, `${route.path}: unexpected page metadata graph`);
-    return;
-  }
-  const node = document["@graph"][2];
-  const expectedType = descriptor === "article" ? "Article" : "WebPage";
-  assert.equal(node["@type"], expectedType, `${route.path}: unexpected page node type`);
-  assert.equal(node["@id"], `${canonical}#${descriptor === "article" ? "article" : "webpage"}`, `${route.path}: unexpected page node id`);
-  assert.equal(node.url, canonical, `${route.path}: page node URL must be canonical`);
-  assert.deepEqual(node.isPartOf, { "@id": "https://maggieappleton.com/#website" }, `${route.path}: page node must reference WebSite`);
-  const allowed = descriptor === "article"
-    ? ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished", "dateModified", "description", "image"]
-    : ["@id", "@type", "url", "name", "isPartOf", "datePublished", "description"];
-  for (const key of Object.keys(node)) {
-    assert.ok(allowed.includes(key), `${route.path}: unsupported page node property ${key}`);
-  }
-  if (descriptor === "article") {
-    const required = ["@id", "@type", "url", "headline", "isPartOf", "author", "publisher", "datePublished"];
-    for (const field of required) assert.equal(Object.hasOwn(node, field), true, `${route.path}: Article missing ${field}`);
-    assert.equal(typeof node.headline, "string");
-    assert.deepEqual(node.author, { "@id": "https://maggieappleton.com/#person" });
-    assert.deepEqual(node.publisher, { "@id": "https://maggieappleton.com/#person" });
-    assert.match(node.datePublished, /^\d{4}-\d{2}-\d{2}$/);
-    assert.equal(toCalendarDate(node.datePublished), node.datePublished, `${route.path}: Article datePublished must be a valid calendar date`);
-    const expected = route.article ?? {};
-    assert.equal(node.datePublished, expected.datePublished, `${route.path}: wrong Article datePublished`);
-    if (expected.dateModified) assert.equal(node.dateModified, expected.dateModified, `${route.path}: wrong Article dateModified`);
-    else assert.equal(Object.hasOwn(node, "dateModified"), false, `${route.path}: unexpected Article dateModified`);
-    if (expected.description) assert.equal(node.description, expected.description, `${route.path}: wrong Article description`);
-    else assert.equal(Object.hasOwn(node, "description"), false);
-    if (node.image !== undefined) {
-      assert.match(node.image, /^https:\/\//, `${route.path}: Article image must be HTTPS`);
-      assert.notEqual(node.image.trim(), "...");
-    }
-    if (expected.hasImage) assert.match(node.image ?? "", /^https:\/\/maggieappleton\.com\//, `${route.path}: expected a canonical-origin HTTPS Article image`);
-    if (!expected.hasImage && !expected.image) assert.equal(Object.hasOwn(node, "image"), false, `${route.path}: unexpected Article image`);
-    if (expected.image) assert.equal(node.image, expected.image, `${route.path}: wrong Article image`);
-  } else {
-    assert.equal(typeof node.name, "string");
-    if (node.datePublished !== undefined) {
-      assert.match(node.datePublished, /^\d{4}-\d{2}-\d{2}$/);
-      assert.equal(toCalendarDate(node.datePublished), node.datePublished);
-    }
-    for (const field of ["author", "publisher", "headline", "image", "dateModified"]) assert.equal(Object.hasOwn(node, field), false, `${route.path}: WebPage has Article-only ${field}`);
-    if (node.description !== undefined) assert.ok(node.description.trim() && node.description.trim() !== "...");
-  }
-}
-
-export function assertHTMLResponse(route, response, body) {
+function assertHTMLDocumentResponse(route, response, body) {
   assertSuccessfulResponse(route, response);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
   const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
   assert.ok(title, `${route.path}: expected a non-empty title`);
+  return title;
+}
+
+export function assertHTMLResponse(route, response, body) {
+  const title = assertHTMLDocumentResponse(route, response, body);
   assertExactlyOneOpeningElement(route, body, "main");
   assertExactlyOneOpeningElement(route, body, "h1");
   const canonical = assertCanonical(route, body);
   const ogUrl = getMetaContent(body, "og:url");
   assert.equal(ogUrl, canonical, `${route.path}: expected og:url to equal its canonical URL`);
-  const ogType = getMetaContent(body, "og:type");
-  const isArticle = route.pageMetadata === "article";
-  assert.equal(ogType, isArticle ? "article" : "website", `${route.path}: unexpected og:type`);
-  const articleMeta = metaProperties(body, "article:");
-  if (!isArticle) {
-    assert.deepEqual(articleMeta, [], `${route.path}: WebPage must not emit article:* metadata`);
-  } else {
-    const allowedArticleMeta = new Set(["article:published_time", "article:author", "article:modified_time"]);
-    for (const property of articleMeta) assert.equal(allowedArticleMeta.has(property), true, `${route.path}: unsupported Article Open Graph property ${property}`);
-    assert.equal(articleMeta.filter((property) => property === "article:published_time").length, 1, `${route.path}: expected exactly one article:published_time`);
-    assert.equal(articleMeta.filter((property) => property === "article:author").length, 1, `${route.path}: expected exactly one article:author`);
-    assert.ok(articleMeta.filter((property) => property === "article:modified_time").length <= 1, `${route.path}: expected at most one article:modified_time`);
-    assert.equal(getMetaContent(body, "article:published_time"), route.article?.datePublished, `${route.path}: wrong article:published_time`);
-    assert.equal(getMetaContent(body, "article:author"), "https://maggieappleton.com/about", `${route.path}: wrong article:author`);
-    if (route.article?.dateModified) assert.equal(getMetaContent(body, "article:modified_time"), route.article.dateModified, `${route.path}: wrong article:modified_time`);
-    else assert.equal(articleMeta.includes("article:modified_time"), false, `${route.path}: unexpected article:modified_time`);
-    for (const field of articleMeta) {
-      if (field.endsWith("published_time") || field.endsWith("modified_time")) assert.match(getMetaContent(body, field), /^\d{4}-\d{2}-\d{2}$/);
-    }
-  }
   if (route.ogUrl) assert.equal(ogUrl, route.ogUrl, `${route.path}: expected og:url ${route.ogUrl}, received ${ogUrl}`);
   if (route.ogImagePath) {
     const ogImage = getMetaContent(body, "og:image");
@@ -500,15 +314,12 @@ export function assertHTMLResponse(route, response, body) {
   }
   if (route.title) assert.ok(title.includes(route.title), `${route.path}: expected title to include ${route.title}`);
   assertExpectedBodyText(route, body);
-  if (route.siteIdentity === true) assertSiteIdentityJSONLD(route, body);
+  if (route.kind === "html") assertSiteIdentityJSONLD(route, body);
   if (route.jsonLD) assertJSONLD(route, body);
 }
 
 export function assertNoindexHTMLResponse(route, response, body) {
-  assertSuccessfulResponse(route, response);
-  assert.match(response.headers.get("content-type") ?? "", /text\/html/i, `${route.path}: expected text/html`);
-  const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
-  assert.ok(title, `${route.path}: expected a non-empty title`);
+  assertHTMLDocumentResponse(route, response, body);
   const robots = extractTags(body, "meta").filter((tag) =>
     (getAttribute(tag, "name") ?? "").toLowerCase() === "robots",
   );
@@ -559,11 +370,21 @@ function decodeXmlEntities(value) {
   })[entity]);
 }
 
+const XML_DECLARATION = new RegExp(
+  String.raw`^<\?xml[ \t\r\n]+version[ \t\r\n]*=[ \t\r\n]*(["'])1\.0\1` +
+  String.raw`(?:[ \t\r\n]+encoding[ \t\r\n]*=[ \t\r\n]*(["'])[A-Za-z][A-Za-z0-9._-]*\2)?` +
+  String.raw`(?:[ \t\r\n]+standalone[ \t\r\n]*=[ \t\r\n]*(["'])(?:yes|no)\3)?[ \t\r\n]*\?>`,
+);
+
 function parseSitemapDocument(route, body) {
   const fail = (message) => assert.fail(`${route.path}: ${message}`);
-  let index = 0;
+  if (/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/u.test(body)) {
+    fail("sitemap contains a forbidden XML character");
+  }
+  const documentStart = body.startsWith("\uFEFF") ? 1 : 0;
+  let index = documentStart;
   const skipWhitespace = () => {
-    while (index < body.length && /\s/.test(body[index])) index += 1;
+    while (index < body.length && /[ \t\r\n]/.test(body[index])) index += 1;
   };
   const consume = (pattern, message) => {
     const match = body.slice(index).match(pattern);
@@ -574,13 +395,12 @@ function parseSitemapDocument(route, body) {
 
   skipWhitespace();
   if (body.startsWith("<?xml", index)) {
-    const declarationEnd = body.indexOf("?>", index + 5);
-    if (declarationEnd < 0) fail("sitemap XML declaration is unclosed");
-    index = declarationEnd + 2;
+    if (index !== documentStart) fail("sitemap XML declaration must be at the document start");
+    consume(XML_DECLARATION, "sitemap XML declaration is malformed");
     skipWhitespace();
   }
   consume(
-    /^<urlset\s+xmlns\s*=\s*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1\s*>/,
+    /^<urlset[ \t\r\n]+xmlns[ \t\r\n]*=[ \t\r\n]*(["'])http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9\1[ \t\r\n]*>/,
     "sitemap must contain exactly one urlset with the sitemap namespace",
   );
 
@@ -592,31 +412,31 @@ function parseSitemapDocument(route, body) {
       index += "</urlset>".length;
       break;
     }
-    consume(/^<url\s*>/, "sitemap must contain complete url blocks");
+    consume(/^<url[ \t\r\n]*>/, "sitemap must contain complete url blocks");
     urlCount += 1;
     skipWhitespace();
-    consume(/^<loc\s*>/, "each sitemap url must contain exactly one loc");
+    consume(/^<loc[ \t\r\n]*>/, "each sitemap url must contain exactly one loc");
     const locEnd = body.indexOf("</loc>", index);
     if (locEnd < 0) fail("sitemap loc is unclosed");
     const rawLocation = body.slice(index, locEnd);
-    if (rawLocation.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
+    if (rawLocation.includes("<") || rawLocation.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLocation)) {
       fail("sitemap loc contains malformed XML text");
     }
     locations.push(decodeXmlEntities(rawLocation));
     index = locEnd + "</loc>".length;
     skipWhitespace();
-    if (body.slice(index).match(/^<lastmod\s*>/)) {
-      consume(/^<lastmod\s*>/, "sitemap lastmod is malformed");
+    if (body.slice(index).match(/^<lastmod[ \t\r\n]*>/)) {
+      consume(/^<lastmod[ \t\r\n]*>/, "sitemap lastmod is malformed");
       const lastmodEnd = body.indexOf("</lastmod>", index);
       if (lastmodEnd < 0) fail("sitemap lastmod is unclosed");
       const rawLastmod = body.slice(index, lastmodEnd);
-      if (rawLastmod.includes("<") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
+      if (rawLastmod.includes("<") || rawLastmod.includes("]]>") || /&(?!amp;|lt;|gt;|quot;|apos;)/.test(rawLastmod)) {
         fail("sitemap lastmod contains malformed XML text");
       }
       index = lastmodEnd + "</lastmod>".length;
       skipWhitespace();
     }
-    consume(/^<\/url\s*>/, "sitemap url is unclosed or contains extra elements");
+    consume(/^<\/url[ \t\r\n]*>/, "sitemap url is unclosed or contains extra elements");
   }
   skipWhitespace();
   if (index !== body.length) fail("sitemap document contains stray content");
@@ -664,7 +484,8 @@ export function assertSiteIdentityJSONLD(route, body) {
   assert.ok(document["@graph"].every((node) => node && typeof node === "object" && !Array.isArray(node)), `${route.path}: JSON-LD graph nodes must be plain objects`);
   const ids = document["@graph"].map((node) => node["@id"]);
   assert.equal(new Set(ids).size, ids.length, `${route.path}: duplicate JSON-LD graph @id`);
-  assertPageNode(route, document, expectedCanonicalUrl(route));
+  assert.equal(document["@graph"].length, 2, `${route.path}: expected exactly two JSON-LD graph nodes`);
+  assert.deepEqual(document, createSiteIdentityGraph(), `${route.path}: unexpected Site/Person JSON-LD graph`);
 }
 
 export function assertJSONLD(route, body) {
@@ -738,7 +559,7 @@ export function waitForExit(child, timeoutMs = 2_000, {
   setTimeoutImpl = setTimeout,
   clearTimeoutImpl = clearTimeout,
 } = {}) {
-  if (child.exitCode !== null) return true;
+  if (child.exitCode !== null || child.signalCode != null) return true;
   return new Promise((resolve) => {
     let timer;
     const finish = (result) => {
@@ -752,20 +573,44 @@ export function waitForExit(child, timeoutMs = 2_000, {
   });
 }
 
-export function waitForChildReady(child) {
+export function waitForChildReady(child, {
+  timeoutMs = 30_000,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout,
+} = {}) {
   return new Promise((resolve, reject) => {
     const streams = [child.stdout, child.stderr].filter(Boolean);
     if (!streams.length) {
       reject(new Error("Astro dev did not expose an output stream for readiness"));
       return;
     }
-    const cleanup = () => streams.forEach((stream) => stream.removeListener("data", onData));
+    let output = "";
+    let timer;
+    const cleanup = () => {
+      streams.forEach((stream) => stream.removeListener("data", onData));
+      clearTimeoutImpl(timer);
+    };
     const onData = (chunk) => {
-      if (!/\bready in\b/i.test(String(chunk))) return;
+      output = `${output}${String(chunk)}`.slice(-256);
+      if (!/\bready in\b/i.test(output)) return;
       cleanup();
       resolve();
     };
     streams.forEach((stream) => stream.on("data", onData));
+    timer = setTimeoutImpl(() => {
+      cleanup();
+      reject(new Error(`Astro dev did not report readiness within ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+}
+
+export function killWindowsProcessTree(pid, force = false, spawnImpl = spawn) {
+  return new Promise((resolve, reject) => {
+    const args = ["/pid", String(pid), "/T"];
+    if (force) args.push("/F");
+    const taskkill = spawnImpl("taskkill.exe", args, { stdio: "ignore", windowsHide: true });
+    taskkill.once("error", reject);
+    taskkill.once("exit", (code) => resolve(code === 0));
   });
 }
 
@@ -792,17 +637,19 @@ function watchChildFailure(child) {
 export async function stopDevServer(child, {
   platform = process.platform,
   killImpl = process.kill,
+  killTreeImpl = killWindowsProcessTree,
   waitForExitImpl = waitForExit,
 } = {}) {
-  if (!child || child.exitCode !== null) return;
-  const signal = (name) => {
-    if (platform !== "win32" && child.pid) killImpl(-child.pid, name);
+  if (!child || child.exitCode !== null || child.signalCode != null) return;
+  const signal = async (name) => {
+    if (platform === "win32" && child.pid) await killTreeImpl(child.pid, name === "SIGKILL");
+    else if (child.pid) killImpl(-child.pid, name);
     else child.kill(name);
   };
-  try { signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  try { await signal("SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
   if (await waitForExitImpl(child, 2_000)) return;
-  try { signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
-  await waitForExitImpl(child, 2_000);
+  try { await signal("SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  if (!await waitForExitImpl(child, 2_000)) throw new Error("Astro dev process tree did not exit after forced termination");
 }
 
 export async function runVerifier({

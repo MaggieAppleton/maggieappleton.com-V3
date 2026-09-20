@@ -4,19 +4,20 @@ import { createServer as createHTTPServer } from "node:http";
 import { createServer } from "node:net";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as verifyHtml from "../src/scripts/verify-html.mjs";
 import {
   DEFAULT_HOST,
   DEFAULT_PORT,
   ROUTES,
   assertAbsentResponse,
   assertHTMLResponse,
-  countOpeningElements,
   assertNoindexHTMLResponse,
   assertPortAvailable,
   assertRobotsResponse,
   assertSitemapResponse,
   assertXMLResponse,
   buildURL,
+  killWindowsProcessTree,
   extractJsonLdScripts,
   parsePort,
   runVerifier,
@@ -26,6 +27,7 @@ import {
   waitForExit,
   waitForServer,
 } from "../src/scripts/verify-html.mjs";
+import { expectedSiteIdentity } from "./fixtures/site-identity.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -35,47 +37,18 @@ const html = (title = "Maggie Appleton", {
   ogImage = "http://localhost:4321/og/about.png",
   extraCanonical = "",
 } = {}) =>
-  `<!doctype html><html><head><title>${title}</title>${canonical === false ? "" : `<link HREF="${canonical}" REL="canonical">${extraCanonical}`}<meta CONTENT="${ogUrl}" PROPERTY="og:url"><meta content="website" property="og:type"><meta content="${ogImage}" property="og:image"></head><body><main><h1>${title}</h1></main></body></html>`;
+  `<!doctype html><html><head><title>${title}</title>${canonical === false ? "" : `<link HREF="${canonical}" REL="canonical">${extraCanonical}`}<meta CONTENT="${ogUrl}" PROPERTY="og:url"><meta content="${ogImage}" property="og:image"></head><body><main><h1>${title}</h1></main></body></html>`;
 const noindexHtml = (title = "Diagram Preview", robots = "noindex, nofollow") =>
   `<!doctype html><html><head><title>${title}</title><meta content="${robots}" name="robots"></head><body><h2>${title}</h2></body></html>`;
 const response = (body, contentType = "text/html", status = 200) =>
   new Response(body, { status, headers: { "content-type": contentType } });
 
-const expectedSiteIdentity = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@id": "https://maggieappleton.com/#website",
-      "@type": "WebSite",
-      url: "https://maggieappleton.com/",
-      name: "Maggie Appleton",
-      description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology",
-      inLanguage: "en-GB",
-      author: { "@id": "https://maggieappleton.com/#person" },
-      publisher: { "@id": "https://maggieappleton.com/#person" },
-    },
-    {
-      "@id": "https://maggieappleton.com/#person",
-      "@type": "Person",
-      name: "Maggie Appleton",
-      url: "https://maggieappleton.com/about",
-      description: "Designer, anthropologist, and mediocre developer.",
-      sameAs: [
-        "https://bsky.app/profile/maggieappleton.com",
-        "https://github.com/MaggieAppleton",
-        "https://uk.linkedin.com/in/maggieappleton",
-        "https://dribbble.com/mappleton",
-        "https://twitter.com/Mappletons",
-        "https://indieweb.social/@maggie",
-      ],
-    },
-  ],
-};
-
 const identityScript = (document = expectedSiteIdentity) =>
   `<script type="application/ld+json">${typeof document === "string" ? document : JSON.stringify(document)}</script>`;
+const withIdentity = (body, source = expectedSiteIdentity) =>
+  body.replace("</head>", `${identityScript(source)}</head>`);
 const htmlWithIdentity = (source = expectedSiteIdentity) =>
-  html("About Maggie Appleton").replace("</head>", `${identityScript(source)}</head>`);
+  withIdentity(html("About Maggie Appleton"), source);
 const htmlWithIdentityDocument = (document) => htmlWithIdentity(JSON.stringify(document));
 const htmlWithTwoIdentityScripts = () => htmlWithIdentity().replace("</body>", `${identityScript()}</body>`);
 
@@ -88,11 +61,11 @@ test("parses only unprivileged TCP ports", () => {
 });
 
 test("defines unique non-image routes with supported kinds", () => {
-	assert.equal(ROUTES.length, 26);
-  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" });
+  assert.equal(ROUTES.length, 26);
+  assert.deepEqual(ROUTES.at(-1), { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" });
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/drafts"),
-    { path: "/drafts", kind: "html", siteIdentity: true, pageMetadata: false, bodyIncludes: "Draft Posts" },
+    { path: "/drafts", kind: "html", bodyIncludes: "Draft Posts" },
   );
   assert.equal(new Set(ROUTES.map(({ path }) => path)).size, ROUTES.length);
   assert.deepEqual(
@@ -100,9 +73,6 @@ test("defines unique non-image routes with supported kinds", () => {
     {
       path: "/api",
       kind: "html",
-      siteIdentity: true,
-      pageMetadata: "article",
-      article: { datePublished: "2019-04-10", dateModified: "2019-06-30", description: "Everything you need to know about what API's are and how they work", hasImage: true },
       canonical: "https://maggieappleton.com/api",
       ogUrl: "https://maggieappleton.com/api",
       ogImagePath: "/og/api.png",
@@ -110,24 +80,21 @@ test("defines unique non-image routes with supported kinds", () => {
   );
   assert.deepEqual(
     ROUTES.find(({ path }) => path === "/about?source=verify"),
-    { path: "/about?source=verify", kind: "html", siteIdentity: true, pageMetadata: "webpage", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
+    { path: "/about?source=verify", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" },
   );
-	assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html", siteIdentity: true, pageMetadata: "webpage" });
-	assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html", siteIdentity: true, pageMetadata: "webpage" });
-	for (const path of [
-		"/now",
-		"/smidgeons",
-		"/2025-01-deepseek",
-		"/2025-01-common-misconceptions",
-		"/still-cant-draw",
-		"/xanadu-patterns",
-		"/greensock-react",
-	]) {
-		const route = ROUTES.find((candidate) => candidate.path === path);
-		assert.equal(route.kind, "html");
-		assert.equal(route.siteIdentity, true);
-		assert.ok(route.pageMetadata);
-	}
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/now-2026-08"), { path: "/now-2026-08", kind: "html" });
+  assert.deepEqual(ROUTES.find(({ path }) => path === "/2025-08-vibe-legacy-code"), { path: "/2025-08-vibe-legacy-code", kind: "html" });
+  for (const path of [
+    "/now",
+    "/smidgeons",
+    "/2025-01-deepseek",
+    "/2025-01-common-misconceptions",
+    "/still-cant-draw",
+    "/xanadu-patterns",
+    "/greensock-react",
+  ]) {
+    assert.deepEqual(ROUTES.find((route) => route.path === path), { path, kind: "html" });
+  }
   assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/colophon/colophon-content"), { path: "/colophon/colophon-content", kind: "absent" });
   assert.deepEqual(ROUTES.find(({ path }) => path === "/sitemap.xml"), {
@@ -149,34 +116,18 @@ test("defines unique non-image routes with supported kinds", () => {
   }
 });
 
-test("keeps the P4 route manifest and marks only ordinary HTML routes for identity", () => {
-	assert.deepEqual(ROUTES.map(({ path }) => path), [
-		"/", "/about", "/about?source=verify", "/garden", "/essays", "/notes",
-		"/patterns", "/topics/web-development", "/websecurity", "/api", "/now-2026-08",
-		"/2025-08-vibe-legacy-code", "/now", "/smidgeons", "/2025-01-deepseek",
-		"/2025-01-common-misconceptions", "/still-cant-draw", "/xanadu-patterns", "/greensock-react",
-		"/diagram-preview", "/colophon/colophon-content", "/rss.xml", "/smidgeons.xml", "/robots.txt",
-		"/sitemap.xml", "/drafts",
-	]);
-	assert.equal(ROUTES.length, 26);
-	for (const route of ROUTES) assert.equal(route.siteIdentity === true, route.kind === "html", route.path);
-	assert.equal(ROUTES.find(({ path }) => path === "/diagram-preview").siteIdentity, undefined);
-	assert.equal(Object.hasOwn(ROUTES.find(({ path }) => path === "/now-2026-08"), "requireH1"), false);
-	for (const path of [
-		"/now",
-		"/smidgeons",
-		"/2025-01-deepseek",
-		"/2025-01-common-misconceptions",
-		"/still-cant-draw",
-		"/xanadu-patterns",
-		"/greensock-react",
-	]) {
-		const route = ROUTES.find((candidate) => candidate.path === path);
-		assert.equal(route.kind, "html");
-		assert.equal(route.siteIdentity, true);
-		assert.ok(route.pageMetadata);
-	}
-	assert.deepEqual(ROUTES.find(({ path }) => path === "/diagram-preview"), { path: "/diagram-preview", kind: "noindexHtml" });
+test("extends the route manifest for P6 and derives identity from ordinary HTML routes", () => {
+  assert.deepEqual(ROUTES.map(({ path }) => path), [
+    "/", "/about", "/about?source=verify", "/garden", "/essays", "/notes",
+    "/patterns", "/topics/web-development", "/websecurity", "/api", "/now-2026-08",
+    "/2025-08-vibe-legacy-code", "/now", "/smidgeons", "/2025-01-deepseek",
+    "/2025-01-common-misconceptions", "/still-cant-draw", "/xanadu-patterns", "/greensock-react",
+    "/diagram-preview", "/colophon/colophon-content", "/rss.xml", "/smidgeons.xml",
+    "/robots.txt", "/sitemap.xml", "/drafts",
+  ]);
+  assert.equal(ROUTES.length, 26);
+  for (const route of ROUTES) assert.equal(Object.hasOwn(route, "siteIdentity"), false, route.path);
+  assert.equal(Object.hasOwn(ROUTES.find(({ path }) => path === "/now-2026-08"), "requireH1"), false);
 });
 
 test("joins route paths to one base URL", () => {
@@ -184,31 +135,33 @@ test("joins route paths to one base URL", () => {
 });
 
 test("counts real opening elements while skipping comments, quoted attributes, and raw script/style text", () => {
-	const body = `<!doctype html>
-		<!-- <main><h1>comment bait</h1></main> -->
-		<div data-template="<main><h1>attribute bait</h1></main>"></div>
-		<script>const template = "<main><h1>script bait</h1></main>";</script>
-		<style>.example::before { content: "<main><h1>style bait</h1></main>"; }</style>
-		<main><h1>Real page title</h1></main>`;
-	assert.equal(countOpeningElements(body, "main"), 1);
-	assert.equal(countOpeningElements(body, "h1"), 1);
+  const body = `<!doctype html>
+    <!-- <main><h1>comment bait</h1></main> -->
+    <div data-template="<main><h1>attribute bait</h1></main>"></div>
+    <script>const template = "<main><h1>script bait</h1></main>";</script>
+    <style>.example::before { content: "<main><h1>style bait</h1></main>"; }</style>
+    <main><h1>Real page title</h1></main>`;
+  assert.equal(typeof verifyHtml.countOpeningElements, "function");
+  assert.equal(verifyHtml.countOpeningElements(body, "main"), 1);
+  assert.equal(verifyHtml.countOpeningElements(body, "h1"), 1);
 });
 
 test("accepts valid HTML and rejects each missing contract", async () => {
   const route = { path: "/about", kind: "html", title: "About Maggie Appleton", canonical: "https://maggieappleton.com/about" };
-  assert.doesNotThrow(() => assertHTMLResponse(route, response(html(route.title)), html(route.title)));
+  const validBody = withIdentity(html(route.title));
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(validBody), validBody));
   assert.throws(() => assertHTMLResponse(route, response("no", "text/plain"), "no"), /text\/html/);
   assert.throws(() => assertHTMLResponse(route, response(html(), "text/html", 404), html()), /status 200/);
   for (const [body, message] of [
     [html().replace(/<title>[\s\S]*?<\/title>/, ""), /title/],
     [html().replace(/<main>[\s\S]*?<\/main>/, ""), /main/],
     [html().replace(/<h1>[\s\S]*?<\/h1>/, ""), /h1/],
-	[html().replace("<main>", "<main><main>"), /exactly one main/],
-	[html().replace("<h1>", "<h1>Second</h1><h1>"), /exactly one h1/],
-	[
-		html(route.title).replace("</body>", "<!-- <main><h1>comment</h1></main> --><script>const x = '<main><h1>script</h1></main>';</script><style>.x{content:'<main><h1>style</h1></main>'}</style></body>"),
-		null,
-	],
+    [html().replace("<main>", "<main><main>"), /exactly one main/],
+    [html().replace("<h1>", "<h1>Second</h1><h1>"), /exactly one h1/],
+    [
+      withIdentity(html(route.title)).replace("</body>", "<!-- <main><h1>comment</h1></main> --><script>const x = '<main><h1>script</h1></main>';</script><style>.x{content:'<main><h1>style</h1></main>'}</style></body>"),
+      null,
+    ],
     [html(route.title, { canonical: false }), /exactly one canonical/],
     [html("Wrong title"), /About Maggie Appleton/],
     [html(route.title, { canonical: "https://maggieappleton.com/about", extraCanonical: '<link rel="canonical" href="https://maggieappleton.com/about">' }), /exactly one canonical/],
@@ -221,31 +174,24 @@ test("accepts valid HTML and rejects each missing contract", async () => {
     [html(route.title, { canonical: "https://maggieappleton.com/about/" }), /slashless/],
     [html(route.title, { ogUrl: "https://maggieappleton.com/wrong" }), /og:url to equal/],
   ]) {
-		if (message === null) {
-			assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
-		} else {
-			assert.throws(() => assertHTMLResponse(route, response(body), body), message);
-		}
-	}
+    if (message === null) {
+      assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+    } else {
+      assert.throws(() => assertHTMLResponse(route, response(body), body), message);
+    }
+  }
 });
 
-test("enforces exact Article Open Graph properties and cardinality", () => {
-  const route = { path: "/api", kind: "html", pageMetadata: "article", canonical: "https://maggieappleton.com/api", article: { datePublished: "2019-04-10" } };
-  const articleHead = '<meta content="article" property="og:type"><meta content="2019-04-10" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">';
-  const valid = html("API", { canonical: route.canonical, ogUrl: route.canonical }).replace('<meta content="website" property="og:type">', articleHead);
-  assert.doesNotThrow(() => assertHTMLResponse(route, response(valid), valid));
-  for (const property of ["article:section", "article:tag", "article:expiration_time"]) {
-    const body = valid.replace("</head>", `<meta content="extra" property="${property}"></head>`);
-    assert.throws(() => assertHTMLResponse(route, response(body), body), /unsupported|property|exactly/);
-  }
-  const duplicatePublished = valid.replace("</head>", '<meta content="2019-04-11" property="article:published_time"></head>');
-  assert.throws(() => assertHTMLResponse(route, response(duplicatePublished), duplicatePublished), /exactly one article:published_time/);
-  const duplicateAuthor = valid.replace("</head>", '<meta content="https://example.test/person" property="article:author"></head>');
-  assert.throws(() => assertHTMLResponse(route, response(duplicateAuthor), duplicateAuthor), /exactly one article:author/);
+test("derives the identity requirement from the HTML route kind", () => {
+  const route = { path: "/about", kind: "html" };
+  assert.throws(
+    () => assertHTMLResponse(route, response(html("About")), html("About")),
+    /exactly one JSON-LD script/,
+  );
 });
 
 test("requires exactly one complete Site/Person JSON-LD graph", () => {
-  const route = { path: "/about", kind: "html", siteIdentity: true };
+  const route = { path: "/about", kind: "html" };
   const duplicatePerson = {
     ...expectedSiteIdentity["@graph"][1],
     sameAs: [...expectedSiteIdentity["@graph"][1].sameAs],
@@ -256,6 +202,8 @@ test("requires exactly one complete Site/Person JSON-LD graph", () => {
   };
   assert.doesNotThrow(() => assertHTMLResponse(route, response(htmlWithIdentity()), htmlWithIdentity()));
   assert.throws(() => assertHTMLResponse(route, response(html("About")), html("About")), /exactly one JSON-LD script/);
+  const nonJsonBody = html("About").replace("</head>", '<script type="application/json">{}</script></head>');
+  assert.throws(() => assertHTMLResponse(route, response(nonJsonBody), nonJsonBody), /exactly one JSON-LD script/);
   assert.throws(() => assertHTMLResponse(route, response(htmlWithIdentity("{")), htmlWithIdentity("{")), /invalid JSON-LD/);
   assert.throws(() => assertHTMLResponse(route, response(htmlWithTwoIdentityScripts()), htmlWithTwoIdentityScripts()), /exactly one JSON-LD script/);
   const duplicateIdBody = htmlWithIdentityDocument(duplicateIdDocument);
@@ -263,7 +211,7 @@ test("requires exactly one complete Site/Person JSON-LD graph", () => {
 });
 
 test("rejects every identity graph drift and unsupported fact", () => {
-  const route = { path: "/about", kind: "html", siteIdentity: true };
+  const route = { path: "/about", kind: "html" };
   const cases = [
     ["@context", (document) => { delete document["@context"]; }, /@context/],
     ["graph type", (document) => { document["@graph"] = {}; }, /@graph array/],
@@ -275,10 +223,13 @@ test("rejects every identity graph drift and unsupported fact", () => {
     ["Website name", (document) => { document["@graph"][0].name = "Other"; }, /unexpected|name/],
     ["Website description", (document) => { document["@graph"][0].description = "Other"; }, /unexpected|description/],
     ["language", (document) => { document["@graph"][0].inLanguage = "en-US"; }, /unexpected|language/],
+    ["author missing", (document) => { delete document["@graph"][0].author; }, /unexpected|author/],
     ["author", (document) => { document["@graph"][0].author = { "@id": "https://example.test/#person" }; }, /unexpected|author/],
+    ["publisher missing", (document) => { delete document["@graph"][0].publisher; }, /unexpected|publisher/],
     ["publisher", (document) => { document["@graph"][0].publisher = {}; }, /unexpected|publisher/],
     ["Person type", (document) => { document["@graph"][1]["@type"] = "Thing"; }, /unexpected|type/],
     ["Person name", (document) => { document["@graph"][1].name = "Other"; }, /unexpected|name/],
+    ["Person relative URL", (document) => { document["@graph"][1].url = "/about"; }, /unexpected|url/],
     ["Person URL", (document) => { document["@graph"][1].url = "https://maggieappleton.com/about/"; }, /unexpected|url/],
     ["Person description", (document) => { document["@graph"][1].description = "Other"; }, /unexpected|description/],
     ["sameAs missing", (document) => { document["@graph"][1].sameAs.pop(); }, /unexpected|sameAs/],
@@ -317,17 +268,11 @@ test("extracts only actual JSON-LD scripts with the effective first type attribu
   assert.throws(() => extractJsonLdScripts(`<script type="application/ld+json">{</script>`, undefined), /requires a routePath/);
 });
 
-test("rejects duplicate JSON object keys, including escape-equivalent keys", () => {
-  const duplicateRoot = '{"@context":"https://schema.org","\\u0040context":"https://example.test","@graph":[]}';
-  assert.throws(
-    () => extractJsonLdScripts(`<script type="application/ld+json">${duplicateRoot}</script>`, "/fixture"),
-    /\/fixture: duplicate JSON-LD object key/,
-  );
-
-  const duplicateNested = '{"@context":"https://schema.org","@graph":[{"@id":"one","nested":{"name":"first","\\u006eame":"second"}}]}';
-  assert.throws(
-    () => extractJsonLdScripts(`<script type="application/ld+json">${duplicateNested}</script>`, "/fixture"),
-    /\/fixture: duplicate JSON-LD object key/,
+test("uses native JSON parsing semantics in the generic extractor", () => {
+  const source = '{"name":"first","name":"last"}';
+  assert.deepEqual(
+    extractJsonLdScripts(`<script type="application/ld+json">${source}</script>`, "/fixture"),
+    [{ name: "last" }],
   );
 });
 
@@ -363,6 +308,16 @@ test("does not mistake prefixed attributes or rel lookalikes for canonical metad
   assert.throws(() => assertHTMLResponse(route, response(quotedFakeHref), quotedFakeHref), /must have an href/);
 });
 
+test("ignores metadata-shaped tags inside comments and raw script/style text", () => {
+  const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
+  const fakeMetadata = `
+    <!-- <link rel="canonical" href="https://evil.test/comment"> -->
+    <script>const fake = '<link rel="canonical" href="https://evil.test/script"><meta property="og:url" content="https://evil.test/script">';</script>
+    <style>.example::before { content: '<meta property="og:url" content="https://evil.test/style">'; }</style>`;
+  const body = withIdentity(html("About")).replace("</head>", `${fakeMetadata}</head>`);
+  assert.doesNotThrow(() => assertHTMLResponse(route, response(body), body));
+});
+
 test("uses the browser-effective first duplicate metadata attribute", () => {
   const route = { path: "/about", kind: "html", canonical: "https://maggieappleton.com/about" };
   const evilHrefFirst = html("About").replace(
@@ -377,7 +332,7 @@ test("uses the browser-effective first duplicate metadata attribute", () => {
   );
   assert.throws(() => assertHTMLResponse(route, response(evilOgContentFirst), evilOgContentFirst), /og:url to equal/);
 
-  const goodHrefFirst = html("About").replace(
+  const goodHrefFirst = withIdentity(html("About")).replace(
     'HREF="https://maggieappleton.com/about"',
     'HREF="https://maggieappleton.com/about" href="https://evil.test/about"',
   ).replace(
@@ -404,10 +359,10 @@ test("checks the configured API social-image pathname", () => {
 });
 
 test("requires an H1 on the Now page while enforcing exact canonical and Open Graph metadata", () => {
-	const route = { path: "/now-2026-08", kind: "html" };
-	const body = html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" })
+  const route = { path: "/now-2026-08", kind: "html" };
+  const body = withIdentity(html("Now", { canonical: "https://maggieappleton.com/now-2026-08", ogUrl: "https://maggieappleton.com/now-2026-08" }))
     .replace(/<h1>[\s\S]*?<\/h1>/, "");
-	assert.throws(() => assertHTMLResponse(route, response(body), body), /exactly one h1/);
+  assert.throws(() => assertHTMLResponse(route, response(body), body), /exactly one h1/);
 });
 
 test("requires noindex utility and absent-route contracts without generic page landmarks", () => {
@@ -450,9 +405,9 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertRobotsResponse(robots, response(body, "text/plain"), body), /Sitemap/);
 
   const schemaRoute = { path: "/schema", kind: "html", jsonLD: true, bodyIncludes: "Useful body text" };
-  const schemaBody = html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p><script type=\"application/ld+json\">{\"@context\":\"https://schema.org\"}</script></body>");
+  const schemaBody = withIdentity(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" }).replace("</body>", "<p>Useful body text</p></body>"));
   assert.doesNotThrow(() => assertHTMLResponse(schemaRoute, response(schemaBody), schemaBody));
-  const invalidSchema = schemaBody.replace("{\"@context\":\"https://schema.org\"}", "{");
+  const invalidSchema = schemaBody.replace(JSON.stringify(expectedSiteIdentity), "{");
   assert.throws(() => assertHTMLResponse(schemaRoute, response(invalidSchema), invalidSchema), /JSON|Unexpected/);
   assert.throws(() => assertHTMLResponse(schemaRoute, response(html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), html("Maggie Appleton", { canonical: "https://maggieappleton.com/schema", ogUrl: "https://maggieappleton.com/schema" })), /Useful body text/);
 
@@ -501,66 +456,65 @@ test("supports robots, JSON-LD, sitemap, and expected body contracts", () => {
   ]) assert.throws(() => assertSitemapResponse(sitemap, response(body, contentType, status), body), message);
 });
 
-function fixtureCanonical(route) {
-  if (route.canonical) return route.canonical;
-  const url = new URL(route.path, "https://maggieappleton.com");
-  return `https://maggieappleton.com${url.pathname === "/" ? "/" : url.pathname.replace(/\/+$/, "")}`;
-}
-
-function fixtureIdentity(route) {
-  const canonical = fixtureCanonical(route);
-  if (!route.pageMetadata) return expectedSiteIdentity;
-  const article = route.pageMetadata === "article";
-  const node = article
-    ? {
-        "@id": `${canonical}#article`, "@type": "Article", url: canonical, headline: "Fixture",
-        isPartOf: { "@id": "https://maggieappleton.com/#website" },
-        author: { "@id": "https://maggieappleton.com/#person" }, publisher: { "@id": "https://maggieappleton.com/#person" },
-        datePublished: route.article.datePublished,
-        ...(route.article.dateModified ? { dateModified: route.article.dateModified } : {}),
-        ...(route.article.description ? { description: route.article.description } : {}),
-        ...(route.article.hasImage ? { image: "https://maggieappleton.com/_astro/fixture.png" } : {}),
-      }
-    : {
-        "@id": `${canonical}#webpage`, "@type": "WebPage", url: canonical, name: "Fixture",
-        isPartOf: { "@id": "https://maggieappleton.com/#website" },
-      };
-  return { ...expectedSiteIdentity, "@graph": [...expectedSiteIdentity["@graph"], node] };
-}
-
-function routeFixture(route) {
-  if (route.kind === "noindexHtml") return response(noindexHtml());
-  if (route.kind === "absent") return response("Not found", "text/html", 404);
-  if (route.kind === "xml") return response("<rss><channel><item /></channel></rss>", "application/xml");
-  if (route.kind === "robots") return response("User-agent: *\nAllow: /\nSitemap: https://maggieappleton.com/sitemap.xml", "text/plain");
-  if (route.kind === "sitemap") {
-    const urls = route.requiredLocations.map((location) => `<url><loc>${location}</loc></url>`).join("");
-    return response(`<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`, "application/xml");
+test("requires a valid XML 1.0 declaration when a sitemap supplies one", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/</loc></url></urlset>';
+  for (const declaration of ["", '<?xml version="1.0"?>', "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"]) {
+    const xml = `${declaration}${body}`;
+    assert.doesNotThrow(() => assertSitemapResponse(route, response(xml, "application/xml"), xml));
   }
-  const canonical = fixtureCanonical(route);
-  const title = route.bodyIncludes ?? route.title ?? "Fixture";
-  const options = { canonical, ogUrl: canonical, ogImage: route.ogImagePath ? `https://maggieappleton.com${route.ogImagePath}` : "https://maggieappleton.com/og.png" };
-  let body = html(title, options);
-  if (route.pageMetadata === "article") {
-    const tags = `<meta content="article" property="og:type"><meta content="${route.article.datePublished}" property="article:published_time"><meta content="https://maggieappleton.com/about" property="article:author">${route.article.dateModified ? `<meta content="${route.article.dateModified}" property="article:modified_time">` : ""}`;
-    body = body.replace('<meta content="website" property="og:type">', tags);
+  for (const declaration of [
+    "<?xml rubbish?>",
+    '<?xml encoding="UTF-8"?>',
+    '<?xml version="1.0" version="1.0"?>',
+    '<?xml version="1.0" encoding="UTF-8\'?>',
+    '<?xml version="1.0" standalone="maybe"?>',
+    '<?xml version="1.0" unknown="value"?>',
+    ' <?xml version="1.0"?>',
+  ]) {
+    const xml = `${declaration}${body}`;
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML declaration/, declaration);
   }
-  return response(body.replace("</head>", `<script type="application/ld+json">${JSON.stringify(fixtureIdentity(route))}</script></head>`));
-}
+});
 
-test("verifies the exact default 26-route manifest without fetching image URLs", async () => {
+test("rejects forbidden sitemap XML characters and malformed character data", () => {
+  const route = { path: "/sitemap.xml" };
+  const body = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://maggieappleton.com/garden</loc><lastmod>2026-02-28</lastmod></url></urlset>';
+  for (const character of ["\0", "\x01", "\x0B", "\x0C", "\x1F", "\uD800", "\uDC00", "\uFFFE", "\uFFFF"]) {
+    for (const xml of [
+      body.replace("garden", `garden${character}`),
+      body.replace("2026-02-28", `2026-02-28${character}`),
+    ]) assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /XML character/);
+  }
+  for (const xml of [body.replace("garden", "garden]]>"), body.replace("2026-02-28", "2026-02-28]]>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /malformed XML text/);
+  }
+  for (const xml of [body.replace("<url>", "<url\u00A0>"), body.replace("<url>", "\u00A0<url>")]) {
+    assert.throws(() => assertSitemapResponse(route, response(xml, "application/xml"), xml), /complete url blocks/);
+  }
+  const valid = body.replace("garden", "garden-\u{1F331}").replace("<url>", "\t\r\n<url>");
+  assert.doesNotThrow(() => assertSitemapResponse(route, response(valid, "application/xml"), valid));
+});
+
+test("verifies routes in order without fetching image URLs", async () => {
   const requested = [];
+  const routes = [
+    { path: "/", kind: "html", title: "Maggie Appleton" },
+    { path: "/rss.xml", kind: "xml" },
+  ];
   const results = await verifyRoutes({
     baseURL: "http://127.0.0.1:4322",
-    routes: ROUTES,
+    routes,
     fetchImpl: async (url) => {
       requested.push(url);
-      return routeFixture(ROUTES[requested.length - 1]);
+      return url.endsWith(".xml")
+        ? response("<rss><channel><item /></channel></rss>", "application/xml")
+        : response(withIdentity(html("Maggie Appleton", { canonical: "https://maggieappleton.com/", ogUrl: "https://maggieappleton.com/" })));
     },
   });
-  assert.equal(results.length, ROUTES.length);
-  assert.equal(requested.length, ROUTES.length);
-  assert.ok(requested.every((url) => !/(?:\/_image|\/og(?:\/|\.|$)|\.(?:avif|gif|jpe?g|png|webp|svg)(?:[?#]|$))/i.test(url)));
+  assert.deepEqual(results, [{ path: "/", status: 200 }, { path: "/rss.xml", status: 200 }]);
+  assert.deepEqual(requested, ["http://127.0.0.1:4322/", "http://127.0.0.1:4322/rss.xml"]);
+  assert.ok(requested.every((url) => !/(?:\/_image|\/og|\.(?:avif|gif|jpe?g|png|webp|svg)$)/i.test(url)));
 });
 
 test("verifies noindex and absent routes without relaxing redirect handling", async () => {
@@ -622,7 +576,7 @@ test("uses manual redirect handling for readiness and route requests", async () 
     routes: [{ path: "/about", kind: "html" }],
     fetchImpl: async (_, requestOptions) => {
       options.push(requestOptions);
-      return response(html());
+      return response(htmlWithIdentity());
     },
   });
   assert.deepEqual(options.map(({ redirect }) => redirect), ["manual", "manual"]);
@@ -724,13 +678,18 @@ test("cleans wait-for-exit listeners and timers on exit and timeout", async () =
   }
 });
 
-test("resolves owned-child readiness from Astro output", async () => {
+test("resolves owned-child readiness when Astro output spans chunks", async () => {
   const child = new EventEmitter();
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
   const ready = waitForChildReady(child);
-  child.stdout.emit("data", Buffer.from("astro v5 ready in 42 ms\n"));
-  await ready;
+  child.stdout.emit("data", Buffer.from("astro v5 rea"));
+  child.stdout.emit("data", Buffer.from("dy in 42 ms\n"));
+  const result = await Promise.race([
+    ready.then(() => "ready"),
+    new Promise((resolve) => setTimeout(() => resolve("timed out"), 20)),
+  ]);
+  assert.equal(result, "ready");
   assert.equal(child.stdout.listenerCount("data"), 0);
   assert.equal(child.stderr.listenerCount("data"), 0);
 });
@@ -741,26 +700,56 @@ test("stops a Unix process group and escalates only when needed", async () => {
   child.exitCode = null;
   child.kill = () => assert.fail("group signalling should be used on Unix");
   const signals = [];
+  const exitResults = [false, true];
   await stopDevServer(child, {
     platform: "darwin",
     killImpl: (pid, signal) => signals.push([pid, signal]),
-    waitForExitImpl: async () => false,
+    waitForExitImpl: async () => exitResults.shift(),
   });
   assert.deepEqual(signals, [[-99, "SIGTERM"], [-99, "SIGKILL"]]);
 });
 
-test("uses child.kill when Windows cannot signal a process group", async () => {
+test("stops the full Windows process tree and escalates only when needed", async () => {
   const child = new EventEmitter();
   child.pid = 99;
   child.exitCode = null;
-  const signals = [];
-  child.kill = (signal) => signals.push(signal);
+  child.kill = () => assert.fail("Windows cleanup should terminate the process tree");
+  const treeKills = [];
+  const exitResults = [false, true];
   await stopDevServer(child, {
     platform: "win32",
     killImpl: () => assert.fail("Windows should use child.kill"),
-    waitForExitImpl: async () => true,
+    killTreeImpl: async (pid, force) => treeKills.push([pid, force]),
+    waitForExitImpl: async () => exitResults.shift(),
   });
-  assert.deepEqual(signals, ["SIGTERM"]);
+  assert.deepEqual(treeKills, [[99, false], [99, true]]);
+});
+
+test("runs taskkill against the full Windows process tree", async () => {
+  const taskkill = new EventEmitter();
+  let spawnCall;
+  const killed = killWindowsProcessTree(99, true, (...args) => {
+    spawnCall = args;
+    return taskkill;
+  });
+  taskkill.emit("exit", 0);
+  assert.equal(await killed, true);
+  assert.deepEqual(spawnCall, [
+    "taskkill.exe",
+    ["/pid", "99", "/T", "/F"],
+    { stdio: "ignore", windowsHide: true },
+  ]);
+});
+
+test("fails cleanup when the process tree survives forced termination", async () => {
+  const child = new EventEmitter();
+  child.pid = 99;
+  child.exitCode = null;
+  await assert.rejects(() => stopDevServer(child, {
+    platform: "win32",
+    killTreeImpl: async () => {},
+    waitForExitImpl: async () => false,
+  }), /did not exit/);
 });
 
 test("runs the verifier with its manifest and reports every result", async () => {

@@ -9,7 +9,7 @@ import { getCollection } from "astro:content";
 const books = await getCollection("books");
 ---
 
-<Layout title="Library of Maggie Appleton" pageMetadata="webpage">
+<Layout title="Library of Maggie Appleton">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
 			<TitleWithCount posts={books}>

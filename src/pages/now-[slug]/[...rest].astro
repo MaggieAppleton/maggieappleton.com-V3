@@ -15,7 +15,6 @@ import Footnote from "../../components/mdx/Footnote.astro";
 import ResourceBook from "../../components/mdx/ResourceBook.astro";
 import Spacer from "../../components/mdx/Spacer.astro";
 import { Icon } from "astro-icon/components";
-import { toCalendarDate } from "../../utils/pageMetadata.mjs";
 
 export async function getStaticPaths() {
 	const nowEntries = await getCollection("now");
@@ -41,7 +40,6 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const startDateCalendar = toCalendarDate(entry.data.startDate);
 
 const components = {
 	h1: BodyHeading1,
@@ -58,17 +56,7 @@ const components = {
 };
 ---
 
-<Layout
-	title={`${entry.data.title} | Maggie Appleton`}
-	type="now"
-	pageMetadata={isPublicEntry(entry)
-		? {
-				type: "webpage",
-				name: entry.data.title,
-				...(startDateCalendar ? { datePublished: startDateCalendar } : {}),
-			}
-		: false}
->
+<Layout title={`${entry.data.title} | Maggie Appleton`} type="now">
 	<header class="header-section">
 		<div class="above-title">
 			<div class="back-link">
@@ -82,16 +70,15 @@ const components = {
 		<div class="now-layout">
 			<div class="metadata">
 				<div class="date-permalink">
-					{startDateCalendar && <time datetime={startDateCalendar}>
+					<time datetime={entry.data.startDate.toISOString()}>
 						{
 							entry.data.startDate.toLocaleDateString("en-US", {
 								year: "numeric",
 								month: "long",
 								day: "numeric",
-								timeZone: "UTC",
 							})
 						}
-					</time>}
+					</time>
 				</div>
 			</div>
 

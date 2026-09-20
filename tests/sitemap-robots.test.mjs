@@ -8,6 +8,7 @@ import { collectTopics } from "../src/utils/topicRoutes.mjs";
 import {
   STATIC_SITEMAP_PATHS,
   createSitemapRecords,
+  createSitemapRecordsFromManifest,
   serializeSitemapXml,
 } from "../src/utils/sitemap.mjs";
 
@@ -49,9 +50,9 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
       { id: "essay/essay-v3.mdx", collection: "essays", data: { version: 3, draft: true, updated: "2026-03-03" } },
       { id: "api-v1.mdx", collection: "essays", data: { updated: "2026-02-04" } },
     ],
-    notes: [],
-    patterns: [],
-    talks: [],
+    notes: [{ id: "note.mdx", collection: "notes", data: { updated: "2026-02-05" } }],
+    patterns: [{ id: "pattern.mdx", collection: "patterns", data: { updated: "2026-02-06" } }],
+    talks: [{ id: "talk.mdx", collection: "talks", data: { updated: "2026-02-07" } }],
     smidgeons: [
       { id: "nested/entry.mdx", collection: "smidgeons", data: { startDate: "2026-04-01" } },
       { id: "2025-08-thought.mdx", collection: "smidgeons", data: { updated: "not-a-date", startDate: "2025-08-02" } },
@@ -60,14 +61,7 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
     podcasts: [{ id: "episode-1", collection: "podcasts", data: { topics: ["Podcast-only Topic"] } }],
   });
 
-  const records = createSitemapRecords({
-    entries: [
-      ...manifest.canonicalByCollection.essays,
-      ...manifest.canonicalByCollection.smidgeons,
-      ...manifest.publicByCollection.now,
-    ],
-    topics: collectTopics(manifest.canonicalEntries),
-  });
+  const records = createSitemapRecordsFromManifest(manifest);
 
   assert.deepEqual(records, [
     { loc: "https://maggieappleton.com/" },
@@ -86,6 +80,9 @@ test("serializes canonical public content, now details, and full ordinary IDs", 
     { loc: "https://maggieappleton.com/colophon" },
     { loc: "https://maggieappleton.com/essay", lastmod: "2026-02-03" },
     { loc: "https://maggieappleton.com/api-v1", lastmod: "2026-02-04" },
+    { loc: "https://maggieappleton.com/note", lastmod: "2026-02-05" },
+    { loc: "https://maggieappleton.com/pattern", lastmod: "2026-02-06" },
+    { loc: "https://maggieappleton.com/talk", lastmod: "2026-02-07" },
     { loc: "https://maggieappleton.com/nested/entry" },
     { loc: "https://maggieappleton.com/2025-08-thought" },
     { loc: "https://maggieappleton.com/now-2026-08" },
@@ -131,6 +128,12 @@ test("only dated collections emit valid updated dates as lastmod", () => {
     () => createSitemapRecords({ entries: [{ collection: "notes", id: "invalid-date", data: { updated: "not-a-date" } }] }),
     /Invalid sitemap updated date.*notes:invalid-date/,
   );
+  assert.throws(
+    () => createSitemapRecords({
+      entries: [{ collection: "essays", id: "rollover-date", data: { updated: "2026-02-31" } }],
+    }),
+    /Invalid sitemap updated date.*essays:rollover-date/,
+  );
 });
 
 test("rejects duplicate absolute locations", () => {
@@ -149,28 +152,19 @@ test("serializes XML with the declaration, namespace, and all XML escapes", () =
   assert.doesNotMatch(xml, /<lastmod><\/lastmod>/);
 });
 
-test("endpoint wires one manifest, the shared topic collector, and no podcast sitemap entries", () => {
-  const source = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
-  assert.match(source, /import\s+\{\s*collectTopics\s*\}\s+from\s+["']\.\.\/utils\/topicRoutes\.mjs["']/);
-  assert.match(source, /createPublicEntryManifest/);
-  assert.match(source, /createSitemapRecords/);
-  assert.match(source, /serializeSitemapXml/);
-  assert.equal((source.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
-  assert.match(source, /getCollection\("essays"\)/);
-  assert.match(source, /getCollection\("notes"\)/);
-  assert.match(source, /getCollection\("patterns"\)/);
-  assert.match(source, /getCollection\("talks"\)/);
-  assert.match(source, /getCollection\("smidgeons"\)/);
-  assert.match(source, /getCollection\("now"\)/);
-  assert.match(source, /getCollection\("podcasts"\)/);
-  assert.match(source, /canonicalByCollection\.essays/);
-  assert.match(source, /canonicalByCollection\.notes/);
-  assert.match(source, /canonicalByCollection\.patterns/);
-  assert.match(source, /canonicalByCollection\.talks/);
-  assert.match(source, /canonicalByCollection\.smidgeons/);
-  assert.match(source, /publicByCollection\.now/);
-  assert.match(source, /collectTopics\(manifest\.canonicalEntries\)/);
-  assert.equal(source.includes("canonicalByCollection.podcasts"), false);
+test("shared loader owns collection reads and sitemap uses its manifest", () => {
+  const sitemapSource = readFileSync(`${repoRoot}/src/pages/sitemap.xml.ts`, "utf8");
+  const loaderSource = readFileSync(`${repoRoot}/src/utils/publicEntryManifest.ts`, "utf8");
+
+  assert.match(sitemapSource, /import\s+\{\s*fetchPublicEntryManifest\s*\}\s+from\s+["']\.\.\/utils\/publicEntryManifest["']/);
+  assert.match(sitemapSource, /createSitemapRecordsFromManifest\(manifest\)/);
+  assert.match(sitemapSource, /serializeSitemapXml/);
+  const loadedCollections = [...loaderSource.matchAll(/getCollection\("([^"]+)"\)/g)].map(([, name]) => name);
+  assert.deepEqual(loadedCollections.sort(), ["essays", "notes", "now", "patterns", "podcasts", "smidgeons", "talks"]);
+  assert.equal((loaderSource.match(/createPublicEntryManifest\s*\(/g) ?? []).length, 1);
+  assert.doesNotMatch(sitemapSource, /getCollection\(/);
+  assert.doesNotMatch(sitemapSource, /createPublicEntryManifest/);
+  assert.doesNotMatch(sitemapSource, /const\s+entries\s*=/);
 });
 
 test("robots declares exactly one absolute sitemap and keeps the crawler allow policy", () => {

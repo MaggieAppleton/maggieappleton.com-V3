@@ -16,12 +16,11 @@ import { getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
 import {
 	getPublicationBaseSlug,
-	isPublicEntry,
+	isVersionedPublicationEntry,
 	selectLatestPublicEntries,
 	selectPublicEntries,
 } from "../utils/publication.mjs";
 import { getEntryCanonicalPath } from "../utils/canonical.mjs";
-import { isCanonicalPublicArticle, toCalendarDate } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter:
@@ -54,9 +53,11 @@ if (entry) {
 	const allEntries = selectPublicEntries(await getCollection(entry.collection)) as (typeof entry)[];
 	const publicEntryForDates =
 		allEntries.find((candidate) => candidate.id === entry.id) ??
-		selectLatestPublicEntries(allEntries).find(
-			(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
-		);
+		(isVersionedPublicationEntry(entry)
+			? selectLatestPublicEntries(allEntries).find(
+					(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
+				)
+			: undefined);
 	if (publicEntryForDates) {
 		const versionedDates = getCanonicalDates(publicEntryForDates, allEntries);
 		canonicalDates = {
@@ -80,23 +81,14 @@ const backlinks = currentPost?.inboundLinks || [];
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 
-const startDateCalendar = toCalendarDate(canonicalDates.startDate);
-const updatedCalendar = toCalendarDate(canonicalDates.updated);
-if (!startDateCalendar) {
-	throw new Error("Canonical Article publication date must be a valid calendar date");
-}
-const pageMetadata = entry && isCanonicalPublicArticle({
-	collection: entry.collection,
-	isPublic: isPublicEntry(entry),
-	requestPath: Astro.url.pathname,
-	canonicalPath,
-})
-	? {
-		type: "article" as const,
-		datePublished: startDateCalendar,
-		...(updatedCalendar ? { dateModified: updatedCalendar } : {}),
-	}
-	: false;
+const startDateISO =
+	canonicalDates.startDate instanceof Date
+		? canonicalDates.startDate.toISOString()
+		: canonicalDates.startDate;
+const updatedISO =
+	canonicalDates.updated instanceof Date
+		? canonicalDates.updated.toISOString()
+		: (canonicalDates.updated ?? "");
 ---
 
 <Layout
@@ -105,7 +97,6 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 	type={frontmatter.type}
 	coverImage={coverImage}
 	canonicalPath={canonicalPath}
-	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
 		<div class="above-title">
@@ -134,8 +125,8 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={startDateCalendar}
-					updated={updatedCalendar}
+					startDate={startDateISO}
+					updated={updatedISO}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>
