@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import matter from "gray-matter";
 
 import {
 	buildNowDescriptionPrompt,
 	cleanNowBody,
 	validateNowDescription,
 } from "../src/utils/nowPreviewDescription.js";
+import {
+	applyDescriptionToSource,
+	generateDescription,
+	runCli,
+	selectNowEntries,
+} from "../scripts/generate-now-descriptions.js";
 
 test("cleans frontmatter, imports, JSX, and Markdown before summarization", () => {
 	const source = `---
@@ -90,4 +97,128 @@ test("counts Unicode code points rather than UTF-16 code units", () => {
 		}),
 		description,
 	);
+});
+
+test("skips drafts and existing descriptions unless regeneration is enabled", () => {
+	const entries = [
+		{ path: "a.mdx", data: { title: "A" } },
+		{ path: "b.mdx", data: { title: "B", description: "Edited" } },
+		{ path: "c.mdx", data: { title: "C", draft: true } },
+	];
+
+	assert.deepEqual(
+		selectNowEntries(entries, { regenerate: false }).map((entry) => entry.path),
+		["a.mdx"],
+	);
+	assert.deepEqual(
+		selectNowEntries(entries, { regenerate: true }).map((entry) => entry.path),
+		["a.mdx", "b.mdx"],
+	);
+});
+
+test("writes a description while preserving body content", () => {
+	const source = `---
+title: "January 2026"
+startDate: 2026-01-02
+type: "now"
+---
+
+Body text.
+`;
+	const updated = applyDescriptionToSource(
+		source,
+		"Work, family, and small models.",
+	);
+
+	assert.equal(
+		matter(updated).data.description,
+		"Work, family, and small models.",
+	);
+	assert.match(updated, /\nBody text\.\n$/);
+});
+
+test("generates and validates a description through Ollama", async () => {
+	const requests = [];
+	const fetchImpl = async (url, options) => {
+		requests.push({ url, options });
+		return {
+			ok: true,
+			json: async () => ({
+				response: "Returning to work while exploring small models.",
+			}),
+		};
+	};
+
+	const description = await generateDescription({
+		model: "test-model",
+		title: "January 2026",
+		source: `---
+title: January 2026
+---
+# Hidden heading
+Returning to work while exploring **small models**.
+`,
+		fetchImpl,
+	});
+
+	assert.equal(description, "Returning to work while exploring small models.");
+	assert.equal(requests[0].url, "http://127.0.0.1:11434/api/generate");
+	assert.deepEqual(JSON.parse(requests[0].options.body), {
+		model: "test-model",
+		prompt: buildNowDescriptionPrompt({
+			title: "January 2026",
+			body: "Returning to work while exploring small models.",
+		}),
+		stream: false,
+		think: false,
+	});
+});
+
+test("checks model availability before writes and reports per-entry failures", async () => {
+	const events = [];
+	const output = [];
+	const files = new Map([
+		["a.mdx", "---\ntitle: A\n---\nAlpha body.\n"],
+		["b.mdx", "---\ntitle: B\n---\nBeta body.\n"],
+		["c.mdx", "---\ntitle: C\ndescription: Edited\n---\nGamma body.\n"],
+		["d.mdx", "---\ntitle: D\ndraft: true\n---\nDelta body.\n"],
+	]);
+	const fetchImpl = async (url, options) => {
+		if (url.endsWith("/api/tags")) {
+			events.push("tags");
+			return {
+				ok: true,
+				json: async () => ({ models: [{ name: "test-model" }] }),
+			};
+		}
+
+		const { prompt } = JSON.parse(options.body);
+		events.push(`generate:${prompt.includes("Title: A") ? "a" : "b"}`);
+		if (prompt.includes("Title: B")) {
+			return { ok: false, status: 500 };
+		}
+		return {
+			ok: true,
+			json: async () => ({ response: "Focused specific update." }),
+		};
+	};
+
+	const result = await runCli({
+		argv: ["--model", "test-model"],
+		fetchImpl,
+		readdir: async () =>
+			[...files.keys()].map((name) => ({
+				name,
+				isFile: () => true,
+			})),
+		readFile: async (url) => files.get(url.pathname.split("/").at(-1)),
+		writeFile: async (url) => events.push(`write:${url.pathname.split("/").at(-1)}`),
+		log: (message) => output.push(message),
+		error: (message) => output.push(message),
+	});
+
+	assert.deepEqual(events, ["tags", "generate:a", "write:a.mdx", "generate:b"]);
+	assert.deepEqual(result, { changed: 1, skipped: 2, failed: 1 });
+	assert.match(output.join("\n"), /b\.mdx: Ollama generation failed with HTTP 500/);
+	assert.match(output.at(-1), /changed: 1, skipped: 2, failed: 1/);
 });

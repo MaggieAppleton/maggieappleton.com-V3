@@ -10,6 +10,7 @@
     "astro": "astro",
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
+    "generate-now-descriptions": "node scripts/generate-now-descriptions.js",
     "smidgeon": "node scripts/create-smidgeon.js",
     "date": "node scripts/current-date.js",
     "jev:generate": "node scripts/jev/generate.js",
