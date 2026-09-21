@@ -62,7 +62,10 @@ const { maxWidth = 400 } = Astro.props;
 			const template = wrapper.querySelector(
 				".tooltip-content",
 			) as HTMLTemplateElement;
-			const target = wrapper.querySelector("a[href]") ?? wrapper;
+			const target =
+				wrapper.querySelector(
+					"a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])",
+				) ?? wrapper;
 			const instance = tippy(
 				target,
 				{
@@ -74,7 +77,7 @@ const { maxWidth = 400 } = Astro.props;
 					animation: reducedMotion ? false : "shift-away",
 					allowHTML: true,
 					theme: "custom",
-					touch: false,
+					touch: target instanceof HTMLAnchorElement ? false : true,
 					onCreate(instance) {
 						setTimeout(() => {
 							instance.setContent(instance.props.content);
@@ -85,8 +88,6 @@ const { maxWidth = 400 } = Astro.props;
 			tooltipInstances.add(instance);
 		});
 	}
-
-	initializeTooltips();
 
 	document.addEventListener("astro:page-load", initializeTooltips);
 </script>
