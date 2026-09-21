@@ -16,14 +16,17 @@ import Card from "../Card.astro";
 # Heading
 
 I returned to work and started exploring **small models**.
-<Card />
+> A quoted observation.
+<Card>
+	{" "}
+</Card>
 
 [Read more](/notes)
 `;
 
 	assert.equal(
 		cleanNowBody(source),
-		"I returned to work and started exploring small models. Read more",
+		"I returned to work and started exploring small models. A quoted observation. Read more",
 	);
 });
 
@@ -58,7 +61,12 @@ test("rejects unsafe or low-quality model responses", () => {
 		"This post covers work and family.",
 		"January 2026 was about work.",
 		"First line\nSecond line",
+		"First line\rSecond line",
+		"Trailing newline\n",
 		"**Markdown description**",
+		"~~Markdown description~~",
+		"<em>HTML description</em>",
+		"One sentence. Second sentence.",
 		"x".repeat(111),
 	]) {
 		assert.throws(
@@ -70,4 +78,16 @@ test("rejects unsafe or low-quality model responses", () => {
 			/description/i,
 		);
 	}
+});
+
+test("counts Unicode code points rather than UTF-16 code units", () => {
+	const description = "🌱".repeat(55);
+
+	assert.equal(
+		validateNowDescription(description, {
+			title: "January 2026",
+			maxLength: 55,
+		}),
+		description,
+	);
 });
