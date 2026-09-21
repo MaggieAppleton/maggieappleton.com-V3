@@ -1,4 +1,5 @@
 ---
+import InternalPreviewContent from "./InternalPreviewContent.astro";
 import Tooltip from "./Tooltip.astro";
 
 interface Props {
@@ -11,10 +12,11 @@ const { href, title, description } = Astro.props;
 ---
 
 <Tooltip>
-	<span slot="content" class="tooltip-content">
-		<h4>{title}</h4>
-		<span class="description">{description}</span>
-	</span>
+	<InternalPreviewContent
+		slot="content"
+		title={title}
+		description={description}
+	/>
 	<span class="styled-container">
 		<a class="styled-link" href={href}>
 			<span><slot /></span>
@@ -23,26 +25,6 @@ const { href, title, description } = Astro.props;
 </Tooltip>
 
 <style>
-	.tooltip-content {
-		padding: var(--space-3xs);
-		display: inline-block;
-	}
-
-	.tooltip-content h4 {
-		margin: 0 0 var(--space-3xs);
-		font-family: var(--font-body);
-		font-weight: 500;
-		line-height: var(--leading-snug);
-		font-size: var(--font-size-base);
-	}
-
-	.tooltip-content .description {
-		display: block;
-		margin: var(--space-2xs) 0 var(--space-3xs);
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-	}
-
 	.styled-container {
 		display: inline-block;
 		align-items: center;
