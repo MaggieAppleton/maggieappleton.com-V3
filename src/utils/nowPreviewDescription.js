@@ -18,6 +18,8 @@ export function cleanNowBody(source) {
 		.join(" ")
 		.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
 		.replace(/\[\[([^\]]+)\]\]/g, "$1")
+		.replace(/\{\s*["']\s*["']\s*\}/g, " ")
+		.replace(/(^|\s)>\s*/g, "$1")
 		.replace(/[*_~`]/g, "")
 		.replace(/<[^>]+>/g, " ")
 		.replace(/\s+/g, " ")
@@ -46,13 +48,17 @@ export function validateNowDescription(
 	response,
 	{ title, maxLength = 110 },
 ) {
+	if (/[\r\n\u2028\u2029]/u.test(response)) {
+		throw new Error("Invalid Now preview description: line breaks are not allowed");
+	}
+
 	const description = response.trim();
 	const invalid =
 		!description ||
-		description.length > maxLength ||
-		description.includes("\n") ||
+		[...description].length > maxLength ||
 		/^["']|["']$/.test(description) ||
-		/[*_`#\[\]]/.test(description) ||
+		/[*_`#~\[\]<>]/.test(description) ||
+		/[.!?]\s+\p{Lu}/u.test(description) ||
 		/^(here is|this post)\b/i.test(description) ||
 		description
 			.toLocaleLowerCase("en-GB")
