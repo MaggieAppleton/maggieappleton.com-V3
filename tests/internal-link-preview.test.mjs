@@ -139,4 +139,25 @@ test("rejects malformed preview records instead of generating invalid data", () 
 			),
 		/pathname/i,
 	);
+
+	for (const pathname of ["/double//slash", "/trailing/", "/query?view=all", "/fragment#part"]) {
+		assert.throws(
+			() =>
+				buildInternalLinkPreviews([], {
+					[pathname]: { title: "Malformed route" },
+				}),
+			/pathname/i,
+		);
+	}
+
+	for (const slug of ["", "/leading-slash", "https://example.com/page"]) {
+		assert.throws(
+			() =>
+				buildInternalLinkPreviews(
+					[{ ids: ["Malformed content route"], slug }],
+					{},
+				),
+			/slug|pathname/i,
+		);
+	}
 });
