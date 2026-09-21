@@ -12,7 +12,8 @@
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
     "verify:html": "node src/scripts/verify-html.mjs",
     "smidgeon": "node scripts/create-smidgeon.js",
-    "date": "node scripts/current-date.js"
+    "date": "node scripts/current-date.js",
+    "test:link-previews": "node --test tests/internal-link-preview.test.mjs tests/internal-link-preview-markup.test.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",
