@@ -35,8 +35,11 @@ ${body}
 
 Requirements:
 - ${maxLength} characters or fewer
+- aim for 70–100 characters
 - one plain-text sentence
 - specific to the supplied body
+- use a neutral editorial voice
+- Do not use first person or refer to the author as "the writer", "a mother", or similar
 - do not repeat the title
 - do not begin with "Here is" or "This post"
 - do not invent details
