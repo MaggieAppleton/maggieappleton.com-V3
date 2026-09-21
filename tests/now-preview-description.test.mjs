@@ -10,6 +10,7 @@ import {
 import {
 	applyDescriptionToSource,
 	generateDescription,
+	parseArguments,
 	runCli,
 	selectNowEntries,
 } from "../scripts/generate-now-descriptions.js";
@@ -119,6 +120,7 @@ test("skips drafts and existing descriptions unless regeneration is enabled", ()
 test("writes a description while preserving body content", () => {
 	const source = `---
 title: "January 2026"
+# Keep this editorial note
 startDate: 2026-01-02
 type: "now"
 ---
@@ -134,7 +136,41 @@ Body text.
 		matter(updated).data.description,
 		"Work, family, and small models.",
 	);
+	assert.match(updated, /title: "January 2026"/);
+	assert.match(updated, /# Keep this editorial note/);
+	assert.match(updated, /startDate: 2026-01-02/);
+	assert.match(updated, /description: "Work, family, and small models\."/);
 	assert.match(updated, /\nBody text\.\n$/);
+});
+
+test("replaces only an existing description during regeneration", () => {
+	const source = `---
+title: "January 2026"
+description: "Old description"
+startDate: 2026-01-02
+---
+Body.
+`;
+
+	assert.equal(
+		applyDescriptionToSource(source, "New description."),
+		`---
+title: "January 2026"
+description: "New description."
+startDate: 2026-01-02
+---
+Body.
+`,
+	);
+});
+
+test("parses supported CLI options without consuming another flag", () => {
+	assert.deepEqual(parseArguments(["--regenerate", "--model", "llama3.2:latest"]), {
+		model: "llama3.2:latest",
+		regenerate: true,
+	});
+	assert.throws(() => parseArguments(["--model", "--regenerate"]), /incomplete/i);
+	assert.throws(() => parseArguments(["--unknown"]), /unknown/i);
 });
 
 test("generates and validates a description through Ollama", async () => {
@@ -172,6 +208,18 @@ Returning to work while exploring **small models**.
 		stream: false,
 		think: false,
 	});
+});
+
+test("reports malformed Ollama generation responses clearly", async () => {
+	await assert.rejects(
+		generateDescription({
+			model: "test-model",
+			title: "January 2026",
+			source: "---\ntitle: January 2026\n---\nBody.",
+			fetchImpl: async () => ({ ok: true, json: async () => ({}) }),
+		}),
+		/Ollama.*response/i,
+	);
 });
 
 test("checks model availability before writes and reports per-entry failures", async () => {
@@ -213,12 +261,48 @@ test("checks model availability before writes and reports per-entry failures", a
 			})),
 		readFile: async (url) => files.get(url.pathname.split("/").at(-1)),
 		writeFile: async (url) => events.push(`write:${url.pathname.split("/").at(-1)}`),
+		rename: async (from, to) =>
+			events.push(
+				`rename:${from.pathname.split("/").at(-1)}:${to.pathname.split("/").at(-1)}`,
+			),
+		remove: async () => {},
+		createTempSuffix: () => "test",
 		log: (message) => output.push(message),
 		error: (message) => output.push(message),
 	});
 
-	assert.deepEqual(events, ["tags", "generate:a", "write:a.mdx", "generate:b"]);
+	assert.deepEqual(events, [
+		"tags",
+		"generate:a",
+		"write:a.mdx.tmp-test",
+		"rename:a.mdx.tmp-test:a.mdx",
+		"generate:b",
+	]);
 	assert.deepEqual(result, { changed: 1, skipped: 2, failed: 1 });
 	assert.match(output.join("\n"), /b\.mdx: Ollama generation failed with HTTP 500/);
 	assert.match(output.at(-1), /changed: 1, skipped: 2, failed: 1/);
+});
+
+test("reports unavailable Ollama and missing models with actionable commands", async () => {
+	await assert.rejects(
+		runCli({
+			fetchImpl: async () => {
+				throw new TypeError("fetch failed");
+			},
+			readdir: async () => [],
+		}),
+		/Ollama.*127\.0\.0\.1:11434.*ollama serve/i,
+	);
+
+	await assert.rejects(
+		runCli({
+			argv: ["--model", "missing-model"],
+			fetchImpl: async () => ({
+				ok: true,
+				json: async () => ({ models: [] }),
+			}),
+			readdir: async () => [],
+		}),
+		/ollama pull missing-model/i,
+	);
 });
