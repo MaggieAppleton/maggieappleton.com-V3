@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
+import matter from "gray-matter";
 
 import {
 	classifyLink,
@@ -163,20 +164,27 @@ test("rejects malformed preview records instead of generating invalid data", () 
 	}
 });
 
-test("generated previews use Now entry frontmatter titles", async () => {
+test("generated previews use every Now entry's frontmatter metadata", async () => {
 	const previews = JSON.parse(
 		await readFile(
 			new URL("../src/internal-link-previews.json", import.meta.url),
 			"utf8",
 		),
 	);
+	const nowDirectory = new URL("../src/content/now/", import.meta.url);
+	const nowFileNames = (await readdir(nowDirectory))
+		.filter((fileName) => fileName.endsWith(".mdx"))
+		.sort();
 
-	assert.deepEqual(previews["/now-2024-07"], {
-		title: "Now update – July 2024",
-		description: "",
-	});
-	assert.deepEqual(previews["/now-2026-01"], {
-		title: "Now update – January 2026",
-		description: "",
-	});
+	for (const fileName of nowFileNames) {
+		const source = await readFile(new URL(fileName, nowDirectory), "utf8");
+		const { data } = matter(source);
+		const slug = fileName.replace(/\.mdx$/, "");
+		const preview = previews[`/now-${slug}`];
+
+		assert.equal(preview.title, `Now update – ${data.title}`);
+		assert.equal(preview.description, data.description);
+		assert.ok(preview.description.length > 0);
+		assert.ok([...preview.description].length <= 110);
+	}
 });
