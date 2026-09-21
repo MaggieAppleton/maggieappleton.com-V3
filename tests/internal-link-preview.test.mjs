@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -160,4 +161,22 @@ test("rejects malformed preview records instead of generating invalid data", () 
 			/slug|pathname/i,
 		);
 	}
+});
+
+test("generated previews use Now entry frontmatter titles", async () => {
+	const previews = JSON.parse(
+		await readFile(
+			new URL("../src/internal-link-previews.json", import.meta.url),
+			"utf8",
+		),
+	);
+
+	assert.deepEqual(previews["/now-2024-07"], {
+		title: "Now update – July 2024",
+		description: "",
+	});
+	assert.deepEqual(previews["/now-2026-01"], {
+		title: "Now update – January 2026",
+		description: "",
+	});
 });
