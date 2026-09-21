@@ -85,6 +85,7 @@ const { maxWidth = 400 } = Astro.props;
 					interactive: true,
 					animation: reducedMotion ? false : "shift-away",
 					allowHTML: true,
+					appendTo: () => wrapper,
 					theme: "custom",
 					touch: target instanceof HTMLAnchorElement ? false : true,
 					onCreate(instance) {
