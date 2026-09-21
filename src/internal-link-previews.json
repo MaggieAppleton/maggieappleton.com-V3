@@ -1,0 +1,538 @@
+{
+  "/": {
+    "title": "Maggie Appleton",
+    "description": "A digital garden of visual essays about programming, design, and anthropology"
+  },
+  "/about": {
+    "title": "About Maggie Appleton",
+    "description": "Designer, anthropologist, and mediocre developer"
+  },
+  "/advancedjs": {
+    "title": "JavaScript Bits You Skipped the First Time Around",
+    "description": "Illustrated notes on advanced but fundamental topics in JavaScript"
+  },
+  "/aesthetic-commands": {
+    "title": "Aesthetic Command Lines with Hyper, Spaceship, and Oh My Zsh",
+    "description": "My fairly banal, basic, but beautiful command line setup"
+  },
+  "/ai-dark-forest": {
+    "title": "The Dark Forest and Generative AI",
+    "description": "Proving you're a human on a web flooded with generative AI content"
+  },
+  "/ai-empty-pointer": {
+    "title": "Empty Pointers and Constellations of AI",
+    "description": "On the fuzziness of calling things “artificial intelligence” and moving the goalposts"
+  },
+  "/ai-enlightenment": {
+    "title": "A Treatise on AI Chatbots Undermining the Enlightenment",
+    "description": "On chatbot sycophancy, passivity, and the case for more intellectually challenging companions"
+  },
+  "/algorithmic-transparency": {
+    "title": "Algorithmic Transparency",
+    "description": "Algorithms that make their reasoning visible"
+  },
+  "/ambient-copresence": {
+    "title": "Ambient Co-presence",
+    "description": "Creating a subtle, peripheral, and synchronous sense of shared space and context on the web"
+  },
+  "/anthropology-react": {
+    "title": "The Cultural Anthropology of React",
+    "description": "An anthropological look at the cultural norms of the React community"
+  },
+  "/antilibrary": {
+    "title": "Antilibrary",
+    "description": ""
+  },
+  "/api": {
+    "title": "Meet the Robowaiter APIs Serving Us Data",
+    "description": "Everything you need to know about what API's are and how they work"
+  },
+  "/apps": {
+    "title": "What App is That?",
+    "description": "A guide to the apps and tools I use to create illustrations"
+  },
+  "/artisan-data": {
+    "title": "Organic, Local, Artisan Data Storage",
+    "description": "Data is currently dislocated – our narratives and metaphors around it try to convince us it is immaterial"
+  },
+  "/assumed-audience": {
+    "title": "Assumed Audiences",
+    "description": "Naming your invisible audiences to free yourself from unspoken obligations"
+  },
+  "/babel": {
+    "title": "What the Fork is Babel?",
+    "description": "Illustrated notes on how Babel works"
+  },
+  "/basb": {
+    "title": "Building a Second Brain: The Illustrated Notes",
+    "description": "Illustrated notes on the Building A Second Brain course"
+  },
+  "/bidirectionals": {
+    "title": "A Short History of Bi-Directional Links",
+    "description": "Seventy years ago we dreamed up links that would allow us to create two-way, contextual conversations. Why don't we use them on the web?"
+  },
+  "/birth-probability": {
+    "title": "Statistically, When Will My Baby Be Born?",
+    "description": "A tiny tool to calculate when your baby might arrive"
+  },
+  "/block-data": {
+    "title": "The Block-Paved Path to Structured Data",
+    "description": "How block-based interfaces can help us create more structured data on the web"
+  },
+  "/building-gatsby-themes": {
+    "title": "The Art and Craft of Gatsby Themes",
+    "description": "Illustrated notes on building Gatsby themes"
+  },
+  "/colophon": {
+    "title": "Colophon of Maggie Appleton",
+    "description": ""
+  },
+  "/command-bar": {
+    "title": "Command K Bars",
+    "description": "Command line bars you can quickly summon with a keyboard shortcut"
+  },
+  "/compilers": {
+    "title": "How Are Compilers & Transpilers Different?",
+    "description": "Illustrated notes on how compilers and transpilers are different"
+  },
+  "/computational-notebooks": {
+    "title": "Computational Notebooks",
+    "description": "Shareable, browser-based documents that can compile and run code"
+  },
+  "/contentful-gatsby": {
+    "title": "The JAMStack, Gatsby & Contentful",
+    "description": "Illustrated notes on the JAMstack, Gatsby & Contentful"
+  },
+  "/cozy-web": {
+    "title": "The Dark Forest and the Cozy Web",
+    "description": "An illustrated diagram exposing the inner layers of the dark and cozy web"
+  },
+  "/cscl": {
+    "title": "A Naïve Exploration of Computer-Supported Collaborative Learning",
+    "description": "Notes on the academic field of CSCL and major papers in the discipline"
+  },
+  "/css-position": {
+    "title": "Positioning Elements & Scrollytelling in CSS",
+    "description": "Notes on how to use the position property in CSS to make scrollytelling stories"
+  },
+  "/customhooks": {
+    "title": "Building Custom React Hooks",
+    "description": "Illustrated notes on building custom React hooks"
+  },
+  "/cyborg-history": {
+    "title": "A History of Cyborgs",
+    "description": "Notes on the history of cyborgs and why the idea still holds historical weight in Western narratives"
+  },
+  "/cypress": {
+    "title": "Testing Apps with Cypress",
+    "description": "Illustrated notes on how to test web apps with Cypress"
+  },
+  "/daily-notes": {
+    "title": "Daily Notes Pages",
+    "description": "Daily notes as a frictionless default input for personal knowledge management systems"
+  },
+  "/data-unions": {
+    "title": "Are Data Unions the Future of Data?",
+    "description": "Illustrated notes on how data unions work and what problems they might solve"
+  },
+  "/databases": {
+    "title": "A Shelfish Starter Guide to Databases",
+    "description": "The absolute minimum you need to know about data storage"
+  },
+  "/design-engineers": {
+    "title": "A Collection of Design Engineers",
+    "description": "Collecting people I know who work at the intersection of design and engineering, in an attempt to figure out what a design engineer is"
+  },
+  "/digital-anth-books": {
+    "title": "A Digital Anthropology Reading List",
+    "description": "A few favourite books from the field of digital anthropology"
+  },
+  "/digital-anthropology": {
+    "title": "A Brief Introduction to Digital Anthropology",
+    "description": "A discipline at the intersection of cultural anthropology and binary logic"
+  },
+  "/dirt": {
+    "title": "Douglas, Dirt, and Matter Out of Place",
+    "description": "Mary Douglas defined dirt as matter out of place – the crossing of boundaries"
+  },
+  "/drawinginvisibles1": {
+    "title": "How to Draw Invisible Programming Concepts: Part I",
+    "description": "A case study showing how I make illustrations for abstract programming concepts"
+  },
+  "/echo-narcissus": {
+    "title": "The Echo & Narcissus Writing Club",
+    "description": "A Hyperlink Academy writing club where we mimic the work of others"
+  },
+  "/epistemic-disclosure": {
+    "title": "Epistemic Disclosure",
+    "description": "Providing clear metadata on the epistemic validity of content"
+  },
+  "/eponymous-laws": {
+    "title": "The Eponymous Laws of Programming",
+    "description": "A collection of laws named for specific people in the field of programming"
+  },
+  "/es2019": {
+    "title": "A Fresh Serving of JavaScript ES2019",
+    "description": "Illustrated notes on the new language changes in JavaScript ES2019"
+  },
+  "/essays": {
+    "title": "Essays by Maggie Appleton",
+    "description": ""
+  },
+  "/evergreens": {
+    "title": "Growing the Evergreens",
+    "description": "Illustrated notes on the concept of 'Evergreen notes' and how to write them"
+  },
+  "/faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Questions I am often asked to answer"
+  },
+  "/folk-interfaces": {
+    "title": "Folk Interfaces",
+    "description": "People reappropriating existing software to solve their own unique problems"
+  },
+  "/forest-talk": {
+    "title": "The Expanding Dark Forest and Generative AI",
+    "description": "An exploration of the problems and possible futures of flooding the web with generative AI content"
+  },
+  "/fruit-comparison": {
+    "title": "A Fruitful Guide to JavaScript's Comparison Operators",
+    "description": "Illustrated notes on how JavaScript's comparison operators work"
+  },
+  "/garden": {
+    "title": "Maggie's Digital Garden",
+    "description": ""
+  },
+  "/garden-history": {
+    "title": "A Brief History & Ethos of the Digital Garden",
+    "description": "A newly revived philosophy for publishing personal knowledge on the web"
+  },
+  "/gastown": {
+    "title": "Gas Town’s Agent Patterns, Design Bottlenecks, and Vibecoding at Scale",
+    "description": "On agent orchestration patterns, why design and critical thinking are the new bottlenecks, and whether we should let go of looking at code"
+  },
+  "/gathering-structures": {
+    "title": "Gathering Structures",
+    "description": "How to gather people and create communities in ways that are low-stress and high-payoff"
+  },
+  "/generative-forgery": {
+    "title": "Faking William Morris, Generative Forgery, and the Erosion of Art History",
+    "description": "Buying fake William Morris prints on Etsy and other early signs of epistemological collapse"
+  },
+  "/gift-economy": {
+    "title": "The Gift Economy",
+    "description": "Illustrated notes on the idea of Gift Economies and cultural historys of economic exchange"
+  },
+  "/git-mistakes": {
+    "title": "Fixing Common Git Mistakes",
+    "description": "Illustrated notes on common mistakes people make in Git, and how to fix them"
+  },
+  "/glitter-devs": {
+    "title": "Pink, Soft, Glittering Developers",
+    "description": "A collection of observations on the rise of soft, sparkly, baby pink aesthetics among developers"
+  },
+  "/graphql": {
+    "title": "Speaking the GraphQL Query Language",
+    "description": "Illustrated notes on the basics of the GraphQL query language"
+  },
+  "/greensock-essentials": {
+    "title": "The Bare Essentials of Greensock",
+    "description": "Notes on the basics of the Greensock animation llibrary"
+  },
+  "/greensock-react": {
+    "title": "GreenSock Animations with React Hooks",
+    "description": "How to use the Greensock animation library inside React using React hooks"
+  },
+  "/growing-a-human": {
+    "title": "Growing a Human: The First 30 Weeks",
+    "description": "Reflections on the strange experience of growing a human from scratch, without any conscious understanding of how you are doing it"
+  },
+  "/hire-me": {
+    "title": "Hire Maggie Appleton",
+    "description": ""
+  },
+  "/historical-trails": {
+    "title": "Historical Trails",
+    "description": "Giving people a visible, useful trail of where they've been over the course of an exploratory journey"
+  },
+  "/home-cooked-software": {
+    "title": "Home-Cooked Software and Barefoot Developers",
+    "description": "The emerging golden age of home-cooked software, barefoot developers, and why the local-first community should help build it"
+  },
+  "/illustrated-gatsby": {
+    "title": "Illustrating Gatsby's Key Concepts",
+    "description": "Illustrated notes on the key concepts of how Gatsby.js works"
+  },
+  "/illustration-resources": {
+    "title": "The Best Illustration Books and Courses",
+    "description": "My favourite resources for learning to draw and developing your visual thinking skills"
+  },
+  "/immer": {
+    "title": "Immutable Data with Immer and Personal Assistant Bots",
+    "description": "Illustrated notes on how work with immutable data in the Immer state library"
+  },
+  "/in-memoriam": {
+    "title": "In Memoriam, Encountering World War I, and Thinkable Horrors",
+    "description": "A delayed education on the trenches and scales of suffering"
+  },
+  "/interoperable-libraries": {
+    "title": "Interoperable Personal Libraries and Ad Hoc Reading Groups",
+    "description": "Exploring ways to build social infrastructure around books and reading on the open web"
+  },
+  "/joining-ought": {
+    "title": "Joining Ought",
+    "description": "A new role at an AI research lab working on tools for open-ended reasoning"
+  },
+  "/jsx": {
+    "title": "JSX is a Lovechild",
+    "description": "Illustrated notes on how JSX in React works"
+  },
+  "/keyboard-fetishism": {
+    "title": "Fetishism & Mechanical Keyboards",
+    "description": "Developer self-expression through coloured switches, keystroke actuation, and LED light displays"
+  },
+  "/keyboard-maestro": {
+    "title": "Plebeian Programming with Keyboard Maestro",
+    "description": "How to write macros without touching the terminal"
+  },
+  "/knowledge-hydrant": {
+    "title": "The Knowledge Hydrant",
+    "description": "Illustrated notes on the Knowledge Hydrant guide to collaborative learning"
+  },
+  "/learnable-programming": {
+    "title": "Making Programming Visual, Spatial, and Learnable",
+    "description": "What's wrong with linear, static programming mediums and how might we improve them?"
+  },
+  "/leaving-elicit": {
+    "title": "Leaving Elicit",
+    "description": "Reflections on two years of working at Elicit and why it's time to leave"
+  },
+  "/library": {
+    "title": "Library",
+    "description": ""
+  },
+  "/lm-sketchbook": {
+    "title": "Language Model Sketchbook, or Why I Hate Chatbots",
+    "description": "Sketchy ideas for interfaces that play with the novel capabilities of language models"
+  },
+  "/maintainers": {
+    "title": "A Chat with Henry Zhu on OSS & Gift Economies",
+    "description": "Notes from my podcast episode Open Source and Gift Economies on Maintainers Anonymous"
+  },
+  "/meat-planet": {
+    "title": "Meat Planet: The Illustrated Notes",
+    "description": "Visualising the cultural narratives around cultured meat"
+  },
+  "/metaphor-books": {
+    "title": "A Metaphorical Reading Collection",
+    "description": "A collection of my favourite books on conceptual metaphor theory"
+  },
+  "/metaphors-web": {
+    "title": "Metaphors We Web By",
+    "description": "A history of our metaphorical understanding of the web"
+  },
+  "/metatour": {
+    "title": "A Meta-Tour of This Site",
+    "description": "A video tour through how I build the old version of this site"
+  },
+  "/narrative-essays": {
+    "title": "The Finest Narrative Non-Fiction Essays",
+    "description": "Narrative essays that I consider ideal models of the medium"
+  },
+  "/natureculture": {
+    "title": "Natureculture, Moral Purity, and Cultural Boundaries",
+    "description": "Why there is nothing natural about the idea of 'nature'"
+  },
+  "/neocyborgs": {
+    "title": "How to Become a Neo-Cartesian Cyborg",
+    "description": "A lightening talk on second brains and cyborg embodiment"
+  },
+  "/neologisms": {
+    "title": "Neologisms",
+    "description": "A collection of interesting words that have recently been coined"
+  },
+  "/newharvest-podcast": {
+    "title": "New Harvest & Illustrating the Cultivated Meat Podcast",
+    "description": "Illustrations made for a set of episodes of the Cultivated Meat podcast"
+  },
+  "/nontechnical-gardening": {
+    "title": "Digital Gardening for Non-Technical Folks",
+    "description": "How to build a digital garden without touching code"
+  },
+  "/note-oppression": {
+    "title": "The Linear Oppression of Note-taking Apps",
+    "description": "What we lose when our digital notes remove the freedom to move"
+  },
+  "/notes": {
+    "title": "Notes by Maggie Appleton",
+    "description": ""
+  },
+  "/now": {
+    "title": "Now",
+    "description": ""
+  },
+  "/openings": {
+    "title": "On Opening Essays, Conference Talks, and Jam Jars",
+    "description": "How to open pieces of narrative non-fiction writing, conference talks, and sticky jars"
+  },
+  "/paintingroam": {
+    "title": "Painting Roam Research with Custom CSS",
+    "description": "How to customise Roam Research with your own CSS themes"
+  },
+  "/paleolithic-nostalgia": {
+    "title": "Paleolithic Nostalgia",
+    "description": "Longing for the paleolithic past in the Anthropocene"
+  },
+  "/pattern-languages": {
+    "title": "Pattern Languages in Programming and Interface Design",
+    "description": "Notes on pattern languages and Christopher Alexander's legacy on software programming"
+  },
+  "/patterns": {
+    "title": "Patterns",
+    "description": ""
+  },
+  "/planning-agents": {
+    "title": "Planning with Agents: Divided Worlds, Boundary Objects, and Thicker Interfaces",
+    "description": "Why we need richer, thicker interfaces and better boundary objects for collaborative planning with agents"
+  },
+  "/podcasts": {
+    "title": "Podcasts with Maggie Appleton",
+    "description": ""
+  },
+  "/problematic-proteins": {
+    "title": "Problematic Proteins",
+    "description": "How to offend everyone with boundary-crossing steak and nuggets"
+  },
+  "/programmatic-notes": {
+    "title": "Programmable Notes",
+    "description": "Agent-based note-taking systems that can prompt and facilitate custom workflows"
+  },
+  "/programming-pictures": {
+    "title": "A Picture Worth a Thousand Programmes",
+    "description": "Bringing visual explanations and embodied knowledge to programming tools"
+  },
+  "/programming-portals": {
+    "title": "Programming Portals",
+    "description": "Small, scoped areas within a graphical interface that allow users to read and write simple programmes"
+  },
+  "/react-vdom": {
+    "title": "What the Fork is the React Virtual DOM",
+    "description": "Illustrated notes on how the React virtual DOM works"
+  },
+  "/react360": {
+    "title": "Building VR Apps with React360",
+    "description": "Illustrated notes on building VR web apps with React360"
+  },
+  "/reactpotato": {
+    "title": "Drawing the Invisible: React Explained in Five Visual Metaphors",
+    "description": "Explaining React through visual metaphors"
+  },
+  "/reactsuspense": {
+    "title": "What the Fork is React Suspense?",
+    "description": "Illustrated notes on how React suspense works"
+  },
+  "/reverse-outline": {
+    "title": "Reverse Outlining with Language Models",
+    "description": "Using language models to generate reverse outlines of writing drafts"
+  },
+  "/roam-garden": {
+    "title": "Tending Evergreen Notes in Roam Research",
+    "description": "A walkthrough of how I manage and tend Evergreen notes in Roam"
+  },
+  "/silentsessions": {
+    "title": "Silent Synchronous Reading Sessions",
+    "description": "Notes on how to run silent meetings and reading sessions"
+  },
+  "/smidgeons": {
+    "title": "Smidgeons Stream",
+    "description": ""
+  },
+  "/spatial-web": {
+    "title": "Spatial Web Browsing",
+    "description": "Adding spatial affordances to the experience of browsing the web"
+  },
+  "/speculative-events": {
+    "title": "Speculative Calendar Events",
+    "description": "Designing tentative calendar events to solve complex scheduling problems"
+  },
+  "/spinning": {
+    "title": "Spinning Worlds, Seasickness, and Dealing with Vestibular Neuritis",
+    "description": "Gaining a strange disease and losing my ability to see straight"
+  },
+  "/spread": {
+    "title": "JavaScript's ...spread Operator",
+    "description": "Illustrated notes on how JavaScript's spread operator works"
+  },
+  "/squish-structure": {
+    "title": "Squish Meets Structure",
+    "description": "Designing with Language Models"
+  },
+  "/still-cant-draw": {
+    "title": "Why You Own an iPad and Still Can't Draw",
+    "description": "The failure of drawing materials without mediums and meat"
+  },
+  "/synecdoche": {
+    "title": "Synecdoche: Drawing the Part for the Whole",
+    "description": "Notes on the metaphorical varieties of synecdoche and metonymy"
+  },
+  "/talks": {
+    "title": "Talks by Maggie Appleton",
+    "description": ""
+  },
+  "/tana-zotero": {
+    "title": "How to Import Academic Papers from Zotero into Tana",
+    "description": "How to use Zotero's translator and Tana Paste formatting to easily import papers into Tana"
+  },
+  "/teenage-desktop": {
+    "title": "Teenage Skeuomorphic Desktop Designs",
+    "description": "An archive of my high school desktop designs, circa 2009"
+  },
+  "/tools-for-thought": {
+    "title": "Tools for Thought as Cultural Practices, not Computational Objects",
+    "description": "On seeing tools for thought through a historical and anthropological lens"
+  },
+  "/tools-thought-talk": {
+    "title": "Tools for Thought as Cultural Practices, not Computational Objects",
+    "description": "On seeing tools for thought through a historical and anthropological lens"
+  },
+  "/tracking-humanity": {
+    "title": "Tracking Humanity",
+    "description": "The introduction to my thesis on the Quantified Self movement and the culture of self-tracking"
+  },
+  "/transcopyright-dreams": {
+    "title": "Transclusion and Transcopyright Dreams",
+    "description": "The lost permissioning and copyright system of the Web"
+  },
+  "/visual-aws": {
+    "title": "Visually Workshopping the AWS Cloud",
+    "description": "Some insights into how I collaborative with experts to create illustrated notes on technical topics"
+  },
+  "/vuerouter": {
+    "title": "A Journey into Vue-Router",
+    "description": "Illustrated notes on how routing works in Vue.js"
+  },
+  "/vuesocket": {
+    "title": "Instachatting with Vue & Socket.io",
+    "description": "Illustrated notes on how to implement web sockets with Vue.js and Socket.io"
+  },
+  "/websecurity": {
+    "title": "Defend Your Cookies with Essential Web Security Tactics",
+    "description": "Illustrated notes on the essentials of web security"
+  },
+  "/wtf-rust": {
+    "title": "What the Fork is Rust?",
+    "description": "Illustrated notes on the core concepts in Rust"
+  },
+  "/xanadu-patterns": {
+    "title": "The Pattern Language of Project Xanadu",
+    "description": "Project Xanadu as a pattern language, rather than a failed software project"
+  },
+  "/xstate": {
+    "title": "What the Fork is xState?",
+    "description": "Illustrated notes on how to build state machines with the xState library"
+  },
+  "/zero-alignment": {
+    "title": "One Developer, Two Dozen Agents, Zero Alignment",
+    "description": "Why we need collaborative AI engineering and a tour of Ace: the multiplayer coding workspace"
+  }
+}

@@ -6,6 +6,7 @@ import {
 	deriveTitleFromPathname,
 	resolveInternalLinkPreview,
 } from "../src/utils/internalLinkPreview.js";
+import { buildInternalLinkPreviews } from "../src/utils/buildInternalLinkPreviews.js";
 
 const context = {
 	currentUrl: new URL("http://localhost:4321/current-note"),
@@ -92,5 +93,50 @@ test("resolves indexed and fallback internal previews without changing hrefs", (
 	assert.equal(
 		resolveInternalLinkPreview("https://example.com", { ...context, previews }),
 		null,
+	);
+});
+
+test("builds canonical content previews over static route defaults", () => {
+	const posts = [
+		{
+			ids: ["Garden History", "Digital Gardening"],
+			slug: "garden-history",
+			description: "A history of digital gardens",
+		},
+		{
+			ids: ["A Note Without a Description"],
+			slug: "plain-note",
+		},
+	];
+	const staticPages = {
+		"/": { title: "Maggie Appleton", description: "Digital garden" },
+		"/garden-history": { title: "Old title", description: "" },
+	};
+
+	assert.deepEqual(buildInternalLinkPreviews(posts, staticPages), {
+		"/": { title: "Maggie Appleton", description: "Digital garden" },
+		"/garden-history": {
+			title: "Garden History",
+			description: "A history of digital gardens",
+		},
+		"/plain-note": {
+			title: "A Note Without a Description",
+			description: "",
+		},
+	});
+});
+
+test("rejects malformed preview records instead of generating invalid data", () => {
+	assert.throws(
+		() => buildInternalLinkPreviews([{ ids: [], slug: "untitled" }], {}),
+		/preview title/i,
+	);
+	assert.throws(
+		() =>
+			buildInternalLinkPreviews(
+				[{ ids: ["Duplicate"], slug: "about" }],
+				{ about: { title: "Missing leading slash", description: "" } },
+			),
+		/pathname/i,
 	);
 });

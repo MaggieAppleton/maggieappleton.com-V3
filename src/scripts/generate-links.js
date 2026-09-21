@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { fileURLToPath } from "url";
+import { STATIC_PAGE_PREVIEWS } from "../data/static-page-previews.js";
+import { buildInternalLinkPreviews } from "../utils/buildInternalLinkPreviews.js";
 // Import the extractBaseSlug function locally since we can't import TS from JS
 const extractBaseSlug = (filePath) => {
   // Handle folder-based versioning: "ai-dark-forest/ai-dark-forest-v1" -> "ai-dark-forest"
@@ -218,4 +220,15 @@ const getAllPostData = () => {
     JSON.stringify(posts, null, 2),
   );
   console.log("✨ Generated links.json");
+
+  const internalLinkPreviews = buildInternalLinkPreviews(
+    posts,
+    STATIC_PAGE_PREVIEWS,
+  );
+
+  fs.writeFileSync(
+    path.join(__dirname, "../internal-link-previews.json"),
+    JSON.stringify(internalLinkPreviews, null, 2),
+  );
+  console.log("✨ Generated internal-link-previews.json");
 })();
