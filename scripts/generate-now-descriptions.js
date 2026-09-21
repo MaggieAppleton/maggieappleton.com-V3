@@ -1,4 +1,5 @@
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -21,8 +22,21 @@ export function selectNowEntries(entries, { regenerate }) {
 }
 
 export function applyDescriptionToSource(source, description) {
-	const { content, data } = matter(source);
-	return matter.stringify(content, { ...data, description });
+	const frontmatterMatch = source.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
+	if (!frontmatterMatch) {
+		throw new Error("Could not find YAML frontmatter");
+	}
+
+	const [, opening, frontmatter, closing] = frontmatterMatch;
+	const serializedDescription = JSON.stringify(description);
+	const updatedFrontmatter = /^description:.*$/m.test(frontmatter)
+		? frontmatter.replace(
+				/^description:.*$/m,
+				`description: ${serializedDescription}`,
+			)
+		: `${frontmatter}\ndescription: ${serializedDescription}`;
+
+	return `${opening}${updatedFrontmatter}${closing}${source.slice(frontmatterMatch[0].length)}`;
 }
 
 export async function generateDescription({
@@ -46,10 +60,13 @@ export async function generateDescription({
 	}
 
 	const result = await response.json();
+	if (!result || typeof result.response !== "string") {
+		throw new Error("Ollama returned an invalid generation response");
+	}
 	return validateNowDescription(result.response, { title });
 }
 
-function parseArguments(argv) {
+export function parseArguments(argv) {
 	let model = DEFAULT_MODEL;
 	let regenerate = false;
 
@@ -57,9 +74,15 @@ function parseArguments(argv) {
 		const argument = argv[index];
 		if (argument === "--regenerate") {
 			regenerate = true;
-		} else if (argument === "--model" && argv[index + 1]) {
+		} else if (
+			argument === "--model" &&
+			argv[index + 1] &&
+			!argv[index + 1].startsWith("--")
+		) {
 			model = argv[index + 1];
 			index += 1;
+		} else if (argument === "--model") {
+			throw new Error("Unknown or incomplete argument: --model");
 		} else {
 			throw new Error(`Unknown or incomplete argument: ${argument}`);
 		}
@@ -69,7 +92,15 @@ function parseArguments(argv) {
 }
 
 async function ensureModelAvailable(model, fetchImpl) {
-	const response = await fetchImpl(`${OLLAMA_URL}/api/tags`);
+	let response;
+	try {
+		response = await fetchImpl(`${OLLAMA_URL}/api/tags`);
+	} catch (error) {
+		throw new Error(
+			`Could not connect to Ollama at ${OLLAMA_URL}. Start it with "ollama serve".`,
+			{ cause: error },
+		);
+	}
 	if (!response.ok) {
 		throw new Error(`Could not query Ollama models (HTTP ${response.status})`);
 	}
@@ -80,8 +111,26 @@ async function ensureModelAvailable(model, fetchImpl) {
 	);
 	if (!available) {
 		throw new Error(
-			`Ollama model "${model}" is not available. Install it before generating descriptions.`,
+			`Ollama model "${model}" is not available. Install it with "ollama pull ${model}".`,
 		);
+	}
+}
+
+async function writeAtomically({
+	url,
+	content,
+	writeSource,
+	renameSource,
+	removeSource,
+	createTempSuffix,
+}) {
+	const temporaryUrl = new URL(`${url.pathname}.tmp-${createTempSuffix()}`, url);
+	try {
+		await writeSource(temporaryUrl, content, "utf8");
+		await renameSource(temporaryUrl, url);
+	} catch (error) {
+		await removeSource(temporaryUrl, { force: true }).catch(() => {});
+		throw error;
 	}
 }
 
@@ -91,6 +140,9 @@ export async function runCli({
 	readdir: readDirectory = readdir,
 	readFile: readSource = readFile,
 	writeFile: writeSource = writeFile,
+	rename: renameSource = rename,
+	remove: removeSource = rm,
+	createTempSuffix = randomUUID,
 	log = console.log,
 	error = console.error,
 } = {}) {
@@ -126,11 +178,14 @@ export async function runCli({
 				source: entry.source,
 				fetchImpl,
 			});
-			await writeSource(
-				entry.url,
-				applyDescriptionToSource(entry.source, description),
-				"utf8",
-			);
+			await writeAtomically({
+				url: entry.url,
+				content: applyDescriptionToSource(entry.source, description),
+				writeSource,
+				renameSource,
+				removeSource,
+				createTempSuffix,
+			});
 			totals.changed += 1;
 		} catch (generationError) {
 			totals.failed += 1;
