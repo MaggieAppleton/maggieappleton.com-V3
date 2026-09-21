@@ -137,6 +137,7 @@ const nowCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/now" }),
   schema: z.object({
     title: z.string(),
+    description: z.string().optional(),
     startDate: contentDate,
     type: z.literal("now"),
     topics: z.array(z.string()).optional(),
