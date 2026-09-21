@@ -20,13 +20,13 @@ Each demonstration occupies `165vh`. Its visual stage sticks within the viewport
 The stage contains:
 
 - The question centered at the top.
-- Five food visuals in a compact horizontal source row.
+- Five food visuals in a compact, slightly fanned central pile.
 - Empty labeled category piles below.
 
 Scroll progress drives a reversible sequence:
 
 1. From `0%` to `18%`, the initial arrangement holds.
-2. From `18%` to `85%`, all five foods move in a quick overlapping cascade from the source row to their Jev category piles.
+2. From `18%` to `85%`, all five foods fly in a quick overlapping cascade from the central pile to their Jev category piles.
 3. Each food starts `8%` of section progress after the previous food.
 4. Each food uses `35%` of section progress for its own journey.
 5. Its `Category · confidence` label fades in during the final quarter of that journey.
@@ -34,13 +34,13 @@ Scroll progress drives a reversible sequence:
 
 Scrolling upward reverses the sequence. Scroll controls progress directly; the animation does not autoplay or continue independently.
 
-The movement feels fast and physical without bounce. Translation, slight scale, and opacity are the only animated properties. Each item travels directly from its measured source position to its measured destination slot.
+The movement feels fast and physical without bounce. Translation, slight scale, and opacity are the only animated properties. Each item follows a shallow quadratic arc from its measured position in the central pile to its measured destination slot. The arc control point sits at the horizontal midpoint and 28px above the vertical midpoint, producing a restrained “fly into place” gesture.
 
 ## Component Architecture
 
 Replace the interactive React implementation with one reusable Astro component:
 
-- `JevScrollSorter.astro` renders static source items, destination slots, the accessible summary, scoped data attributes, and the Scrollama lifecycle script.
+- `JevScrollSorter.astro` renders the central source pile, destination slots, the accessible summary, scoped data attributes, and the Scrollama lifecycle script.
 - `SandwichSorter.astro` supplies the binary categories, five visuals, and saved probability maps.
 - `FlavourSorter.astro` supplies the three categories, five visuals, and saved probability maps.
 
@@ -50,9 +50,9 @@ The shared component:
 
 - Validates its configuration during Astro rendering.
 - Derives each winning category from the largest saved probability.
-- Renders one destination slot per item in the correct pile.
-- Measures each source item and target slot after initialization and resize.
-- Stores the required translation as CSS custom properties.
+- Renders one stable source slot and one destination slot per item.
+- Measures each source slot and target slot after initialization and resize.
+- Stores the source, arc control, and destination coordinates for each item.
 - Maps Scrollama progress to a per-item normalized progress value.
 - Updates only CSS custom properties inside one animation frame.
 - Recomputes geometry on resize and image load.
@@ -82,7 +82,7 @@ The existing authored configuration shape remains:
 }
 ```
 
-Emoji and image visuals remain interchangeable. Visuals use `clamp(40px, 10vw, 60px)` and item frames use `clamp(44px, 12vw, 68px)` so all five source items remain on one line at narrow widths.
+Emoji and image visuals remain interchangeable. Visuals use `clamp(40px, 10vw, 60px)` and item frames use `clamp(44px, 12vw, 68px)`. The central pile uses small fixed rotations and offsets derived from item order so every food remains identifiable before it moves.
 
 `sorter.js` retains:
 
@@ -99,11 +99,11 @@ The component remains visually spare and integrated with the article:
 - Existing Jev ink, muted, rule, paper, accent, and typography variables.
 - The question uses the existing serif display face.
 - Category piles use light rules and quiet headings rather than boxes.
-- Source and destination layouts reserve stable space so the sticky stage does not jump.
+- The central pile and destination layouts reserve stable space so the sticky stage does not jump.
 - Probability labels use 10–12px muted text with tabular numerals.
 - The two-category and three-category versions share the same geometry system.
 
-On wider screens, all five source items stay on one horizontal line. On narrow screens, item frames scale down enough to preserve the line rather than wrapping. Category piles remain in two or three columns and must not create horizontal overflow at a 390px viewport.
+The central source pile stays centered at every viewport width. Category piles remain in two or three columns and must not create horizontal overflow at a 390px viewport.
 
 ## Accessibility and Progressive Enhancement
 
@@ -124,7 +124,7 @@ When `prefers-reduced-motion: reduce` is active:
 
 - The section uses normal document height instead of `165vh`.
 - The stage does not stick.
-- Source-row staging is skipped.
+- Central-pile staging is skipped.
 - The completed classified piles are shown immediately.
 - No transforms, transitions, or opacity animation run.
 
@@ -147,7 +147,7 @@ Focused Node tests should prove:
 - Configuration validation still rejects malformed data.
 - Winning-category derivation remains deterministic.
 - Reader-choice state exports are removed.
-- Server-rendered markup contains source items, destination slots, probability labels, and an accessible static summary.
+- Server-rendered markup contains central-pile source items, destination slots, probability labels, and an accessible static summary.
 - The shared component initializes each instance independently.
 - The wrappers contain no React hydration directive.
 - The wrappers still support emoji and future image data.
@@ -159,7 +159,7 @@ Browser verification should prove:
 
 - The stage pins and unpins naturally.
 - Forward scroll moves every food into the correct pile.
-- Reverse scroll restores the source row.
+- Reverse scroll restores the central pile.
 - Labels appear near each item’s landing point.
 - The source-to-completed transition requires no more than one viewport of scroll travel.
 - Both instances initialize after Astro view transitions.
