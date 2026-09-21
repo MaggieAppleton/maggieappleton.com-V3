@@ -47,6 +47,8 @@ test("builds a bounded editorial prompt from title and cleaned body", () => {
 
 	assert.match(prompt, /January 2026/);
 	assert.match(prompt, /110 characters or fewer/);
+	assert.match(prompt, /neutral editorial voice/);
+	assert.match(prompt, /Do not use first person/);
 	assert.match(prompt, /I returned to work and explored small models\./);
 	assert.match(prompt, /Return only the description/);
 });
@@ -208,6 +210,31 @@ Returning to work while exploring **small models**.
 		stream: false,
 		think: false,
 	});
+});
+
+test("retries an invalid Ollama description with corrective feedback", async () => {
+	const responses = [
+		"This response is deliberately far too long to fit within the strict preview character limit required by the card component.",
+		"Work, family, and experiments with small models.",
+	];
+	const prompts = [];
+	const description = await generateDescription({
+		model: "test-model",
+		title: "January 2026",
+		source: "---\ntitle: January 2026\n---\nWork and family.",
+		fetchImpl: async (_url, options) => {
+			prompts.push(JSON.parse(options.body).prompt);
+			return {
+				ok: true,
+				json: async () => ({ response: responses.shift() }),
+			};
+		},
+	});
+
+	assert.equal(description, "Work, family, and experiments with small models.");
+	assert.equal(prompts.length, 2);
+	assert.match(prompts[1], /previous response was invalid/i);
+	assert.match(prompts[1], /110 characters or fewer/i);
 });
 
 test("reports malformed Ollama generation responses clearly", async () => {

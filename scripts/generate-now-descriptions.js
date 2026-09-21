@@ -45,25 +45,39 @@ export async function generateDescription({
 	source,
 	fetchImpl = fetch,
 }) {
-	const prompt = buildNowDescriptionPrompt({
+	let prompt = buildNowDescriptionPrompt({
 		title,
 		body: cleanNowBody(source),
 	});
-	const response = await fetchImpl(`${OLLAMA_URL}/api/generate`, {
-		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ model, prompt, stream: false, think: false }),
-	});
 
-	if (!response.ok) {
-		throw new Error(`Ollama generation failed with HTTP ${response.status}`);
-	}
+	for (let attempt = 1; attempt <= 3; attempt += 1) {
+		const response = await fetchImpl(`${OLLAMA_URL}/api/generate`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ model, prompt, stream: false, think: false }),
+		});
 
-	const result = await response.json();
-	if (!result || typeof result.response !== "string") {
-		throw new Error("Ollama returned an invalid generation response");
+		if (!response.ok) {
+			throw new Error(`Ollama generation failed with HTTP ${response.status}`);
+		}
+
+		const result = await response.json();
+		if (!result || typeof result.response !== "string") {
+			throw new Error("Ollama returned an invalid generation response");
+		}
+
+		try {
+			return validateNowDescription(result.response, { title });
+		} catch (error) {
+			if (attempt === 3) throw error;
+			prompt = `${prompt}
+
+The previous response was invalid:
+${result.response}
+
+Rewrite it as one neutral sentence of 110 characters or fewer. Return only the description.`;
+		}
 	}
-	return validateNowDescription(result.response, { title });
 }
 
 export function parseArguments(argv) {
