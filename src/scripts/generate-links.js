@@ -112,6 +112,19 @@ const getAllPostData = () => {
   return [...essaysData, ...notesData, ...patternsData, ...talksData];
 };
 
+const getNowPreviewData = () => {
+  const nowPath = path.join(CONTENT_PATH, "now");
+  const nowFiles = getFilesFromDir(nowPath);
+
+  return getDataForBacklinks(nowFiles, nowPath).map(
+    ({ title, slug, description }) => ({
+      ids: [`Now update – ${title}`],
+      slug: `now-${slug}`,
+      description,
+    }),
+  );
+};
+
 // Main execution
 (function () {
   // Get content and frontmatter for each post
@@ -187,7 +200,7 @@ const getAllPostData = () => {
   console.log("✨ Generated links.json");
 
   const internalLinkPreviews = buildInternalLinkPreviews(
-    posts,
+    [...posts, ...getNowPreviewData()],
     STATIC_PAGE_PREVIEWS,
   );
 
