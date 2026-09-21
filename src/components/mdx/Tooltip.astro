@@ -43,51 +43,50 @@ const { maxWidth = 400 } = Astro.props;
 </style>
 
 <script>
-	import tippy, { type Props } from "tippy.js";
+	import tippy, { type Instance, type Props } from "tippy.js";
 	import "tippy.js/dist/tippy.css";
 	import "tippy.js/animations/shift-away.css";
 
-	function initializeTooltips() {
-		// Destroy existing tooltips first
-		const existingTooltips = document.querySelectorAll(".tooltip-trigger");
-		existingTooltips.forEach((element) => {
-			const instance = (element as any)._tippy;
-			if (instance) {
-				instance.destroy();
-			}
-		});
+	const tooltipInstances = new Set<Instance>();
 
-		// Initialize tooltips
+	function initializeTooltips() {
+		tooltipInstances.forEach((instance) => instance.destroy());
+		tooltipInstances.clear();
+
 		const tooltips = document.querySelectorAll(".tooltip-trigger");
-		tooltips.forEach((element) => {
-			const template = element.querySelector(
+		const reducedMotion = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+
+		tooltips.forEach((wrapper) => {
+			const template = wrapper.querySelector(
 				".tooltip-content",
 			) as HTMLTemplateElement;
-			tippy(
-				element as Element,
+			const target = wrapper.querySelector("a[href]") ?? wrapper;
+			const instance = tippy(
+				target,
 				{
 					content: template.content.cloneNode(true),
-					maxWidth: parseInt(element.getAttribute("data-maxwidth") || "320"),
-					duration: 500,
+					maxWidth: parseInt(wrapper.getAttribute("data-maxwidth") || "320"),
+					duration: reducedMotion ? 0 : 180,
 					arrow: true,
 					interactive: true,
-					animation: "shift-away",
+					animation: reducedMotion ? false : "shift-away",
 					allowHTML: true,
 					theme: "custom",
+					touch: false,
 					onCreate(instance) {
-						// Force a DOM update after creation
 						setTimeout(() => {
 							instance.setContent(instance.props.content);
 						}, 0);
 					},
 				} as Partial<Props>,
 			);
+			tooltipInstances.add(instance);
 		});
 	}
 
-	// Initialize on first load
 	initializeTooltips();
 
-	// Re-initialize after view transitions
 	document.addEventListener("astro:page-load", initializeTooltips);
 </script>
