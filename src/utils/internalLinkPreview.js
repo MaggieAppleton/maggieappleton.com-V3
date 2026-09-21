@@ -1,5 +1,6 @@
 const HTTP_PROTOCOLS = new Set(["http:", "https:"]);
 const NON_PAGE_EXTENSION = /\.[a-z0-9]+$/i;
+const FEED_PATHS = new Set(["/feed", "/rss"]);
 
 const normalizePathname = (pathname) => {
 	const withoutDuplicateSlashes = pathname.replace(/\/{2,}/g, "/");
@@ -27,9 +28,12 @@ export function classifyLink(href, { currentUrl, siteUrl }) {
 	if (!internalOrigins.has(url.origin)) return { kind: "external" };
 
 	const pathname = normalizePathname(url.pathname);
+	const currentPathname = normalizePathname(currentUrl.pathname);
 	if (
+		(url.hash && pathname === currentPathname) ||
 		pathname === "/api" ||
 		pathname.startsWith("/api/") ||
+		FEED_PATHS.has(pathname) ||
 		NON_PAGE_EXTENSION.test(pathname)
 	) {
 		return { kind: "excluded" };
