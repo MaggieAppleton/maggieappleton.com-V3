@@ -34,13 +34,22 @@ test("separates external links from excluded internal targets", () => {
 
 	for (const href of [
 		"#section",
+		"/current-note#section",
+		"http://localhost:4321/current-note#section",
 		"/api/jev-playground",
+		"/feed",
+		"/rss/",
 		"/rss.xml",
 		"/images/diagram.png",
 		"mailto:hello@maggieappleton.com",
 	]) {
 		assert.deepEqual(classifyLink(href, context), { kind: "excluded" });
 	}
+
+	assert.deepEqual(classifyLink("/garden-history#section", context), {
+		kind: "internal-page",
+		pathname: "/garden-history",
+	});
 });
 
 test("derives a readable title for an unindexed internal page", () => {
