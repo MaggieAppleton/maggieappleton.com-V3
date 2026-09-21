@@ -14,7 +14,8 @@
     "date": "node scripts/current-date.js",
     "jev:generate": "node scripts/jev/generate.js",
     "jev:check": "node scripts/jev/check.js",
-    "test:jev": "node --import tsx --test tests/jev*.test.mjs"
+    "test:jev": "node --import tsx --test tests/jev*.test.mjs",
+    "test:link-previews": "node --test tests/internal-link-preview.test.mjs tests/internal-link-preview-markup.test.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",
