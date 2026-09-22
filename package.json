@@ -13,9 +13,7 @@
     "verify:html": "node src/scripts/verify-html.mjs",
     "generate-now-descriptions": "node scripts/generate-now-descriptions.js",
     "smidgeon": "node scripts/create-smidgeon.js",
-    "date": "node scripts/current-date.js",
-    "test:link-previews": "node --test tests/internal-link-preview.test.mjs",
-    "test:now-previews": "node --test tests/now-preview-description.test.mjs"
+    "date": "node scripts/current-date.js"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.1",
