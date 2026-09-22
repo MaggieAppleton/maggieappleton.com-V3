@@ -61,7 +61,7 @@ export function validateNowDescription(
 		[...description].length > maxLength ||
 		/^["']|["']$/.test(description) ||
 		/[*_`#~\[\]<>]/.test(description) ||
-		/[.!?]\s+\p{Lu}/u.test(description) ||
+		/[.!?]\s+\S/u.test(description) ||
 		/^(here is|this post)\b/i.test(description) ||
 		description
 			.toLocaleLowerCase("en-GB")

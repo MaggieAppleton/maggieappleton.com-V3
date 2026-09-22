@@ -31,7 +31,6 @@ export function classifyLink(href, { currentUrl, siteUrl }) {
 	const currentPathname = normalizePathname(currentUrl.pathname);
 	if (
 		(url.hash && pathname === currentPathname) ||
-		pathname === "/api" ||
 		pathname.startsWith("/api/") ||
 		FEED_PATHS.has(pathname) ||
 		NON_PAGE_EXTENSION.test(pathname)
@@ -40,6 +39,30 @@ export function classifyLink(href, { currentUrl, siteUrl }) {
 	}
 
 	return { kind: "internal-page", pathname };
+}
+
+export function findInternalLinkPreviewByText(text, previews) {
+	if (typeof text !== "string") return null;
+	const normalizedText = text.toLocaleLowerCase("en-GB");
+
+	for (const [pathname, preview] of Object.entries(previews)) {
+		const names = [preview.title, ...(preview.aliases || [])];
+		if (
+			names.some(
+				(name) =>
+					typeof name === "string" &&
+					name.toLocaleLowerCase("en-GB") === normalizedText,
+			)
+		) {
+			return {
+				pathname,
+				title: preview.title,
+				description: preview.description || "",
+			};
+		}
+	}
+
+	return null;
 }
 
 export function deriveTitleFromPathname(pathname) {

@@ -18,6 +18,25 @@ const validateRecord = (pathname, preview) => {
 	) {
 		throw new Error(`Internal preview description must be a string for ${pathname}`);
 	}
+	if (
+		preview.aliases !== undefined &&
+		(!Array.isArray(preview.aliases) ||
+			preview.aliases.some(
+				(alias) => typeof alias !== "string" || !alias.trim(),
+			))
+	) {
+		throw new Error(`Internal preview aliases must be strings for ${pathname}`);
+	}
+};
+
+const buildPreviewRecord = (preview) => {
+	const record = {
+		title: preview.title.trim(),
+		description: preview.description?.trim() || "",
+	};
+	const aliases = preview.aliases?.map((alias) => alias.trim());
+	if (aliases?.length) record.aliases = aliases;
+	return record;
 };
 
 export function buildInternalLinkPreviews(posts, staticPages) {
@@ -25,10 +44,7 @@ export function buildInternalLinkPreviews(posts, staticPages) {
 
 	for (const [pathname, preview] of Object.entries(staticPages)) {
 		validateRecord(pathname, preview);
-		previews[pathname] = {
-			title: preview.title.trim(),
-			description: preview.description?.trim() || "",
-		};
+		previews[pathname] = buildPreviewRecord(preview);
 	}
 
 	for (const post of posts) {
@@ -48,12 +64,10 @@ export function buildInternalLinkPreviews(posts, staticPages) {
 		const preview = {
 			title: post.ids?.[0],
 			description: post.description || "",
+			aliases: post.ids?.slice(1) || [],
 		};
 		validateRecord(pathname, preview);
-		previews[pathname] = {
-			title: preview.title.trim(),
-			description: preview.description.trim(),
-		};
+		previews[pathname] = buildPreviewRecord(preview);
 	}
 
 	return Object.fromEntries(

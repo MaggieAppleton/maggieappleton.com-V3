@@ -77,6 +77,7 @@ test("rejects unsafe or low-quality model responses", () => {
 		"~~Markdown description~~",
 		"<em>HTML description</em>",
 		"One sentence. Second sentence.",
+		"One sentence. another sentence.",
 		"x".repeat(111),
 	]) {
 		assert.throws(
@@ -306,7 +307,13 @@ test("checks model availability before writes and reports per-entry failures", a
 		"generate:b",
 	]);
 	assert.deepEqual(result, { changed: 1, skipped: 2, failed: 1 });
-	assert.match(output.join("\n"), /b\.mdx: Ollama generation failed with HTTP 500/);
+	assert.ok(output.includes("a.mdx: changed"));
+	assert.ok(output.includes("c.mdx: skipped"));
+	assert.ok(output.includes("d.mdx: skipped"));
+	assert.match(
+		output.join("\n"),
+		/b\.mdx: failed - Ollama generation failed with HTTP 500/,
+	);
 	assert.match(output.at(-1), /changed: 1, skipped: 2, failed: 1/);
 });
 

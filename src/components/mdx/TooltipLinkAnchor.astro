@@ -1,0 +1,103 @@
+---
+interface Props {
+	href: string;
+	noStyling?: boolean;
+	linkColor: string;
+	hoverColor: string;
+	internal?: "true" | "false";
+}
+
+const { href, noStyling, linkColor, hoverColor, internal } = Astro.props;
+---
+
+<a
+	class="link"
+	style={{
+		"--link-color": linkColor,
+		"--link-hover-color": hoverColor,
+		"--text-decoration": noStyling ? "none" : "underline",
+	}}
+	href={href}
+	data-internal={internal}
+	data-no-styling={noStyling}
+>
+	<slot />
+</a>
+
+<style>
+	.link {
+		display: inline;
+		cursor: pointer;
+		position: relative;
+		white-space: normal;
+		text-decoration: none;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		color: var(--link-color);
+		transition: color 0.2s ease-in-out;
+	}
+
+	.link:focus-visible {
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 4px;
+		border-radius: 2px;
+	}
+
+	.link:hover {
+		color: var(--link-hover-color);
+		transform: translate3d(0, -1px, 0);
+	}
+
+	.link::before {
+		@media (min-width: 550px) {
+			content: "";
+			display: inline-block;
+			transform-origin: 50% 100%;
+			background: var(--color-gray-300);
+			transition:
+				clip-path 0.3s,
+				transform 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+			position: absolute;
+			width: 100%;
+			height: 1px;
+			top: 105%;
+			left: 0;
+			pointer-events: none;
+			clip-path: polygon(
+				0% 0%,
+				0% 100%,
+				50% 100%,
+				50% 0,
+				50% 0,
+				50% 100%,
+				50% 100%,
+				0 100%,
+				100% 100%,
+				100% 0%
+			);
+		}
+	}
+
+	.link[data-no-styling="true"]::before {
+		display: none;
+	}
+
+	.link:hover::before {
+		@media (min-width: 550px) {
+			transform: translate3d(0, 3px, 0) scale3d(1, 2, 1);
+			background: var(--link-hover-color);
+			clip-path: polygon(
+				0% 0%,
+				0% 100%,
+				50% 100%,
+				50% 0,
+				50% 0,
+				50% 100%,
+				50% 100%,
+				0 100%,
+				100% 100%,
+				100% 0%
+			);
+		}
+	}
+</style>

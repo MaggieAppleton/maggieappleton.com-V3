@@ -6,6 +6,7 @@ import matter from "gray-matter";
 import {
 	classifyLink,
 	deriveTitleFromPathname,
+	findInternalLinkPreviewByText,
 	resolveInternalLinkPreview,
 } from "../src/utils/internalLinkPreview.js";
 import { buildInternalLinkPreviews } from "../src/utils/buildInternalLinkPreviews.js";
@@ -16,6 +17,10 @@ const context = {
 };
 
 test("classifies and normalizes internal page URLs", () => {
+	assert.deepEqual(classifyLink("/api", context), {
+		kind: "internal-page",
+		pathname: "/api",
+	});
 	assert.deepEqual(classifyLink("/garden-history/?view=full#ethos", context), {
 		kind: "internal-page",
 		pathname: "/garden-history",
@@ -120,12 +125,32 @@ test("builds canonical content previews over static route defaults", () => {
 		"/garden-history": {
 			title: "Garden History",
 			description: "A history of digital gardens",
+			aliases: ["Digital Gardening"],
 		},
 		"/plain-note": {
 			title: "A Note Without a Description",
 			description: "",
 		},
 	});
+});
+
+test("resolves wiki text from preview titles and aliases", () => {
+	const previews = {
+		"/garden-history": {
+			title: "Garden History",
+			description: "A history of digital gardens",
+			aliases: ["Digital Gardening"],
+		},
+	};
+
+	assert.deepEqual(
+		findInternalLinkPreviewByText("digital gardening", previews),
+		{
+			pathname: "/garden-history",
+			title: "Garden History",
+			description: "A history of digital gardens",
+		},
+	);
 });
 
 test("rejects malformed preview records instead of generating invalid data", () => {
@@ -187,4 +212,6 @@ test("generated previews use every Now entry's frontmatter metadata", async () =
 		assert.ok(preview.description.length > 0);
 		assert.ok([...preview.description].length <= 110);
 	}
+
+	assert.deepEqual(previews["/api"].aliases, ["APIs"]);
 });
