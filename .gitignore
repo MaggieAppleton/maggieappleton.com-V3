@@ -27,3 +27,7 @@ pnpm-debug.log*
 .claude/worktrees/
 .vscode
 .env*.local
+
+# agent planning artifacts
+docs/superpowers/plans/
+docs/superpowers/specs/

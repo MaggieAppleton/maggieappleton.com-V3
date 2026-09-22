@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { fileURLToPath } from "url";
+import { STATIC_PAGE_PREVIEWS } from "../data/static-page-previews.js";
+import { buildInternalLinkPreviews } from "../utils/buildInternalLinkPreviews.js";
 import {
   getPublicationBaseSlug,
   isVersionedPublicationEntry,
@@ -110,6 +112,19 @@ const getAllPostData = () => {
   return [...essaysData, ...notesData, ...patternsData, ...talksData];
 };
 
+const getNowPreviewData = () => {
+  const nowPath = path.join(CONTENT_PATH, "now");
+  const nowFiles = getFilesFromDir(nowPath);
+
+  return getDataForBacklinks(nowFiles, nowPath).map(
+    ({ title, slug, description }) => ({
+      ids: [`Now update – ${title}`],
+      slug: `now-${slug}`,
+      description,
+    }),
+  );
+};
+
 // Main execution
 (function () {
   // Get content and frontmatter for each post
@@ -183,4 +198,15 @@ const getAllPostData = () => {
     JSON.stringify(posts, null, 2),
   );
   console.log("✨ Generated links.json");
+
+  const internalLinkPreviews = buildInternalLinkPreviews(
+    [...posts, ...getNowPreviewData()],
+    STATIC_PAGE_PREVIEWS,
+  );
+
+  fs.writeFileSync(
+    path.join(__dirname, "../internal-link-previews.json"),
+    JSON.stringify(internalLinkPreviews, null, 2),
+  );
+  console.log("✨ Generated internal-link-previews.json");
 })();

@@ -11,6 +11,7 @@
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
     "verify:html": "node src/scripts/verify-html.mjs",
+    "generate-now-descriptions": "node scripts/generate-now-descriptions.js",
     "smidgeon": "node scripts/create-smidgeon.js",
     "date": "node scripts/current-date.js"
   },

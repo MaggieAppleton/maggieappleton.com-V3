@@ -1,5 +1,6 @@
 import { visit } from "unist-util-visit";
-import linkMaps from "../links.json";
+import internalLinkPreviews from "../internal-link-previews.json";
+import { findInternalLinkPreviewByText } from "../utils/internalLinkPreview.js";
 
 export function remarkWikiLink() {
 	return (tree) => {
@@ -25,11 +26,12 @@ export function remarkWikiLink() {
 
 				// Normalize curly quotes added by remark-smartypants before matching
 				const normalizedText = linkText.replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
-				const matchedPost = linkMaps.find((post) =>
-					post.ids.some((id) => id.toLowerCase() === normalizedText.toLowerCase())
+				const matchedPreview = findInternalLinkPreviewByText(
+					normalizedText,
+					internalLinkPreviews,
 				);
 
-				if (matchedPost) {
+				if (matchedPreview) {
 					// Create the InternalTooltipLink component
 					children.push({
 						type: "mdxJsxTextElement",
@@ -38,17 +40,17 @@ export function remarkWikiLink() {
 							{
 								type: "mdxJsxAttribute",
 								name: "href",
-								value: `/${matchedPost.slug}`,
+								value: matchedPreview.pathname,
 							},
 							{
 								type: "mdxJsxAttribute",
 								name: "title",
-								value: matchedPost.ids[0],
+								value: matchedPreview.title,
 							},
 							{
 								type: "mdxJsxAttribute",
 								name: "description",
-								value: matchedPost.description || "",
+								value: matchedPreview.description,
 							},
 						],
 						children: [{ type: "text", value: linkText }],
