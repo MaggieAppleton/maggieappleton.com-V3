@@ -46,7 +46,6 @@ const { maxWidth = 400 } = Astro.props;
 	import tippy, { type Instance, type Props } from "tippy.js";
 	import "tippy.js/dist/tippy.css";
 	import "tippy.js/animations/shift-away.css";
-	import { getTooltipMotion } from "../../utils/tooltipMotion.js";
 
 	const tooltipInstances = new Set<Instance>();
 
@@ -55,7 +54,6 @@ const { maxWidth = 400 } = Astro.props;
 		const reducedMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
 		).matches;
-		const motion = getTooltipMotion(reducedMotion);
 
 		tooltipInstances.forEach((instance) => {
 			if (!instance.reference.isConnected) {
@@ -82,10 +80,10 @@ const { maxWidth = 400 } = Astro.props;
 				{
 					content: template.content.cloneNode(true),
 					maxWidth: parseInt(wrapper.getAttribute("data-maxwidth") || "320"),
-					duration: motion.duration,
+					duration: reducedMotion ? 0 : 500,
 					arrow: true,
 					interactive: true,
-					animation: motion.animation,
+					animation: reducedMotion ? false : "shift-away",
 					allowHTML: true,
 					appendTo: () => wrapper,
 					theme: "custom",
