@@ -122,6 +122,36 @@
 		position: relative;
 		top: 4px;
 		right: 2.5rem;
+		transform-origin: 50% 50%;
+	}
+
+	/* Leaf bullet wiggles like the logo leaves when its list item is hovered. */
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.prose-wrapper :global(ul > li:hover::before) {
+			animation: leafBulletWiggle calc(var(--dur-page) + var(--dur-quick)) var(--ease-in-out) 1;
+		}
+	}
+
+	@keyframes leafBulletWiggle {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(10deg);
+		}
+		50% {
+			transform: rotate(-10deg);
+		}
+		75% {
+			transform: rotate(6deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.prose-wrapper :global(ul > li::before) {
+			animation: none;
+		}
 	}
 
 	.prose-wrapper :global(ol > li) {
