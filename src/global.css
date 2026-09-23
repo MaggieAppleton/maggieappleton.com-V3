@@ -458,13 +458,6 @@ select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-
-  /* Hover/press transforms shouldn't move anything under reduced motion */
-  *:hover,
-  *:active,
-  *:focus-visible {
-    transform: none !important;
-  }
 }
 html,
 body,
