@@ -8,8 +8,8 @@ const slotHtml = await Astro.slots.render("default");
 
 function wrapDropCap(html: string): string {
 	// Skip any leading tags/whitespace (in any order/count), then grab the
-	// first real character.
-	const match = html.match(/^((?:\s|<[^>]+>)*)([^\s<])/);
+	// first real character, keeping HTML entities (e.g. &quot;) whole.
+	const match = html.match(/^((?:\s|<[^>]+>)*)(&#?\w+;|[^\s<])/);
 	if (!match) return html;
 	const [full, prefix, letter] = match;
 	return `${prefix}<span class="drop-cap">${letter}</span>${html.slice(full.length)}`;
