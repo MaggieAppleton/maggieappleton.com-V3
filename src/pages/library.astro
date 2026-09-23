@@ -13,16 +13,16 @@ const books = await getCollection("books");
 <Layout title="Library of Maggie Appleton" desc={PAGE_DESCRIPTIONS.library} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
-			<TitleWithCount posts={books}>
-				Library
-				<div style="color: var(--color-gray-300); display: inline-block">|</div>
-				<a href="/antilibrary" class="styled-link">Antilibrary</a>
+			<TitleWithCount posts={books} countTransitionName="lib-count">
+				<span class="word word-active lib-word">Library</span>
+				<div class="divider" style="color: var(--color-gray-300); display: inline-block">|</div>
+				<a href="/antilibrary" class="styled-link word word-recede antilib-word">Antilibrary</a>
 			</TitleWithCount>
 			<Title2 class="cascade" style="--cascade: 2">
 				Books I've read that significantly influenced how I see the world.
 			</Title2>
 		</header>
-		<section class="bookshelf-grid cascade-fade" style="--cascade: 3">
+		<section class="bookshelf-grid lib-grid">
 			{
 				books.map((book) => (
 					<BookCard
@@ -53,4 +53,102 @@ const books = await getCollection("books");
 		grid-gap: var(--space-s);
 		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 	}
+
+	.word-active {
+		color: var(--color-black);
+	}
+
+	.word-recede {
+		font-size: 0.82em;
+	}
+</style>
+
+<!-- ______________ Motion pass slice 4: view transitions ______________
+     Page-specific, kept out of the shared scoped block above so slice 3's
+     work in Layout.astro's head scripts (card->title morphs, pageswap/
+     pagereveal) never has to touch this file. `is:global` because
+     ::view-transition-* pseudo-elements aren't part of the DOM tree, so
+     Astro's scoped-style attribute selectors can't reach them.
+
+     Names below are intentionally the SAME on library.astro and
+     antilibrary.astro for lib-word/antilib-word/lib-count: the cross-
+     document view transition spec pairs old/new snapshots by matching
+     view-transition-name, which is what makes the browser morph "Library"
+     into "Library" (and tick the count) across the navigation instead of
+     just cross-fading the whole page. The grid keyframes are direction-
+     specific (this is the /library side, i.e. the "going back" direction),
+     so they're the mirror image of antilibrary.astro's. -->
+<style is:global>
+	.lib-word {
+		view-transition-name: lib-word;
+	}
+
+	.antilib-word {
+		view-transition-name: antilib-word;
+	}
+
+	/* The "|" divider is not given a name: its position is identical on both
+	   pages (word order never swaps, only color/emphasis does), so it has
+	   nothing to morph. Leaving it unnamed means it simply rides along with
+	   the default root cross-fade — the simplest correct behaviour. */
+
+	.lib-grid {
+		view-transition-name: lib-grid;
+	}
+
+	::view-transition-group(lib-word),
+	::view-transition-group(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	::view-transition-old(lib-word),
+	::view-transition-new(lib-word),
+	::view-transition-old(antilib-word),
+	::view-transition-new(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1);
+		height: 100%;
+		object-fit: contain;
+	}
+
+	::view-transition-group(lib-count) {
+		animation-duration: 360ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	/* /library is the "reverse" direction: the old (antilibrary) grid exits
+	   to the right, the new (library) grid enters from the left. */
+	@keyframes mv-grid-exit-right {
+		to {
+			transform: translateX(48px);
+			opacity: 0;
+		}
+	}
+
+	@keyframes mv-grid-enter-from-left {
+		from {
+			transform: translateX(-48px);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+
+	::view-transition-old(lib-grid) {
+		animation: mv-grid-exit-right 360ms cubic-bezier(0.4, 0, 0.2, 1) both;
+	}
+
+	::view-transition-new(lib-grid) {
+		animation: mv-grid-enter-from-left 360ms cubic-bezier(0.16, 1, 0.3, 1)
+			both;
+	}
+
+	/* prefers-reduced-motion is already handled globally in global.css via
+	   `::view-transition-group(*), ::view-transition-old(*),
+	   ::view-transition-new(*) { animation: none !important; }` — that
+	   wildcard covers these named transitions too, and since none of the
+	   rules above use !important, that global rule always wins. */
 </style>

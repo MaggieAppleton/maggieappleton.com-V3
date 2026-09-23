@@ -1,18 +1,29 @@
 ---
 interface Props {
 	posts: any[];
+	/**
+	 * Optional view-transition-name for the count span. Opt-in and left
+	 * undefined by default so this shared component (used by patterns,
+	 * garden, podcasts, notes, essays, smidgeons, talks, topics/[topic]) only
+	 * gets a name where a caller explicitly asks for the library/antilibrary
+	 * count-tick transition (slice 4 of the motion pass).
+	 */
+	countTransitionName?: string;
 }
 
-const { posts } = Astro.props;
+const { posts, countTransitionName } = Astro.props;
 const count = posts.length;
 const digits = count.toString().length;
 const leftOffset = `-${1 + digits}rem`;
+const countStyle = countTransitionName
+	? `left: ${leftOffset}; view-transition-name: ${countTransitionName}`
+	: `left: ${leftOffset}`;
 ---
 
 <div class="styled-container" data-digits={digits} data-debug-count={count}>
 	<div class="mobile-header cascade" style="--cascade: 0">
 		<div class="count-wrapper">
-			<span style={`left: ${leftOffset}`}>{count}</span>
+			<span style={countStyle}>{count}</span>
 		</div>
 		<slot name="header-right" />
 	</div>

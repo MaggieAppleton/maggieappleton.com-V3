@@ -13,14 +13,14 @@ const antiBookData = await getCollection("antibooks");
 <Layout title="Antilibrary of Maggie Appleton" desc={PAGE_DESCRIPTIONS.antilibrary} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
-			<TitleWithCount posts={antiBookData}>
-				<a href="/library" class="styled-link">Library</a>
-				<div style="color: var(--color-gray-300); display: inline-block">|</div>
-				Antilibrary
+			<TitleWithCount posts={antiBookData} countTransitionName="lib-count">
+				<a href="/library" class="styled-link word word-recede lib-word">Library</a>
+				<div class="divider" style="color: var(--color-gray-300); display: inline-block">|</div>
+				<span class="word word-active antilib-word">Antilibrary</span>
 			</TitleWithCount>
 			<Title2 class="cascade" style="--cascade: 2">Books I like the idea of having read.</Title2>
 		</header>
-		<section class="bookshelf-grid cascade-fade" style="--cascade: 3">
+		<section class="bookshelf-grid lib-grid">
 			{
 				antiBookData.map((book) => (
 					<BookCard
@@ -51,4 +51,89 @@ const antiBookData = await getCollection("antibooks");
 		grid-gap: var(--space-s);
 		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 	}
+
+	.word-active {
+		color: var(--color-black);
+	}
+
+	.word-recede {
+		font-size: 0.82em;
+	}
+</style>
+
+<!-- ______________ Motion pass slice 4: view transitions ______________
+     Mirror image of library.astro's block — see the comment there for the
+     full rationale. lib-word/antilib-word/lib-count share names with
+     library.astro on purpose (that's what lets the browser morph/tick
+     between the two documents); the grid keyframes are this page's own
+     direction ("going forward": /library -> /antilibrary), so old exits
+     left and new enters from the right, the reverse of library.astro. -->
+<style is:global>
+	.lib-word {
+		view-transition-name: lib-word;
+	}
+
+	.antilib-word {
+		view-transition-name: antilib-word;
+	}
+
+	/* Divider intentionally unnamed — see library.astro's comment. */
+
+	.lib-grid {
+		view-transition-name: lib-grid;
+	}
+
+	::view-transition-group(lib-word),
+	::view-transition-group(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	::view-transition-old(lib-word),
+	::view-transition-new(lib-word),
+	::view-transition-old(antilib-word),
+	::view-transition-new(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1);
+		height: 100%;
+		object-fit: contain;
+	}
+
+	::view-transition-group(lib-count) {
+		animation-duration: 360ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	/* /antilibrary is the "forward" direction: the old (library) grid exits
+	   to the left, the new (antilibrary) grid enters from the right. */
+	@keyframes mv-grid-exit-left {
+		to {
+			transform: translateX(-48px);
+			opacity: 0;
+		}
+	}
+
+	@keyframes mv-grid-enter-from-right {
+		from {
+			transform: translateX(48px);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+
+	::view-transition-old(lib-grid) {
+		animation: mv-grid-exit-left 360ms cubic-bezier(0.4, 0, 0.2, 1) both;
+	}
+
+	::view-transition-new(lib-grid) {
+		animation: mv-grid-enter-from-right 360ms cubic-bezier(0.16, 1, 0.3, 1)
+			both;
+	}
+
+	/* prefers-reduced-motion: handled globally in global.css (wildcard
+	   ::view-transition-*(*) { animation: none !important; }) — none of the
+	   rules above use !important, so that rule always wins. */
 </style>
