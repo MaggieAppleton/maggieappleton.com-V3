@@ -64,14 +64,17 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		margin: 0 var(--space-xs) var(--space-xs) 0;
 		border-radius: var(--border-radius-base);
 		border: 1px solid var(--color-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring),
+			background-color var(--dur-quick) var(--ease-hover),
+			box-shadow var(--dur-quick) var(--ease-hover),
+			border-color var(--dur-quick) var(--ease-hover);
 		will-change: transform, background-color, box-shadow;
 		cursor: pointer;
 	}
 
 	.note-card h3 {
 		color: var(--color-gray-800);
-		transition: color 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		will-change: transform;
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
@@ -86,14 +89,32 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		flex-shrink: 0;
 	}
 
-	a:is(:hover, :focus-visible) .note-card {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .note-card {
+			transform: scale3d(1.02, 1.02, 1.02);
+			background: var(--color-light-cream);
+			box-shadow: var(--box-shadow-sm);
+			border: 1px solid var(--color-tinted-cream);
+		}
+
+		a:hover .note-card h3 {
+			color: var(--color-crimson);
+		}
+	}
+
+	a:focus-visible .note-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus-visible) .note-card h3 {
+	a:focus-visible .note-card h3 {
 		color: var(--color-crimson);
+	}
+
+	a:active .note-card {
+		transform: scale3d(0.98, 0.98, 0.98);
+		transition-duration: var(--dur-micro);
 	}
 </style>

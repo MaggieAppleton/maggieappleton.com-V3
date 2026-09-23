@@ -172,6 +172,22 @@
     1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.045), 2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.06),
     6px 14px 30px -10px rgba(0, 0, 0, 0.08);
 
+  /* Motion tokens */
+  /* Easing: --ease-out for things entering/exiting, --ease-in-out for on-screen
+     movement, --ease-spring for playful hover lifts (slight overshoot), --ease-hover
+     for simple hover color/shadow fades. Never use ease-in (feels laggy). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-hover: ease;
+
+  /* Durations: micro for presses, quick for hover color/opacity, base for hover
+     transforms, page for larger entering/exiting transitions. */
+  --dur-micro: 120ms;
+  --dur-quick: 180ms;
+  --dur-base: 240ms;
+  --dur-page: 380ms;
+
   /* Fluid spacing */
   --fc-3xs-min: (var(--fc-s-min) * 0.25);
   --fc-3xs-max: (var(--fc-s-max) * 0.25);
@@ -442,6 +458,13 @@ select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Hover/press transforms shouldn't move anything under reduced motion */
+  *:hover,
+  *:active,
+  *:focus-visible {
+    transform: none !important;
+  }
 }
 html,
 body,
@@ -490,7 +513,7 @@ h2 {
   font-weight: 100;
   line-height: var(--leading-snug);
   margin: var(--space-xs) 0 var(--space-2xs);
-  transition: all 0.3s ease-in-out;
+  transition: color var(--dur-quick) var(--ease-hover);
 }
 
 @media screen and (max-width: 768px) {

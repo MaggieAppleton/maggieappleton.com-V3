@@ -59,7 +59,8 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		border-radius: var(--border-radius-base);
 		background: var(--color-light-cream);
 		border: 1px solid var(--color-tinted-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring),
+			box-shadow var(--dur-quick) var(--ease-hover);
 		will-change: transform, box-shadow;
 		align-items: start;
 		cursor: pointer;
@@ -78,7 +79,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		object-fit: cover;
 		border-top-left-radius: var(--border-radius-base);
 		border-top-right-radius: var(--border-radius-base);
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
 	}
 
@@ -138,19 +139,37 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		font-size: var(--font-size-base);
 		font-weight: 400;
 		line-height: var(--leading-snug);
-		transition: color 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		will-change: transform;
 		margin-bottom: 0.5rem;
 	}
 
-	a:is(:hover, :focus-visible) .talk-card {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .talk-card {
+			transform: scale3d(1.01, 1.01, 1.01);
+			background: var(--color-light-cream);
+			box-shadow: var(--box-shadow-md);
+			border: 1px solid var(--color-tinted-cream);
+		}
+
+		a:hover .talk-card h3 {
+			color: var(--color-crimson);
+		}
+	}
+
+	a:focus-visible .talk-card {
 		transform: scale3d(1.01, 1.01, 1.01);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-md);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus-visible) .talk-card h3 {
+	a:focus-visible .talk-card h3 {
 		color: var(--color-crimson);
+	}
+
+	a:active .talk-card {
+		transform: scale3d(0.98, 0.98, 0.98);
+		transition-duration: var(--dur-micro);
 	}
 </style>

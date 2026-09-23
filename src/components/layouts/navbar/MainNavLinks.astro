@@ -200,7 +200,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		text-decoration: none;
 		font-size: var(--font-size-xs);
 		font-family: var(--font-sans);
-		transition: color 0.2s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		cursor: pointer;
 		position: relative;
 		top: 1px;
@@ -212,7 +212,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		color: var(--color-gray-800);
 	}
 
-	.hover-link:is(:hover, :focus) span {
+	.hover-link:is(:hover, :focus-visible) span {
 		color: var(--color-crimson);
 	}
 
@@ -227,8 +227,8 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		transform-origin: 50% 100%;
 		background: var(--color-sea-blue);
 		transition:
-			clip-path 0.3s,
-			transform 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+			clip-path var(--dur-base) var(--ease-hover),
+			transform var(--dur-base) var(--ease-out);
 		position: absolute;
 		width: 100%;
 		height: 1px;
@@ -249,7 +249,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		);
 	}
 
-	.hover-link:is(:hover, :focus)::before {
+	.hover-link:is(:hover, :focus-visible)::before {
 		transform: translate3d(0, 2px, 0) scale3d(1, 2, 1);
 		clip-path: polygon(
 			0% 0%,
@@ -272,13 +272,14 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		position: relative;
 		top: 0;
 		background: transparent;
+		transition: transform var(--dur-micro) var(--ease-hover);
 	}
 
 	.chevron-icon {
 		vertical-align: middle;
 		transition:
-			color 0.3s ease-in-out,
-			background-color 0.3s ease-in-out,
+			color var(--dur-quick) var(--ease-hover),
+			background-color var(--dur-quick) var(--ease-hover),
 			transform 0.8s ease-in-out;
 		color: var(--color-gray-600);
 	}
@@ -291,6 +292,10 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 	.popover-button:focus-visible {
 		outline: 2px solid var(--color-sea-blue);
 		outline-offset: 4px;
+	}
+
+	.popover-button:active {
+		transform: scale(0.98);
 	}
 
 	.popover-button:hover .chevron-icon {
@@ -339,7 +344,10 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		text-decoration: none;
 		padding: var(--space-xs);
 		border-radius: var(--border-radius-base);
-		transition: all 0.3s ease-in-out;
+		transition:
+			transform var(--dur-base) var(--ease-spring),
+			background-color var(--dur-quick) var(--ease-hover),
+			border-color var(--dur-quick) var(--ease-hover);
 		border: 1px solid transparent;
 		display: block;
 	}
@@ -355,7 +363,9 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		flex-shrink: 0;
 		color: var(--color-sea-blue);
 		margin-top: 2px;
-		transition: all 0.3s ease-in-out;
+		transition:
+			color var(--dur-quick) var(--ease-hover),
+			transform var(--dur-base) var(--ease-spring);
 	}
 
 	.megamenu-text {
@@ -366,19 +376,13 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		fill: var(--color-sea-blue);
 	}
 
-	.megamenu-item:hover {
-		background: var(--color-light-cream);
-		border-color: var(--color-tinted-cream);
-		transform: translateY(-1px);
-	}
-
 	.megamenu-title {
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		color: var(--color-gray-800);
 		margin: 0 0 var(--space-3xs) 0;
-		transition: color 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 	}
 
 	.megamenu-description {
@@ -387,41 +391,52 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 		color: var(--color-gray-600);
 		margin: 0;
 		line-height: var(--leading-snug);
-		transition: color 0.3s ease-in-out;
-	}
-
-	.megamenu-item:hover .megamenu-title {
-		color: var(--color-crimson);
-	}
-
-	.megamenu-item:hover .megamenu-description {
-		color: var(--color-gray-800);
-	}
-
-	.megamenu-item:hover .megamenu-icon {
-		color: var(--color-crimson);
-		transform: scale(1.1);
-	}
-
-	/* Pattern card leaf animations for the patterns menu item */
-	.megamenu-item:hover :global(.left-leaf) {
-		transform: translateX(29px);
-		transition: transform 0.3s ease-in-out;
-	}
-
-	.megamenu-item:hover :global(.right-leaf) {
-		transform: translateX(-29px);
-		transition: transform 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 	}
 
 	:global(.left-leaf) {
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
 	}
 
 	:global(.right-leaf) {
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.megamenu-item:hover {
+			background: var(--color-light-cream);
+			border-color: var(--color-tinted-cream);
+			transform: translateY(-1px);
+		}
+
+		.megamenu-item:hover .megamenu-title {
+			color: var(--color-crimson);
+		}
+
+		.megamenu-item:hover .megamenu-description {
+			color: var(--color-gray-800);
+		}
+
+		.megamenu-item:hover .megamenu-icon {
+			color: var(--color-crimson);
+			transform: scale(1.1);
+		}
+
+		/* Pattern card leaf animations for the patterns menu item */
+		.megamenu-item:hover :global(.left-leaf) {
+			transform: translateX(29px);
+		}
+
+		.megamenu-item:hover :global(.right-leaf) {
+			transform: translateX(-29px);
+		}
+	}
+
+	.megamenu-item:active {
+		transform: scale3d(0.98, 0.98, 0.98);
+		transition-duration: var(--dur-micro);
 	}
 
 	.outside-dropdown :global(.link-container) {

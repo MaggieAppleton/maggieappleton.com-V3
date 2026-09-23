@@ -59,7 +59,7 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		height: 100%;
 		object-fit: cover;
 		object-position: center;
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
 	}
 
@@ -97,7 +97,8 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		border-radius: var(--border-radius-base);
 		box-shadow: var(--box-shadow-sm);
 		background: var(--color-light-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring),
+			box-shadow var(--dur-quick) var(--ease-hover);
 		will-change: transform, box-shadow;
 		color: var(--color-gray-800);
 		cursor: pointer;
@@ -108,7 +109,7 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 	}
 
 	.essay-card h3 {
-		transition: all 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		font-weight: 400;
@@ -116,12 +117,19 @@ import GrowthIcon from "../layouts/GrowthIcon.astro";
 		margin: var(--space-2xs) 0;
 	}
 
-	.essay-card:hover {
-		box-shadow: var(--box-shadow-md);
-		transform: scale3d(1.02, 1.02, 1.02);
+	@media (hover: hover) and (pointer: fine) {
+		.essay-card:hover {
+			box-shadow: var(--box-shadow-md);
+			transform: scale3d(1.02, 1.02, 1.02);
+		}
+
+		.essay-card:hover h3 {
+			color: var(--color-crimson);
+		}
 	}
 
-	.essay-card:hover h3 {
-		color: var(--color-crimson);
+	a:active .essay-card {
+		transform: scale3d(0.98, 0.98, 0.98);
+		transition-duration: var(--dur-micro);
 	}
 </style>
