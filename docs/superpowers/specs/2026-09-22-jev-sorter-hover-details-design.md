@@ -1,75 +1,87 @@
-# Jev Sorter Hover Details
+# Jev Sorter Cursor Popover
 
 ## Goal
 
-Let readers inspect each food after Jev sorts it into the Yes or No bucket. The settled state remains compact, while hover, keyboard focus, or tap reveals the food's name and explains what the percentage means.
+Let readers inspect each food after Jev sorts it into the Yes or No bucket. The settled state remains compact, while hover, keyboard focus, or tap reveals the food's name and explains what the percentage represents.
 
 ## Interaction
 
-Each settled food initially shows its image and the existing compact percentage pill.
+Each settled food continues to show its image and compact percentage pill.
 
-Hovering or focusing the food reveals:
+When a fine pointer hovers a settled food, a single shared popover appears beside the cursor and follows it for as long as the pointer remains over that food. The popover keeps a 12px gap from the cursor and flips left or upward when needed to remain inside the viewport.
 
-- A white name pill above the percentage pill, such as `Burrito`.
-- An expanded crimson probability pill, such as `66% sure it is a sandwich`.
+Keyboard focus and touch cannot use cursor coordinates. For those inputs, the same popover anchors beside the food item. A tapped item remains open until the reader taps another food or the surrounding sorter. Pressing Escape closes the open popover.
 
-On touch devices, tapping a food opens the same state. It remains open until the reader taps another food or the surrounding sorter. Pressing Escape also closes an open item.
-
-The expanded labels float over the existing layout. Revealing them must not move the food image, neighbouring items, bucket headings, or bucket boundaries.
+The popover is supplemental. It does not replace or expand the compact percentage pill, and revealing it must not move the food image, neighbouring items, bucket headings, or bucket boundaries.
 
 ## Copy
 
-The probability sentence describes Jev's confidence in the winning answer:
+The popover has two left-aligned lines:
 
-- Yes bucket: `{percentage} sure it is a sandwich`
-- No bucket: `{percentage} sure it isn't a sandwich`
+1. The food label, such as `Burrito`.
+2. The winning probability and category, such as `66% probability: Yes`.
 
-The percentage remains visually prominent at the beginning of the pill.
+No category-specific sentence is authored in configuration. The second line is derived from the winning category already calculated by the sorter:
+
+- Yes bucket: `{percentage} probability: Yes`
+- No bucket: `{percentage} probability: No`
 
 ## Visual Treatment
 
-The name and probability remain separate stacked pills.
+The popover is one compact card:
 
-- The name pill has a white background and dark text.
-- The name pill is flat, with no outer shadow.
-- The probability pill retains the existing crimson palette.
-- At rest, only the percentage is visible in the probability pill.
-- On reveal, the probability pill expands horizontally to expose the explanatory sentence.
+- White background.
+- Rounded corners rather than a pill shape.
+- Subtle outer shadow.
+- Dark, semibold food label.
+- Smaller secondary probability line.
+- No pointer arrow.
+- Enough padding to separate the two lines without making the card feel large.
 
-The metadata layer may extend beyond the fixed item column, but it must remain centered on its food and avoid clipping at bucket or sorter edges.
+The card uses a fixed viewport position while following the cursor so it can escape the sorter's clipped sticky container. Its width is content-sized but capped to remain readable on narrow viewports.
 
 ## Motion
 
-The name pill enters with a short fade and slight upward slide. The probability sentence reveals with a smooth horizontal expansion. The food image does not move.
+The card enters with a short opacity fade and a very small scale change from the cursor-side corner. Cursor tracking itself is immediate and does not animate or lag behind the pointer.
 
-Motion should feel like one coordinated disclosure and use the existing Jev motion language. Under `prefers-reduced-motion: reduce`, both labels switch states without transitional movement.
+Motion stays under 200ms. Under `prefers-reduced-motion: reduce`, the popover switches state without a transition.
 
 ## Accessibility
 
-Settled foods are focusable controls, not hover-only targets. Each control exposes a complete accessible label containing the food name and confidence sentence.
+Settled foods remain native focusable controls with complete accessible labels, such as `Burrito: 66% probability: Yes`.
 
-The bucket headings and item controls remain available to assistive technology. The existing visually hidden classification summary remains as a non-visual fallback. Decorative animation duplicates stay hidden from assistive technology.
+The shared popover uses tooltip semantics and is referenced by the active item's `aria-describedby` only while visible. Decorative moving duplicates remain hidden from assistive technology and pointer-transparent.
 
-## Implementation Boundaries
+Keyboard focus reveals the popover beside the focused food. Escape closes it without changing the classification. Touch uses the existing one-open-at-a-time tap behavior.
 
-This change is limited to the shared scroll sorter:
+## Architecture
 
-- Derive the confidence sentence from the winning category already calculated by the sorter.
-- Extend the shared sorter item markup so only final bucket instances are interactive.
-- Add hover, focus, tapped-open, Escape, and outside-tap behavior without changing the scroll classification animation.
-- Add styles for the fixed overlay geometry, stacked pills, and reduced-motion state.
+Use one popover per sorter rather than rendering one card per food:
 
-No probabilities, category assignments, food assets, scroll timing, or source-stage animation should change.
+- Final food controls expose their label, percentage, and winning category through data attributes.
+- The sorter renders one popover outside the clipped sticky container.
+- Pointer enter selects the active item.
+- Pointer move updates the popover's viewport coordinates directly.
+- Pointer leave hides the hover popover.
+- Focus and tap use the active item's bounding rectangle for placement.
+- Viewport-edge collision logic flips the card horizontally and vertically.
+- Page-lifecycle cleanup removes every pointer, focus, keyboard, and click listener.
+
+The existing scroll flight and score-pop animation remain unchanged.
 
 ## Verification
 
 Verify:
 
-- Both Yes and No items use the correct sentence.
-- Hover, keyboard focus, tap, outside tap, and Escape produce the expected open and closed states.
-- Only one tapped item remains open at a time.
+- Burrito displays `Burrito` and `66% probability: Yes`.
+- Doughnut displays `Doughnut` and `94% probability: No`.
+- The popover follows the cursor without lag while the pointer remains over an item.
+- The popover flips near right and bottom viewport edges and never clips.
+- Pointer leave closes the hover popover.
+- Keyboard focus and touch position the same card beside the food.
+- Tap switching, outside tap, and Escape close the correct state.
 - Revealing details causes no layout shift.
-- Expanded copy remains readable in both desktop and mobile bucket layouts without clipping.
-- Reduced-motion mode removes transitional movement.
+- The compact percentage pill does not expand or disappear.
+- Reduced-motion mode removes the entrance transition.
 - Existing sorter animation and non-JavaScript rendering still work.
-- The production build succeeds.
+- The complete Jev test suite and production build succeed.
