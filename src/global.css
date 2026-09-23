@@ -638,9 +638,7 @@ mark {
    document snapshots. See src/layouts/Layout.astro for the Firefox fallback
    detection script that adds `no-vt` to <html> when unsupported. */
 
-@view-transition {
-  navigation: auto;
-}
+/* The @view-transition opt-in is inlined in Layout.astro <head>. */
 
 /* Keep the navbar and footer perfectly still across navigations — they're
    the same UI on every page, so cross-fading them looks like a flicker

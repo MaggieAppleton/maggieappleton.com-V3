@@ -90,6 +90,14 @@ const isArticle = Boolean(articleMetadata);
 		<link rel="pingback" href="https://webmention.io/maggieappleton.com/xmlrpc" />
 		<link rel="me" href="https://bsky.app/profile/maggieappleton.com" />
 		<link rel="preconnect" href="https://media.maggieappleton.com" />
+		<!-- Inline so Chrome sees the opt-in before external CSS loads; otherwise it
+		     skips the transition on heavier pages. -->
+		<style is:inline>@view-transition { navigation: auto; }</style>
+		<!-- Browser-native prefetch on hover. Astro's prefetch script stops Chrome
+		     from running cross-document view transitions, so it stays off. -->
+		<script type="speculationrules" is:inline>
+			{ "prefetch": [{ "where": { "href_matches": "/*" }, "eagerness": "moderate" }] }
+		</script>
 		<script is:inline>
 			if (!("CSSViewTransitionRule" in window)) {
 				document.documentElement.classList.add("no-vt");
