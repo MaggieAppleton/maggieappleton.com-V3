@@ -125,12 +125,12 @@ const antiBookData = await getCollection("antibooks");
 	}
 
 	::view-transition-old(lib-grid) {
-		animation: mv-grid-exit-left 360ms cubic-bezier(0.4, 0, 0.2, 1) both;
+		animation: mv-grid-exit-left 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
 	}
 
 	::view-transition-new(lib-grid) {
-		animation: mv-grid-enter-from-right 360ms cubic-bezier(0.16, 1, 0.3, 1)
-			both;
+		animation: mv-grid-enter-from-right 320ms cubic-bezier(0.16, 1, 0.3, 1)
+			120ms both;
 	}
 
 	/* prefers-reduced-motion: handled globally in global.css (wildcard
