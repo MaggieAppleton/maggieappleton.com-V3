@@ -1,6 +1,24 @@
-<p class="intro-paragraph">
-	<slot />
-</p>
+---
+// `::first-letter` only accepts a narrow list of CSS properties, and browsers
+// disagree on whether `animation`/`transform`/`filter` are honored there at
+// all (Safari/WebKit in particular). To animate the drop cap reliably we wrap
+// the first character in a real `<span>` at render time instead, styled
+// identically to the old `::first-letter` rule at rest.
+const slotHtml = await Astro.slots.render("default");
+
+function wrapDropCap(html: string): string {
+	// Skip any leading tags/whitespace (in any order/count), then grab the
+	// first real character.
+	const match = html.match(/^((?:\s|<[^>]+>)*)([^\s<])/);
+	if (!match) return html;
+	const [full, prefix, letter] = match;
+	return `${prefix}<span class="drop-cap">${letter}</span>${html.slice(full.length)}`;
+}
+
+const contentWithDropCap = wrapDropCap(slotHtml);
+---
+
+<p class="intro-paragraph" set:html={contentWithDropCap} />
 
 <style>
 	.intro-paragraph {
@@ -8,7 +26,7 @@
 		white-space: normal;
 	}
 
-	.intro-paragraph:first-letter {
+	.intro-paragraph :global(.drop-cap) {
 		float: left;
 		font-size: 5.2rem;
 		line-height: 2.5rem;
@@ -17,11 +35,43 @@
 		padding: 0;
 	}
 
+	/* Ink in on page load: a short fade + blur-out + settle, timed to land
+	   just after the page transition. */
+	.intro-paragraph :global(.drop-cap) {
+		animation-name: dropCapInk;
+		animation-duration: calc(var(--dur-page) * 2);
+		animation-timing-function: var(--ease-out);
+		animation-delay: 150ms;
+		animation-fill-mode: both;
+	}
+
+	@keyframes dropCapInk {
+		from {
+			opacity: 0;
+			filter: blur(6px);
+			transform: scale(1.04);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: scale(1);
+		}
+	}
+
 	@media (max-width: 768px) {
-		.intro-paragraph:first-letter {
+		.intro-paragraph :global(.drop-cap) {
 			font-size: 4.6rem;
 			line-height: 2rem;
 			margin: 1.15rem var(--space-3xs) 0 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.intro-paragraph :global(.drop-cap) {
+			animation: none;
+			opacity: 1;
+			filter: none;
+			transform: none;
 		}
 	}
 </style>
