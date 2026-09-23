@@ -38,8 +38,6 @@ import { Icon } from "astro-icon/components";
 		flex-direction: row;
 		justify-content: space-between;
 		padding: var(--space-s) var(--space-m) var(--space-s) 1.3rem;
-		animation: fadeIn 0.5s 0.2s forwards;
-		opacity: 0;
 		background: var(--color-cream);
 		position: relative;
 		z-index: 1001;
@@ -96,12 +94,6 @@ import { Icon } from "astro-icon/components";
 	@media (prefers-reduced-motion: reduce) {
 		.mobile-menu-toggle [data-icon] {
 			transition: none;
-		}
-	}
-
-	@keyframes fadeIn {
-		to {
-			opacity: 1;
 		}
 	}
 </style>
