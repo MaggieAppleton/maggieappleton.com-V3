@@ -649,12 +649,11 @@ mark {
 }
 
 /* _____________________ View Transitions _____________________ */
-/* Native cross-document view transitions (Chrome 126+/Safari 18.2+). Pages
-   are normal full loads; the browser animates between the old and new
-   document snapshots. See src/layouts/Layout.astro for the Firefox fallback
-   detection script that adds `no-vt` to <html> when unsupported. */
-
-/* The @view-transition opt-in is inlined in Layout.astro <head>. */
+/* Native cross-document view transitions (Chrome 126+/Safari 18.2+); pages
+   are normal full loads and the browser animates between old/new document
+   snapshots. The `@view-transition` opt-in is inlined in Layout.astro's
+   <head> — Layout.astro also has the Firefox fallback script that adds
+   `no-vt` to <html> when unsupported. */
 
 /* Keep the navbar and footer perfectly still across navigations — they're
    the same UI on every page, so cross-fading them looks like a flicker
@@ -676,9 +675,8 @@ mark {
   animation: none !important;
 }
 
-/* Default page transition: sequential, not overlapping. The old page fades
-   out fast, then the new page fades in — no cross-fade, so no double-exposed
-   text. Calm: no translate, ease-out both ways. */
+/* Sequential, not overlapping: the old page fades out fast, then the new
+   page fades in — no cross-fade means no double-exposed text. */
 ::view-transition-old(root) {
   animation: mv-page-fade-out 120ms ease-out both;
   mix-blend-mode: normal;
@@ -713,26 +711,15 @@ mark {
 }
 
 /* _____________________ Cascade Entrance _____________________ */
-/* Key blocks on a page fade+rise into place top-down, in visual order, on
-   every load — normal page loads, native cross-document navigations (the
-   blocks are live content inside the new document's view-transition
-   snapshot, so they animate independently of the root crossfade above), and
-   the Firefox/no-vt fallback (no native view transition at all, just a plain
-   navigation) — same mechanism everywhere, so behaviour stays consistent.
-
-   Mark an element `.cascade` (translate + fade) or `.cascade-fade`
-   (opacity-only — use this for any block that contains a `position: sticky`
-   or `position: fixed` descendant, e.g. a post's table of contents; a
-   `transform` on an ancestor creates a new containing block and breaks
-   those while the animation runs) and give it a `--cascade` index (0-based,
-   visual order) via `style="--cascade: N"`. `animation-fill-mode: backwards`
-   means once the animation finishes the element has no transform/opacity
-   override left — it just falls back to its own normal styles — so sticky
-   positioning is unaffected after the cascade completes.
-
-   Grids/masonry layouts animate as a single block (one `.cascade-fade` on
-   the wrapper), never per card — per-card entrance would fight with the
-   garden's own filter animation. */
+/* Key blocks fade+rise into place top-down, in visual order, on every load
+   (works the same for plain loads, native view transitions, and the
+   Firefox/no-vt fallback). Mark an element `.cascade` (translate + fade) or
+   `.cascade-fade` (opacity-only — use for blocks containing a sticky/fixed
+   descendant, since a transform on an ancestor breaks those), and give it a
+   `--cascade` index via `style="--cascade: N"`. `animation-fill-mode:
+   backwards` means sticky positioning is unaffected once the cascade
+   finishes. Grids/masonry animate as one `.cascade-fade` block, not per
+   card, so entrance doesn't fight the garden's own filter animation. */
 @media (prefers-reduced-motion: no-preference) {
   .cascade,
   .cascade-fade {

@@ -63,21 +63,14 @@ const books = await getCollection("books");
 	}
 </style>
 
-<!-- ______________ Motion pass slice 4: view transitions ______________
-     Page-specific, kept out of the shared scoped block above so slice 3's
-     work in Layout.astro's head scripts (card->title morphs, pageswap/
-     pagereveal) never has to touch this file. `is:global` because
-     ::view-transition-* pseudo-elements aren't part of the DOM tree, so
-     Astro's scoped-style attribute selectors can't reach them.
+<!-- `is:global` because ::view-transition-* pseudo-elements aren't part of the
+     DOM tree, so scoped-style attribute selectors can't reach them.
 
-     Names below are intentionally the SAME on library.astro and
-     antilibrary.astro for lib-word/antilib-word/lib-count: the cross-
-     document view transition spec pairs old/new snapshots by matching
-     view-transition-name, which is what makes the browser morph "Library"
-     into "Library" (and tick the count) across the navigation instead of
-     just cross-fading the whole page. The grid keyframes are direction-
-     specific (this is the /library side, i.e. the "going back" direction),
-     so they're the mirror image of antilibrary.astro's. -->
+     lib-word/antilib-word/lib-count use the SAME view-transition-name here
+     and in antilibrary.astro — the browser pairs old/new snapshots by that
+     name, which is what morphs "Library" into "Library" (and ticks the
+     count) instead of cross-fading the whole page. The grid keyframes are
+     direction-specific: this is the /library side, mirroring antilibrary.astro's. -->
 <style is:global>
 	.lib-word {
 		view-transition-name: lib-word;
@@ -87,10 +80,8 @@ const books = await getCollection("books");
 		view-transition-name: antilib-word;
 	}
 
-	/* The "|" divider is not given a name: its position is identical on both
-	   pages (word order never swaps, only color/emphasis does), so it has
-	   nothing to morph. Leaving it unnamed means it simply rides along with
-	   the default root cross-fade — the simplest correct behaviour. */
+	/* The "|" divider isn't named: its position never changes between pages,
+	   so it has nothing to morph and just rides the default root cross-fade. */
 
 	.lib-grid {
 		view-transition-name: lib-grid;
@@ -146,9 +137,6 @@ const books = await getCollection("books");
 			120ms both;
 	}
 
-	/* prefers-reduced-motion is already handled globally in global.css via
-	   `::view-transition-group(*), ::view-transition-old(*),
-	   ::view-transition-new(*) { animation: none !important; }` — that
-	   wildcard covers these named transitions too, and since none of the
-	   rules above use !important, that global rule always wins. */
+	/* prefers-reduced-motion is handled globally in global.css — its
+	   wildcard `!important` rule covers these named transitions too. */
 </style>

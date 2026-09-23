@@ -125,9 +125,8 @@ import { Icon } from "astro-icon/components";
 			}
 		});
 
-		// Keep the toggle button's icon/state in sync if the page is restored
-		// from bfcache with the menu open (MobileMenu.astro closes the menu
-		// itself on pagehide/pageshow, but doesn't know about this button).
+		// MobileMenu.astro closes the menu itself on bfcache restore but
+		// doesn't know about this button, so sync it here too.
 		window.addEventListener("pageshow", (e) => {
 			if (!e.persisted) return;
 			newMenuToggle.classList.remove("open");
