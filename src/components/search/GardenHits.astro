@@ -220,7 +220,6 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		item.style.opacity = "";
 	}
 
-	// Fallback for prefers-reduced-motion and browsers without Element.animate.
 	function filterGridItemsInstant(topic: string, growthStage: string, types: string[]) {
 		document.querySelectorAll<HTMLElement>(".grid-item").forEach((item) => {
 			clearItemMotionStyles(item);

@@ -182,7 +182,6 @@
 		}
 	}
 
-	/* Reduced motion: no rotation/scaling, just a subtle whole-logo fade. */
 	@media (prefers-reduced-motion: reduce) {
 		.is-loading .leaf,
 		.is-loading .leaf-2,
@@ -278,7 +277,6 @@
 
 			if (url.origin !== window.location.origin) return false;
 
-			// Same-page hash link - no real navigation happens.
 			const samePage =
 				url.pathname === window.location.pathname && url.search === window.location.search;
 			if (samePage && url.hash) return false;

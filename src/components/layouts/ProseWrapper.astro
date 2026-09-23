@@ -125,7 +125,6 @@
 		transform-origin: 50% 50%;
 	}
 
-	/* Leaf bullet wiggles like the logo leaves when its list item is hovered. */
 	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
 		.prose-wrapper :global(ul > li:hover::before) {
 			animation: leafBulletWiggle calc(var(--dur-page) + var(--dur-quick)) var(--ease-in-out) 1;
