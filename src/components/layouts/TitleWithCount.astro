@@ -9,9 +9,14 @@ interface Props {
 	 * count-tick transition (slice 4 of the motion pass).
 	 */
 	countTransitionName?: string;
+	/**
+	 * Set false where the heading has its own view transition (library /
+	 * antilibrary word swap) — the cascade's fade would hide the morphing words.
+	 */
+	cascade?: boolean;
 }
 
-const { posts, countTransitionName } = Astro.props;
+const { posts, countTransitionName, cascade = true } = Astro.props;
 const count = posts.length;
 const digits = count.toString().length;
 const leftOffset = `-${1 + digits}rem`;
@@ -21,13 +26,13 @@ const countStyle = countTransitionName
 ---
 
 <div class="styled-container" data-digits={digits} data-debug-count={count}>
-	<div class="mobile-header cascade" style="--cascade: 0">
+	<div class:list={["mobile-header", { cascade }]} style="--cascade: 0">
 		<div class="count-wrapper">
 			<span style={countStyle}>{count}</span>
 		</div>
 		<slot name="header-right" />
 	</div>
-	<h1 class="cascade" style="--cascade: 1"><slot /></h1>
+	<h1 class:list={[{ cascade }]} style="--cascade: 1"><slot /></h1>
 </div>
 
 <style>

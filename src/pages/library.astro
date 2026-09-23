@@ -13,7 +13,7 @@ const books = await getCollection("books");
 <Layout title="Library of Maggie Appleton" desc={PAGE_DESCRIPTIONS.library} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
-			<TitleWithCount posts={books} countTransitionName="lib-count">
+			<TitleWithCount posts={books} countTransitionName="lib-count" cascade={false}>
 				<span class="word word-active lib-word">Library</span>
 				<div class="divider" style="color: var(--color-gray-300); display: inline-block">|</div>
 				<a href="/antilibrary" class="styled-link word word-recede antilib-word">Antilibrary</a>
