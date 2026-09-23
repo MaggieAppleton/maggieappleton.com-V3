@@ -91,9 +91,7 @@ const battleLabels = BATTLES.map((b) => {
 
 <script>
 	import { initPoppyField } from "./poppy-field";
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const fields = document.querySelectorAll<HTMLElement>(".poppy-field");
 		if (fields.length === 0) return;
 
@@ -104,7 +102,7 @@ const battleLabels = BATTLES.map((b) => {
 		});
 
 		return () => cleanups.forEach((off) => off());
-	});
+	})();
 </script>
 
 <style>

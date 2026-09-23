@@ -248,9 +248,7 @@ const { headings } = Astro.props;
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
 		let isCollapsed = false;
 		let isAutoCollapsed = false;
@@ -360,5 +358,5 @@ const { headings } = Astro.props;
 				link.removeEventListener("click", handler);
 			});
 		};
-	});
+	})();
 </script>

@@ -73,10 +73,7 @@ import { Icon } from "astro-icon/components";
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-	import { navigate } from "astro:transitions/client";
-
-	onPageLifecycle(() => {
+	(() => {
 		const mobileMenu = document.getElementById("mobile-menu") as HTMLElement;
 		const links = mobileMenu?.querySelectorAll("a");
 
@@ -97,7 +94,7 @@ import { Icon } from "astro-icon/components";
 			closeMobileMenu();
 
 			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-				navigate(link.href);
+				window.location.href = link.href;
 				return;
 			}
 
@@ -105,7 +102,7 @@ import { Icon } from "astro-icon/components";
 			const navigateAfterClose = () => {
 				if (hasNavigated) return;
 				hasNavigated = true;
-				navigate(link.href);
+				window.location.href = link.href;
 			};
 
 			mobileMenu.addEventListener("transitionend", navigateAfterClose, { once: true });
@@ -116,13 +113,11 @@ import { Icon } from "astro-icon/components";
 			link.addEventListener("click", handleLinkClick);
 		});
 
-		document.addEventListener("astro:before-preparation", closeMobileMenu);
-
-		return () => {
-			links.forEach((link) => {
-				link.removeEventListener("click", handleLinkClick);
-			});
-			document.removeEventListener("astro:before-preparation", closeMobileMenu);
-		};
-	});
+		// Close before unload, and close instantly (no animation) if the page
+		// is restored from bfcache with the menu still open.
+		window.addEventListener("pagehide", closeMobileMenu);
+		window.addEventListener("pageshow", (e) => {
+			if (e.persisted) closeMobileMenu();
+		});
+	})();
 </script>

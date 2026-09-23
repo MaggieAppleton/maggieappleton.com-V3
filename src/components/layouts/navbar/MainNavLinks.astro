@@ -109,9 +109,7 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 </div>
 
 <script>
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const button = document.querySelector(".popover-button") as HTMLButtonElement;
 		const megamenu = document.getElementById("garden-dropdown") as HTMLElement;
 
@@ -171,18 +169,23 @@ import PatternIcon from "../../icons/PatternIcon.astro";
 			}
 		};
 
+		// Close (without animating) if the page is restored from bfcache with
+		// the menu open — avoids it reappearing stuck open on back/forward.
+		const pageshowHandler = (e: PageTransitionEvent) => {
+			if (!e.persisted) return;
+			button.setAttribute("aria-expanded", "false");
+			megamenu.classList.add("hidden");
+			megamenu.style.opacity = "0";
+			megamenu.style.transform = "rotateX(-15deg)";
+			megamenu.style.scale = "0.95";
+		};
+
 		button.addEventListener("click", clickHandler);
 		document.addEventListener("keydown", keydownHandler);
 		document.addEventListener("focusout", focusoutHandler);
-		document.addEventListener("astro:before-preparation", closeMegamenu);
-
-		return () => {
-			button.removeEventListener("click", clickHandler);
-			document.removeEventListener("keydown", keydownHandler);
-			document.removeEventListener("focusout", focusoutHandler);
-			document.removeEventListener("astro:before-preparation", closeMegamenu);
-		};
-	});
+		window.addEventListener("pagehide", closeMegamenu);
+		window.addEventListener("pageshow", pageshowHandler);
+	})();
 </script>
 
 <style>
