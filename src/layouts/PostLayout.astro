@@ -167,6 +167,9 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 		font-weight: 600;
 		line-height: var(--leading-tighter);
 		max-width: 100%;
+		/* Hugs its text so the view-transition snapshot's box is close to the
+		   card title's, instead of stretching to the full container width. */
+		width: fit-content;
 	}
 
 	.title-container p {

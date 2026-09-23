@@ -103,6 +103,193 @@ const isArticle = Boolean(articleMetadata);
 				document.documentElement.classList.add("no-vt");
 			}
 		</script>
+		<!-- Card -> post title morph + navigation direction. Registered here (not
+		     in a bundled/deferred script) because `pagereveal` fires before first
+		     render of the new document — a module script loaded lower in <head>
+		     or in <body> would miss it. Kept intentionally tiny and dependency-free. -->
+		<script is:inline>
+			(function () {
+				var TITLE_NAME = "vt-post-title";
+				// Pages that list cards linking out to individual posts. Used to
+				// gate the morph so it only ever runs between a listing and one of
+				// its own posts, never between two arbitrary pages.
+				var LISTING_PATHS = [
+					"/",
+					"/garden",
+					"/essays",
+					"/notes",
+					"/patterns",
+					"/talks",
+					"/podcasts",
+					"/library",
+					"/now",
+					"/smidgeons",
+				];
+
+				function normalizePath(pathname) {
+					return pathname.length > 1 && pathname.endsWith("/")
+						? pathname.slice(0, -1)
+						: pathname;
+				}
+
+				function isListingPath(pathname) {
+					return LISTING_PATHS.indexOf(normalizePath(pathname)) !== -1;
+				}
+
+				function toPath(url) {
+					try {
+						return normalizePath(new URL(url, location.href).pathname);
+					} catch (err) {
+						return null;
+					}
+				}
+
+				// Finds the <h3> title inside the card `<a>` on THIS document that
+				// links to `path` — cards are always `<a href="..."><h3>Title</h3>...`,
+				// so requiring an h3 child naturally excludes prose/backlink/tooltip
+				// links that happen to point at the same URL.
+				function findCardTitleForPath(path) {
+					var anchors = document.querySelectorAll("a[href]");
+					for (var i = 0; i < anchors.length; i++) {
+						var href = anchors[i].getAttribute("href");
+						if (!href) continue;
+						var absPath;
+						try {
+							var abs = new URL(href, location.href);
+							if (abs.origin !== location.origin) continue;
+							absPath = normalizePath(abs.pathname);
+						} catch (err) {
+							continue;
+						}
+						if (absPath !== path) continue;
+						var titleEl = anchors[i].querySelector("h3");
+						if (titleEl) return titleEl;
+					}
+					return null;
+				}
+
+				function findPostTitle() {
+					return (
+						document.querySelector(".title-container h1") ||
+						document.querySelector(".now-layout h1") ||
+						document.querySelector("h1.content-header") ||
+						document.querySelector("main h1")
+					);
+				}
+
+				function tag(el) {
+					if (!el) return null;
+					el.style.viewTransitionName = TITLE_NAME;
+					return el;
+				}
+
+				function untag(el) {
+					if (el) el.style.viewTransitionName = "";
+				}
+
+				function addType(viewTransition, type) {
+					if (
+						viewTransition &&
+						viewTransition.types &&
+						typeof viewTransition.types.add === "function"
+					) {
+						try {
+							viewTransition.types.add(type);
+						} catch (err) {
+							/* view transition types unsupported; ignore */
+						}
+					}
+				}
+
+				// `traverse` (back/forward buttons) can move either direction along
+				// history — only a lower destination index is a "back" navigation.
+				function isBackTraversal(activation) {
+					return (
+						!!activation &&
+						activation.navigationType === "traverse" &&
+						!!activation.from &&
+						!!activation.entry &&
+						typeof activation.from.index === "number" &&
+						typeof activation.entry.index === "number" &&
+						activation.entry.index < activation.from.index
+					);
+				}
+
+				// Fires on the OUTGOING document, before it unloads. This is where
+				// we can still see the listing page's cards (forward) or the post's
+				// own <h1> (back), so tag whichever one is leaving.
+				window.addEventListener("pageswap", function (e) {
+					if (!e.viewTransition) return;
+					var activation = e.activation;
+					if (!activation || !activation.entry) return;
+
+					var back = isBackTraversal(activation);
+					addType(e.viewTransition, back ? "back" : "forward");
+
+					var fromPath = normalizePath(location.pathname);
+					var destPath = toPath(activation.entry.url);
+					if (!destPath) return;
+
+					if (!back && isListingPath(fromPath) && !isListingPath(destPath)) {
+						tag(findCardTitleForPath(destPath));
+					} else if (back && !isListingPath(fromPath) && isListingPath(destPath)) {
+						tag(findPostTitle());
+					}
+				});
+
+				// Fires on the INCOMING document, before its first render. Tag
+				// whichever element should morph in, then untag once the transition
+				// settles so a later navigation away from this same page starts clean.
+				window.addEventListener("pagereveal", function (e) {
+					if (!e.viewTransition) return;
+					var activation = window.navigation && window.navigation.activation;
+					if (!activation || !activation.from) return;
+
+					var back = isBackTraversal(activation);
+					addType(e.viewTransition, back ? "back" : "forward");
+
+					var currentPath = normalizePath(location.pathname);
+					var fromPath = toPath(activation.from.url);
+					if (!fromPath) return;
+
+					function findMatch() {
+						if (!back && isListingPath(fromPath) && !isListingPath(currentPath)) {
+							return findPostTitle();
+						} else if (back && isListingPath(currentPath) && !isListingPath(fromPath)) {
+							return findCardTitleForPath(fromPath);
+						}
+						return null;
+					}
+
+					function finishWith(tagged) {
+						if (!tagged) return;
+						e.viewTransition.finished.then(
+							function () {
+								untag(tagged);
+							},
+							function () {
+								untag(tagged);
+							},
+						);
+					}
+
+					var tagged = tag(findMatch());
+					if (tagged) {
+						finishWith(tagged);
+						return;
+					}
+
+					// On a big listing page the target card may not have parsed yet at
+					// this exact point — observed in WebKit, where `pagereveal` can fire
+					// before the card grid (past the navbar) exists in the DOM. One
+					// rAF gives the parser another tick before we give up and let the
+					// default page transition play instead.
+					requestAnimationFrame(function () {
+						finishWith(tag(findMatch()));
+					});
+				});
+			})();
+		</script>
 		<SEO
 			title={title}
 			description={resolvedDescription}
