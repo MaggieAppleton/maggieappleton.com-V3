@@ -189,11 +189,6 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		document.querySelectorAll(".scrolly-img").forEach((img) => {
 			img.addEventListener("load", handleResize, { once: true });
 		});
-
-		return () => {
-			scrollers.forEach((s) => s.destroy());
-			window.removeEventListener("resize", handleResize);
-		};
 	})();
 </script>
 

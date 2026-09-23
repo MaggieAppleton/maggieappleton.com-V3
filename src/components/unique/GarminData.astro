@@ -889,13 +889,5 @@ const data = [
 	(() => {
 		const container = document.querySelector(".chart-container");
 		if (container) initChart();
-
-		return () => {
-			clearTimeout(resizeTimer);
-			if (resizeHandler) {
-				window.removeEventListener("resize", resizeHandler);
-				resizeHandler = null;
-			}
-		};
 	})();
 </script>

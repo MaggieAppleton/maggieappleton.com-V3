@@ -83,11 +83,6 @@ if (!data || data.length === 0) {
 
 		const handleResize = () => scroller?.resize();
 		window.addEventListener("resize", handleResize);
-
-		return () => {
-			scroller?.destroy();
-			window.removeEventListener("resize", handleResize);
-		};
 	})();
 </script>
 
