@@ -37,9 +37,7 @@ if (!data || data.length === 0) {
 
 <script>
 	import scrollama from "scrollama";
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		let scroller: any;
 		let fadeImages: NodeListOf<HTMLImageElement>;
 		let currentStep = -1;
@@ -90,7 +88,7 @@ if (!data || data.length === 0) {
 			scroller?.destroy();
 			window.removeEventListener("resize", handleResize);
 		};
-	});
+	})();
 </script>
 
 <style>

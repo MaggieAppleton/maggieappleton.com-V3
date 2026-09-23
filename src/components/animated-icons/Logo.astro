@@ -6,7 +6,6 @@
 	fill="none"
 	style="position: relative; top: 4px;"
 	xmlns="http://www.w3.org/2000/svg"
-	transition:persist
 >
 	<path
 		class="leaf"
@@ -111,8 +110,6 @@
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
 	function handleLogoAnimation() {
 		const logo = document.getElementById("logo");
 		if (logo) {
@@ -123,10 +120,10 @@
 		}
 	}
 
-	onPageLifecycle(() => {
+	(() => {
 		const logo = document.getElementById("logo");
 		if (!logo) return;
 		logo.addEventListener("mouseenter", handleLogoAnimation);
 		return () => logo.removeEventListener("mouseenter", handleLogoAnimation);
-	});
+	})();
 </script>

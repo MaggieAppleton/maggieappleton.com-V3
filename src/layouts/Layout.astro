@@ -2,7 +2,6 @@
 import Footer from "../components/layouts/Footer.astro";
 import Navbar from "../components/layouts/navbar/Navbar.astro";
 import { SEO } from "astro-seo";
-import { ClientRouter } from "astro:transitions";
 import { Agentation } from "agentation";
 import { buildCanonicalUrl } from "../utils/canonical.mjs";
 import { isMeaningfulDescription, requirePageDescription } from "../utils/descriptions.mjs";
@@ -91,7 +90,11 @@ const isArticle = Boolean(articleMetadata);
 		<link rel="pingback" href="https://webmention.io/maggieappleton.com/xmlrpc" />
 		<link rel="me" href="https://bsky.app/profile/maggieappleton.com" />
 		<link rel="preconnect" href="https://media.maggieappleton.com" />
-		<ClientRouter />
+		<script is:inline>
+			if (!("CSSViewTransitionRule" in window)) {
+				document.documentElement.classList.add("no-vt");
+			}
+		</script>
 		<SEO
 			title={title}
 			description={resolvedDescription}

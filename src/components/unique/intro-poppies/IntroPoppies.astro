@@ -15,9 +15,7 @@
 
 <script>
 	import { initIntroPoppies } from "./intro-poppies";
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const wraps = document.querySelectorAll<HTMLElement>(".intro-poppies-wrap");
 		if (wraps.length === 0) return;
 
@@ -28,7 +26,7 @@
 		});
 
 		return () => cleanups.forEach((off) => off());
-	});
+	})();
 </script>
 
 <style>

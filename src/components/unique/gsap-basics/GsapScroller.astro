@@ -35,9 +35,7 @@
 
 <script>
 	import scrollama from "scrollama";
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		let scroller: any;
 		let fadeImages: NodeListOf<Element>;
 		let currentStep = -1;
@@ -75,7 +73,7 @@
 			scroller?.destroy();
 			window.removeEventListener("resize", handleResize);
 		};
-	});
+	})();
 </script>
 
 <style>

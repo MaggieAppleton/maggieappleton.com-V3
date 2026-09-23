@@ -5,7 +5,7 @@ import MobileMenu from "./MobileMenu.astro";
 import { Icon } from "astro-icon/components";
 ---
 
-<nav class="navbar" transition:persist>
+<nav class="navbar">
 	<a href="/" aria-label="home">
 		<span class="visually-hidden">Home</span>
 		<Logo />
@@ -132,11 +132,17 @@ import { Icon } from "astro-icon/components";
 				document.body.style.overflow = "auto";
 			}
 		});
+
+		// Keep the toggle button's icon/state in sync if the page is restored
+		// from bfcache with the menu open (MobileMenu.astro closes the menu
+		// itself on pagehide/pageshow, but doesn't know about this button).
+		window.addEventListener("pageshow", (e) => {
+			if (!e.persisted) return;
+			newMenuToggle.classList.remove("open");
+			newMenuToggle.setAttribute("aria-expanded", "false");
+		});
 	}
 
 	// Initialize on page load
 	initializeMobileMenu();
-
-	// Re-initialize after each navigation
-	document.addEventListener("astro:page-load", initializeMobileMenu);
 </script>

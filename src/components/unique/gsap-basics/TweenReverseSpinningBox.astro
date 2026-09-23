@@ -5,9 +5,7 @@
 <div class="box" id="reverse-spinning-box"></div>
 
 <script>
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const box = document.getElementById("reverse-spinning-box");
 		if (!box) return;
 
@@ -22,7 +20,7 @@
 
 		observer.observe(box);
 		return () => observer.disconnect();
-	});
+	})();
 </script>
 
 <style>

@@ -219,7 +219,4 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 
 	// Initialize on first load
 	init();
-
-	// Re-initialize after page navigation
-	document.addEventListener("astro:page-load", init);
 </script>

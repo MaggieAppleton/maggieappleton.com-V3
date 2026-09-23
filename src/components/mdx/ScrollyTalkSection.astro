@@ -146,9 +146,7 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 <script>
 	import scrollama from "scrollama";
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const scrollers: any[] = [];
 
 		document.querySelectorAll("[data-scrolly-id]").forEach((section) => {
@@ -196,7 +194,7 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 			scrollers.forEach((s) => s.destroy());
 			window.removeEventListener("resize", handleResize);
 		};
-	});
+	})();
 </script>
 
 <style>

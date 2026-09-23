@@ -492,7 +492,7 @@ const unusedCount = unusedTokens.length;
 
 <script>
 	// Copy to clipboard functionality
-	document.addEventListener("astro:page-load", () => {
+	(() => {
 		const buttons = document.querySelectorAll("[data-token]");
 		const toast = document.getElementById("copy-toast");
 
@@ -512,7 +512,7 @@ const unusedCount = unusedTokens.length;
 				}
 			});
 		});
-	});
+	})();
 </script>
 
 <style>

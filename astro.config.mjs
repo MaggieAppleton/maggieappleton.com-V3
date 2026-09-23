@@ -13,6 +13,10 @@ export default defineConfig({
   image: {
     domains: ["res.cloudinary.com"],
   },
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: "hover",
+  },
   integrations: [
     mdx({
       remarkPlugins: [remarkWikiLink, remarkLongBlockquote],
