@@ -62,9 +62,12 @@ const sortedPosts = posts.sort((a, b) => {
 				</div>
 				{topicName}
 			</TitleWithCount>
-			<Title2>Essays, notes, patterns, and smidgeons related to {topicName}</Title2>
+			<Title2 class="cascade" style="--cascade: 2">
+				Essays, notes, patterns, and smidgeons related to {topicName}
+			</Title2>
 		</header>
 
+		<div class="cascade-fade" style="--cascade: 3">
 		<MasonryGrid>
 			<div class="grid-sizer"></div>
 			{
@@ -173,6 +176,7 @@ const sortedPosts = posts.sort((a, b) => {
 				})
 			}
 		</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 
