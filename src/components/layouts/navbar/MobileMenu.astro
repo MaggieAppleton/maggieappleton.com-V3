@@ -89,6 +89,9 @@ import { Icon } from "astro-icon/components";
 			closeMobileMenu();
 
 			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+				// Tell the logo a real navigation is starting - it's about to
+				// call location.href directly, bypassing the normal link click.
+				document.dispatchEvent(new CustomEvent("mv:navigate-start"));
 				window.location.href = link.href;
 				return;
 			}
@@ -97,6 +100,7 @@ import { Icon } from "astro-icon/components";
 			const navigateAfterClose = () => {
 				if (hasNavigated) return;
 				hasNavigated = true;
+				document.dispatchEvent(new CustomEvent("mv:navigate-start"));
 				window.location.href = link.href;
 			};
 
