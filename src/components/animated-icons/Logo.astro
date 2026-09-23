@@ -108,10 +108,8 @@
 		}
 	}
 
-	/* Loading indicator: looping wiggle shown while a same-origin navigation
-	   is in flight (see the script below). Leaves are slightly out of phase
-	   for charm; letter gets a gentle pulse. Transform/opacity only so it
-	   stays cheap while a real navigation is happening. */
+	/* Wiggle shown while a same-origin navigation is in flight (see script
+	   below); transform/opacity only so it stays cheap mid-navigation. */
 	.is-loading .leaf {
 		animation: leafWiggleLoop 900ms ease-in-out infinite;
 	}
@@ -216,12 +214,9 @@
 		return () => logo.removeEventListener("mouseenter", handleLogoAnimation);
 	})();
 
-	// --- Loading indicator -------------------------------------------------
-	// While a real (cross-document) navigation is in flight, wiggle the logo
-	// so the page doesn't feel frozen on slow loads. Most navigations are
-	// prefetched via speculation rules and finish fast, so we delay the
-	// start to avoid a flash on those, and stop the moment the browser is
-	// about to snapshot this page for the view transition.
+	// Wiggle the logo during a real cross-document navigation so slow loads
+	// don't feel frozen. Most navigations are prefetched via speculation
+	// rules and finish fast, so the start is delayed to avoid a flash.
 	(() => {
 		const logo = document.getElementById("logo");
 		if (!logo) return;
@@ -249,7 +244,6 @@
 		}
 
 		function scheduleLoading() {
-			// Already running/pending - don't restart the delay.
 			if (startTimer !== null || logo?.classList.contains("is-loading")) return;
 			startTimer = setTimeout(() => {
 				startTimer = null;
@@ -304,14 +298,12 @@
 			false // bubble phase, after other click handlers may call preventDefault()
 		);
 
-		// The mobile menu animates itself closed, then navigates via
-		// window.location.href instead of letting the link click through -
-		// it dispatches this event right before doing so (see MobileMenu.astro).
+		// MobileMenu.astro navigates via window.location.href instead of a
+		// click, so it dispatches this event itself before doing so.
 		document.addEventListener("mv:navigate-start", scheduleLoading);
 
-		// Stop right before the old page's snapshot is captured, so the
-		// (perfectly-still) navbar snapshot shows the logo at rest instead of
-		// mid-wiggle.
+		// Stop before the old page's snapshot is captured, so the navbar
+		// snapshot shows the logo at rest instead of mid-wiggle.
 		window.addEventListener("pageswap", stopLoading);
 		window.addEventListener("pagehide", stopLoading);
 		window.addEventListener("pageshow", (event: PageTransitionEvent) => {

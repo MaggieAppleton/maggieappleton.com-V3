@@ -41,9 +41,8 @@ const { maxWidth = 400 } = Astro.props;
 		color: var(--color-white);
 	}
 
-	/* Grow out of the link. Tippy waits for transitionend before unmounting,
-	   so this must be a transition (not a keyframe animation). Tippy sets the
-	   duration inline from its `duration` option. */
+	/* Tippy waits for transitionend before unmounting, so this must be a
+	   transition, not a keyframe animation. */
 	.tippy-box[data-animation="grow"] {
 		transition-property: transform, opacity;
 		transition-timing-function: var(--ease-spring), var(--ease-out);

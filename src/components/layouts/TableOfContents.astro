@@ -296,7 +296,6 @@ const { headings } = Astro.props;
 		const content = document.querySelector(".collapse-content");
 		const mobileArrow = header?.querySelector(".arrow-icon");
 
-		// --- Active-section marker ------------------------------------------------
 		// Tracks which heading is currently being read and slides a small bar
 		// alongside the desktop TOC to follow it.
 		const trackEl = document.querySelector(".desktop-container .toc-track") as HTMLElement | null;
@@ -305,8 +304,8 @@ const { headings } = Astro.props;
 			document.querySelectorAll(".desktop-container .toc-link")
 		) as HTMLAnchorElement[];
 
-		// Pair each desktop link with the heading element it points to, in
-		// document order, so we can tell which heading is "current" while scrolling.
+		// Pair each link with the heading it points to, so we can tell which
+		// heading is "current" while scrolling.
 		const sections = desktopLinks
 			.map((link) => {
 				const id = link.getAttribute("href")?.slice(1);
@@ -316,8 +315,8 @@ const { headings } = Astro.props;
 			.filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => entry !== null);
 
 		let activeIndex: number | null = null;
-		// A heading counts as "current" once it's in the top 30% of the viewport,
-		// so clicking a TOC link (which lands the heading ~150px down) activates it.
+		// Top 30% counts as "current" so clicking a TOC link (which lands the
+		// heading partway down) still activates it.
 		const headingThreshold = () => window.innerHeight * 0.3;
 
 		const setActiveClasses = () => {
@@ -350,8 +349,7 @@ const { headings } = Astro.props;
 			}
 
 			if (!animate) {
-				// Force layout so the transition-less position is committed, then
-				// re-enable transitions on the next frame for future moves.
+				// Force layout to commit the transition-less position before re-enabling.
 				markerEl.getBoundingClientRect();
 				requestAnimationFrame(() => {
 					markerEl.style.transition = "";
@@ -395,8 +393,8 @@ const { headings } = Astro.props;
 
 		let markerResizeObserver: ResizeObserver | undefined;
 		if (sections.length > 0 && markerEl && trackEl) {
-			// Set the initial position synchronously, with transitions disabled,
-			// so the marker never slides in from a resting state on first paint.
+			// Set synchronously with transitions disabled so it doesn't slide
+			// in from a resting state on first paint.
 			updateActiveHeading(false);
 
 			window.addEventListener("scroll", markerScrollHandler, { passive: true });
@@ -410,7 +408,6 @@ const { headings } = Astro.props;
 
 			document.fonts?.ready?.then(() => scheduleMarkerUpdate(false));
 		}
-		// ---------------------------------------------------------------------------
 
 		// Desktop toggle handler
 		const desktopClickHandler = () => {

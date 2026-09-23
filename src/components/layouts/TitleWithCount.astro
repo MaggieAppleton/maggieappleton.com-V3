@@ -1,18 +1,10 @@
 ---
 interface Props {
 	posts: any[];
-	/**
-	 * Optional view-transition-name for the count span. Opt-in and left
-	 * undefined by default so this shared component (used by patterns,
-	 * garden, podcasts, notes, essays, smidgeons, talks, topics/[topic]) only
-	 * gets a name where a caller explicitly asks for the library/antilibrary
-	 * count-tick transition (slice 4 of the motion pass).
-	 */
+	/** Opt-in view-transition-name for the count span (used by library/antilibrary). */
 	countTransitionName?: string;
-	/**
-	 * Set false where the heading has its own view transition (library /
-	 * antilibrary word swap) — the cascade's fade would hide the morphing words.
-	 */
+	/** Set false where the heading has its own view transition (word swap) —
+	 * the cascade's fade would hide the morphing words. */
 	cascade?: boolean;
 }
 

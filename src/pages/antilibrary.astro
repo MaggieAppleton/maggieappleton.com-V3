@@ -61,13 +61,9 @@ const antiBookData = await getCollection("antibooks");
 	}
 </style>
 
-<!-- ______________ Motion pass slice 4: view transitions ______________
-     Mirror image of library.astro's block — see the comment there for the
-     full rationale. lib-word/antilib-word/lib-count share names with
-     library.astro on purpose (that's what lets the browser morph/tick
-     between the two documents); the grid keyframes are this page's own
-     direction ("going forward": /library -> /antilibrary), so old exits
-     left and new enters from the right, the reverse of library.astro. -->
+<!-- Mirror of library.astro's block — see the comment there for the full
+     rationale. Grid keyframes are this page's own direction (/library ->
+     /antilibrary), the reverse of library.astro's. -->
 <style is:global>
 	.lib-word {
 		view-transition-name: lib-word;
@@ -133,7 +129,5 @@ const antiBookData = await getCollection("antibooks");
 			120ms both;
 	}
 
-	/* prefers-reduced-motion: handled globally in global.css (wildcard
-	   ::view-transition-*(*) { animation: none !important; }) — none of the
-	   rules above use !important, so that rule always wins. */
+	/* prefers-reduced-motion: handled globally in global.css's wildcard rule. */
 </style>

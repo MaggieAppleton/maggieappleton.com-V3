@@ -157,9 +157,8 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	}
 
 	.grid-item {
-		/* Motion is driven entirely by JS (Web Animations API FLIP in the
-		   script below), so no CSS transition here — it would otherwise
-		   fight the animate() calls and double-ease the same properties. */
+		/* Motion is driven by the FLIP animation in the script below; a CSS
+		   transition here would double-ease the same properties. */
 		transition: none;
 		transform-origin: center;
 		will-change: opacity, transform;
@@ -179,9 +178,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 </style>
 
 <script>
-	// Easing/duration values below mirror the motion tokens in src/global.css
-	// (--ease-out, --ease-in-out). They're hardcoded here because the Web
-	// Animations API's `easing` option doesn't resolve CSS custom properties.
+	// Mirrors --ease-out/--ease-in-out in global.css — WAAPI can't read CSS vars.
 	const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 	const EASE_IN_OUT = "cubic-bezier(0.645, 0.045, 0.355, 1)";
 
@@ -209,9 +206,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		return matchesTopic && matchesGrowthStage && matchesType;
 	}
 
-	// Cancel any in-flight FLIP animation on an item and strip the inline
-	// styles used to pin exiting cards, returning it to plain class-driven
-	// styling. Called before every pass so rapid filter clicks don't stack.
+	// Called before every pass so rapid filter clicks don't stack animations.
 	function clearItemMotionStyles(item: HTMLElement) {
 		item.getAnimations().forEach((anim) => anim.cancel());
 		item.style.position = "";
@@ -225,8 +220,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		item.style.opacity = "";
 	}
 
-	// Instant path: used for prefers-reduced-motion and browsers without
-	// Element.animate support. Correctness only, no motion.
+	// Fallback for prefers-reduced-motion and browsers without Element.animate.
 	function filterGridItemsInstant(topic: string, growthStage: string, types: string[]) {
 		document.querySelectorAll<HTMLElement>(".grid-item").forEach((item) => {
 			clearItemMotionStyles(item);
@@ -235,10 +229,8 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	}
 
 	// FLIP: measure current (First) positions, apply the new filter (Last),
-	// then animate the delta. Cards that stay visible glide to their new
-	// spot, cards that appear fade/scale in, cards that disappear are
-	// pinned at their old on-screen position and fade/shrink out while
-	// their neighbours reflow into the space they leave behind.
+	// then animate the delta. Exiting cards are pinned at their old
+	// on-screen position while their neighbours reflow around them.
 	function filterGridItemsAnimated(topic: string, growthStage: string, types: string[]) {
 		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item"));
 
@@ -287,11 +279,8 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 			}
 		});
 
-		// On a long results page, a card that used to live far down the list
-		// can end up needing to travel thousands of pixels to its new slot.
-		// A glide over that distance just reads as a blank/washed-out beat
-		// (the card spends the whole animation off-screen), so past this
-		// threshold we treat it like a fresh arrival instead of a move.
+		// Beyond this distance a glide reads as a blank off-screen beat, so
+		// treat it like a fresh arrival instead of a move.
 		const maxGlideDistance = Math.max(window.innerWidth, window.innerHeight) * 1.5;
 
 		moving.forEach(({ item, lastRect }) => {

@@ -38,10 +38,7 @@ const { growthStage, size = "22" } = Astro.props;
 }
 
 <style>
-	/* Growth icons get a small hover flourish: seedling sprouts from the soil,
-	   budding/evergreen sway like the logo leaves. Triggered by hovering the
-	   icon itself, or its parent card/link where one exists. Single short
-	   play, never infinite. */
+	/* Triggered by hovering the icon itself, or its parent card/link. */
 	:global(.growth-icon) {
 		transform-origin: 50% 50%;
 	}
