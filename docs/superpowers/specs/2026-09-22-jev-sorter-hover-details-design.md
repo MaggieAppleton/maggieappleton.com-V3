@@ -19,24 +19,27 @@ The popover is supplemental. It does not replace or expand the compact percentag
 The popover has two left-aligned lines:
 
 1. The food label, such as `Burrito`.
-2. The winning probability and category, such as `66% probability: Yes`.
+2. Jev's confidence sentence, such as `66% sure it's a sandwich`.
 
-No category-specific sentence is authored in configuration. The second line is derived from the winning category already calculated by the sorter:
+The winning category supplies the sentence ending:
 
-- Yes bucket: `{percentage} probability: Yes`
-- No bucket: `{percentage} probability: No`
+- Yes bucket: `{percentage} sure it's a sandwich`
+- No bucket: `{percentage} sure it's not a sandwich`
 
 ## Visual Treatment
 
 The popover is one compact card:
 
 - White background.
+- A 1px pure-black border at 7% opacity.
 - Rounded corners rather than a pill shape.
 - Subtle outer shadow.
 - Dark, semibold food label.
-- Smaller secondary probability line.
+- A secondary confidence line at the same type size as the food label and regular weight.
+- A bold crimson percentage at the start of the confidence line.
 - No pointer arrow.
 - Enough padding to separate the two lines without making the card feel large.
+- A pointer cursor over settled food controls.
 
 The card uses a fixed viewport position while following the cursor so it can escape the sorter's clipped sticky container. Its width is content-sized but capped to remain readable on narrow viewports.
 
@@ -48,7 +51,7 @@ Motion stays under 200ms. Under `prefers-reduced-motion: reduce`, the popover sw
 
 ## Accessibility
 
-Settled foods remain native focusable controls with complete accessible labels, such as `Burrito: 66% probability: Yes`.
+Settled foods remain native focusable controls with complete accessible labels, such as `Burrito: 66% sure it's a sandwich`.
 
 The shared popover uses tooltip semantics and is referenced by the active item's `aria-describedby` only while visible. Decorative moving duplicates remain hidden from assistive technology and pointer-transparent.
 
@@ -73,8 +76,12 @@ The existing scroll flight and score-pop animation remain unchanged.
 
 Verify:
 
-- Burrito displays `Burrito` and `66% probability: Yes`.
-- Doughnut displays `Doughnut` and `94% probability: No`.
+- Burrito displays `Burrito` and `66% sure it's a sandwich`.
+- Doughnut displays `Doughnut` and `94% sure it's not a sandwich`.
+- Only the percentage is bold and crimson; the rest of the confidence line is regular weight.
+- The food name and confidence line use the same type size.
+- The card has a 1px pure-black border at 7% opacity.
+- Settled food controls use the pointer cursor.
 - The popover follows the cursor without lag while the pointer remains over an item.
 - The popover flips near right and bottom viewport edges and never clips.
 - Pointer leave closes the hover popover.
