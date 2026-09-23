@@ -18,9 +18,9 @@ const antiBookData = await getCollection("antibooks");
 				<div style="color: var(--color-gray-300); display: inline-block">|</div>
 				Antilibrary
 			</TitleWithCount>
-			<Title2>Books I like the idea of having read.</Title2>
+			<Title2 class="cascade" style="--cascade: 2">Books I like the idea of having read.</Title2>
 		</header>
-		<section class="bookshelf-grid">
+		<section class="bookshelf-grid cascade-fade" style="--cascade: 3">
 			{
 				antiBookData.map((book) => (
 					<BookCard

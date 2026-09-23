@@ -48,7 +48,7 @@ const components = {
 
 <Layout title="Now | Maggie Appleton" desc={PAGE_DESCRIPTIONS.now} pageMetadata="webpage">
 	<PageWrapper>
-		<header class="header">
+		<header class="header cascade" style="--cascade: 0">
 			<div class="back-link" slot="header-right">
 				<a href="/garden">
 					<Icon name="heroicons:arrow-left" size={16} />
@@ -60,7 +60,7 @@ const components = {
 				A sporadically updated log of what I'm reading, exploring, and thinking about
 			</Title2>
 		</header>
-		<div class="now-feed">
+		<div class="now-feed cascade-fade" style="--cascade: 1">
 			{
 				renderedPosts.map(({ Content, post }) => (
 					<NowSection>

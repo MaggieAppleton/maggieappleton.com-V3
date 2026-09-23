@@ -111,7 +111,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
-		<div class="above-title">
+		<div class="above-title cascade" style="--cascade: 0">
 			<div class="back-link">
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
@@ -128,10 +128,12 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
 		</div>
 		<div class="title-container">
-			<h1>{frontmatter.title}</h1>
-			{frontmatter.description && <p>{frontmatter.description}</p>}
+			<h1 class="cascade" style="--cascade: 1">{frontmatter.title}</h1>
+			{frontmatter.description && (
+				<p class="cascade" style="--cascade: 2">{frontmatter.description}</p>
+			)}
 		</div>
-		<div class="metadata">
+		<div class="metadata cascade" style="--cascade: 3">
 			<div class="metadata-left">
 				{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 			</div>
@@ -147,7 +149,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 	</header>
 
 
-	<div class="styled-main">
+	<div class="styled-main cascade-fade" style="--cascade: 4">
 		<slot />
 	</div>
 
@@ -167,9 +169,6 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 		font-weight: 600;
 		line-height: var(--leading-tighter);
 		max-width: 100%;
-		/* Hugs its text so the view-transition snapshot's box is close to the
-		   card title's, instead of stretching to the full container width. */
-		width: fit-content;
 	}
 
 	.title-container p {

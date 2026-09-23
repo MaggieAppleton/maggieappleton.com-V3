@@ -33,26 +33,30 @@ const sortedEssays = essays.sort(
 				</div>
 				Essays
 			</TitleWithCount>
-			<Title2>Opinionated, longform narrative writing with an agenda.</Title2>
+			<Title2 class="cascade" style="--cascade: 2">
+				Opinionated, longform narrative writing with an agenda.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedEssays.map((essay) => (
-					<div class="grid-item">
-						<EssayCard
-							id={essay.id}
-							slug={extractBaseSlug(essay.id)}
-							cover={essay.data.cover}
-							title={essay.data.title}
-							growthStage={essay.data.growthStage}
-							date={essay.data.updated}
-							description={essay.data.description}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedEssays.map((essay) => (
+						<div class="grid-item">
+							<EssayCard
+								id={essay.id}
+								slug={extractBaseSlug(essay.id)}
+								cover={essay.data.cover}
+								title={essay.data.title}
+								growthStage={essay.data.growthStage}
+								date={essay.data.updated}
+								description={essay.data.description}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

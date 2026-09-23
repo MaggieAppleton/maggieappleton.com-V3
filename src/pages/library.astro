@@ -18,11 +18,11 @@ const books = await getCollection("books");
 				<div style="color: var(--color-gray-300); display: inline-block">|</div>
 				<a href="/antilibrary" class="styled-link">Antilibrary</a>
 			</TitleWithCount>
-			<Title2
-				>Books I've read that significantly influenced how I see the world.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				Books I've read that significantly influenced how I see the world.
+			</Title2>
 		</header>
-		<section class="bookshelf-grid">
+		<section class="bookshelf-grid cascade-fade" style="--cascade: 3">
 			{
 				books.map((book) => (
 					<BookCard
