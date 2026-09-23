@@ -21,14 +21,58 @@ export const articleState = doc => ({
   paragraphs: doc.paragraphs,
 });
 
+const segmenter = new Intl.Segmenter('en', { granularity: 'sentence' });
+const wordSegmenter = new Intl.Segmenter('en', { granularity: 'word' });
+const leadingParagraphOffsets = new Map([
+  ['programming-portals', 1],
+  ['folk-interfaces', 1],
+  ['assumed-audience', 1],
+  ['ambient-copresence', 1],
+  ['growing-a-human', 1],
+  ['ai-enlightenment', 1],
+]);
+const endsSentence = text => /[.!?…](?:["'”’)\]}]+)?$/u.test(text);
+const isPreviewSentence = sentence => (
+  endsSentence(sentence)
+  && [...wordSegmenter.segment(sentence)].filter(({ isWordLike }) => isWordLike).length >= 4
+);
+const normalizePreviewText = text => text.replace(/\ban a synchronous\b/giu, 'an asynchronous');
+const sentenceSegments = texts => {
+  const segments = texts
+    .flatMap(text => [...segmenter.segment(text)].map(({ segment }) => segment.trim()))
+    .filter(Boolean);
+  const merged = [];
+  for (let index = 0; index < segments.length; index++) {
+    let sentence = segments[index];
+    while (/\b[A-Z]\.$/u.test(sentence) && segments[index + 1]) {
+      sentence = `${sentence} ${segments[++index]}`;
+    }
+    merged.push(sentence);
+  }
+  return merged;
+};
+
 export function previewSentences(doc) {
-  const segmenter = new Intl.Segmenter('en', { granularity: 'sentence' });
-  const sentences = doc.paragraphs
+  const offset = leadingParagraphOffsets.get(doc.id) ?? 0;
+  const prose = doc.paragraphs
+    .slice(offset)
     .filter(paragraph => paragraph.source !== 'image_alt')
-    .flatMap(paragraph => [...segmenter.segment(paragraph.text)].map(({ segment }) => segment.trim()))
-    .filter(Boolean)
+    .map(paragraph => paragraph.text)
+    .reduce((chunks, text) => {
+      const previous = chunks.at(-1);
+      if (!previous || endsSentence(previous)) chunks.push(text);
+      else chunks[chunks.length - 1] = `${previous} ${text}`;
+      return chunks;
+    }, []);
+  const sentences = sentenceSegments(prose)
+    .filter(isPreviewSentence)
     .slice(0, 2);
-  return sentences.join(' ');
+  if (sentences.length !== 2) {
+    throw new Error(
+      `Recorded playground source must supply exactly two eligible prose sentences: ${doc.id || doc.title || 'unknown'}`,
+    );
+  }
+  return normalizePreviewText(sentences.join(' '));
 }
 
 function selectedDocuments(documents) {
@@ -105,6 +149,10 @@ export function validateRecordedSnapshot(snapshot, documents) {
   }
   for (const [index, post] of snapshot.posts.entries()) {
     if (!post.title || !post.preview) throw new Error(`Recorded playground metadata is incomplete: ${post.id}`);
+    const previewSegments = sentenceSegments([post.preview]);
+    if (previewSegments.length !== 2 || !previewSegments.every(isPreviewSentence)) {
+      throw new Error(`Recorded playground preview must contain exactly two complete prose sentences: ${post.id}`);
+    }
     const currentDocument = currentDocuments?.[index];
     if (currentDocument
       && (post.title !== currentDocument.title || post.preview !== previewSentences(currentDocument))) {

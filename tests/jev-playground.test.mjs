@@ -44,6 +44,15 @@ const expectedPostIds = [
   'ambient-copresence',
 ];
 
+const postsWithLeadingNonProse = new Set([
+  'programming-portals',
+  'folk-interfaces',
+  'assumed-audience',
+  'ambient-copresence',
+  'growing-a-human',
+  'ai-enlightenment',
+]);
+
 const validAnswer = question => {
   if (question.type === 'noul') return { type: 'noul', noul: 0.75 };
   const keys = question.type === 'choice'
@@ -63,6 +72,9 @@ const documents = expectedPostIds.map((id, index) => ({
   title: `Post ${index + 1}`,
   description: `Description ${index + 1}`,
   paragraphs: [
+    ...(postsWithLeadingNonProse.has(id)
+      ? [{ id: 'p0', text: 'Curated introductory block.', heading: '', citations: [] }]
+      : []),
     { id: 'p1', text: `First sentence for ${id}. Second sentence for ${id}. Third sentence is hidden.`, heading: '', citations: [] },
   ],
 }));
@@ -112,6 +124,122 @@ test('article state uses full extracted prose while preview contains two sentenc
   assert.equal(
     previewSentences(documents[0]),
     'First sentence for garden-history. Second sentence for garden-history.',
+  );
+});
+
+test('preview skips a curated HTML heading even when it looks like a sentence', () => {
+  assert.equal(
+    previewSentences({
+      id: 'programming-portals',
+      paragraphs: [
+        { id: 'p1', text: 'A Portal Into Programming Ideas.', heading: '', citations: [] },
+        {
+          id: 'p2',
+          text: 'The first complete prose sentence follows. The second complete prose sentence follows it.',
+          heading: '',
+          citations: [],
+        },
+      ],
+    }),
+    'The first complete prose sentence follows. The second complete prose sentence follows it.',
+  );
+});
+
+test('preview skips a curated AssumedAudience block with punctuated noun phrases', () => {
+  assert.equal(
+    previewSentences({
+      id: 'assumed-audience',
+      paragraphs: [
+        {
+          id: 'p1',
+          text: 'Designers, writers, technologists, and researchers. Curious people, thoughtful practitioners, and newcomers.',
+          heading: '',
+          citations: [],
+        },
+        {
+          id: 'p2',
+          text: 'The article opens with actual explanatory prose. Its second sentence continues the central idea.',
+          heading: '',
+          citations: [],
+        },
+      ],
+    }),
+    'The article opens with actual explanatory prose. Its second sentence continues the central idea.',
+  );
+});
+
+test('preview joins inline-fragment paragraphs before sentence segmentation', () => {
+  assert.equal(
+    previewSentences({
+      id: 'ambient-copresence',
+      paragraphs: [
+        { id: 'p0', text: 'Ambient copresence among networked collaborators.', heading: '', citations: [] },
+        { id: 'p1', text: 'We need a', heading: '', citations: [] },
+        { id: 'p2', text: 'synchronous way to feel present together. The shared space should remain calm and peripheral.', heading: '', citations: [] },
+      ],
+    }),
+    'We need a synchronous way to feel present together. The shared space should remain calm and peripheral.',
+  );
+  assert.equal(
+    previewSentences({
+      id: 'ambient-copresence',
+      paragraphs: [
+        { id: 'p0', text: 'Ambient copresence among networked collaborators.', heading: '', citations: [] },
+        { id: 'p1', text: "It's hard to feel present together.", heading: '', citations: [] },
+        { id: 'p2', text: 'You and I are currently in an', heading: '', citations: [] },
+        { id: 'p3', text: 'a', heading: '', citations: [] },
+        { id: 'p4', text: 'synchronous exchange.', heading: '', citations: [] },
+      ],
+    }),
+    "It's hard to feel present together. You and I are currently in an asynchronous exchange.",
+  );
+});
+
+test('preview ignores punctuated micro-fragments when filling its two slots', () => {
+  assert.equal(
+    previewSentences({
+      id: 'planning-agents',
+      paragraphs: [{
+        id: 'p1',
+        text: 'Planning used to be a human activity. With agents. It becomes a collaboration across several different timescales.',
+        heading: '',
+        citations: [],
+      }],
+    }),
+    'Planning used to be a human activity. It becomes a collaboration across several different timescales.',
+  );
+  assert.throws(
+    () => previewSentences({
+      paragraphs: [
+        { id: 'p2', text: 'Only one complete prose sentence follows.', heading: '', citations: [] },
+      ],
+    }),
+    /exactly two eligible prose sentences/,
+  );
+});
+
+test('preview keeps a middle initial with the sentence it belongs to', () => {
+  assert.equal(
+    previewSentences({
+      id: 'ai-enlightenment',
+      paragraphs: [
+        { id: 'p0', text: 'Readers of essays about language models.', heading: '', citations: [] },
+        {
+          id: 'p1',
+          text: "I don't pay much attention to the torrent of AI think pieces. But this one, by Princeton professor David A. Bell hits some good notes.",
+          heading: '',
+          citations: [],
+        },
+        { id: 'p2', text: 'reference', heading: '', citations: [] },
+        {
+          id: 'p3',
+          text: 'As an expert on the Enlightenment, he has been asked to develop an opinion.',
+          heading: '',
+          citations: [],
+        },
+      ],
+    }),
+    "I don't pay much attention to the torrent of AI think pieces. But this one, by Princeton professor David A. Bell hits some good notes.",
   );
 });
 
@@ -239,9 +367,20 @@ test('snapshot validation rejects saved titles and previews that differ from cur
   assert.throws(
     () => validateRecordedSnapshot({
       ...snapshot,
-      posts: snapshot.posts.map((post, index) => index ? post : { ...post, preview: 'Wrong preview.' }),
+      posts: snapshot.posts.map((post, index) => index
+        ? post
+        : { ...post, preview: 'This preview is deliberately wrong. Its second sentence is wrong too.' }),
     }, documents),
     /metadata does not match current source: garden-history/,
+  );
+  assert.throws(
+    () => validateRecordedSnapshot({
+      ...snapshot,
+      posts: snapshot.posts.map((post, index) => index
+        ? post
+        : { ...post, preview: 'Only one complete sentence.' }),
+    }),
+    /preview must contain exactly two complete prose sentences: garden-history/,
   );
 });
 
