@@ -33,27 +33,29 @@ const sortedNotes = notes.sort(
 				</div>
 				Notes
 			</TitleWithCount>
-			<Title2
-				>Loose, unopinionated notes on things I don't entirely understand yet.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				Loose, unopinionated notes on things I don't entirely understand yet.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedNotes.map((note) => (
-					<div class="grid-item">
-						<NoteCard
-							id={note.id}
-							slug={extractBaseSlug(note.id)}
-							title={note.data.title}
-							growthStage={note.data.growthStage}
-							date={note.data.updated}
-							description={note.data.description}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedNotes.map((note) => (
+						<div class="grid-item">
+							<NoteCard
+								id={note.id}
+								slug={extractBaseSlug(note.id)}
+								title={note.data.title}
+								growthStage={note.data.growthStage}
+								date={note.data.updated}
+								description={note.data.description}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

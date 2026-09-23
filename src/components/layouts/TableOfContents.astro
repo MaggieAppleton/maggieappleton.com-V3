@@ -27,19 +27,22 @@ const { headings } = Astro.props;
 	</h4>
 
 	<nav class="toc" id="desktop-toc-content">
-		<ul>
-			{
-				headings
-					.filter(({ depth }) => depth > 1 && depth < 4)
-					.map((heading) => (
-						<li class="toc-item" data-level={heading.depth}>
-							<a href={`#${heading.slug}`} class="toc-link">
-								{heading.text}
-							</a>
-						</li>
-					))
-			}
-		</ul>
+		<div class="toc-track">
+			<span class="toc-marker" aria-hidden="true"></span>
+			<ul>
+				{
+					headings
+						.filter(({ depth }) => depth > 1 && depth < 4)
+						.map((heading) => (
+							<li class="toc-item" data-level={heading.depth}>
+								<a href={`#${heading.slug}`} class="toc-link">
+									{heading.text}
+								</a>
+							</li>
+						))
+				}
+			</ul>
+		</div>
 	</nav>
 </div>
 
@@ -201,6 +204,27 @@ const { headings } = Astro.props;
 		display: block;
 	}
 
+	.toc-track {
+		position: relative;
+	}
+
+	.toc-marker {
+		position: absolute;
+		left: 2px;
+		top: 0;
+		width: 2px;
+		height: 1px;
+		border-radius: var(--border-radius-sm);
+		background: var(--color-sea-blue);
+		opacity: 0;
+		transform-origin: top;
+		transform: translateY(0) scaleY(0);
+		transition:
+			transform var(--dur-page) var(--ease-in-out),
+			opacity var(--dur-quick) var(--ease-hover);
+		pointer-events: none;
+	}
+
 	.toc ul {
 		list-style: none;
 		padding: 0;
@@ -222,7 +246,7 @@ const { headings } = Astro.props;
 		line-height: var(--leading-base);
 		font-size: var(--font-size-sm);
 		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+		transition: color var(--dur-quick) var(--ease-hover);
 		color: var(--color-gray-600);
 		text-decoration: none;
 	}
@@ -248,9 +272,7 @@ const { headings } = Astro.props;
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
 		let isCollapsed = false;
 		let isAutoCollapsed = false;
@@ -273,6 +295,122 @@ const { headings } = Astro.props;
 		const header = document.querySelector(".collapse-header");
 		const content = document.querySelector(".collapse-content");
 		const mobileArrow = header?.querySelector(".arrow-icon");
+
+		// --- Active-section marker ------------------------------------------------
+		// Tracks which heading is currently being read and slides a small bar
+		// alongside the desktop TOC to follow it.
+		const trackEl = document.querySelector(".desktop-container .toc-track") as HTMLElement | null;
+		const markerEl = trackEl?.querySelector(".toc-marker") as HTMLElement | null;
+		const desktopLinks = Array.from(
+			document.querySelectorAll(".desktop-container .toc-link")
+		) as HTMLAnchorElement[];
+
+		// Pair each desktop link with the heading element it points to, in
+		// document order, so we can tell which heading is "current" while scrolling.
+		const sections = desktopLinks
+			.map((link) => {
+				const id = link.getAttribute("href")?.slice(1);
+				const heading = id ? document.getElementById(id) : null;
+				return heading ? { link, heading } : null;
+			})
+			.filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => entry !== null);
+
+		let activeIndex: number | null = null;
+		// A heading counts as "current" once it's in the top 30% of the viewport,
+		// so clicking a TOC link (which lands the heading ~150px down) activates it.
+		const headingThreshold = () => window.innerHeight * 0.3;
+
+		const setActiveClasses = () => {
+			const activeId = activeIndex !== null ? sections[activeIndex].heading.id : null;
+			document.querySelectorAll(".toc-link").forEach((link) => {
+				const isActive = activeId !== null && link.getAttribute("href") === `#${activeId}`;
+				link.classList.toggle("active", isActive);
+				if (isActive) {
+					link.setAttribute("aria-current", "true");
+				} else {
+					link.removeAttribute("aria-current");
+				}
+			});
+		};
+
+		const positionMarker = (animate: boolean) => {
+			if (!markerEl || !trackEl) return;
+
+			if (!animate) markerEl.style.transition = "none";
+
+			if (activeIndex === null) {
+				markerEl.style.opacity = "0";
+			} else {
+				const trackRect = trackEl.getBoundingClientRect();
+				const linkRect = sections[activeIndex].link.getBoundingClientRect();
+				const top = linkRect.top - trackRect.top;
+				const height = linkRect.height;
+				markerEl.style.transform = `translateY(${top}px) scaleY(${height})`;
+				markerEl.style.opacity = "1";
+			}
+
+			if (!animate) {
+				// Force layout so the transition-less position is committed, then
+				// re-enable transitions on the next frame for future moves.
+				markerEl.getBoundingClientRect();
+				requestAnimationFrame(() => {
+					markerEl.style.transition = "";
+				});
+			}
+		};
+
+		const updateActiveHeading = (animate: boolean) => {
+			let newIndex: number | null = null;
+			for (let i = 0; i < sections.length; i++) {
+				const top = sections[i].heading.getBoundingClientRect().top;
+				if (top - headingThreshold() <= 0) {
+					newIndex = i;
+				} else {
+					break;
+				}
+			}
+
+			if (newIndex === activeIndex) {
+				if (!animate) positionMarker(false);
+				return;
+			}
+
+			activeIndex = newIndex;
+			setActiveClasses();
+			positionMarker(animate);
+		};
+
+		let markerTicking = false;
+		const scheduleMarkerUpdate = (animate: boolean) => {
+			if (markerTicking) return;
+			markerTicking = true;
+			requestAnimationFrame(() => {
+				markerTicking = false;
+				updateActiveHeading(animate);
+			});
+		};
+
+		const markerScrollHandler = () => scheduleMarkerUpdate(true);
+		const markerResizeHandler = () => scheduleMarkerUpdate(false);
+
+		let markerResizeObserver: ResizeObserver | undefined;
+		if (sections.length > 0 && markerEl && trackEl) {
+			// Set the initial position synchronously, with transitions disabled,
+			// so the marker never slides in from a resting state on first paint.
+			updateActiveHeading(false);
+
+			window.addEventListener("scroll", markerScrollHandler, { passive: true });
+			window.addEventListener("resize", markerResizeHandler);
+
+			const list = trackEl.querySelector("ul");
+			if (list && "ResizeObserver" in window) {
+				markerResizeObserver = new ResizeObserver(() => scheduleMarkerUpdate(false));
+				markerResizeObserver.observe(list);
+			}
+
+			document.fonts?.ready?.then(() => scheduleMarkerUpdate(false));
+		}
+		// ---------------------------------------------------------------------------
 
 		// Desktop toggle handler
 		const desktopClickHandler = () => {
@@ -319,6 +457,15 @@ const { headings } = Astro.props;
 		header?.addEventListener("click", mobileClickHandler);
 		window.addEventListener("scroll", scrollHandler);
 
+		// Calls `fn` once scrolling stops (scrollend where supported, else a timeout)
+		const onScrollSettled = (fn: () => void) => {
+			if ("onscrollend" in window) {
+				window.addEventListener("scrollend", fn, { once: true });
+			} else {
+				setTimeout(fn, 900);
+			}
+		};
+
 		// Smooth scrolling for TOC links
 		const linkHandlers: Array<{ link: Element; handler: EventListener }> = [];
 		document.querySelectorAll(".toc-link").forEach((link) => {
@@ -339,6 +486,18 @@ const { headings } = Astro.props;
 					block: "start",
 				});
 
+				// Lazy images above the target can load mid-scroll and push it down,
+				// so the smooth scroll stops short. Re-aim a few times once it settles.
+				let corrections = 0;
+				const correctScroll = () => {
+					const top = targetElement.getBoundingClientRect().top;
+					if (corrections++ < 3 && Math.abs(top) > window.innerHeight * 0.3) {
+						targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+						onScrollSettled(correctScroll);
+					}
+				};
+				onScrollSettled(correctScroll);
+
 				clearTimeout(scrollTimeoutId);
 				scrollTimeoutId = setTimeout(() => {
 					isScrollingToSection = false;
@@ -356,9 +515,12 @@ const { headings } = Astro.props;
 			tocHeader?.removeEventListener("click", desktopClickHandler);
 			header?.removeEventListener("click", mobileClickHandler);
 			window.removeEventListener("scroll", scrollHandler);
+			window.removeEventListener("scroll", markerScrollHandler);
+			window.removeEventListener("resize", markerResizeHandler);
+			markerResizeObserver?.disconnect();
 			linkHandlers.forEach(({ link, handler }) => {
 				link.removeEventListener("click", handler);
 			});
 		};
-	});
+	})();
 </script>

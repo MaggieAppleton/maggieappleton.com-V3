@@ -33,7 +33,7 @@ const pageMetadata = createDatedWebPageMetadata({
 	desc={description}
 	pageMetadata={pageMetadata}
 >
-	<header class="header-section">
+	<header class="header-section cascade" style="--cascade: 0">
 		<div class="above-title">
 			<div class="back-link">
 				<a href="/smidgeons">
@@ -47,14 +47,14 @@ const pageMetadata = createDatedWebPageMetadata({
 	</header>
 
 	<div class="smidgeon-layout">
-		<div class="metadata">
+		<div class="metadata cascade" style="--cascade: 1">
 			<div class="date-permalink">
 				<CalendarDate value={frontmatter.startDate} />
 			</div>
 			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 		</div>
 
-		<div class="content">
+		<div class="content cascade" style="--cascade: 2">
 			{!frontmatter.external && !frontmatter.citation && (
 				<h1 class="content-header">{primaryTitle}</h1>
 			)}

@@ -31,25 +31,27 @@ const sortedPodcasts = podcasts.sort(
 				</div>
 				Podcasts
 			</TitleWithCount>
-			<Title2
-				>Interviews and casual chats on various podcasts. Inevitably about digital gardening,
-				artificial intelligence, or metaphors.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				Interviews and casual chats on various podcasts. Inevitably about digital gardening,
+				artificial intelligence, or metaphors.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			{
-				sortedPodcasts.map((podcast) => (
-					<PodcastCard
-						id={podcast.id}
-						url={podcast.data.url}
-						episodeName={podcast.data.episodeName}
-						podcastName={podcast.data.podcastName}
-						date={podcast.data.updated}
-						podcastCover={podcast.data.coverImage}
-					/>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				{
+					sortedPodcasts.map((podcast) => (
+						<PodcastCard
+							id={podcast.id}
+							url={podcast.data.url}
+							episodeName={podcast.data.episodeName}
+							podcastName={podcast.data.podcastName}
+							date={podcast.data.updated}
+							podcastCover={podcast.data.coverImage}
+						/>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

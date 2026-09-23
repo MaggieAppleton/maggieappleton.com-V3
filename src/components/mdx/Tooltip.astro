@@ -40,12 +40,52 @@ const { maxWidth = 400 } = Astro.props;
 	.tippy-box[data-theme~="custom"] .tippy-arrow {
 		color: var(--color-white);
 	}
+
+	/* Grow out of the link. Tippy waits for transitionend before unmounting,
+	   so this must be a transition (not a keyframe animation). Tippy sets the
+	   duration inline from its `duration` option. */
+	.tippy-box[data-animation="grow"] {
+		transition-property: transform, opacity;
+		transition-timing-function: var(--ease-spring), var(--ease-out);
+	}
+
+	.tippy-box[data-animation="grow"][data-state="hidden"] {
+		opacity: 0;
+		transition-timing-function: var(--ease-out);
+	}
+
+	.tippy-box[data-animation="grow"][data-placement^="top"] {
+		transform-origin: bottom center;
+	}
+	.tippy-box[data-animation="grow"][data-placement^="top"][data-state="hidden"] {
+		transform: scale(0.94) translateY(4px);
+	}
+
+	.tippy-box[data-animation="grow"][data-placement^="bottom"] {
+		transform-origin: top center;
+	}
+	.tippy-box[data-animation="grow"][data-placement^="bottom"][data-state="hidden"] {
+		transform: scale(0.94) translateY(-4px);
+	}
+
+	.tippy-box[data-animation="grow"][data-placement^="left"] {
+		transform-origin: right center;
+	}
+	.tippy-box[data-animation="grow"][data-placement^="left"][data-state="hidden"] {
+		transform: scale(0.94) translateX(4px);
+	}
+
+	.tippy-box[data-animation="grow"][data-placement^="right"] {
+		transform-origin: left center;
+	}
+	.tippy-box[data-animation="grow"][data-placement^="right"][data-state="hidden"] {
+		transform: scale(0.94) translateX(-4px);
+	}
 </style>
 
 <script>
 	import tippy, { type Instance, type Props } from "tippy.js";
 	import "tippy.js/dist/tippy.css";
-	import "tippy.js/animations/shift-away.css";
 
 	const tooltipInstances = new Set<Instance>();
 
@@ -80,10 +120,10 @@ const { maxWidth = 400 } = Astro.props;
 				{
 					content: template.content.cloneNode(true),
 					maxWidth: parseInt(wrapper.getAttribute("data-maxwidth") || "320"),
-					duration: reducedMotion ? 0 : 500,
+					duration: reducedMotion ? 0 : [240, 160],
 					arrow: true,
 					interactive: true,
-					animation: reducedMotion ? false : "shift-away",
+					animation: reducedMotion ? false : "grow",
 					allowHTML: true,
 					appendTo: () => wrapper,
 					theme: "custom",
@@ -100,5 +140,4 @@ const { maxWidth = 400 } = Astro.props;
 	}
 
 	initializeTooltips();
-	document.addEventListener("astro:page-load", initializeTooltips);
 </script>

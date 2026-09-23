@@ -562,8 +562,6 @@ const TYPES = [
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
 	interface FilterState {
 		topic: string;
 		growthStage: string;
@@ -903,7 +901,7 @@ const TYPES = [
 		list.classList.toggle("at-end", atEnd);
 	}
 
-	onPageLifecycle(() => {
+	(() => {
 		filterState.topic = "";
 		filterState.growthStage = "";
 		filterState.types = [];
@@ -931,12 +929,10 @@ const TYPES = [
 			rightBtn.addEventListener("click", () => topicsList.scrollBy({ left: 160, behavior: "smooth" }));
 		}
 
-		return () => {
-			topicsList?.removeEventListener("click", handleTopicClick);
-			filterPopovers?.removeEventListener("click", handlePopoverClick);
-			document.removeEventListener("click", handleDocumentClick);
-			document.removeEventListener("keydown", handleKeydown);
-			if (onScroll) topicsList?.removeEventListener("scroll", onScroll);
-		};
-	});
+		// Close any open popover if restored from bfcache, so it doesn't
+		// reappear stuck open on back/forward navigation.
+		window.addEventListener("pageshow", (e) => {
+			if (e.persisted) closeAllPopovers();
+		});
+	})();
 </script>

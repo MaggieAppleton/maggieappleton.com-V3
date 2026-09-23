@@ -33,28 +33,29 @@ const sortedPatterns = patterns.sort(
 				</div>
 				Pattern Catalogue
 			</TitleWithCount>
-			<Title2
-				>A catalogue of design patterns gathered from my own observations and
-				research.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				A catalogue of design patterns gathered from my own observations and research.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedPatterns.map((pattern) => (
-					<div class="grid-item">
-						<PatternCard
-							id={pattern.id}
-							slug={extractBaseSlug(pattern.id)}
-							title={pattern.data.title}
-							growthStage={pattern.data.growthStage}
-							date={pattern.data.updated}
-							description={pattern.data.description}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedPatterns.map((pattern) => (
+						<div class="grid-item">
+							<PatternCard
+								id={pattern.id}
+								slug={extractBaseSlug(pattern.id)}
+								title={pattern.data.title}
+								growthStage={pattern.data.growthStage}
+								date={pattern.data.updated}
+								description={pattern.data.description}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

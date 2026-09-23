@@ -39,11 +39,11 @@ const sortedPatterns = patterns
 <Layout title="Maggie Appleton" desc={PAGE_DESCRIPTIONS.home} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="page-header">
-			<Title1 class="main-title">
+			<Title1 class="main-title cascade" style={{ "--cascade": 0 }}>
 				<b>Maggie </b>
 				makes visual essays about programming, design, and anthropology.
 			</Title1>
-			<SmallTitle2>
+			<SmallTitle2 class="cascade" style={{ "--cascade": 1 }}>
 				Designer, anthropologist, and mediocre developer
 				<br /> Currently exploring AI & software engineering at
 				<b class="company-name">
@@ -54,6 +54,7 @@ const sortedPatterns = patterns
 
 		<Spacer />
 
+		<div class="cascade-fade" style={{ "--cascade": 2 }}>
 		<section>
 			<a href="/garden" class="garden-link">
 				<h2 class="garden-title">The Garden</h2>
@@ -171,6 +172,7 @@ const sortedPatterns = patterns
 				</div>
 			</section>
 		</section>
+		</div>
 	</PageWrapper>
 </Layout>
 

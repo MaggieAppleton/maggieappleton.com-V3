@@ -68,13 +68,13 @@ const renderedSmidgeons = await Promise.all(
 				</div>
 				Smidgeons Stream
 			</TitleWithCount>
-			<Title2>
+			<Title2 class="cascade" style="--cascade: 2">
 				A stream of interesting links, papers, and tiny thoughts. Roughly what I'm reading and
-				thinking about at the moment.</Title2
-			>
+				thinking about at the moment.
+			</Title2>
 		</header>
 
-		<div class="page-layout">
+		<div class="page-layout cascade-fade" style="--cascade: 3">
 			<div class="smidgeons-list">
 				{
 					renderedSmidgeons.map((smidgeon, index) => (

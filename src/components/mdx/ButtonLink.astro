@@ -25,7 +25,7 @@ const { href } = Astro.props;
 <style>
 	.external-url {
 		color: var(--color-gray-600);
-		transition: color 0.2s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		text-align: center;
 	}
 
@@ -40,11 +40,7 @@ const { href } = Astro.props;
 
 	.link-container {
 		margin: var(--space-s) auto;
-		transition: all 300ms ease-in-out;
-	}
-
-	.link-container:hover {
-		transform: scale3d(1.02, 1.02, 1.02);
+		transition: transform var(--dur-base) var(--ease-spring);
 	}
 
 	.styled-link {
@@ -54,10 +50,21 @@ const { href } = Astro.props;
 		color: white;
 		font-weight: 400;
 		font-family: var(--font-sans);
-		transition: all 300ms ease-in-out;
+		transition: background-color var(--dur-quick) var(--ease-hover);
 	}
 
-	.styled-link:hover {
-		background-color: var(--color-medium-sea-blue);
+	@media (hover: hover) and (pointer: fine) {
+		.link-container:hover {
+			transform: scale3d(1.02, 1.02, 1.02);
+		}
+
+		.styled-link:hover {
+			background-color: var(--color-medium-sea-blue);
+		}
+	}
+
+	.link-container:active {
+		transform: scale3d(0.98, 0.98, 0.98);
+		transition-duration: var(--dur-micro);
 	}
 </style>

@@ -2,12 +2,13 @@
 export interface Props {
 	as?: "h1" | "h2";
 	style?: Record<string, string | number>;
+	class?: string;
 }
 
-const { as: Tag = "h1", style } = Astro.props;
+const { as: Tag = "h1", style, class: className } = Astro.props;
 ---
 
-<Tag class="title1" style={style}><slot /></Tag>
+<Tag class:list={["title1", className]} style={style}><slot /></Tag>
 
 <style>
 	h2.title1 {

@@ -337,9 +337,7 @@ const getVersionUrl = (version: VersionedContent) => {
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const dropdown = document.querySelector(".version-dropdown");
 		const trigger = dropdown?.querySelector(".version-trigger") as HTMLElement | null;
 		const menu = dropdown?.querySelector(".version-menu") as HTMLElement | null;
@@ -460,12 +458,14 @@ const getVersionUrl = (version: VersionedContent) => {
 		document.addEventListener("click", outsideClickHandler);
 		document.addEventListener("focusin", outsideFocusHandler);
 
-		return () => {
-			trigger.removeEventListener("click", triggerClickHandler);
-			trigger.removeEventListener("keydown", triggerKeydownHandler);
-			menu.removeEventListener("keydown", menuKeydownHandler);
-			document.removeEventListener("click", outsideClickHandler);
-			document.removeEventListener("focusin", outsideFocusHandler);
-		};
-	});
+		// If restored from bfcache with the dropdown open, close it instantly
+		// (without stealing focus) rather than have it reappear stuck open.
+		window.addEventListener("pageshow", (e) => {
+			if (!e.persisted || !isOpen) return;
+			isOpen = false;
+			menu!.classList.remove("open");
+			trigger!.setAttribute("aria-expanded", "false");
+			currentIndex = -1;
+		});
+	})();
 </script>

@@ -80,11 +80,13 @@ const allPosts = [
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={allPosts}>The Garden</TitleWithCount>
-			<Title2>
+			<Title2 class="cascade" style="--cascade: 2">
 				A collection of essays, notes, talks, podcasts, and half-baked explorations I'm always
 				tending to.
 			</Title2>
 		</header>
-		<GardenFiltersAndHits allPostData={allPosts} />
+		<div class="cascade-fade" style="--cascade: 3">
+			<GardenFiltersAndHits allPostData={allPosts} />
+		</div>
 	</PageWrapper>
 </Layout>

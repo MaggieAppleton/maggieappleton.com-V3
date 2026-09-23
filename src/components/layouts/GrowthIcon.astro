@@ -11,10 +11,119 @@ const { growthStage, size = "22" } = Astro.props;
 
 {
 	growthStage === "seedling" ? (
-		<Icon name="seedling" width={size} height={size} style="flex-shrink: 0;" />
+		<Icon
+			name="seedling"
+			width={size}
+			height={size}
+			class="growth-icon"
+			style="flex-shrink: 0;"
+		/>
 	) : growthStage === "budding" ? (
-		<Icon name="budding" width={size} height={size} style="flex-shrink: 0;" />
+		<Icon
+			name="budding"
+			width={size}
+			height={size}
+			class="growth-icon"
+			style="flex-shrink: 0;"
+		/>
 	) : growthStage === "evergreen" ? (
-		<Icon name="evergreen" width={size} height={size} style="flex-shrink: 0;" />
+		<Icon
+			name="evergreen"
+			width={size}
+			height={size}
+			class="growth-icon"
+			style="flex-shrink: 0;"
+		/>
 	) : null
 }
+
+<style>
+	/* Growth icons get a small hover flourish: seedling sprouts from the soil,
+	   budding/evergreen sway like the logo leaves. Triggered by hovering the
+	   icon itself, or its parent card/link where one exists. Single short
+	   play, never infinite. */
+	:global(.growth-icon) {
+		transform-origin: 50% 50%;
+	}
+
+	:global(.growth-icon[data-icon="seedling"]) {
+		transform-origin: 50% 100%;
+	}
+
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		:global(a:hover .growth-icon[data-icon="seedling"]),
+		:global(.growth-icon[data-icon="seedling"]:hover),
+		:global(.growth-icon[data-icon="seedling"]:focus-visible) {
+			animation: growthSprout calc(var(--dur-page) + var(--dur-quick)) var(--ease-spring) 1;
+		}
+
+		:global(a:hover .growth-icon[data-icon="budding"]),
+		:global(.growth-icon[data-icon="budding"]:hover),
+		:global(.growth-icon[data-icon="budding"]:focus-visible) {
+			animation: growthSway calc(var(--dur-page) + var(--dur-quick)) var(--ease-in-out) 1;
+		}
+
+		:global(a:hover .growth-icon[data-icon="evergreen"]),
+		:global(.growth-icon[data-icon="evergreen"]:hover),
+		:global(.growth-icon[data-icon="evergreen"]:focus-visible) {
+			animation: growthSway2 calc(var(--dur-page) + var(--dur-quick)) var(--ease-in-out) 1;
+		}
+	}
+
+	@keyframes growthSprout {
+		0% {
+			transform: scaleY(0.82) rotate(0deg);
+		}
+		30% {
+			transform: scaleY(1.06) rotate(-7deg);
+		}
+		55% {
+			transform: scaleY(1) rotate(6deg);
+		}
+		75% {
+			transform: scaleY(1) rotate(-3deg);
+		}
+		100% {
+			transform: scaleY(1) rotate(0deg);
+		}
+	}
+
+	@keyframes growthSway {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(10deg);
+		}
+		50% {
+			transform: rotate(-10deg);
+		}
+		75% {
+			transform: rotate(5deg);
+		}
+	}
+
+	@keyframes growthSway2 {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(-8deg);
+		}
+		50% {
+			transform: rotate(8deg);
+		}
+		75% {
+			transform: rotate(-4deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(.growth-icon) {
+			animation: none;
+		}
+	}
+</style>
+

@@ -6,7 +6,6 @@
 	fill="none"
 	style="position: relative; top: 4px;"
 	xmlns="http://www.w3.org/2000/svg"
-	transition:persist
 >
 	<path
 		class="leaf"
@@ -108,11 +107,98 @@
 			fill: var(--color-bright-crimson);
 		}
 	}
+
+	/* Loading indicator: looping wiggle shown while a same-origin navigation
+	   is in flight (see the script below). Leaves are slightly out of phase
+	   for charm; letter gets a gentle pulse. Transform/opacity only so it
+	   stays cheap while a real navigation is happening. */
+	.is-loading .leaf {
+		animation: leafWiggleLoop 900ms ease-in-out infinite;
+	}
+
+	.is-loading .leaf-2 {
+		animation: leafWiggleLoop2 900ms ease-in-out infinite;
+		animation-delay: -300ms;
+	}
+
+	.is-loading .letter {
+		animation: letterPulseLoop 900ms ease-in-out infinite;
+		animation-delay: -150ms;
+	}
+
+	@keyframes leafWiggleLoop {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		15% {
+			transform: rotate(10deg);
+		}
+		35% {
+			transform: rotate(-7deg);
+		}
+		55% {
+			transform: rotate(4deg);
+		}
+		75% {
+			transform: rotate(-2deg);
+		}
+	}
+
+	@keyframes leafWiggleLoop2 {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		15% {
+			transform: rotate(-6deg);
+		}
+		35% {
+			transform: rotate(4deg);
+		}
+		55% {
+			transform: rotate(-2deg);
+		}
+		75% {
+			transform: rotate(1deg);
+		}
+	}
+
+	@keyframes letterPulseLoop {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(0.96);
+		}
+	}
+
+	@keyframes logoLoadingOpacityPulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.6;
+		}
+	}
+
+	/* Reduced motion: no rotation/scaling, just a subtle whole-logo fade. */
+	@media (prefers-reduced-motion: reduce) {
+		.is-loading .leaf,
+		.is-loading .leaf-2,
+		.is-loading .letter {
+			animation: none;
+		}
+
+		#logo.is-loading {
+			animation: logoLoadingOpacityPulse 1.2s ease-in-out infinite;
+		}
+	}
 </style>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
 	function handleLogoAnimation() {
 		const logo = document.getElementById("logo");
 		if (logo) {
@@ -123,10 +209,113 @@
 		}
 	}
 
-	onPageLifecycle(() => {
+	(() => {
 		const logo = document.getElementById("logo");
 		if (!logo) return;
 		logo.addEventListener("mouseenter", handleLogoAnimation);
 		return () => logo.removeEventListener("mouseenter", handleLogoAnimation);
-	});
+	})();
+
+	// --- Loading indicator -------------------------------------------------
+	// While a real (cross-document) navigation is in flight, wiggle the logo
+	// so the page doesn't feel frozen on slow loads. Most navigations are
+	// prefetched via speculation rules and finish fast, so we delay the
+	// start to avoid a flash on those, and stop the moment the browser is
+	// about to snapshot this page for the view transition.
+	(() => {
+		const logo = document.getElementById("logo");
+		if (!logo) return;
+
+		const START_DELAY_MS = 150;
+		const SAFETY_TIMEOUT_MS = 10000;
+
+		let startTimer: ReturnType<typeof setTimeout> | null = null;
+		let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
+		function clearTimers() {
+			if (startTimer !== null) {
+				clearTimeout(startTimer);
+				startTimer = null;
+			}
+			if (safetyTimer !== null) {
+				clearTimeout(safetyTimer);
+				safetyTimer = null;
+			}
+		}
+
+		function stopLoading() {
+			clearTimers();
+			logo?.classList.remove("is-loading");
+		}
+
+		function scheduleLoading() {
+			// Already running/pending - don't restart the delay.
+			if (startTimer !== null || logo?.classList.contains("is-loading")) return;
+			startTimer = setTimeout(() => {
+				startTimer = null;
+				logo?.classList.add("is-loading");
+			}, START_DELAY_MS);
+			safetyTimer = setTimeout(stopLoading, SAFETY_TIMEOUT_MS);
+		}
+
+		function isPlainLeftClick(event: MouseEvent) {
+			return (
+				event.button === 0 &&
+				!event.metaKey &&
+				!event.ctrlKey &&
+				!event.shiftKey &&
+				!event.altKey
+			);
+		}
+
+		function isRealSameOriginNavigation(link: HTMLAnchorElement, event: MouseEvent) {
+			if (event.defaultPrevented) return false;
+			if (!isPlainLeftClick(event)) return false;
+			if (!link.hasAttribute("href")) return false;
+			if (link.hasAttribute("download")) return false;
+			if (link.target && link.target !== "_self") return false;
+
+			let url: URL;
+			try {
+				url = new URL(link.href, window.location.href);
+			} catch {
+				return false;
+			}
+
+			if (url.origin !== window.location.origin) return false;
+
+			// Same-page hash link - no real navigation happens.
+			const samePage =
+				url.pathname === window.location.pathname && url.search === window.location.search;
+			if (samePage && url.hash) return false;
+
+			return true;
+		}
+
+		document.addEventListener(
+			"click",
+			(event: MouseEvent) => {
+				const target = event.target;
+				const link = target instanceof Element ? target.closest("a") : null;
+				if (link && isRealSameOriginNavigation(link, event)) {
+					scheduleLoading();
+				}
+			},
+			false // bubble phase, after other click handlers may call preventDefault()
+		);
+
+		// The mobile menu animates itself closed, then navigates via
+		// window.location.href instead of letting the link click through -
+		// it dispatches this event right before doing so (see MobileMenu.astro).
+		document.addEventListener("mv:navigate-start", scheduleLoading);
+
+		// Stop right before the old page's snapshot is captured, so the
+		// (perfectly-still) navbar snapshot shows the logo at rest instead of
+		// mid-wiggle.
+		window.addEventListener("pageswap", stopLoading);
+		window.addEventListener("pagehide", stopLoading);
+		window.addEventListener("pageshow", (event: PageTransitionEvent) => {
+			if (event.persisted) stopLoading();
+		});
+	})();
 </script>

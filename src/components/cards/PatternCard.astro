@@ -63,7 +63,10 @@ import PatternIcon from "../icons/PatternIcon.astro";
 		margin: 0 var(--space-xs) 0 0;
 		border-radius: var(--border-radius-base);
 		border: 1px solid var(--color-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring),
+			background-color var(--dur-quick) var(--ease-hover),
+			box-shadow var(--dur-quick) var(--ease-hover),
+			border-color var(--dur-quick) var(--ease-hover);
 		will-change: transform, background-color, box-shadow;
 		align-items: start;
 		cursor: pointer;
@@ -71,7 +74,7 @@ import PatternIcon from "../icons/PatternIcon.astro";
 
 	.pattern-card h3 {
 		color: var(--color-gray-800);
-		transition: color 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		font-weight: 400;
@@ -85,34 +88,58 @@ import PatternIcon from "../icons/PatternIcon.astro";
 		flex-shrink: 0;
 	}
 
-	a:is(:hover, :focus-visible) .pattern-card {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .pattern-card {
+			transform: scale3d(1.02, 1.02, 1.02);
+			background: var(--color-light-cream);
+			box-shadow: var(--box-shadow-sm);
+			border: 1px solid var(--color-tinted-cream);
+		}
+
+		a:hover .pattern-card h3 {
+			color: var(--color-crimson);
+		}
+
+		a:hover .pattern-card :global(.left-leaf) {
+			transform: translateX(29px);
+		}
+
+		a:hover .pattern-card :global(.right-leaf) {
+			transform: translateX(-29px);
+		}
+	}
+
+	a:focus-visible .pattern-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 		background: var(--color-light-cream);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
-	a:is(:hover, :focus-visible) .pattern-card h3 {
+	a:focus-visible .pattern-card h3 {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus-visible) .pattern-card :global(.left-leaf) {
+	a:focus-visible .pattern-card :global(.left-leaf) {
 		transform: translateX(29px);
-		transition: transform 0.3s ease-in-out;
 	}
 
-	a:is(:hover, :focus-visible) .pattern-card :global(.right-leaf) {
+	a:focus-visible .pattern-card :global(.right-leaf) {
 		transform: translateX(-29px);
-		transition: transform 0.3s ease-in-out;
+	}
+
+	a:active .pattern-card {
+		transform: scale3d(1, 1, 1);
+		transition-duration: var(--dur-micro);
 	}
 
 	:global(.left-leaf) {
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
 	}
 
 	:global(.right-leaf) {
-		transition: transform 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		will-change: transform;
 	}
 </style>

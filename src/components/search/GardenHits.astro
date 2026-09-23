@@ -157,9 +157,12 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	}
 
 	.grid-item {
-		transition: all 0.3s ease-out;
+		/* Motion is driven entirely by JS (Web Animations API FLIP in the
+		   script below), so no CSS transition here — it would otherwise
+		   fight the animate() calls and double-ease the same properties. */
+		transition: none;
 		transform-origin: center;
-		will-change: opacity;
+		will-change: opacity, transform;
 		break-inside: avoid;
 		page-break-inside: avoid;
 	}
@@ -176,23 +179,176 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 </style>
 
 <script>
+	// Easing/duration values below mirror the motion tokens in src/global.css
+	// (--ease-out, --ease-in-out). They're hardcoded here because the Web
+	// Animations API's `easing` option doesn't resolve CSS custom properties.
+	const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+	const EASE_IN_OUT = "cubic-bezier(0.645, 0.045, 0.355, 1)";
+
+	const MOVE_DURATION = 320;
+	const EXIT_DURATION = 180;
+	const ENTER_DURATION = 260;
+	const ENTER_STAGGER_STEP = 15;
+	const ENTER_STAGGER_MAX = 150;
+
+	function computeVisible(
+		item: HTMLElement,
+		topic: string,
+		growthStage: string,
+		types: string[],
+	): boolean {
+		const itemTopics = item.dataset.topics?.split(",") || [];
+		// Podcast items don't set data.type — treat empty as "podcast".
+		const itemType = item.dataset.type || "podcast";
+		const itemGrowthStage = item.dataset.growthStage;
+
+		const matchesTopic = !topic || itemTopics.includes(topic);
+		const matchesGrowthStage = !growthStage || itemGrowthStage === growthStage;
+		const matchesType = types.length === 0 || types.includes(itemType);
+
+		return matchesTopic && matchesGrowthStage && matchesType;
+	}
+
+	// Cancel any in-flight FLIP animation on an item and strip the inline
+	// styles used to pin exiting cards, returning it to plain class-driven
+	// styling. Called before every pass so rapid filter clicks don't stack.
+	function clearItemMotionStyles(item: HTMLElement) {
+		item.getAnimations().forEach((anim) => anim.cancel());
+		item.style.position = "";
+		item.style.top = "";
+		item.style.left = "";
+		item.style.width = "";
+		item.style.height = "";
+		item.style.margin = "";
+		item.style.zIndex = "";
+		item.style.transform = "";
+		item.style.opacity = "";
+	}
+
+	// Instant path: used for prefers-reduced-motion and browsers without
+	// Element.animate support. Correctness only, no motion.
+	function filterGridItemsInstant(topic: string, growthStage: string, types: string[]) {
+		document.querySelectorAll<HTMLElement>(".grid-item").forEach((item) => {
+			clearItemMotionStyles(item);
+			item.classList.toggle("filtered-out", !computeVisible(item, topic, growthStage, types));
+		});
+	}
+
+	// FLIP: measure current (First) positions, apply the new filter (Last),
+	// then animate the delta. Cards that stay visible glide to their new
+	// spot, cards that appear fade/scale in, cards that disappear are
+	// pinned at their old on-screen position and fade/shrink out while
+	// their neighbours reflow into the space they leave behind.
+	function filterGridItemsAnimated(topic: string, growthStage: string, types: string[]) {
+		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item"));
+
+		items.forEach(clearItemMotionStyles);
+
+		const wasVisible = new Map<HTMLElement, boolean>();
+		const firstRects = new Map<HTMLElement, DOMRect>();
+		items.forEach((item) => {
+			const visible = !item.classList.contains("filtered-out");
+			wasVisible.set(item, visible);
+			if (visible) firstRects.set(item, item.getBoundingClientRect());
+		});
+
+		const willBeVisible = new Map<HTMLElement, boolean>();
+		items.forEach((item) =>
+			willBeVisible.set(item, computeVisible(item, topic, growthStage, types)),
+		);
+
+		const exiting: HTMLElement[] = [];
+		items.forEach((item) => {
+			if (wasVisible.get(item) && !willBeVisible.get(item)) {
+				const rect = firstRects.get(item)!;
+				item.style.position = "fixed";
+				item.style.top = `${rect.top}px`;
+				item.style.left = `${rect.left}px`;
+				item.style.width = `${rect.width}px`;
+				item.style.height = `${rect.height}px`;
+				item.style.margin = "0";
+				item.style.zIndex = "1";
+				item.classList.add("filtered-out");
+				exiting.push(item);
+			} else {
+				item.classList.toggle("filtered-out", !willBeVisible.get(item));
+			}
+		});
+
+		const moving: { item: HTMLElement; lastRect: DOMRect }[] = [];
+		const entering: HTMLElement[] = [];
+		items.forEach((item) => {
+			if (!willBeVisible.get(item)) return;
+			const lastRect = item.getBoundingClientRect();
+			if (wasVisible.get(item)) {
+				moving.push({ item, lastRect });
+			} else {
+				entering.push(item);
+			}
+		});
+
+		// On a long results page, a card that used to live far down the list
+		// can end up needing to travel thousands of pixels to its new slot.
+		// A glide over that distance just reads as a blank/washed-out beat
+		// (the card spends the whole animation off-screen), so past this
+		// threshold we treat it like a fresh arrival instead of a move.
+		const maxGlideDistance = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+
+		moving.forEach(({ item, lastRect }) => {
+			const firstRect = firstRects.get(item)!;
+			const dx = firstRect.left - lastRect.left;
+			const dy = firstRect.top - lastRect.top;
+			const distance = Math.hypot(dx, dy);
+			if (distance < 0.5) return;
+			if (distance > maxGlideDistance) {
+				item.animate(
+					[
+						{ opacity: 0.5, transform: "scale(0.98)" },
+						{ opacity: 1, transform: "scale(1)" },
+					],
+					{ duration: ENTER_DURATION, easing: EASE_OUT, fill: "none" },
+				);
+				return;
+			}
+			item.animate(
+				[{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
+				{ duration: MOVE_DURATION, easing: EASE_IN_OUT, fill: "none" },
+			);
+		});
+
+		entering.forEach((item, index) => {
+			const delay = Math.min(index * ENTER_STAGGER_STEP, ENTER_STAGGER_MAX);
+			item.animate(
+				[
+					{ opacity: 0, transform: "scale(0.96)" },
+					{ opacity: 1, transform: "scale(1)" },
+				],
+				{ duration: ENTER_DURATION, delay, easing: EASE_OUT, fill: "backwards" },
+			);
+		});
+
+		exiting.forEach((item) => {
+			const anim = item.animate(
+				[
+					{ opacity: 1, transform: "scale(1)" },
+					{ opacity: 0, transform: "scale(0.96)" },
+				],
+				{ duration: EXIT_DURATION, easing: EASE_OUT, fill: "forwards" },
+			);
+			anim.addEventListener("finish", () => clearItemMotionStyles(item));
+		});
+	}
+
 	// Function to filter grid items
 	function filterGridItems(topic: string, growthStage: string, types: string[]) {
-		const items = document.querySelectorAll<HTMLElement>(".grid-item");
+		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const supportsAnimate = typeof HTMLElement.prototype.animate === "function";
 
-		items.forEach((htmlItem) => {
-			const itemTopics = htmlItem.dataset.topics?.split(",") || [];
-			// Podcast items don't set data.type — treat empty as "podcast".
-			const itemType = htmlItem.dataset.type || "podcast";
-			const itemGrowthStage = htmlItem.dataset.growthStage;
-
-			const matchesTopic = !topic || itemTopics.includes(topic);
-			const matchesGrowthStage = !growthStage || itemGrowthStage === growthStage;
-			const matchesType = types.length === 0 || types.includes(itemType);
-
-			const isVisible = matchesTopic && matchesGrowthStage && matchesType;
-			htmlItem.classList.toggle("filtered-out", !isVisible);
-		});
+		if (prefersReducedMotion || !supportsAnimate) {
+			filterGridItemsInstant(topic, growthStage, types);
+		} else {
+			filterGridItemsAnimated(topic, growthStage, types);
+		}
 	}
 
 	// Listen for filter changes with debounce
@@ -219,7 +375,4 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 
 	// Initialize on first load
 	init();
-
-	// Re-initialize after page navigation
-	document.addEventListener("astro:page-load", init);
 </script>

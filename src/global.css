@@ -172,6 +172,22 @@
     1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.045), 2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.06),
     6px 14px 30px -10px rgba(0, 0, 0, 0.08);
 
+  /* Motion tokens */
+  /* Easing: --ease-out for things entering/exiting, --ease-in-out for on-screen
+     movement, --ease-spring for playful hover lifts (slight overshoot), --ease-hover
+     for simple hover color/shadow fades. Never use ease-in (feels laggy). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-hover: ease;
+
+  /* Durations: micro for presses, quick for hover color/opacity, base for hover
+     transforms, page for larger entering/exiting transitions. */
+  --dur-micro: 120ms;
+  --dur-quick: 180ms;
+  --dur-base: 240ms;
+  --dur-page: 380ms;
+
   /* Fluid spacing */
   --fc-3xs-min: (var(--fc-s-min) * 0.25);
   --fc-3xs-max: (var(--fc-s-max) * 0.25);
@@ -490,7 +506,7 @@ h2 {
   font-weight: 100;
   line-height: var(--leading-snug);
   margin: var(--space-xs) 0 var(--space-2xs);
-  transition: all 0.3s ease-in-out;
+  transition: color var(--dur-quick) var(--ease-hover);
 }
 
 @media screen and (max-width: 768px) {
@@ -630,4 +646,127 @@ mark {
    layout-neutral. */
 .styled-main:has(.margin-poppies) {
   position: relative;
+}
+
+/* _____________________ View Transitions _____________________ */
+/* Native cross-document view transitions (Chrome 126+/Safari 18.2+). Pages
+   are normal full loads; the browser animates between the old and new
+   document snapshots. See src/layouts/Layout.astro for the Firefox fallback
+   detection script that adds `no-vt` to <html> when unsupported. */
+
+/* The @view-transition opt-in is inlined in Layout.astro <head>. */
+
+/* Keep the navbar and footer perfectly still across navigations — they're
+   the same UI on every page, so cross-fading them looks like a flicker
+   rather than a transition. */
+.navbar {
+  view-transition-name: site-nav;
+}
+
+.styled-footer {
+  view-transition-name: site-footer;
+}
+
+::view-transition-group(site-nav),
+::view-transition-group(site-footer),
+::view-transition-old(site-nav),
+::view-transition-new(site-nav),
+::view-transition-old(site-footer),
+::view-transition-new(site-footer) {
+  animation: none !important;
+}
+
+/* Default page transition: sequential, not overlapping. The old page fades
+   out fast, then the new page fades in — no cross-fade, so no double-exposed
+   text. Calm: no translate, ease-out both ways. */
+::view-transition-old(root) {
+  animation: mv-page-fade-out 120ms ease-out both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: mv-page-fade-in 200ms ease-out 100ms both;
+  mix-blend-mode: normal;
+}
+
+@keyframes mv-page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes mv-page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* _____________________ Cascade Entrance _____________________ */
+/* Key blocks on a page fade+rise into place top-down, in visual order, on
+   every load — normal page loads, native cross-document navigations (the
+   blocks are live content inside the new document's view-transition
+   snapshot, so they animate independently of the root crossfade above), and
+   the Firefox/no-vt fallback (no native view transition at all, just a plain
+   navigation) — same mechanism everywhere, so behaviour stays consistent.
+
+   Mark an element `.cascade` (translate + fade) or `.cascade-fade`
+   (opacity-only — use this for any block that contains a `position: sticky`
+   or `position: fixed` descendant, e.g. a post's table of contents; a
+   `transform` on an ancestor creates a new containing block and breaks
+   those while the animation runs) and give it a `--cascade` index (0-based,
+   visual order) via `style="--cascade: N"`. `animation-fill-mode: backwards`
+   means once the animation finishes the element has no transform/opacity
+   override left — it just falls back to its own normal styles — so sticky
+   positioning is unaffected after the cascade completes.
+
+   Grids/masonry layouts animate as a single block (one `.cascade-fade` on
+   the wrapper), never per card — per-card entrance would fight with the
+   garden's own filter animation. */
+@media (prefers-reduced-motion: no-preference) {
+  .cascade,
+  .cascade-fade {
+    animation-duration: 260ms;
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+    animation-fill-mode: backwards;
+    animation-delay: calc(100ms + var(--cascade, 0) * 45ms);
+  }
+
+  .cascade {
+    animation-name: mv-cascade-in;
+  }
+
+  .cascade-fade {
+    animation-name: mv-cascade-fade-in;
+  }
+}
+
+@keyframes mv-cascade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mv-cascade-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
