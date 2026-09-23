@@ -318,7 +318,9 @@ const { headings } = Astro.props;
 			.filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => entry !== null);
 
 		let activeIndex: number | null = null;
-		const HEADING_THRESHOLD = 120; // px from top of viewport, roughly the sticky header offset
+		// A heading counts as "current" once it's in the top 30% of the viewport,
+		// so clicking a TOC link (which lands the heading ~150px down) activates it.
+		const headingThreshold = () => window.innerHeight * 0.3;
 
 		const setActiveClasses = () => {
 			const activeId = activeIndex !== null ? sections[activeIndex].heading.id : null;
@@ -363,7 +365,7 @@ const { headings } = Astro.props;
 			let newIndex: number | null = null;
 			for (let i = 0; i < sections.length; i++) {
 				const top = sections[i].heading.getBoundingClientRect().top;
-				if (top - HEADING_THRESHOLD <= 0) {
+				if (top - headingThreshold() <= 0) {
 					newIndex = i;
 				} else {
 					break;
@@ -457,6 +459,15 @@ const { headings } = Astro.props;
 		header?.addEventListener("click", mobileClickHandler);
 		window.addEventListener("scroll", scrollHandler);
 
+		// Calls `fn` once scrolling stops (scrollend where supported, else a timeout)
+		const onScrollSettled = (fn: () => void) => {
+			if ("onscrollend" in window) {
+				window.addEventListener("scrollend", fn, { once: true });
+			} else {
+				setTimeout(fn, 900);
+			}
+		};
+
 		// Smooth scrolling for TOC links
 		const linkHandlers: Array<{ link: Element; handler: EventListener }> = [];
 		document.querySelectorAll(".toc-link").forEach((link) => {
@@ -476,6 +487,18 @@ const { headings } = Astro.props;
 					behavior: "smooth",
 					block: "start",
 				});
+
+				// Lazy images above the target can load mid-scroll and push it down,
+				// so the smooth scroll stops short. Re-aim a few times once it settles.
+				let corrections = 0;
+				const correctScroll = () => {
+					const top = targetElement.getBoundingClientRect().top;
+					if (corrections++ < 3 && Math.abs(top) > window.innerHeight * 0.3) {
+						targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+						onScrollSettled(correctScroll);
+					}
+				};
+				onScrollSettled(correctScroll);
 
 				clearTimeout(scrollTimeoutId);
 				scrollTimeoutId = setTimeout(() => {
