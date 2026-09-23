@@ -1,16 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   RECORDED_POST_IDS,
   recordedQuestions,
+  recordedQuestionMap,
   articleState,
   previewSentences,
   createRecordedSnapshot,
   validateRecordedSnapshot,
   recordedSelection,
 } from '../src/lib/jev/recorded-playground.js';
+import {
+  createCachedRecordedRun,
+  writeJsonAtomic,
+} from '../src/lib/jev/recorded-generation.js';
 import { probabilityRows, estimatedRunCost } from '../src/lib/jev/playground.js';
 import { MODEL } from '../src/lib/jev/rubrics.js';
 import PlaygroundAnswer from '../src/components/unique/jev/PlaygroundAnswer.jsx';
@@ -238,6 +245,45 @@ test('recorded selection returns a saved pair and reports missing pairs explicit
   assert.equal(recordedSelection(snapshot, 'garden-history', 'title_fit').answer.noul, 0.75);
   assert.equal(recordedSelection(snapshot, 'missing', 'title_fit'), null);
   assert.equal(recordedSelection(snapshot, 'garden-history', 'missing'), null);
+});
+
+test('recorded generation cache reuses an identical request without calling Jev again', async (t) => {
+  const cacheRoot = path.join(process.cwd(), '.cache/jev/tests');
+  await fs.mkdir(cacheRoot, { recursive: true });
+  const cacheDir = await fs.mkdtemp(path.join(cacheRoot, 'recorded-cache-'));
+  t.after(() => fs.rm(cacheDir, { recursive: true, force: true }));
+  let calls = 0;
+  let now = 100;
+  const run = createCachedRecordedRun({
+    cacheDir,
+    now: () => now,
+    evaluateImpl: async request => {
+      calls++;
+      now = 125;
+      return {
+        model: MODEL,
+        usage: { input_tokens: 12, output_tokens: 3 },
+        answers: Object.fromEntries(Object.entries(request.questions).map(([id, value]) => [id, validAnswer(value)])),
+      };
+    },
+  });
+  const state = articleState(documents[0]);
+  const first = await run(state, recordedQuestionMap);
+  const second = await run(state, recordedQuestionMap);
+  assert.equal(calls, 1);
+  assert.deepEqual(second, first);
+  assert.equal(first.elapsedMs, 25);
+});
+
+test('atomic JSON writing leaves a complete parseable destination', async (t) => {
+  const cacheRoot = path.join(process.cwd(), '.cache/jev/tests');
+  await fs.mkdir(cacheRoot, { recursive: true });
+  const directory = await fs.mkdtemp(path.join(cacheRoot, 'recorded-write-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const destination = path.join(directory, 'playground.json');
+  await writeJsonAtomic(destination, { complete: true });
+  assert.deepEqual(JSON.parse(await fs.readFile(destination, 'utf8')), { complete: true });
+  await assert.rejects(fs.access(`${destination}.tmp`));
 });
 
 const question = { type: 'noul', instructions: 'Is the article practical?' };
