@@ -5,21 +5,26 @@ import path from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-  RECORDED_POST_IDS,
-  recordedQuestions,
-  recordedQuestionMap,
   articleState,
   previewSentences,
   createRecordedSnapshot,
   validateRecordedSnapshot,
-  recordedSelection,
 } from '../src/lib/jev/recorded-playground.js';
+import {
+  RECORDED_POST_IDS,
+  recordedQuestions,
+  recordedQuestionMap,
+  recordedSelection,
+} from '../src/lib/jev/recorded-playground-config.js';
 import {
   createCachedRecordedRun,
   writeJsonAtomic,
 } from '../src/lib/jev/recorded-generation.js';
 import { probabilityRows, estimatedRunCost } from '../src/lib/jev/playground.js';
 import { MODEL } from '../src/lib/jev/rubrics.js';
+import Pipeline, {
+  RecordedResult,
+} from '../src/components/unique/jev/Pipeline.jsx';
 import PlaygroundAnswer from '../src/components/unique/jev/PlaygroundAnswer.jsx';
 
 const expectedPostIds = [
@@ -86,6 +91,16 @@ test('recorded playground exposes only the approved posts and six fixed question
     'Exploring uncertain possibilities',
     'Predominantly conjectural or open questions',
   ]);
+});
+
+test('the hydrated pipeline imports only browser-safe recorded playground config', async () => {
+  const [pipeline, config] = await Promise.all([
+    fs.readFile('src/components/unique/jev/Pipeline.jsx', 'utf8'),
+    fs.readFile('src/lib/jev/recorded-playground-config.js', 'utf8'),
+  ]);
+  assert.match(pipeline, /lib\/jev\/recorded-playground-config\.js/);
+  assert.doesNotMatch(pipeline, /lib\/jev\/recorded-playground\.js/);
+  assert.doesNotMatch(config, /node:|corpus\.js|recorded-playground\.js|(?:^|['"])fs(?:['"]|$)|(?:^|['"])path(?:['"]|$)/m);
 });
 
 test('article state uses full extracted prose while preview contains two sentences', () => {
@@ -309,4 +324,67 @@ test('playground answers omit the decision-rule section', () => {
 
   assert.match(html, /75\.0%/);
   assert.doesNotMatch(html, /Use the answer in code|Decision threshold|jev-play-rule/);
+});
+
+const viewerSnapshot = {
+  version: 1,
+  generatedAt: '2026-09-23T08:30:00.000Z',
+  model: MODEL,
+  posts: [{
+    id: 'garden-history',
+    title: 'A Brief History & Ethos of the Digital Garden',
+    preview: 'Gardens are personal spaces. They grow over time.',
+    elapsedMs: 320,
+    usage: { input_tokens: 100, output_tokens: 10 },
+    answers: {
+      title_fit: { type: 'noul', noul: 0.93 },
+      analogy: { type: 'noul', noul: 0.62 },
+    },
+  }],
+};
+
+test('recorded viewer shows selectors, two-sentence preview, and saved answer', () => {
+  const html = renderToStaticMarkup(React.createElement(Pipeline, { snapshot: viewerSnapshot }));
+  assert.match(html, /A Brief History &amp; Ethos of the Digital Garden/);
+  assert.match(html, /Gardens are personal spaces\. They grow over time\./);
+  assert.match(html, /Does the title fit the content\?/);
+  assert.match(html, /93\.0%/);
+  assert.match(html, /Recorded Jev run/);
+  assert.doesNotMatch(html, /textarea|View or edit|Exact request and response|Asking Jev|Waiting for edits/);
+});
+
+test('recorded result switches to the selected saved question', () => {
+  const title = renderToStaticMarkup(React.createElement(RecordedResult, {
+    snapshot: viewerSnapshot,
+    postId: 'garden-history',
+    questionId: 'title_fit',
+  }));
+  const analogy = renderToStaticMarkup(React.createElement(RecordedResult, {
+    snapshot: viewerSnapshot,
+    postId: 'garden-history',
+    questionId: 'analogy',
+  }));
+  assert.match(title, /93\.0%/);
+  assert.match(analogy, /62\.0%/);
+});
+
+test('recorded result reports absent authored data without making a request', () => {
+  const html = renderToStaticMarkup(React.createElement(RecordedResult, {
+    snapshot: viewerSnapshot,
+    postId: 'garden-history',
+    questionId: 'knowledge',
+  }));
+  assert.match(html, /This recorded answer is unavailable/);
+});
+
+test('published playground has no live hook, editor, service, or API route', async () => {
+  const removed = [
+    'src/components/unique/jev/QuestionEditor.jsx',
+    'src/components/unique/jev/usePlayground.js',
+    'src/lib/jev/playground-service.js',
+    'src/pages/api/jev-playground.js',
+  ];
+  for (const file of removed) await assert.rejects(fs.access(file));
+  const pipeline = await fs.readFile('src/components/unique/jev/Pipeline.jsx', 'utf8');
+  assert.doesNotMatch(pipeline, /fetch\s*\(|usePlayground|QuestionEditor|Inspector/);
 });

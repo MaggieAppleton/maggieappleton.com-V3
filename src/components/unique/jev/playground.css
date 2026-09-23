@@ -1,0 +1,35 @@
+.jev .jev-playground { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-m) var(--space-l); padding-top: var(--space-s); border-top: 1px solid var(--jev-rule); }
+.jev .jev-playground h3, .jev .jev-playground h4 { margin: 0 0 var(--space-xs); font-family: var(--font-sans); font-size: var(--font-size-sm); font-weight: 400; line-height: var(--leading-base); }
+.jev .jev-playground .jev-field { margin-bottom: var(--space-2xs); }
+.jev .jev-play-state { margin-bottom: var(--space-m); }
+.jev .jev-playground .jev-state-excerpt { margin: var(--space-2xs) 0 0; color: var(--jev-muted); font-family: var(--font-body); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
+.jev .jev-play-results { min-width: 0; padding-left: var(--space-m); border-left: 1px solid var(--jev-rule); }
+.jev .jev-playground .jev-play-help { margin: var(--space-2xs) 0; color: var(--jev-muted); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
+.jev .jev-recorded-label { margin: 0 0 var(--space-xs); color: var(--jev-muted); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+.jev .jev-run-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0 0 var(--space-s); border: 1px solid var(--jev-rule); background: var(--jev-rule); }
+.jev .jev-run-metrics > div { min-width: 0; padding: var(--space-2xs); background: var(--jev-paper); }
+.jev .jev-run-metrics dt { color: var(--jev-muted); font-size: 11px; }
+.jev .jev-run-metrics dd { margin: var(--space-3xs) 0; font-family: var(--font-serif); font-size: var(--font-size-base); font-weight: 400; line-height: var(--leading-snug); font-variant-numeric: tabular-nums; }
+.jev .jev-run-metrics small { display: block; color: var(--jev-muted); font-size: 10px; line-height: 1.45; }
+.jev .jev-play-answer + .jev-play-answer { margin-top: var(--space-m); padding-top: var(--space-s); border-top: 1px solid var(--jev-rule); }
+.jev .jev-playground .jev-play-answer-question { margin-bottom: var(--space-s); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
+.jev .jev-answer-value { display: flex; flex-direction: column; gap: var(--space-3xs); margin-bottom: var(--space-s); }
+.jev .jev-answer-value strong { overflow-wrap: anywhere; font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 400; line-height: var(--leading-tight); }
+.jev .jev-answer-value > span { color: var(--jev-muted); font-size: 12px; }
+.jev .jev-play-bars { display: grid; gap: var(--space-2xs); }
+.jev .jev-play-bar-row > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; margin-bottom: 4px; }
+.jev .jev-play-bar-row > div > span:first-child { overflow-wrap: anywhere; }
+.jev .jev-play-bar-row > div > span:last-child { flex: none; font-variant-numeric: tabular-nums; }
+.jev .jev-selected-marker { color: var(--jev-muted); font-size: 11px; }
+.jev .jev-play-bars meter { display: block; width: 100%; height: 10px; appearance: none; border: 0; border-radius: 0; background: transparent; }
+.jev .jev-play-bars meter::-webkit-meter-bar { height: 8px; background: color-mix(in srgb, var(--jev-kind-0) 12%, transparent); border: 0; border-radius: 0; }
+.jev .jev-play-bars meter::-webkit-meter-optimum-value { background: var(--jev-kind-0); border-radius: 0; transition: width 160ms ease; }
+.jev .jev-play-bars meter::-moz-meter-bar { background: var(--jev-kind-0); }
+.jev .jev-answer-confidence { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: var(--space-3xs) var(--space-2xs); margin-top: var(--space-xs); padding-top: var(--space-2xs); border-top: 1px solid var(--jev-rule); }
+.jev .jev-answer-confidence > span { color: var(--jev-muted); font-size: 12px; }
+.jev .jev-answer-confidence > strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+.jev .jev-answer-confidence > small { grid-column: 1 / -1; color: var(--jev-muted); font-size: 10px; line-height: 1.45; }
+@media (max-width: 650px) {
+  .jev .jev-playground { grid-template-columns: minmax(0, 1fr); gap: var(--space-s); }
+  .jev .jev-play-results { padding-top: var(--space-s); padding-left: 0; border-top: 1px solid var(--jev-rule); border-left: 0; }
+}
