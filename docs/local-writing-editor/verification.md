@@ -13,7 +13,7 @@
 
 ## Corpus
 
-116 in-scope MDX files: 22 essays and 94 notes, including 19 drafts. 113 contain JSX; 70 contain wiki links. The current corpus has no nested source versions, so version identity coverage uses synthetic fixtures. Inventories are recorded under `.local-writing-editor/`.
+116 in-scope MDX files: 22 essays and 94 notes, including 19 drafts. 113 contain JSX; 70 contain wiki links. The current corpus has no nested source versions, so version identity coverage uses synthetic fixtures. Inventories are recorded under `.local-writing-editor/`. All 116 full save requests fit the 10 MiB limit; the largest serialized JSON request is 56,589 bytes (`growing-a-human.mdx`). Measurement: `request-size-corpus.json`.
 
 ## Acceptance status
 
@@ -25,8 +25,8 @@ The complete acceptance matrix is in the supplied `docs/superpowers/plans/local-
 | --- | --- | --- |
 | S1 / S3 source | 25 source cases pass, including independent-review regressions, BOM/CRLF/Unicode, protected removal, list marker contexts and empty supported wrappers. Pure seam independently approved. | Actual engine structural edits and complete browser corpus pending. |
 | S2 corpus | 116/116 pure-source no-op and representative edits; unusual legacy syntax retained. | Actual engine import/export and transaction corpus, compile evidence. |
-| F1–F3 persistence/guards | Eight guard, fourteen index/store, seven deterministic race, and eight candidate-validation tests pass. Guards and service/index reviewed. | Complete live API request tests and draft creation. |
-| R1–R2 session/recovery | Session contract documented. | State machine, storage, delayed/failing saves, conflict/restart/browser tests. |
+| F1–F3 persistence/guards | Eight guard, fourteen index/store, seven deterministic race, and eight candidate-validation tests pass. Guards and service/index reviewed. Four real HTTP tests pass, including valid persistence and rejection/no-CORS/no-store matrix. | Draft creation, full integrated head rerun. |
+| R1–R2 session/recovery | Session module independently reviewed; 19 deterministic state, ordering, conflict, composition and storage tests pass. | Live binding, delayed/failing saves, conflict/restart/navigation browser tests. |
 | B1–B4 writing | MDXEditor same-root browser probe preserves no-op, second repeated paragraph, nested footnote, and undo after blur. | Integrated writing, selection, composition, protected nodes, watcher/caret/history tests. |
 | D1 drafts | Creation defaults documented. | Note/essay UI, exclusive service, restart/discovery and production tests. |
 | V1–V2 rendering | Original Astro rendering seam independently inspected. | Representative normal/edit pairs, protected real assets/layout/custom interaction. |
@@ -45,3 +45,13 @@ Fresh pre-commit checks in this worktree: `node --test tests/editor/source.test.
 Fresh `npm run test:editor`: exit 0, 64 tests pass; existing Node suite: exit 0, 66 pass. The shared note/essay schemas retain the site’s existing fields and date validation. Candidate validation accepts representative edits across all 116 current files. Independent tests found and verified fixes for swapped repeated-component attributes, invalid cover files, duplicate indexed identities, and a symlink alias used as a write target. Service/index spec and quality review passed. Raw evidence: `.local-writing-editor/service-*-tests.log`, `service-review/report.md`, and `validation-tests-report.md`. Live HTTP endpoints remain pending.
 
 All 172 baseline authored MDX/JSON files remain byte-identical. `src/content/config.ts` is intentionally changed only to reuse the shared schema factories.
+
+## First live integration checks
+
+The real HTTP suite passed 4/4 in an owned disposable project (50.5 s). It covers no-ID session bootstrap, malformed raw source, valid authenticated reads/writes, wrong identities/hosts/origins/tokens/methods/content types, oversized bodies, no-store/no-CORS, and unchanged files after rejection. The first run caught Vite’s wildcard CORS header; the dev server now disables CORS explicitly. Evidence: `.local-writing-editor/http-tests-report.md` and `http-tests-final.log`.
+
+The first real MDXEditor page mounts without browser errors and transplants three original protected Astro regions. This is not rendering acceptance: an initial cozy-web comparison found an incorrect body font/width, absent drop cap, and changed image width. Both Cloudinary images loaded in that comparison. Detailed metrics/screenshots are in `browser-evidence/cozy-web-first-review.*`; the drift is being corrected before V1/V2 acceptance.
+
+## Session module checkpoint
+
+Fresh `node --test tests/editor/session.test.mjs`: exit 0, 19 passed. Independent bounded spec and quality review passed (`.local-writing-editor/session-review.md`). Cases cover debounce, one request in flight, generation-specific acknowledgements, uncertain retries, late responses, per-tab recovery, storage failure, explicit disk replacement, and composition/conversion recovery. Review regressions include conflict status while typing and retaining the durable recovery when discarded-copy archival fails. This result covers the state coordinator; live browser binding and navigation remain separate acceptance gates.
