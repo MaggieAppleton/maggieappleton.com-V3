@@ -46,6 +46,11 @@ export function sameSemantic(a, b) {
 
 /** Compare parsed meaning, allowing mdast's equivalent JSX/optional-field shapes. */
 export function sameSupportedStructure(a, b) {
+	const phrasingTypes = new Set([
+		"text", "emphasis", "strong", "delete", "inlineCode", "link", "linkReference",
+		"image", "imageReference", "break", "mdxJsxTextElement", "mdxTextExpression",
+		"footnoteReference",
+	]);
 	function project(value) {
 		if (Array.isArray(value)) return value.map(project);
 		if (!value || typeof value !== "object") return value;
@@ -53,10 +58,15 @@ export function sameSupportedStructure(a, b) {
 			&& value.children[0].type === "mdxJsxTextElement") {
 			return project(value.children[0]);
 		}
+		if (value.type === "blockquote" && value.children?.length
+			&& value.children.every((child) => phrasingTypes.has(child.type))) {
+			return project({ ...value, children: [{ type: "paragraph", children: value.children }] });
+		}
 		const result = {};
 		for (const [key, child] of Object.entries(value)) {
 			if (key === "position" || key === "data") continue;
 			if (key === "checked" && child === null) continue;
+			if (key === "start" && value.type === "list" && child === null) continue;
 			result[key] = key === "type" && (child === "mdxJsxFlowElement" || child === "mdxJsxTextElement")
 				? "mdxJsxElement" : project(child);
 		}

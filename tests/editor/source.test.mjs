@@ -354,6 +354,23 @@ test("accepts adjacent editor text nodes that reparse as one prose node", () => 
   assert.equal(serializeSourceDocument(document, { body }), fixture.replace("Hello world.", "Hello world!"));
 });
 
+test("accepts engine blockquote and unordered-list shapes that omit parser-only wrappers", () => {
+  const fixture = source.replace(
+    "Repeated paragraph.\n\nRepeated paragraph.",
+    "> Quoted prose.\n\n- Parent item\n- Nested item",
+  );
+  const document = createSourceDocument(fixture);
+  const body = structuredClone(document.body);
+  const quote = nodesMatching(body, (node) => node.type === "blockquote")[0];
+  const list = nodesMatching(body, (node) => node.type === "list")[0];
+  assert.ok(quote && list);
+
+  quote.children = [{ type: "text", value: "Quoted prose." }];
+  delete list.start;
+
+  assert.equal(serializeSourceDocument(document, { body }), fixture);
+});
+
 test("reverses ordered list items with correctly ordered source markers", () => {
   const fixture = [
     "---",

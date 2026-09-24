@@ -103,3 +103,7 @@ The file service requires real candidate validation. It shares the site’s note
 ### Active editor reload handling
 
 Vite’s documented HMR notifications provide no reload veto, and the installed client also reloads automatically after a server restart. An isolated browser probe confirmed that an editor-only WebSocket capture listener can stop reload/update/close events before Vite handles them, while ordinary preview tabs continue reloading. The guard restores the native WebSocket constructor immediately after capturing the Vite socket. This freezes development-code HMR in the active writing tab until intentional navigation/reload; HTTP revision checks and capability renewal remain the session’s responsibility. The real Astro editor still needs the same browser proof. Evidence: `.local-writing-editor/hmr-spike/`; reference: [Vite HMR API](https://vite.dev/guide/api-hmr).
+
+### Equivalent structural exports
+
+MDXEditor exports a newly entered blockquote as direct phrasing children, while remark reparses the same source with one paragraph wrapper. It also omits an unordered list's parser-inserted `start: null`. Candidate validation now compares these two narrow equivalent forms without relaxing component, protected-source or multi-paragraph structure checks. A direct regression and fresh source/corpus/validator suite pass 37/37; the browser formatting gate remains separate.
