@@ -1,0 +1,157 @@
+/* Garden Tending — a task-first tending dashboard. Tiles summarise how many
+   posts need each kind of care and filter the list; each post then shows at
+   most one consolidated line per task. Composes the shared Jev kit. */
+
+.jev .jev-kit.jev-tending {
+  container: jev-tending / inline-size;
+}
+
+/* Task tiles */
+.jev .jev-kit .jev-tending-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2xs);
+}
+
+.jev .jev-kit .jev-tending-tile {
+  display: grid;
+  gap: var(--space-3xs);
+  align-content: start;
+  min-width: 0;
+  padding: var(--space-xs);
+  border: 1px solid var(--jev-border);
+  border-radius: var(--border-radius-lg);
+  background: var(--jev-field);
+  box-shadow: var(--jev-shadow-xs);
+  color: var(--jev-text);
+  text-align: left;
+  line-height: var(--leading-snug);
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.jev .jev-kit .jev-tending-tile:hover {
+  border-color: var(--color-gray-400);
+  background: var(--jev-field);
+}
+
+.jev .jev-kit .jev-tending-tile:focus-visible {
+  outline: none;
+  border-color: var(--jev-teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jev-teal) 22%, transparent);
+}
+
+.jev .jev-kit .jev-tending-tile[aria-pressed='true'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--jev-teal) 12%, transparent);
+  box-shadow: none;
+  color: var(--jev-teal-deep);
+}
+
+.jev .jev-kit .jev-tending-tile-count {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.jev .jev-kit .jev-tending-tile-label {
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+}
+
+.jev .jev-kit .jev-tending-tile[aria-pressed='true'] .jev-tending-tile-label {
+  color: inherit;
+}
+
+.jev .jev-kit .jev-tending-summary {
+  margin: var(--space-s) 0 var(--space-m);
+}
+
+/* Posts */
+.jev .jev-kit .jev-tending-posts {
+  gap: var(--space-l);
+}
+
+.jev .jev-kit .jev-tending-head {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.jev .jev-kit .jev-tending-meta > span {
+  white-space: nowrap;
+}
+
+.jev .jev-kit .jev-tending-title {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-kit .jev-tending-lines {
+  display: grid;
+  gap: var(--space-3xs-2xs);
+  margin: var(--space-2xs) 0 0;
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--jev-hairline);
+}
+
+.jev .jev-kit .jev-tending-line {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-s);
+}
+
+.jev .jev-kit .jev-tending-line dt {
+  margin: 0;
+}
+
+.jev .jev-kit .jev-tending-line dd {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-kit .jev-tending-sub {
+  display: block;
+}
+
+.jev .jev-kit .jev-tending-sub + .jev-tending-sub {
+  margin-top: var(--space-3xs);
+}
+
+.jev .jev-kit .jev-tending-emphasis {
+  color: var(--jev-teal-deep);
+}
+
+/* Inline "+4 more" — reads as a quiet teal text link */
+.jev .jev-kit .jev-tending-more-links {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--jev-teal-deep);
+  font-size: var(--font-size-xs);
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.jev .jev-kit .jev-tending-more-links:hover {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.jev .jev-kit .jev-tending-more {
+  margin-top: var(--space-m);
+}
+
+@container jev-tending (max-width: 34rem) {
+  .jev .jev-kit .jev-tending-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jev .jev-kit .jev-tending-line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}

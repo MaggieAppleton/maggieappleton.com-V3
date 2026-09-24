@@ -461,7 +461,7 @@ test('playground answers omit the decision-rule section', () => {
     answer: { type: 'noul', noul: 0.75 },
   }));
 
-  assert.match(html, /75\.0%/);
+  assert.match(html, /75%/);
   assert.doesNotMatch(html, /Use the answer in code|Decision threshold|jev-play-rule/);
 });
 
@@ -487,7 +487,7 @@ test('recorded viewer shows selectors, two-sentence preview, and saved answer', 
   assert.match(html, /A Brief History &amp; Ethos of the Digital Garden/);
   assert.match(html, /Gardens are personal spaces\. They grow over time\./);
   assert.match(html, /Does the title fit the content\?/);
-  assert.match(html, /93\.0%/);
+  assert.match(html, /93%/);
   assert.match(html, /Recorded Jev run/);
   assert.doesNotMatch(html, /textarea|View or edit|Exact request and response|Asking Jev|Waiting for edits/);
 });
@@ -503,8 +503,8 @@ test('recorded result switches to the selected saved question', () => {
     postId: 'garden-history',
     questionId: 'analogy',
   }));
-  assert.match(title, /93\.0%/);
-  assert.match(analogy, /62\.0%/);
+  assert.match(title, /93%/);
+  assert.match(analogy, /62%/);
 });
 
 test('recorded result reports absent authored data without making a request', () => {

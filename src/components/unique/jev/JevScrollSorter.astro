@@ -1,0 +1,515 @@
+---
+import { getWinningCategory, validateSorterConfig } from '../../../lib/jev/sorter.js';
+import JevSorterItem from './JevSorterItem.astro';
+import './sorter.css';
+
+const percent = value => `${Math.round(value * 100)}%`;
+
+const config = validateSorterConfig(Astro.props);
+const { question, categories } = config;
+const items = config.items.map((item, index) => {
+  const categoryId = getWinningCategory(item, categories);
+  const category = categories.find(candidate => candidate.id === categoryId);
+  const probabilityLabel = percent(item.probabilities[categoryId]);
+  return {
+    ...item,
+    index,
+    categoryId,
+    probabilityLabel,
+    detailText: category.detailText,
+    detailLabel: `${probabilityLabel} sure ${category.detailText}`,
+    summaryLabel: `${category.label}, ${probabilityLabel}`,
+  };
+});
+---
+
+<section class="jev-scroll-sorter" data-jev-scroll-sorter>
+  <div class="jev-scroll-sticky">
+    <div class="jev-scroll-top">
+      <header class="jev-scroll-heading">
+        <p class="jev-scroll-eyebrow">Ask Jev</p>
+        <h2 class="jev-scroll-question">{question}</h2>
+      </header>
+
+      <div class="jev-scroll-source-stage" aria-hidden="true">
+        {
+          items.map(item => (
+            <div
+              class="jev-scroll-source-slot"
+              data-jev-source-slot={item.id}
+            >
+              <div
+                class="jev-scroll-moving"
+                data-jev-moving-item={item.id}
+                data-index={item.index}
+              >
+                <JevSorterItem item={item} probabilityLabel={item.probabilityLabel} />
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div
+      class="jev-scroll-buckets"
+      style={`--category-count:${categories.length};`}
+    >
+      {
+        categories.map(category => (
+          <section class="jev-scroll-bucket">
+            <h3>{category.label}</h3>
+            <div
+              class="jev-scroll-targets"
+              style={`--bucket-items:${Math.max(1, items.filter(item => item.categoryId === category.id).length)};`}
+              data-item-count={items.filter(item => item.categoryId === category.id).length}
+            >
+              {
+                items
+                  .filter(item => item.categoryId === category.id)
+                  .map(item => (
+                    <div class="jev-scroll-target" data-jev-target={item.id}>
+                      <div class="jev-scroll-final">
+                        <JevSorterItem
+                          item={item}
+                          probabilityLabel={item.probabilityLabel}
+                          detailLabel={item.detailLabel}
+                          interactive
+                        />
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <div class="jev-scroll-summary">
+      <p>{question} Jev classified:</p>
+      <ul>
+        {items.map(item => <li>{item.label}: {item.summaryLabel}</li>)}
+      </ul>
+    </div>
+  </div>
+  <div class="jev-scroll-popover" data-jev-popover role="tooltip" hidden>
+    <strong class="jev-scroll-popover-name" data-jev-popover-name></strong>
+    <span class="jev-scroll-popover-detail">
+      <strong class="jev-scroll-popover-probability" data-jev-popover-probability></strong>
+      <span data-jev-popover-copy></span>
+    </span>
+  </div>
+</section>
+
+<script>
+  import scrollama from "scrollama";
+  import {
+    createProgressSampler,
+    scaleOvershootProgress,
+  } from "../../../lib/jev/motion.js";
+  import { placePopover } from "../../../lib/jev/popover.js";
+  import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
+
+  /* ─────────────────────────────────────────────────────────
+   * ANIMATION STORYBOARD
+   *
+   * 0.00–0.22   food appears in the question chamber
+   * 0.26–0.82   food floats along a spring-eased quadratic arc
+   * after 0.82   food rests continuously in its final position
+   * after 0.86   confidence pill springs 0.72 → 1.1 → 1
+   * ───────────────────────────────────────────────────────── */
+
+  const TIMING = {
+    scrollOffset: 0.08,
+    itemWindow: 0.14,
+    revealEnd: 0.22,
+    flightStart: 0.26,
+    flightEnd: 0.82,
+    scoreStart: 0.86,
+    scoreWindow: 0.06,
+  };
+
+  const FLIGHT = {
+    transition: {
+      type: "spring" as const,
+      visualDuration: 0.7,
+      bounce: 0,
+    },
+    lateralArc: 128,
+    verticalLift: 56,
+    arcPeak: 0.5,
+    scaleDip: 0.025,
+  };
+
+  const SCORE = {
+    transition: {
+      type: "spring" as const,
+      visualDuration: 0.45,
+      bounce: 0.2,
+    },
+    initialScale: 0.72,
+    overshootScale: 1.1,
+    lift: 8,
+  };
+
+  const clamp = (value: number) => Math.min(1, Math.max(0, value));
+  const smoothstep = (value: number) => value * value * (3 - 2 * value);
+  const lerp = (start: number, end: number, progress: number) => (
+    start + ((end - start) * progress)
+  );
+  const quadraticPoint = (start: number, control: number, end: number, progress: number) => {
+    const inverse = 1 - progress;
+    return (inverse * inverse * start)
+      + (2 * inverse * progress * control)
+      + (progress * progress * end);
+  };
+  onPageLifecycle(() => {
+    const cleanups: Array<() => void> = [];
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motionTuning = {
+      timing: { ...TIMING },
+      flight: {
+        ...FLIGHT,
+        transition: { ...FLIGHT.transition },
+        sampler: createProgressSampler(FLIGHT.transition),
+      },
+      score: {
+        ...SCORE,
+        transition: { ...SCORE.transition },
+        sampler: createProgressSampler(SCORE.transition),
+      },
+    };
+
+    document.querySelectorAll<HTMLElement>("[data-jev-scroll-sorter]").forEach((root, rootIndex) => {
+      const detailItems = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-jev-detail-item]"),
+      );
+      const popover = root.querySelector<HTMLElement>("[data-jev-popover]");
+      const popoverName = popover?.querySelector<HTMLElement>("[data-jev-popover-name]");
+      const popoverProbability = popover?.querySelector<HTMLElement>(
+        "[data-jev-popover-probability]",
+      );
+      const popoverCopy = popover?.querySelector<HTMLElement>("[data-jev-popover-copy]");
+      if (!popover || !popoverName || !popoverProbability || !popoverCopy) return;
+
+      popover.id = `jev-scroll-popover-${rootIndex}`;
+      let activeItem: HTMLElement | null = null;
+      let lastPointerType = "";
+
+      const closeDetails = (except?: HTMLElement) => {
+        detailItems.forEach(item => {
+          if (item !== except) item.removeAttribute("data-expanded");
+        });
+      };
+      const hidePopover = () => {
+        activeItem?.removeAttribute("aria-describedby");
+        activeItem = null;
+        popover.removeAttribute("data-open");
+        popover.hidden = true;
+      };
+      const positionPopover = (anchorX: number, anchorY: number) => {
+        const placement = placePopover({
+          anchorX,
+          anchorY,
+          width: popover.offsetWidth,
+          height: popover.offsetHeight,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        });
+        popover.style.setProperty("--jev-popover-x", `${placement.x}px`);
+        popover.style.setProperty("--jev-popover-y", `${placement.y}px`);
+        popover.style.setProperty("--jev-popover-origin-x", placement.originX);
+        popover.style.setProperty("--jev-popover-origin-y", placement.originY);
+      };
+      const showPopover = (item: HTMLElement, anchorX: number, anchorY: number) => {
+        if (root.classList.contains("is-ready") && !item.hasAttribute("data-settled")) return;
+        activeItem?.removeAttribute("aria-describedby");
+        activeItem = item;
+        popoverName.textContent = item.dataset.jevFoodLabel ?? "";
+        popoverProbability.textContent = item.dataset.jevProbabilityLabel ?? "";
+        popoverCopy.textContent = `sure ${item.dataset.jevDetailText ?? ""}`;
+        item.setAttribute("aria-describedby", popover.id);
+        popover.removeAttribute("data-open");
+        popover.hidden = false;
+        positionPopover(anchorX, anchorY);
+        void popover.offsetWidth;
+        popover.setAttribute("data-open", "");
+      };
+      const showBesideItem = (item: HTMLElement) => {
+        const bounds = item.getBoundingClientRect();
+        showPopover(item, bounds.right, bounds.top);
+      };
+
+      detailItems.forEach(item => {
+        const handlePointerDown = (event: PointerEvent) => {
+          lastPointerType = event.pointerType;
+        };
+        const handlePointerEnter = (event: PointerEvent) => {
+          if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+          showPopover(item, event.clientX, event.clientY);
+        };
+        const handlePointerMove = (event: PointerEvent) => {
+          if (activeItem !== item || event.pointerType === "touch") return;
+          positionPopover(event.clientX, event.clientY);
+        };
+        const handlePointerLeave = (event: PointerEvent) => {
+          if (event.pointerType === "touch" || activeItem !== item) return;
+          item.removeAttribute("data-expanded");
+          hidePopover();
+        };
+        const handleFocus = () => showBesideItem(item);
+        const handleBlur = () => {
+          if (!item.hasAttribute("data-expanded")) hidePopover();
+        };
+
+        item.addEventListener("pointerdown", handlePointerDown);
+        item.addEventListener("pointerenter", handlePointerEnter);
+        item.addEventListener("pointermove", handlePointerMove);
+        item.addEventListener("pointerleave", handlePointerLeave);
+        item.addEventListener("focus", handleFocus);
+        item.addEventListener("blur", handleBlur);
+        cleanups.push(() => {
+          item.removeEventListener("pointerdown", handlePointerDown);
+          item.removeEventListener("pointerenter", handlePointerEnter);
+          item.removeEventListener("pointermove", handlePointerMove);
+          item.removeEventListener("pointerleave", handlePointerLeave);
+          item.removeEventListener("focus", handleFocus);
+          item.removeEventListener("blur", handleBlur);
+        });
+      });
+
+      const handleDetailClick = (event: MouseEvent) => {
+        const target = event.target as Element | null;
+        const item = target?.closest<HTMLElement>("[data-jev-detail-item]");
+        if (!item || !root.contains(item)) {
+          closeDetails();
+          hidePopover();
+          return;
+        }
+        if (root.classList.contains("is-ready") && !item.hasAttribute("data-settled")) return;
+        if (lastPointerType === "mouse" || event.detail === 0) return;
+        const wasExpanded = item.hasAttribute("data-expanded");
+        closeDetails(item);
+        const isExpanded = !wasExpanded;
+        item.toggleAttribute("data-expanded", isExpanded);
+        if (isExpanded) showBesideItem(item);
+        else hidePopover();
+      };
+      const handleDetailKeydown = (event: KeyboardEvent) => {
+        if (event.key !== "Escape") return;
+        closeDetails();
+        hidePopover();
+        (event.target as HTMLElement | null)?.blur();
+      };
+
+      root.addEventListener("click", handleDetailClick);
+      root.addEventListener("keydown", handleDetailKeydown);
+      cleanups.push(() => {
+        root.removeEventListener("click", handleDetailClick);
+        root.removeEventListener("keydown", handleDetailKeydown);
+        closeDetails();
+        hidePopover();
+        popover.removeAttribute("id");
+        popover.style.removeProperty("--jev-popover-x");
+        popover.style.removeProperty("--jev-popover-y");
+        popover.style.removeProperty("--jev-popover-origin-x");
+        popover.style.removeProperty("--jev-popover-origin-y");
+      });
+
+      if (reducedMotion.matches) return;
+      root.dataset.jevScrollSorter = String(rootIndex);
+
+      const movingItems = Array.from(root.querySelectorAll<HTMLElement>("[data-jev-moving-item]"));
+      const geometry = new Map<string, {
+        x: number;
+        y: number;
+        scale: number;
+        finalItem: HTMLElement;
+        finalLabel: HTMLElement;
+      }>();
+      let animationFrame = 0;
+      let resizeFrame = 0;
+      let pendingProgress = 0;
+
+      const render = (sectionProgress: number) => {
+        movingItems.forEach(item => {
+          const id = item.dataset.jevMovingItem;
+          const coordinates = id ? geometry.get(id) : null;
+          if (!coordinates) return;
+
+          const index = Number(item.dataset.index);
+          const raw = clamp(
+            (sectionProgress - index * motionTuning.timing.itemWindow)
+              / motionTuning.timing.itemWindow,
+          );
+          const revealProgress = index === 0
+            ? 1
+            : smoothstep(clamp(raw / motionTuning.timing.revealEnd));
+          const flightLinear = clamp(
+            (raw - motionTuning.timing.flightStart)
+              / (motionTuning.timing.flightEnd - motionTuning.timing.flightStart),
+          );
+          const progress = motionTuning.flight.sampler.sample(flightLinear);
+          const direction = Math.sign(coordinates.x) || 1;
+          const controlX = (coordinates.x * motionTuning.flight.arcPeak)
+            - (direction * motionTuning.flight.lateralArc);
+          const controlY = (coordinates.y * motionTuning.flight.arcPeak)
+            - motionTuning.flight.verticalLift;
+          const x = quadraticPoint(0, controlX, coordinates.x, progress);
+          const y = quadraticPoint(0, controlY, coordinates.y, progress);
+          const entranceScale = 0.94 + (revealProgress * 0.06);
+          const flightScale = 1
+            - (Math.sin(Math.PI * progress) * motionTuning.flight.scaleDip);
+          const sizeScale = 1 + ((coordinates.scale - 1) * progress);
+          const scale = entranceScale * flightScale * sizeScale;
+          const scoreStart = (index * motionTuning.timing.itemWindow)
+            + (motionTuning.timing.scoreStart * motionTuning.timing.itemWindow);
+          const scoreProgress = clamp(
+            (sectionProgress - scoreStart) / motionTuning.timing.scoreWindow,
+          );
+          const scoreResponse = motionTuning.score.sampler.sample(scoreProgress);
+          const scoreScale = scaleOvershootProgress(
+            scoreResponse,
+            motionTuning.score.sampler.peak,
+            motionTuning.score.initialScale,
+            motionTuning.score.overshootScale,
+          );
+          const scoreLift = lerp(
+            motionTuning.score.lift,
+            0,
+            clamp(scoreResponse),
+          );
+          const scoreOpacity = smoothstep(clamp(scoreProgress / 0.18));
+
+          coordinates.finalItem.toggleAttribute("data-settled", scoreProgress >= 1);
+          coordinates.finalItem.tabIndex = scoreProgress >= 1 ? 0 : -1;
+          if (scoreProgress < 1) {
+            coordinates.finalItem.removeAttribute("data-expanded");
+            if (activeItem === coordinates.finalItem) hidePopover();
+          }
+          item.style.opacity = `${revealProgress}`;
+          item.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+          coordinates.finalLabel.style.opacity = `${scoreOpacity}`;
+          coordinates.finalLabel.style.transform = (
+            `translateY(${scoreLift}px) scale(${scoreScale})`
+          );
+          if (raw > 0 && raw < 1) item.style.willChange = "transform";
+          else item.style.removeProperty("will-change");
+          if (scoreProgress > 0 && scoreProgress < 1) {
+            coordinates.finalLabel.style.willChange = "transform, opacity";
+          } else {
+            coordinates.finalLabel.style.removeProperty("will-change");
+          }
+        });
+      };
+
+      const measure = () => {
+        root.classList.add("is-measuring");
+        geometry.clear();
+        const geometryItems = movingItems.flatMap(item => {
+          const id = item.dataset.jevMovingItem;
+          const source = root.querySelector<HTMLElement>(`[data-jev-source-slot="${id}"]`);
+          const target = root.querySelector<HTMLElement>(
+            `[data-jev-target="${id}"] .jev-scroll-final .jev-scroll-item`,
+          );
+          const finalLabel = target?.querySelector<HTMLElement>(".jev-scroll-probability");
+          return id && source && target && finalLabel
+            ? [{ id, source, target, finalItem: target, finalLabel }]
+            : [];
+        });
+        const measurements = geometryItems.map(({ id, source, target, finalItem, finalLabel }) => ({
+          id,
+          source: source.getBoundingClientRect(),
+          target: target.getBoundingClientRect(),
+          finalItem,
+          finalLabel,
+        }));
+        measurements.forEach(({ id, source, target, finalItem, finalLabel }) => {
+          geometry.set(id, {
+            x: (target.left + target.width / 2) - (source.left + source.width / 2),
+            y: (target.top + target.height / 2) - (source.top + source.height / 2),
+            scale: target.width / source.width,
+            finalItem,
+            finalLabel,
+          });
+        });
+
+        if (geometry.size !== movingItems.length) {
+          root.classList.remove("is-ready");
+          root.classList.remove("is-measuring");
+          return;
+        }
+        render(pendingProgress);
+        root.classList.add("is-ready");
+        root.classList.remove("is-measuring");
+      };
+
+      const schedule = (progress: number) => {
+        pendingProgress = clamp(progress);
+        if (animationFrame) return;
+        animationFrame = requestAnimationFrame(() => {
+          animationFrame = 0;
+          render(pendingProgress);
+        });
+      };
+
+      const scroller = scrollama();
+      measure();
+      scroller
+        .setup({
+          step: `[data-jev-scroll-sorter="${rootIndex}"]`,
+          offset: TIMING.scrollOffset,
+          progress: true,
+        })
+        .onStepProgress(({ progress }: { progress: number }) => schedule(progress))
+        .onStepExit(({ direction }: { direction: string }) => (
+          schedule(direction === "down" ? 1 : 0)
+        ));
+
+      const handleResize = () => {
+        if (resizeFrame) cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(() => {
+          resizeFrame = 0;
+          measure();
+          scroller.resize();
+        });
+      };
+      const images = Array.from(root.querySelectorAll("img"));
+      images.forEach(image => image.addEventListener("load", handleResize, { once: true }));
+      window.addEventListener("resize", handleResize);
+      schedule(0);
+
+      cleanups.push(() => {
+        scroller.destroy();
+        window.removeEventListener("resize", handleResize);
+        images.forEach(image => image.removeEventListener("load", handleResize));
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        if (resizeFrame) cancelAnimationFrame(resizeFrame);
+        movingItems.forEach(item => {
+          item.style.removeProperty("opacity");
+          item.style.removeProperty("transform");
+          item.style.removeProperty("will-change");
+          item.querySelector<HTMLElement>(".jev-scroll-probability")?.style.removeProperty("opacity");
+        });
+        root.querySelectorAll<HTMLElement>(".jev-scroll-final .jev-scroll-probability")
+          .forEach(label => {
+            label.style.removeProperty("opacity");
+            label.style.removeProperty("transform");
+            label.style.removeProperty("will-change");
+          });
+        detailItems.forEach(item => {
+          item.removeAttribute("data-settled");
+          item.removeAttribute("data-expanded");
+          item.removeAttribute("tabindex");
+        });
+        root.classList.remove("is-ready");
+        root.classList.remove("is-measuring");
+      });
+    });
+
+    return () => {
+      cleanups.forEach(cleanup => cleanup());
+    };
+  });
+</script>

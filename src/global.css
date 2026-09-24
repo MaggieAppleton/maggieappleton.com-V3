@@ -172,6 +172,20 @@
     1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.045), 2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.06),
     6px 14px 30px -10px rgba(0, 0, 0, 0.08);
 
+  /* Dropdown menus — shared by every select-style menu (GardenFilters, Jev playground) */
+  --dropdown-offset: 6px;
+  --dropdown-max-height: 360px;
+  --dropdown-padding: 4px;
+  --dropdown-background: var(--color-white);
+  --dropdown-border: 1px solid var(--color-gray-200);
+  --dropdown-radius: var(--border-radius-base);
+  --dropdown-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --dropdown-option-padding: var(--space-3xs) var(--space-2xs);
+  --dropdown-option-radius: var(--border-radius-sm);
+  --dropdown-option-hover: var(--color-cream);
+  --dropdown-option-color: var(--color-gray-800);
+  --dropdown-option-selected-color: var(--color-black);
+
   /* Fluid spacing */
   --fc-3xs-min: (var(--fc-s-min) * 0.25);
   --fc-3xs-max: (var(--fc-s-max) * 0.25);

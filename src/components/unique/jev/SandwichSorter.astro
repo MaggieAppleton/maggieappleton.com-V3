@@ -1,0 +1,23 @@
+---
+import JevScrollSorter from './JevScrollSorter.astro';
+import JevExperimentMount from './JevExperimentMount.astro';
+
+const config = {
+  question: 'Is this a sandwich?',
+  categories: [
+    { id: 'no', label: 'No', detailText: "it's not a sandwich" },
+    { id: 'yes', label: 'Yes', detailText: "it's a sandwich" },
+  ],
+  items: [
+    { id: 'burrito', label: 'Burrito', visual: { type: 'image', src: '/images/posts/jev/burrito.png', alt: 'Burrito' }, probabilities: { no: 0.34, yes: 0.66 } },
+    { id: 'doughnut', label: 'Doughnut', visual: { type: 'image', src: '/images/posts/jev/doughnut.png', alt: 'Doughnut' }, probabilities: { no: 0.94, yes: 0.06 } },
+    { id: 'croissant', label: 'Croissant', visual: { type: 'image', src: '/images/posts/jev/croissant.png', alt: 'Croissant' }, probabilities: { no: 0.81, yes: 0.19 } },
+    { id: 'pop-tart', label: 'Pop-Tart', visual: { type: 'image', src: '/images/posts/jev/pop-tart.png', alt: 'Pop-Tart' }, probabilities: { no: 0.72, yes: 0.28 } },
+    { id: 'empanada', label: 'Empanada', visual: { type: 'image', src: '/images/posts/jev/empanada.png', alt: 'Empanada' }, probabilities: { no: 0.43, yes: 0.57 } },
+  ],
+};
+---
+
+<JevExperimentMount>
+  <JevScrollSorter {...config} />
+</JevExperimentMount>

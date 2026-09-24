@@ -9,6 +9,8 @@ Place the spectrum navigation experiment directly beneath the existing "Spectrum
 - Add a standalone Astro wrapper that loads the saved Jev garden snapshot and mounts `GardenLenses` as a client-side island.
 - Render that wrapper immediately beneath the article's existing "Spectrum Navigation" heading.
 - Remove `GardenLenses` and its "Garden lenses" `Section` wrapper from the combined `Experiments` component.
+- Add a standalone `JevPlayground` island at the existing inline Jev demo placeholder.
+- Keep the combined `JevExperiments` island at the end of the article, but remove `Pipeline` and the introductory title and description so it contains only the remaining experiment sections.
 - Keep the remaining Jev experiments and their numbering unchanged.
 
 ## Spectrum navigation behavior
@@ -26,8 +28,16 @@ Place the spectrum navigation experiment directly beneath the existing "Spectrum
 - Adapt ranked-row styles from buttons to anchors while retaining hover and focus feedback.
 - Use ordinary links so keyboard interaction, browser link previews, open-in-new-tab behavior, and link semantics work without custom event handling.
 
+## Playground simplification
+
+- Remove the manual run row; edits continue to evaluate automatically after the existing debounce.
+- Remove the advanced JSON question editor and the expandable yes/no criteria editor.
+- Remove the external question-type documentation row.
+- Keep validation and request errors visible beside the question editor.
+
 ## Verification
 
 - Run the Jev test suite.
 - Run the local Astro production build to catch React, Astro, content, and stylesheet integration errors.
 - Confirm the generated page contains the standalone spectrum island beneath the intended heading and no longer contains the removed heading, metadata, toolbar, or profile-order suffix.
+- Confirm the playground appears at the inline demo position and omits its removed title, manual-run row, advanced summaries, and documentation row.

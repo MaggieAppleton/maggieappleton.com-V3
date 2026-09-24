@@ -1,0 +1,204 @@
+.jev .jev-relationships {
+  display: grid;
+  gap: var(--space-l);
+  container: jev-relationships / inline-size;
+}
+
+.jev .jev-relationships-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-s);
+}
+
+.jev .jev-relationships-threshold-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2xs);
+}
+
+/* Connector column (fixed px, drawn 1:1 — no viewBox scaling) beside a
+   normal HTML column of destination rows. Row height matches the SVG's
+   per-row spacing exactly, so curve endpoints land on each row's centre. */
+.jev .jev-relationships-graph-row {
+  display: grid;
+  grid-template-columns: var(--connector-width) minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--space-xs);
+}
+
+.jev .jev-relationships-connector {
+  display: block;
+  flex: none;
+  color: var(--jev-teal);
+}
+
+.jev .jev-relationships-connector path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.4;
+  transition: opacity 150ms ease-out, stroke-width 150ms ease-out;
+}
+
+.jev .jev-relationships-connector marker path {
+  fill: currentColor;
+  stroke: none;
+}
+
+.jev .jev-relationships-connector circle {
+  fill: currentColor;
+  opacity: 0.7;
+}
+
+.jev .jev-relationships-connector path.is-selected {
+  stroke-dasharray: none;
+  stroke-width: 2;
+  opacity: 0.95;
+}
+
+.jev .jev-relationships-rows {
+  grid-auto-rows: var(--row-height);
+}
+
+/* .jev-list resets list-style, but prose-wrapper's global `ul > li::before`
+   leaf icon still generates a phantom inline box before our button, adding
+   extra height and offsetting every row from its connector curve — kill it. */
+.jev .jev-relationships-rows > li::before {
+  content: none !important;
+}
+
+/* Destination row: plain HTML, kit-sized text, no pills. */
+.jev .jev-relationships-node {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3xs);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2xs);
+  border: 0;
+  border-radius: var(--border-radius-base);
+  background: transparent;
+  text-align: left;
+  transition: background-color 150ms ease-out;
+}
+
+.jev .jev-relationships-node:hover,
+.jev .jev-relationships-node:focus-visible {
+  background: var(--dropdown-option-hover);
+}
+
+.jev .jev-relationships-node[aria-pressed='true'] {
+  box-shadow: inset 2px 0 0 var(--jev-teal);
+}
+
+.jev .jev-relationships-node[aria-pressed='true'] .jev-relationships-node-title {
+  color: var(--jev-teal-deep);
+  font-weight: 700;
+}
+
+.jev .jev-relationships-node-title {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--jev-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jev .jev-relationships-node-meta {
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-snug);
+}
+
+/* Detail card: centred verdict (headline + probability lead), like Jev's
+   Decision, with the evidence passages left-aligned below. */
+.jev .jev-relationships-detail .jev-card-header span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jev .jev-relationships-verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3xs-2xs);
+  margin-bottom: var(--space-m);
+  text-align: center;
+}
+
+.jev .jev-relationships-lead {
+  margin: 0;
+  color: var(--jev-muted);
+  font-size: var(--font-size-sm);
+}
+
+.jev .jev-relationships-lead strong {
+  color: var(--jev-teal-deep);
+  font-weight: 700;
+}
+
+.jev .jev-relationships-evidence {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-s);
+  align-items: start;
+}
+
+.jev .jev-relationships-evidence .jev-aside {
+  align-content: start;
+}
+
+.jev .jev-relationships-passage {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-base);
+  text-align: left;
+}
+
+/* shared.jsx's <Source> now carries both `.jev-source` and `a.jev-link`;
+   colour/hover come from the kit's `a.jev-link` — just add local spacing
+   and the smaller xs size for its position under an evidence passage. */
+.jev .jev-kit .jev-source {
+  display: inline-block;
+  margin-top: var(--space-2xs);
+  font-size: var(--font-size-xs);
+}
+
+@container jev-relationships (max-width: 30rem) {
+  .jev .jev-relationships-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jev .jev-relationships-graph-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jev .jev-relationships-connector {
+    display: none;
+  }
+
+  .jev .jev-relationships-rows {
+    grid-auto-rows: auto;
+    gap: var(--space-2xs);
+  }
+
+  .jev .jev-relationships-node {
+    height: auto;
+    min-height: 56px;
+  }
+
+  .jev .jev-relationships-node-title {
+    white-space: normal;
+  }
+
+  .jev .jev-relationships-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

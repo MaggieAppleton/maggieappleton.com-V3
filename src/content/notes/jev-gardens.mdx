@@ -1,0 +1,90 @@
+---
+title: "Playing with System One Models (like Jev) for Digital Gardening"
+startDate: "2026-09-19"
+updated: "2026-09-19"
+type: "note"
+growthStage: "seedling"
+topics: ["Artificial Intelligence", "Digital Gardening"]
+draft: true
+toc: false
+---
+
+import JevGardenExamples from "../../components/unique/jev/JevGardenExamples.astro";
+import SpectrumNavigation from "../../components/unique/jev/SpectrumNavigation.astro";
+import SemanticSearch from "../../components/unique/jev/SemanticSearch.astro";
+import TypedRelationshipGraph from "../../components/unique/jev/TypedRelationshipGraph.astro";
+import EpistemicLinterExperiment from "../../components/unique/jev/EpistemicLinterExperiment.astro";
+import GardenTendingWorkshop from "../../components/unique/jev/GardenTendingWorkshop.astro";
+import SandwichSorter from "../../components/unique/jev/SandwichSorter.astro";
+
+<IntroParagraph>It's been nine years since the [transformer architecture](https://arxiv.org/abs/1706.03762) gave us large language models, the wildly capable cognitive engine of agents.<Footnote idName={1}>Introduced by researchers at Google Brain and Google Research in the 2017 paper [*Attention Is All You Need*](https://arxiv.org/abs/1706.03762).</Footnote> And all those years we've been waiting for some new architectural breakthrough. Or at least something novel and different, beyond incremental improvements to LLMs.</IntroParagraph>
+
+And such a moment has arrived! Just under a week ago, TypeSafe [released Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), a new kind of model. They call these ["System One Models"](https://docs.typesafe.ai/concepts/system-one), as in Daniel Kahneman's [system one and system two](https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow) modes of thinking.
+
+[meme of khanneman]
+
+System one is your automatic mode of thinking. Quick decisions, gut feelings, and first impressions. Which is roughly how these models work. By giving you snappy decisions, like their intuition on whether something is a sandwich or not:
+
+<SandwichSorter />
+
+This is significantly different to language models, which output language. You put language in and you get statistically probable language out.
+
+Jev is more like a classifier: a system that sorts things into categories based on patterns it has learnt. Most classifiers are trained for one specific sorting job, with the categories decided in advance. For example: is this email spam or not spam?
+
+But Jev is a fancy, flexible classifier. You give it some content (called “state”), then define the question and possible answers on the fly, without retraining it. Those answers can be yes/no, multiple-choice, or a range. It returns a structured, snap decision, along with probabilities and confidence scores.
+
+Here's some slightly more pragmatic examples (other than sandwich judgements) asking questions about the content on my digital garden:
+
+<JevGardenExamples />
+
+Right now everyone is slightly flustered and hyper over it. First, because Jev was developed by a guy who's listed third on the original transformer architecture paper. And second, because the extremely low cost, snappy speed, and utilitarian workhorse capabilities of the model open up _so many_ new possibilities.
+
+"lightning-fast probability predictions over structured schemas" (https://laya.convaiinnovations.com/)
+
+## Throwing Jev at the Digital Garden
+
+In an unplanned public service campaign, I've ended up as some kind of informal spokesperson for [[Digital Gardening]]. I did not invent the term, but I did write a long, comprehensive essay on the [history and philosophy](/garden-history) of the idea back in the lockdown days of 2020, then extended it in [numerous posts and podcasts](/topics/digital-gardening). And over the course of the last six years, turned this website into an ideal example of what a digital garden can be.
+
+[Image of digital gardening]
+https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:best,w_1000/v1622719121/maggieappleton.com/notes/garden-history/garden-main_ayoaqo_shrink_szbgc7.png
+
+For those new the the idea, here's the nutshell: gardens are personal blogs that are always growing, encourage sharing early and working in public, prefer contextual navigation over chronological, and are built on the open web. They lean into experimental and exploratory ways of creating and presenting personal writing and research.
+
+https://res.cloudinary.com/dg3gyk0gu/image/upload/c_scale,f_auto,q_auto:good,w_1100/v1593765637/maggieappleton.com/notes/garden-history/digital-garden.png
+
+A key part of digital gardening is finding ways for readers to discover and interact with your body of work other than a reverse chronological list. They are decidedly anti-social-media-feed. This is grounded in the belief that the most recent thing is rarely the most important or relevant to your readers. In practice this means having things like good metadata on posts, explorable grids on index pages, topic collections, semantic recommendations, and [[Bi-Directional Links]].
+
+[Image of non-chronological gardens]
+https://res.cloudinary.com/dxj9qr5gj/image/upload/c_scale,f_auto,q_auto:best,w_1100/v1621774501/maggieappleton.com/notes/garden-history/topographytimelines_shrink_jxgw9l.png
+
+As a natural extension of this philosophy, I believe the best gardeners build rich, creative interactions into their writing: interactive diagrams, detailed link previews, assumed audience statements, and epistemic disclaimers. Anything that can layer lenses over information to help explain, extrapolate, and contextualise it.
+
+[Lots of images and videos here – Gwern, etc.]
+
+If I'm being perfectly honest, my current garden feels behind the agentic times. I typed the original code for most of this website _by hand_, like the outdated, mid-thirties millenial I am. In my [time-starved](/now-2026-08), [new parent](/now-2025-05) schedule, I have let it fall victim to the [capabilities overhang](). What is possible today with agents powered by large language models, and now system one models like Jev, opens up a world of wild ideas for the digital gardener. Few of which I have implemented.
+
+But it is never too late to jump on the hype train. What kinds of cheap, fast, and valuable work can Jev do for gardeners?
+
+---
+
+## 1. Spectrum Navigation
+
+<SpectrumNavigation />
+
+Helping readers explore garden content in non-chronological formats, using the content of posts to guide navigation.
+
+## 2. Semantic search
+
+<SemanticSearch />
+
+## 3. Typed Relationship Graphs
+
+<TypedRelationshipGraph />
+
+## 4. Epistemic Annotations
+
+<EpistemicLinterExperiment />
+
+## 5. Garden Tending Workshop
+
+<GardenTendingWorkshop />

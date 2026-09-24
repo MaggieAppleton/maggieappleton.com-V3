@@ -20,10 +20,16 @@ export const RECORDED_POST_IDS = [
 const profile = documentQuestions([]);
 
 export const recordedQuestions = [
-  { id: 'title_fit', label: 'Does the title fit the content?', question: profile.title_fit },
+  {
+    id: 'title_fit',
+    label: 'Does the title fit the content?',
+    claim: 'the title fits the content',
+    question: profile.title_fit,
+  },
   {
     id: 'analogy',
     label: 'Explain through an analogy',
+    claim: 'this article uses an analogy to explain an idea',
     question: {
       ...noul('Does this article use an analogy to explain an idea?'),
       criteria: {
@@ -32,10 +38,16 @@ export const recordedQuestions = [
       },
     },
   },
-  { id: 'growth_stage', label: 'Editorial maturity', question: profile.growth_stage },
+  {
+    id: 'growth_stage',
+    label: 'Editorial maturity',
+    subject: 'this article’s editorial maturity',
+    question: profile.growth_stage,
+  },
   {
     id: 'mode',
     label: 'Mode of writing',
+    subject: 'this article’s mode of writing',
     question: choice('Which mode of writing best describes the article as a whole?', {
       explanation: 'Primarily explains an idea',
       argument: 'Primarily argues for a position',
@@ -44,8 +56,8 @@ export const recordedQuestions = [
       other: 'None of these fits',
     }),
   },
-  { id: 'knowledge', label: 'Prior knowledge', question: lensQuestions.knowledge },
-  { id: 'speculation', label: 'Speculation', question: lensQuestions.speculation },
+  { id: 'knowledge', label: 'Prior knowledge', scale: 'prior knowledge', question: lensQuestions.knowledge },
+  { id: 'speculation', label: 'Speculation', scale: 'speculation', question: lensQuestions.speculation },
 ];
 
 export const recordedQuestionMap = Object.fromEntries(

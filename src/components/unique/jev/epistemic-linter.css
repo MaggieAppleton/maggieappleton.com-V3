@@ -1,0 +1,301 @@
+.jev .jev-epistemic {
+  container: jev-epistemic / inline-size;
+}
+
+.jev .jev-epistemic-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-s) var(--space-l);
+}
+
+.jev .jev-epistemic-toolbar .jev-epistemic-article-field {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.jev .jev-epistemic-toolbar .jev-epistemic-review-field {
+  flex: 0 0 auto;
+  width: 15rem;
+  max-width: 100%;
+}
+
+.jev .jev-epistemic .jev-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+.jev .jev-epistemic .jev-kind-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.jev .jev-epistemic .jev-kind-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kind-color);
+}
+
+.jev .jev-epistemic .jev-kind-chip[aria-pressed='true'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--kind-color) 22%, transparent);
+  color: var(--jev-text);
+}
+
+.jev .jev-epistemic-hint {
+  margin: var(--space-2xs) 0 0;
+}
+
+.jev .jev-epistemic > .jev-field-group {
+  margin-top: var(--space-s);
+}
+
+/* The linted excerpt reads like the article itself: no container, full
+   width, in the site's serif body face. */
+.jev .jev-linted-article {
+  margin: var(--space-l) 0 0;
+}
+
+.jev .jev-linted-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3xs) var(--space-s);
+  margin-bottom: var(--space-m);
+}
+
+.jev .jev-linted-header h4 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-md);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-linted-header .jev-link {
+  flex: none;
+  font-size: var(--font-size-xs);
+}
+
+.jev .jev-linted-paragraph {
+  margin: 0 0 var(--space-m);
+}
+
+.jev .jev-linted-paragraph h5 {
+  margin: var(--space-l) 0 var(--space-2xs);
+  font-family: var(--font-serif);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-linted-paragraph > p:not(.jev-label, .jev-sources) {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 300;
+  line-height: var(--leading-loose);
+}
+
+/* Wikipedia-style inline flags: the familiar convention for exactly this. */
+.jev .jev-flag {
+  margin-left: 0.2em;
+  color: var(--jev-warm);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0;
+  vertical-align: super;
+  white-space: nowrap;
+}
+
+.jev .jev-flag + .jev-flag {
+  margin-left: 0.3em;
+}
+
+.jev .jev-sentence-wrap:has(.jev-sentence.is-muted) .jev-flag {
+  opacity: 0.4;
+}
+
+/* Sources the author already linked in this paragraph */
+.jev .jev-kit .jev-sources {
+  margin: var(--space-3xs) 0 0;
+  color: var(--jev-muted);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-kit .jev-sources a.jev-link {
+  color: var(--jev-muted);
+}
+
+.jev .jev-kit .jev-sources a.jev-link:hover,
+.jev .jev-kit .jev-sources a.jev-link:focus-visible {
+  color: var(--jev-teal-deep);
+}
+
+.jev .jev-epistemic-more {
+  margin-top: var(--space-s);
+}
+
+.jev .jev-image-description {
+  margin: 0 0 var(--space-3xs);
+}
+
+.jev .jev-sentence-wrap {
+  position: relative;
+  display: inline;
+}
+
+.jev .jev-sentence {
+  border-radius: var(--border-radius-sm);
+  box-decoration-break: clone;
+  transition: opacity 120ms ease, background-color 120ms ease;
+  -webkit-box-decoration-break: clone;
+}
+
+.jev .jev-sentence.jev-kind-0 { --sentence-kind: var(--jev-kind-0); }
+.jev .jev-sentence.jev-kind-1 { --sentence-kind: var(--jev-kind-1); }
+.jev .jev-sentence.jev-kind-2 { --sentence-kind: var(--jev-kind-2); }
+.jev .jev-sentence.jev-kind-3 { --sentence-kind: var(--jev-kind-3); }
+.jev .jev-sentence.jev-kind-4 { --sentence-kind: var(--jev-kind-4); }
+.jev .jev-sentence.jev-kind-5 { --sentence-kind: var(--jev-kind-5); }
+.jev .jev-sentence.jev-kind-6 { --sentence-kind: var(--jev-kind-6); }
+
+/* Quiet default: every classified sentence carries a soft highlight in its
+   claim-kind colour, so the annotation is visible without hovering. */
+.jev .jev-sentence.has-kind {
+  margin-inline: -0.12em;
+  padding: 0.1em 0.12em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sentence-kind) 14%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color 150ms ease-out;
+}
+
+.jev .jev-sentence.has-kind:hover,
+.jev .jev-sentence.has-kind:focus-visible {
+  background: color-mix(in srgb, var(--sentence-kind) 26%, transparent);
+}
+
+/* Focus mode: a claim-type chip is active, so its sentences get a stronger tint. */
+.jev .jev-sentence.jev-kind-active {
+  margin-inline: -0.12em;
+  padding: 0.1em 0.12em;
+  background: color-mix(in srgb, var(--sentence-kind) 30%, transparent);
+}
+
+.jev .jev-sentence.is-muted {
+  opacity: 0.4;
+}
+
+.jev .jev-sentence-tooltip {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% + var(--space-2xs));
+  left: 50%;
+  width: max-content;
+  max-width: min(290px, 80vw);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity 100ms ease, transform 100ms ease;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  line-height: var(--leading-base);
+}
+
+.jev .jev-sentence-tooltip .jev-card-header {
+  justify-content: flex-start;
+  padding: var(--space-2xs) var(--space-2xs) 0;
+}
+
+.jev .jev-sentence-tooltip .jev-card-body {
+  display: grid;
+  max-width: none;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+}
+
+.jev .jev-tooltip-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.5rem 2.75rem;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.jev .jev-tooltip-value {
+  color: var(--jev-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.jev .jev-sentence-tooltip::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--jev-hairline);
+  border-bottom: 1px solid var(--jev-hairline);
+  background: var(--jev-surface);
+  content: '';
+  transform: translate(-50%, -4px) rotate(45deg);
+}
+
+.jev .jev-sentence:hover + .jev-sentence-tooltip,
+.jev .jev-sentence:focus + .jev-sentence-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+
+@container jev-epistemic (max-width: 30rem) {
+  .jev .jev-epistemic-toolbar .jev-epistemic-review-field {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .jev .jev-linted-header {
+    display: block;
+  }
+
+  .jev .jev-linted-header .jev-link {
+    display: inline-block;
+    margin-top: var(--space-3xs);
+  }
+
+  .jev .jev-sentence-tooltip {
+    position: fixed;
+    right: var(--space-2xs);
+    bottom: var(--space-2xs);
+    left: var(--space-2xs);
+    width: auto;
+    max-width: none;
+    transform: translateY(var(--space-3xs));
+  }
+
+  .jev .jev-tooltip-row {
+    grid-template-columns: minmax(0, 1fr) 3rem 2.25rem;
+  }
+
+  .jev .jev-sentence-tooltip::after {
+    display: none;
+  }
+
+  .jev .jev-sentence:hover + .jev-sentence-tooltip,
+  .jev .jev-sentence:focus + .jev-sentence-tooltip {
+    transform: translateY(0);
+  }
+}

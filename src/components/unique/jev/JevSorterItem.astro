@@ -1,0 +1,41 @@
+---
+const {
+  item,
+  probabilityLabel = null,
+  detailLabel = null,
+  interactive = false,
+} = Astro.props;
+---
+
+{
+  interactive
+    ? (
+      <button
+        type="button"
+        class="jev-scroll-item"
+        data-jev-item-id={item.id}
+        data-jev-detail-item
+        data-jev-food-label={item.label}
+        data-jev-probability-label={probabilityLabel}
+        data-jev-detail-text={item.detailText}
+        aria-label={`${item.label}: ${detailLabel}`}
+      >
+        <span class="jev-scroll-probability">{probabilityLabel}</span>
+        {
+          item.visual.type === 'image'
+            ? <img src={item.visual.src} alt={item.visual.alt} width="60" height="60" />
+            : <span class="jev-scroll-emoji" role="img" aria-label={item.label}>{item.visual.value}</span>
+        }
+      </button>
+    )
+    : (
+      <div class="jev-scroll-item" data-jev-item-id={item.id}>
+        <span class="jev-scroll-probability">{probabilityLabel}</span>
+        {
+          item.visual.type === 'image'
+            ? <img src={item.visual.src} alt={item.visual.alt} width="60" height="60" />
+            : <span class="jev-scroll-emoji" role="img" aria-label={item.label}>{item.visual.value}</span>
+        }
+      </div>
+    )
+}

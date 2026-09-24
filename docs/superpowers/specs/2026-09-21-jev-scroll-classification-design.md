@@ -6,45 +6,46 @@ This design supersedes `2026-09-21-jev-sorting-interactives-design.md`. The read
 
 ## Goal
 
-Use two short scroll-driven demonstrations to show Jev classifying familiar food objects:
+Use one short scroll-driven demonstration to show Jev classifying five familiar food objects as No or Yes in response to “Is this a sandwich?”
 
-1. “Is this a sandwich?” sorts five foods into No and Yes.
-2. “Is this fruity, tart, or salty?” sorts five foods into three categories.
-
-Each demonstration communicates that Jev produces fast structured decisions with probabilities. The reader watches the model classify; they do not provide an answer.
+The demonstration communicates that Jev produces fast structured decisions with probabilities. The reader watches the model classify; they do not provide an answer.
 
 ## Choreography
 
-Each demonstration occupies `165vh`. Its visual stage sticks within the viewport while the reader crosses that section.
+The demonstration occupies `320vh`. The card fills the viewport minus a 24px inset at the top and bottom while the reader crosses that section. The five compact item windows complete before the sticky boundary, leaving the remaining outer distance to hold the completed state.
 
 The stage contains:
 
-- The question centered at the top.
-- Five food visuals in a compact, slightly fanned central pile.
-- Empty labeled category piles below.
+- The question, which remains visible throughout.
+- One centered source position that shows the current food.
+- Labeled No and Yes piles below, where completed foods accumulate.
 
 Scroll progress drives a reversible sequence:
 
-1. From `0%` to `18%`, the initial arrangement holds.
-2. From `18%` to `85%`, all five foods fly in a quick overlapping cascade from the central pile to their Jev category piles.
-3. Each food starts `8%` of section progress after the previous food.
-4. Each food uses `35%` of section progress for its own journey.
-5. Its `Category · confidence` label fades in during the final quarter of that journey.
-6. From `85%` to `100%`, the completed classification holds before the section unpins.
+1. The burrito is fully visible when the card first arrives.
+2. Scroll progress begins when the card reaches the top `8%` of the viewport, so it is almost completely visible before the burrito moves.
+3. Each food receives a `14%` progress window in this order: burrito, doughnut, croissant, Pop-Tart, empanada. This lengthens each flight's scroll distance without changing its easing.
+4. Later foods reveal during the first `22%` of their window.
+5. Each food holds briefly in the center, then flies from `30%` to `74%` of its window.
+6. The moving food crossfades into its settled copy from `74%` to `80%`.
+7. Only after landing, at `82%`, its confidence pill begins a separate spring response across a `6%` section-progress window. It scales from `0.72`, reaches the configured overshoot, and settles at `1`.
+8. Completed foods remain visible in their destination piles while the next food appears.
+9. The outer scroll section holds the completed classification after the animation ends.
 
 Scrolling upward reverses the sequence. Scroll controls progress directly; the animation does not autoplay or continue independently.
 
-The movement feels fast and physical without bounce. Translation, slight scale, and opacity are the only animated properties. Each item follows a shallow quadratic arc from its measured position in the central pile to its measured destination slot. The arc control point sits at the horizontal midpoint and 28px above the vertical midpoint, producing a restrained “fly into place” gesture.
+The food movement uses a snappy cubic-bezier progress curve and a quadratic path whose control point bends toward the card's centerline before parking in the destination slot. Translation, slight scale, and opacity are the only animated food properties. The confidence pill is a second animation layer: it remains hidden until landing, then uses transform and opacity to pop up, overshoot slightly, and settle.
+
+The tuned flight and confidence-pop values are fixed in the component source. The development page does not mount animation controls.
 
 ## Component Architecture
 
 Replace the interactive React implementation with one reusable Astro component:
 
-- `JevScrollSorter.astro` renders the central source pile, destination slots, the accessible summary, scoped data attributes, and the Scrollama lifecycle script.
+- `JevScrollSorter.astro` renders the single-item source stage, destination slots, the accessible summary, scoped data attributes, and the Scrollama lifecycle script.
 - `SandwichSorter.astro` supplies the binary categories, five visuals, and saved probability maps.
-- `FlavourSorter.astro` supplies the three categories, five visuals, and saved probability maps.
 
-Both wrappers continue to use `JevExperimentMount.astro`.
+The wrapper continues to use `JevExperimentMount.astro`.
 
 The shared component:
 
@@ -52,9 +53,9 @@ The shared component:
 - Derives each winning category from the largest saved probability.
 - Renders one stable source slot and one destination slot per item.
 - Measures each source slot and target slot after initialization and resize.
-- Stores the source, arc control, and destination coordinates for each item.
+- Stores the measured source and destination geometry for each item and derives the tunable inward arc control point.
 - Maps Scrollama progress to a per-item normalized progress value.
-- Updates only CSS custom properties inside one animation frame.
+- Updates only transform and opacity styles inside one animation frame.
 - Recomputes geometry on resize and image load.
 - Cleans up Scrollama, resize listeners, image listeners, and pending animation frames through `onPageLifecycle`.
 
@@ -82,7 +83,7 @@ The existing authored configuration shape remains:
 }
 ```
 
-Emoji and image visuals remain interchangeable. Visuals use `clamp(40px, 10vw, 60px)` and item frames use `clamp(44px, 12vw, 68px)`. The central pile uses small fixed rotations and offsets derived from item order so every food remains identifiable before it moves.
+Emoji and image visuals remain interchangeable. Visuals render up to 78px within responsive destination slots up to 88px wide.
 
 `sorter.js` retains:
 
@@ -95,15 +96,18 @@ Reader-choice state creation and transition functions are deleted because the re
 
 The component remains visually spare and integrated with the article:
 
-- No outer card, panel background, or instructional copy.
+- A very light card treatment using the existing paper and rule colors, a 1px border, and a 16px radius.
 - Existing Jev ink, muted, rule, paper, accent, and typography variables.
 - The question uses the existing serif display face.
-- Category piles use light rules and quiet headings rather than boxes.
-- The central pile and destination layouts reserve stable space so the sticky stage does not jump.
-- Probability labels use 10–12px muted text with tabular numerals.
-- The two-category and three-category versions share the same geometry system.
+- The sticky card is `calc(100dvh - 48px)` tall, up to 800px wide, and pins 24px from the top of the viewport.
+- The question uses the design system's large type step.
+- Category names use the design system's base type step, food visuals grow to 78px within 88px slots, and larger vertical gaps separate the question, source pile, and completed categories.
+- Category names sit beneath their completed food rows as quiet captions, without boxes or divider lines.
+- The centered source stage and destination layouts reserve stable space so the sticky card does not jump.
+- Percentage labels use 10–12px muted text with tabular numerals.
+- The binary categories share the same responsive geometry system.
 
-The central source pile stays centered at every viewport width. Category piles remain in two or three columns and must not create horizontal overflow at a 390px viewport.
+The source position stays centered at every viewport width. The two category piles remain in columns, and every food within a bucket stays on one row. At narrow widths the food visuals shrink within equal-width bucket slots rather than wrapping.
 
 ## Accessibility and Progressive Enhancement
 
@@ -122,9 +126,9 @@ The server-rendered visual state is the completed classification. The script onl
 
 When `prefers-reduced-motion: reduce` is active:
 
-- The section uses normal document height instead of `165vh`.
+- The section uses normal document height instead of `300vh`.
 - The stage does not stick.
-- Central-pile staging is skipped.
+- Sequential staging is skipped.
 - The completed classified piles are shown immediately.
 - No transforms, transitions, or opacity animation run.
 
@@ -147,22 +151,22 @@ Focused Node tests should prove:
 - Configuration validation still rejects malformed data.
 - Winning-category derivation remains deterministic.
 - Reader-choice state exports are removed.
-- Server-rendered markup contains central-pile source items, destination slots, probability labels, and an accessible static summary.
+- Server-rendered markup contains single-stage source items, destination slots, probability labels, and an accessible static summary.
 - The shared component initializes each instance independently.
 - The wrappers contain no React hydration directive.
 - The wrappers still support emoji and future image data.
 - No Yes/No choice buttons, “You sorted,” agreement/disagreement copy, or reset controls remain.
 - Reduced-motion CSS disables sticky staging and shows the final piles.
-- `jev-gardens.mdx` still mounts both demonstrations and omits the safe/unsafe variation.
+- `jev-gardens.mdx` mounts only the sandwich demonstration and omits the safe/unsafe variation.
 
 Browser verification should prove:
 
 - The stage pins and unpins naturally.
 - Forward scroll moves every food into the correct pile.
-- Reverse scroll restores the central pile.
+- Reverse scroll restores each item in reverse order and ends with the burrito visible in the center.
 - Labels appear near each item’s landing point.
-- The source-to-completed transition requires no more than one viewport of scroll travel.
-- Both instances initialize after Astro view transitions.
+- The source-to-completed transition uses five distinct scroll beats across the pinned section.
+- The instance initializes after Astro view transitions.
 - Desktop and 390px layouts have no horizontal overflow.
 - Reduced-motion mode renders the completed piles immediately without pinning.
 

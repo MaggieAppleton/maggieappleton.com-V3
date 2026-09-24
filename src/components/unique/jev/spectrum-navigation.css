@@ -1,0 +1,153 @@
+/* Spectrum Navigation — four dials over the garden's Jev-scored spectrums,
+   ranking the closest-matching articles. Composes the shared Jev kit
+   (jev.css); anything below is specific to this component's layout. */
+
+.jev .jev-kit.jev-lenses {
+  /* Shared column widths so the header row and every ranked row line up,
+     regardless of how many digits a rank number has. */
+  --jev-rank-col: 1.75rem;
+  --jev-match-col: 3rem;
+  container: jev-lenses / inline-size;
+}
+
+/* One design-system colour per spectrum, shared by its slider, its value and
+   its bar in every row's match glyph. */
+.jev .jev-kit .jev-lens-knowledge { --lens-color: var(--color-medium-sea-blue); }
+.jev .jev-kit .jev-lens-practicality { --lens-color: var(--color-purple); }
+.jev .jev-kit .jev-lens-abstraction { --lens-color: var(--color-dark-salmon); }
+.jev .jev-kit .jev-lens-speculation { --lens-color: var(--color-bright-crimson); }
+
+.jev .jev-kit .jev-lens input[type='range'].jev-range {
+  accent-color: var(--lens-color);
+}
+
+.jev .jev-kit .jev-lens input[type='range'].jev-range:focus-visible {
+  outline-color: color-mix(in srgb, var(--lens-color) 35%, transparent);
+}
+
+.jev .jev-kit .jev-lenses-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-m) var(--space-s);
+  margin-bottom: var(--space-l);
+}
+
+.jev .jev-kit .jev-lens-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.jev .jev-kit .jev-lens-value {
+  color: var(--lens-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-kit .jev-lens-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  margin-top: -4px;
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+/* Quiet column header: article count on the left, "Match" above the glyphs. */
+.jev .jev-kit .jev-ranked-header {
+  display: grid;
+  grid-template-columns: var(--jev-rank-col) minmax(0, 1fr) var(--jev-match-col);
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: 0 var(--space-3xs);
+  margin: 0 calc(-1 * var(--space-3xs)) var(--space-2xs);
+}
+
+.jev .jev-kit .jev-ranked-header-match {
+  text-align: right;
+}
+
+.jev .jev-kit .jev-ranked {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.jev .jev-kit a.jev-ranked-row {
+  display: grid;
+  grid-template-columns: var(--jev-rank-col) minmax(0, 1fr) var(--jev-match-col);
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-3xs);
+  /* Bleed the hover background out so row content aligns with the sliders */
+  margin-inline: calc(-1 * var(--space-3xs));
+  border-radius: var(--border-radius-base);
+  color: var(--jev-text);
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.jev .jev-kit a.jev-ranked-row:hover,
+.jev .jev-kit a.jev-ranked-row:focus-visible {
+  background: var(--dropdown-option-hover);
+  color: var(--jev-teal-deep);
+}
+
+.jev .jev-kit .jev-ranked-title {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-snug);
+}
+
+/* Compact match visual: one bar per spectrum, taller and more solid the
+   closer the article sits to the desired position. */
+.jev .jev-kit .jev-match {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 20px;
+}
+
+.jev .jev-kit .jev-match-bar {
+  width: 6px;
+  height: calc(5px + var(--closeness, 0) * 15px);
+  border-radius: 2px 2px 0 0;
+  background: color-mix(in srgb, var(--lens-color) calc(25% + var(--closeness, 0) * 75%), transparent);
+  transition: height 200ms ease-out, background-color 200ms ease-out;
+}
+
+@container jev-lenses (max-width: 44rem) {
+  .jev .jev-kit .jev-lenses-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-m) var(--space-l);
+  }
+}
+
+@container jev-lenses (max-width: 34rem) {
+  .jev .jev-kit .jev-lenses-controls {
+    grid-template-columns: 1fr;
+    gap: var(--space-m);
+  }
+
+  .jev .jev-kit .jev-ranked-header {
+    grid-template-columns: var(--jev-rank-col) minmax(0, 1fr);
+  }
+
+  .jev .jev-kit .jev-ranked-header-match {
+    display: none;
+  }
+
+  .jev .jev-kit a.jev-ranked-row {
+    grid-template-columns: var(--jev-rank-col) minmax(0, 1fr);
+    row-gap: var(--space-3xs);
+  }
+
+  .jev .jev-kit .jev-match {
+    grid-column: 2;
+    justify-content: flex-start;
+    margin-top: var(--space-3xs);
+  }
+}

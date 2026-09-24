@@ -1,0 +1,130 @@
+.jev .jev-search-form {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2xs);
+}
+
+.jev .jev-search-form .jev-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.jev .jev-search-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs) var(--space-2xs);
+  margin-top: var(--space-s);
+}
+
+.jev .jev-search-status {
+  min-height: 1.2em;
+  margin: var(--space-2xs) 0 0;
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* The one headline moment: whether the garden holds a real answer at all. */
+.jev .jev-search-verdict {
+  margin: var(--space-s) 0;
+  text-align: center;
+}
+
+.jev .jev-search-verdict .jev-card-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3xs);
+}
+
+.jev .jev-search-verdict-copy {
+  max-width: 32ch;
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+}
+
+.jev .jev-search-verdict .jev-meter {
+  width: 100%;
+  max-width: 16rem;
+}
+
+.jev .jev-search-results {
+  gap: var(--space-m);
+  margin-top: var(--space-m);
+}
+
+/* .jev-list resets list-style, but prose-wrapper's global ul > li::before leaf
+   icon still generates a box that becomes a phantom grid item here — kill it. */
+.jev .jev-search-row::before {
+  content: none !important;
+}
+
+.jev .jev-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem;
+  gap: var(--space-s);
+  align-items: start;
+}
+
+.jev .jev-search-row-main {
+  display: grid;
+  gap: var(--space-3xs);
+  min-width: 0;
+}
+
+.jev .jev-search-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-base);
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.jev .jev-search-row-stat {
+  display: grid;
+  gap: var(--space-3xs);
+  min-width: 0;
+}
+
+.jev .jev-search-row-stat .jev-meter {
+  width: 100%;
+}
+
+.jev .jev-search-percent {
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-search-percent--muted {
+  color: var(--jev-muted);
+}
+
+.jev .jev-search-delta {
+  color: var(--jev-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-search-delta.is-up,
+.jev .jev-search-delta.is-new {
+  color: var(--jev-teal-deep);
+}
+
+@media (max-width: 600px) {
+  .jev .jev-search-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3xs);
+  }
+
+  .jev .jev-search-row-stat {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .jev .jev-search-row-stat .jev-meter {
+    width: 4rem;
+  }
+}

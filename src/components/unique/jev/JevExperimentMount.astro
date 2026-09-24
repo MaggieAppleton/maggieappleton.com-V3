@@ -1,0 +1,31 @@
+---
+import './jev.css';
+
+const { wide = false, spaced = false, class: className } = Astro.props;
+---
+
+<div class:list={['jev-mount', className, { 'jev-mount--wide': wide, 'jev-mount--spaced': spaced }]}>
+  <div class="jev">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .jev-mount {
+    grid-column: 1 / -1 !important;
+    justify-self: center;
+    width: min(800px, calc(100vw - 48px));
+    max-width: 100%;
+    margin-inline: auto;
+  }
+  .jev-mount--wide {
+    width: min(1046px, calc(100vw - 48px));
+  }
+  /* For mounts followed directly by article prose rather than a heading */
+  .jev-mount--spaced {
+    margin-bottom: var(--space-m);
+  }
+  @media (max-width: 600px) {
+    .jev-mount { width: calc(100vw - 36px); }
+  }
+</style>

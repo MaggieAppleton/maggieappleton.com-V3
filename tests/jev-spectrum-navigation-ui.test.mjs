@@ -32,12 +32,12 @@ test('the article mounts spectrum navigation beneath its heading', async () => {
 test('the playground and remaining experiments use separate article mounts', async () => {
   const [article, playground, pipeline] = await Promise.all([
     fs.readFile('src/content/notes/jev-gardens.mdx', 'utf8'),
-    fs.readFile('src/components/unique/jev/JevPlayground.astro', 'utf8'),
+    fs.readFile('src/components/unique/jev/JevGardenExamples.astro', 'utf8'),
     fs.readFile('src/components/unique/jev/Pipeline.jsx', 'utf8'),
   ]);
 
   assert.doesNotMatch(article, /Interactive component demo-ing Jev/);
-  assert.ok(article.indexOf('<JevPlayground />') < article.indexOf('## Throwing Jev at the Digital Garden'));
+  assert.ok(article.indexOf('<JevGardenExamples />') < article.indexOf('## Throwing Jev at the Digital Garden'));
   assert.match(playground, /<JevPlaygroundIsland client:load \/>/);
   assert.doesNotMatch(pipeline, /jev-play-docs|jev-play-run|Edit questions as JSON|Object\.values\(active/);
 });
@@ -50,7 +50,7 @@ test('each garden exploration mounts as an independent island beneath its headin
     fs.readFile('src/components/unique/jev/EpistemicLinterExperiment.astro', 'utf8'),
     fs.readFile('src/components/unique/jev/GardenTendingWorkshop.astro', 'utf8'),
     fs.readFile('src/components/unique/jev/SpectrumNavigation.astro', 'utf8'),
-    fs.readFile('src/components/unique/jev/JevPlayground.astro', 'utf8'),
+    fs.readFile('src/components/unique/jev/JevGardenExamples.astro', 'utf8'),
     fs.readFile('src/components/unique/jev/JevIslandEntries.jsx', 'utf8'),
   ]);
 

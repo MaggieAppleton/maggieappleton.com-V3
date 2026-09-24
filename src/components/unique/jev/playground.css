@@ -1,35 +1,443 @@
-.jev .jev-playground { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-m) var(--space-l); padding-top: var(--space-s); border-top: 1px solid var(--jev-rule); }
-.jev .jev-playground h3, .jev .jev-playground h4 { margin: 0 0 var(--space-xs); font-family: var(--font-sans); font-size: var(--font-size-sm); font-weight: 400; line-height: var(--leading-base); }
-.jev .jev-playground .jev-field { margin-bottom: var(--space-2xs); }
-.jev .jev-play-state { margin-bottom: var(--space-m); }
-.jev .jev-playground .jev-state-excerpt { margin: var(--space-2xs) 0 0; color: var(--jev-muted); font-family: var(--font-body); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
-.jev .jev-play-results { min-width: 0; padding-left: var(--space-m); border-left: 1px solid var(--jev-rule); }
-.jev .jev-playground .jev-play-help { margin: var(--space-2xs) 0; color: var(--jev-muted); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
-.jev .jev-recorded-label { margin: 0 0 var(--space-xs); color: var(--jev-muted); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
-.jev .jev-run-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0 0 var(--space-s); border: 1px solid var(--jev-rule); background: var(--jev-rule); }
-.jev .jev-run-metrics > div { min-width: 0; padding: var(--space-2xs); background: var(--jev-paper); }
-.jev .jev-run-metrics dt { color: var(--jev-muted); font-size: 11px; }
-.jev .jev-run-metrics dd { margin: var(--space-3xs) 0; font-family: var(--font-serif); font-size: var(--font-size-base); font-weight: 400; line-height: var(--leading-snug); font-variant-numeric: tabular-nums; }
-.jev .jev-run-metrics small { display: block; color: var(--jev-muted); font-size: 10px; line-height: 1.45; }
-.jev .jev-play-answer + .jev-play-answer { margin-top: var(--space-m); padding-top: var(--space-s); border-top: 1px solid var(--jev-rule); }
-.jev .jev-playground .jev-play-answer-question { margin-bottom: var(--space-s); font-size: var(--font-size-xs); line-height: var(--leading-loose); }
-.jev .jev-answer-value { display: flex; flex-direction: column; gap: var(--space-3xs); margin-bottom: var(--space-s); }
-.jev .jev-answer-value strong { overflow-wrap: anywhere; font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 400; line-height: var(--leading-tight); }
-.jev .jev-answer-value > span { color: var(--jev-muted); font-size: 12px; }
-.jev .jev-play-bars { display: grid; gap: var(--space-2xs); }
-.jev .jev-play-bar-row > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; margin-bottom: 4px; }
-.jev .jev-play-bar-row > div > span:first-child { overflow-wrap: anywhere; }
-.jev .jev-play-bar-row > div > span:last-child { flex: none; font-variant-numeric: tabular-nums; }
-.jev .jev-selected-marker { color: var(--jev-muted); font-size: 11px; }
-.jev .jev-play-bars meter { display: block; width: 100%; height: 10px; appearance: none; border: 0; border-radius: 0; background: transparent; }
-.jev .jev-play-bars meter::-webkit-meter-bar { height: 8px; background: color-mix(in srgb, var(--jev-kind-0) 12%, transparent); border: 0; border-radius: 0; }
-.jev .jev-play-bars meter::-webkit-meter-optimum-value { background: var(--jev-kind-0); border-radius: 0; transition: width 160ms ease; }
-.jev .jev-play-bars meter::-moz-meter-bar { background: var(--jev-kind-0); }
-.jev .jev-answer-confidence { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: var(--space-3xs) var(--space-2xs); margin-top: var(--space-xs); padding-top: var(--space-2xs); border-top: 1px solid var(--jev-rule); }
-.jev .jev-answer-confidence > span { color: var(--jev-muted); font-size: 12px; }
-.jev .jev-answer-confidence > strong { font-size: 14px; font-variant-numeric: tabular-nums; }
-.jev .jev-answer-confidence > small { grid-column: 1 / -1; color: var(--jev-muted); font-size: 10px; line-height: 1.45; }
-@media (max-width: 650px) {
-  .jev .jev-playground { grid-template-columns: minmax(0, 1fr); gap: var(--space-s); }
-  .jev .jev-play-results { padding-top: var(--space-s); padding-left: 0; border-top: 1px solid var(--jev-rule); border-left: 0; }
+.jev .jev-playground {
+  /* Aliases of the shared Jev kit tokens (jev.css) */
+  --play-ink: var(--jev-text);
+  --play-muted: var(--jev-muted);
+  --play-rule: var(--jev-hairline);
+  --play-border: var(--jev-border);
+  --play-accent: var(--jev-teal);
+  --play-surface: var(--jev-surface);
+  --play-field: var(--jev-field);
+  --play-warm: var(--jev-warm);
+  --play-step-size: 1.875rem;
+  --play-gap: 4px;
+  --play-shadow-xsmall: var(--jev-shadow-xs);
+  --play-shadow-small: var(--jev-shadow-sm);
+  container: jev-playground / inline-size;
+  color: var(--play-ink);
+  font-size: var(--font-size-sm);
+}
+
+.jev .jev-playground .jev-play-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-l);
+}
+
+.jev .jev-playground .jev-play-inputs {
+  display: grid;
+  gap: var(--space-l);
+  min-width: 0;
+}
+
+/* Steps */
+.jev .jev-playground .jev-play-step-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.jev .jev-playground .jev-play-step-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--play-step-size);
+  height: var(--play-step-size);
+  border-radius: 50%;
+  background: var(--color-sea-blue-20);
+  color: var(--color-dark-sea-blue);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.jev .jev-playground .jev-play-step-heading label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3xs-2xs);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-playground .jev-play-step-heading label > span {
+  color: var(--play-muted);
+}
+
+.jev .jev-playground .jev-play-step-body {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+  margin: var(--space-3xs-2xs) 0 0 calc(var(--play-step-size) + var(--space-2xs));
+}
+
+/* Preview + question details, hung off a hairline */
+.jev .jev-playground .jev-play-aside {
+  display: grid;
+  gap: var(--space-3xs-2xs);
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--play-rule);
+}
+
+.jev .jev-playground :where(.jev-play-aside, .jev-play-verdict) p {
+  width: auto;
+  margin: 0;
+}
+
+.jev .jev-playground .jev-play-aside-label {
+  color: var(--play-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-playground .jev-play-preview {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-base);
+}
+
+.jev .jev-playground .jev-play-question {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-playground ol.jev-play-options {
+  display: grid;
+  width: auto;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  gap: var(--space-xs);
+  margin: calc(var(--space-s) - var(--space-3xs-2xs)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jev .jev-playground .jev-play-options > li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  margin: 0;
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-playground .jev-play-option-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--border-radius-base);
+  background: var(--color-gray-200);
+  color: var(--play-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.jev .jev-playground .jev-play-options strong {
+  font-weight: 400;
+}
+
+/* Jev's decision card */
+.jev .jev-playground .jev-play-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--play-rule);
+  border-radius: var(--border-radius-lg);
+  background: var(--play-surface);
+  box-shadow: var(--play-shadow-small);
+}
+
+.jev .jev-playground .jev-play-card > .jev-error {
+  margin: var(--space-l) var(--space-s);
+}
+
+.jev .jev-playground .jev-play-card-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3xs-2xs);
+  padding: var(--space-s) var(--space-s) 0;
+  color: var(--play-muted);
+}
+
+.jev .jev-playground .jev-play-card-header h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+}
+
+.jev .jev-playground .jev-play-answer {
+  padding: var(--space-l) var(--space-s) calc(var(--space-xl) - 16px);
+}
+
+.jev .jev-playground .jev-play-verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: jev-play-verdict-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jev .jev-playground .jev-play-headline {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.jev .jev-playground .jev-play-summary {
+  max-width: 17rem;
+  margin: var(--space-2xs) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-base);
+  text-wrap: balance;
+}
+
+.jev .jev-playground .jev-play-summary strong {
+  font-weight: 700;
+}
+
+.jev .jev-playground .jev-play-summary .jev-play-lead {
+  color: var(--play-accent);
+}
+
+.jev .jev-playground .jev-play-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  margin: var(--space-s) 0 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-gold) 50%, transparent);
+  color: var(--play-warm);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-playground .jev-play-confidence .jev-play-icon {
+  color: var(--color-dark-salmon);
+}
+
+/* Probability bar: one segment per option, sized by probability.
+   The label rows above and below mirror the bar's flex geometry, but a label
+   cell can't shrink below its text. Any extra room it needs is taken from the
+   other cells in proportion to their size, so labels push apart rather than
+   overlap and the big segments absorb most of the difference. */
+.jev .jev-playground .jev-play-distribution {
+  display: grid;
+  gap: var(--space-3xs-2xs);
+  margin-top: var(--space-s);
+  color: var(--play-accent);
+  font-weight: 700;
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-playground :is(ol.jev-play-bar, .jev-play-bar-labels) {
+  display: flex;
+  gap: var(--play-gap);
+  width: auto;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  list-style: none;
+}
+
+.jev .jev-playground ol.jev-play-bar {
+  height: 4.375rem;
+}
+
+.jev .jev-playground .jev-play-bar-labels {
+  min-height: 1lh;
+}
+
+.jev .jev-playground :is(.jev-play-bar, .jev-play-bar-labels) > * {
+  flex: var(--share) 1 calc(var(--share) * 100%);
+  min-width: 0.75rem;
+  margin: 0;
+  transition:
+    flex-basis 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    flex-grow 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease-out;
+}
+
+.jev .jev-playground .jev-play-bar-labels > :not(.is-inside, .is-empty) {
+  min-width: max-content;
+  padding-right: var(--space-2xs);
+  white-space: nowrap;
+}
+
+.jev .jev-playground .jev-play-bar-labels > .is-end:not(.is-inside) {
+  padding-right: 0;
+  padding-left: var(--space-2xs);
+  text-align: right;
+}
+
+.jev .jev-playground .jev-play-bar-ghost {
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.jev .jev-playground :is(.jev-play-bar, .jev-play-bar-labels) > .is-empty {
+  flex: 0 0 0%;
+  min-width: 0;
+  margin-left: calc(var(--play-gap) * -1);
+  overflow: hidden;
+  opacity: 0;
+}
+
+.jev .jev-playground .jev-play-bar > li {
+  border: 1px solid rgb(0 0 0 / 0.05);
+  border-radius: var(--border-radius-base);
+  background: color-mix(in srgb, var(--play-accent) var(--tint), var(--play-surface));
+  box-shadow: var(--play-shadow-small);
+}
+
+.jev .jev-playground .jev-play-bar > .is-empty {
+  border-width: 0;
+}
+
+.jev .jev-playground .jev-play-segment-inside {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3xs-2xs);
+  height: 100%;
+  padding: 0 var(--space-2xs);
+  color: var(--color-white);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.jev .jev-playground .jev-play-bar > .is-pale .jev-play-segment-inside {
+  color: var(--color-dark-sea-blue);
+}
+
+.jev .jev-playground .jev-play-segment-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 400;
+  text-overflow: ellipsis;
+}
+
+/* Score questions: one vertical stacked bar with a row per level, so long
+   descriptions fit. Segment heights follow probability, but a row never
+   shrinks below its description. */
+.jev .jev-playground ol.jev-play-scale-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--play-gap);
+  width: auto;
+  height: 20rem;
+  margin: var(--space-m) 0 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-snug);
+  list-style: none;
+}
+
+.jev .jev-playground .jev-play-scale-column > li {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  column-gap: var(--space-s);
+  flex: var(--share) 1 calc(var(--share) * 100%);
+  margin: 0;
+  line-height: var(--leading-snug);
+  transition:
+    flex-basis 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    flex-grow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jev .jev-playground .jev-play-scale-level {
+  margin-right: 0.3em;
+  color: var(--play-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-playground .jev-play-scale-bar {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(0 0 0 / 0.05);
+  border-radius: var(--border-radius-base);
+  background: color-mix(in srgb, var(--play-accent) var(--tint), var(--play-surface));
+  box-shadow: var(--play-shadow-small);
+  color: var(--color-white);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-playground .jev-play-scale-column > .is-pale .jev-play-scale-bar {
+  color: var(--color-dark-sea-blue);
+}
+
+.jev .jev-playground .jev-play-scale-column > .is-empty .jev-play-scale-bar {
+  border: 1px dashed var(--play-border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--play-muted);
+}
+
+.jev .jev-playground .jev-play-scale-column .jev-play-scale-label {
+  align-self: center;
+  padding-block: 2px;
+}
+
+/* Run details */
+.jev .jev-playground .jev-play-telemetry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3xs);
+  margin: auto 0 0;
+  padding: var(--space-2xs) var(--space-xs);
+  border-top: 1px solid var(--play-rule);
+  color: var(--play-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--leading-snug);
+  font-variant-numeric: tabular-nums;
+}
+
+.jev .jev-playground .jev-play-telemetry > div {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.jev .jev-playground .jev-play-telemetry dd {
+  margin: 0;
+}
+
+.jev .jev-playground .jev-play-telemetry-speed .jev-play-icon {
+  color: var(--play-warm);
+}
+
+.jev .jev-playground .jev-play-telemetry-cost .jev-play-icon {
+  color: var(--play-accent);
+}
+
+.jev .jev-playground .jev-play-icon {
+  display: block;
+  flex: none;
+}
+
+@keyframes jev-play-verdict-in {
+  from { opacity: 0; translate: 0 4px; }
+}
+
+@container jev-playground (max-width: 44rem) {
+  .jev .jev-playground .jev-play-layout { grid-template-columns: minmax(0, 1fr); }
 }
