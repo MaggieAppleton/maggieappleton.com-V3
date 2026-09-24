@@ -4,6 +4,7 @@ import PageWrapper from "../../components/layouts/PageWrapper.astro";
 import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
 import { getDraftPreviewSlug } from "../../utils/publicationRoutes.mjs";
+import LocalDraftForm from "../../editor/components/LocalDraftForm.astro";
 
 export function getStaticPaths() {
 	if (!import.meta.env.DEV) return [];
@@ -19,13 +20,30 @@ const now = await getCollection("now", ({ data }) => data.draft === true);
 
 const totalDrafts =
 	essays.length + notes.length + patterns.length + talks.length + smidgeons.length + now.length;
+let editorOrigin;
+let editorUnavailable = false;
+if (import.meta.env.DEV) {
+	try {
+		const { editorServerConfig } = await import("../../editor/server/runtime.mjs");
+		editorOrigin = editorServerConfig().origin;
+	} catch {
+		editorUnavailable = true;
+	}
+}
 ---
 
 <!-- Development-only surface: intentionally no pageMetadata. -->
-<Layout title="Draft Posts | Maggie Appleton">
+<Layout title="Draft Posts | Maggie Appleton" editorHmrGuard={import.meta.env.DEV}>
 	<PageWrapper>
 		<h1>Draft Posts ({totalDrafts})</h1>
 		<p class="draft-notice">These posts are only visible in development mode</p>
+		{
+			editorOrigin ? <LocalDraftForm origin={editorOrigin} /> : editorUnavailable && (
+				<p class="draft-notice" role="alert">
+					New drafts need the local editor to restart on its configured loopback address.
+				</p>
+			)
+		}
 
 		{
 			essays.length > 0 && (

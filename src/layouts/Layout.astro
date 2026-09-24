@@ -22,9 +22,10 @@ export interface Props {
 		datePublished?: string;
 		dateModified?: string;
 	};
+	editorHmrGuard?: boolean;
 }
 
-const { title, desc = "", type, coverImage, canonicalPath, pageMetadata = false } = Astro.props;
+const { title, desc = "", type, coverImage, canonicalPath, pageMetadata = false, editorHmrGuard = false } = Astro.props;
 
 const canonicalURL = buildCanonicalUrl(canonicalPath ?? Astro.url.pathname);
 
@@ -71,6 +72,33 @@ const isArticle = Boolean(articleMetadata);
 <!doctype html>
 <html lang="en">
 	<head>
+		{import.meta.env.DEV && editorHmrGuard && (
+			<script is:inline>
+				const NativeSocket = window.WebSocket;
+				window.WebSocket = class extends NativeSocket {
+					constructor(url, protocols) {
+						super(url, protocols);
+						if ((Array.isArray(protocols) ? protocols : [protocols]).includes("vite-hmr")) {
+							window.WebSocket = NativeSocket;
+							const active = () => location.pathname === "/_editor"
+								|| window.__localDraftFormActive === true
+								|| window.__localDraftCreationPending === true;
+							this.addEventListener("message", (event) => {
+								if (!active()) return;
+								let payload;
+								try { payload = JSON.parse(event.data); } catch { return; }
+								if (payload.type === "full-reload" || payload.type === "update") {
+									event.stopImmediatePropagation();
+								}
+							}, true);
+							this.addEventListener("close", (event) => {
+								if (active()) event.stopImmediatePropagation();
+							}, true);
+						}
+					}
+				};
+			</script>
+		)}
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="color-scheme" content="light dark" />

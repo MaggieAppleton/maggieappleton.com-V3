@@ -1,0 +1,40 @@
+---
+const { origin } = Astro.props;
+---
+
+<section class="local-draft-form" aria-label="New draft" data-editor-origin={origin}>
+	<button class="local-draft-open" type="button" aria-expanded="false">New draft</button>
+	<form class="local-draft-fields" hidden>
+		<fieldset>
+			<legend>Start a</legend>
+			<label><input type="radio" name="collection" value="notes" checked /> Note</label>
+			<label><input type="radio" name="collection" value="essays" /> Essay</label>
+		</fieldset>
+
+		<label>
+			<span>Title</span>
+			<input name="title" required autocomplete="off" />
+		</label>
+		<label>
+			<span>Filename</span>
+			<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" autocomplete="off" />
+		</label>
+		<div class="local-draft-essay" hidden>
+			<label>
+				<span>Description</span>
+				<textarea name="description" rows="3"></textarea>
+			</label>
+			<label>
+				<span>Cover</span>
+				<select name="coverId"><option value="">Choose a cover</option></select>
+			</label>
+		</div>
+		<p class="local-draft-message" role="alert" hidden></p>
+		<button class="local-draft-submit" type="submit">Create draft</button>
+	</form>
+</section>
+
+<script is:inline type="module">
+	import { mountDraftForm } from "/src/editor/client/draft-form.mjs";
+	mountDraftForm(document.querySelector(".local-draft-form"));
+</script>

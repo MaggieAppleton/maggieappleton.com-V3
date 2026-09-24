@@ -1,0 +1,102 @@
+---
+import { getEntry, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import PostLayout from "../../layouts/PostLayout.astro";
+import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
+import { mdxComponents } from "../../components/mdx/component-map.mjs";
+import { editorServerConfig, getEditorServices } from "../server/runtime.mjs";
+import { loadEditorEntries } from "./content-entries.mjs";
+
+export const prerender = false;
+
+async function waitForAstroEntry(collection, entryId) {
+	const deadline = Date.now() + 12_000;
+	let loaded = await getEntry(collection, entryId);
+	while (!loaded && Date.now() < deadline) {
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		loaded = await getEntry(collection, entryId);
+	}
+	return loaded;
+}
+
+let capability;
+try { capability = editorServerConfig(); } catch { /* Show the local restart path below. */ }
+const { origin, token } = capability ?? {};
+if (origin && Astro.url.origin !== origin) {
+	const expected = new URL(origin);
+	const loopbackAlias = ["localhost", "127.0.0.1", "[::1]"].includes(Astro.url.hostname);
+	if (!loopbackAlias || Astro.url.port !== expected.port) {
+		return new Response("Local editor origin is unavailable", { status: 403, headers: { "Cache-Control": "no-store" } });
+	}
+	return Astro.redirect(`${origin}${Astro.url.pathname}${Astro.url.search}`, 307);
+}
+const documentId = Astro.url.searchParams.get("documentId");
+let record;
+let documentRead;
+let entry;
+let Content;
+let headings = [];
+let renderError;
+if (origin && documentId) {
+	try {
+		const { index, store } = await getEditorServices(loadEditorEntries);
+		record = await index.resolve(documentId);
+		documentRead = await store.readDocument(documentId);
+		if (!documentRead.parseError) {
+			entry = await waitForAstroEntry(record.collection, record.entryId);
+			if (entry) ({ Content, headings } = await render(entry));
+			else renderError = "Astro has not loaded this source file yet";
+		} else renderError = documentRead.parseError;
+	} catch (error) { renderError = error.message; }
+}
+const bootstrap = origin
+	? JSON.stringify({ token, origin, documentId, document: documentRead }).replaceAll("<", "\\u003c")
+	: null;
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+
+{!origin ? (
+	<Layout title="Local writing unavailable" desc="Restart locally to edit writing">
+		<section aria-label="Writing editor" class="editor-fallback">
+			<h1>Local writing is unavailable</h1>
+			<p>Restart the development server with <code>npm run dev -- --host 127.0.0.1</code> to edit writing.</p>
+			<p><a href="/drafts">View drafts</a></p>
+		</section>
+	</Layout>
+) : entry && Content && documentRead && !renderError ? (
+	<PostLayout frontmatter={entry.data} headings={headings} entry={entry} editorHmrGuard>
+		<section aria-label="Writing editor" id="local-writing-editor">
+			<div id="local-editor-original">
+				<ProseWrapper><Content components={mdxComponents} /></ProseWrapper>
+			</div>
+		</section>
+		<script id="local-editor-bootstrap" type="application/json" set:html={bootstrap} />
+		<script is:inline type="module">
+			import { mountWritingEditor } from "/src/editor/client/mount.mjs";
+			mountWritingEditor();
+		</script>
+	</PostLayout>
+) : (
+	<Layout title="Writing editor" desc="Local writing editor" editorHmrGuard>
+		<section aria-label="Writing editor" id="local-writing-editor" class="editor-fallback">
+			{documentId ? (
+				<>
+					<h1>Writing editor</h1>
+					<p role="alert">{renderError ?? "Document unavailable"}</p>
+					{documentRead && <pre>{documentRead.source}</pre>}
+				</>
+			) : (
+				<>
+					<h1>Local writing</h1>
+					<p><a href="/drafts">Open drafts or start a new draft</a></p>
+				</>
+			)}
+		</section>
+		<script id="local-editor-bootstrap" type="application/json" set:html={bootstrap} />
+	</Layout>
+)}
+
+<style>
+	.editor-fallback { max-width: 72ch; margin: var(--space-xl) auto; padding: var(--space-s); }
+	.editor-fallback pre { overflow: auto; white-space: pre-wrap; }
+</style>

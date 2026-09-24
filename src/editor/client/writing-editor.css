@@ -1,0 +1,124 @@
+@import "../../components/mdx/Footnote.css";
+@import "../../components/mdx/AssumedAudience.css";
+
+#local-writing-editor .prose-wrapper[data-editor-live="true"] {
+	grid-template-columns: minmax(0, 1fr);
+	--editor-site-font-body: var(--font-body);
+}
+
+#local-writing-editor .prose-wrapper[data-editor-live="true"] > * {
+	grid-column: 1;
+}
+
+#local-writing-editor .mdxeditor {
+	--font-body: var(--editor-site-font-body);
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+}
+
+#local-writing-editor .editor-body {
+	display: grid;
+	/* ProseWrapper's 72ch track is measured in its Times grid font (36em). */
+	grid-template-columns: 1fr min(36em, 100%) 1fr;
+	font-family: var(--font-body);
+	font-size: var(--font-size-base);
+	line-height: var(--leading-looser);
+	white-space: normal;
+	padding: 0;
+	outline: none;
+}
+
+#local-writing-editor .editor-body [data-lexical-text="true"] { white-space: normal; }
+#local-writing-editor .editor-body code [data-lexical-text="true"] { white-space: pre-wrap; }
+
+#local-writing-editor .editor-body > * { grid-column: 2; }
+#local-writing-editor .editor-body > .editor-protected-node:has(.editor-protected-wide) {
+	grid-column: 1 / -1;
+}
+#local-writing-editor .editor-body > .editor-protected-node figure.container {
+	width: max-content;
+	max-width: 100%;
+}
+#local-writing-editor .editor-body > p { margin-bottom: var(--space-m); }
+#local-writing-editor .editor-body a { color: var(--color-crimson); text-decoration: underline; }
+#local-writing-editor .editor-wiki-link { color: var(--color-crimson); text-decoration: underline dotted; text-underline-offset: 0.15em; }
+#local-writing-editor .editor-wiki-form {
+	grid-column: 2;
+	display: flex;
+	align-items: end;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	width: min(72ch, 100%);
+	margin: var(--space-s) auto;
+	font-family: var(--font-sans);
+}
+#local-writing-editor .editor-wiki-form label { display: grid; gap: var(--space-2xs); }
+#local-writing-editor .editor-wiki-form input { min-width: 18ch; font: inherit; }
+#local-writing-editor .editor-body > h2 { font-size: var(--font-size-xl); margin: var(--space-xl) 0 var(--space-m); }
+#local-writing-editor .editor-body > ul,
+#local-writing-editor .editor-body > ol { margin: 0 0 var(--space-m); }
+#local-writing-editor .editor-protected-node { cursor: default; }
+#local-writing-editor .editor-protected-host { display: contents; }
+#local-writing-editor .editor-protected-copy { color: var(--color-gray-600); font-style: italic; }
+#local-writing-editor .editor-body [data-writing-component="IntroParagraph"] .drop-cap {
+	float: left;
+	font-size: 5.2rem;
+	line-height: 2.5rem;
+	font-weight: bold;
+	margin: 1.15rem var(--space-2xs) 0 0;
+	padding: 0;
+}
+
+#local-writing-editor .editor-toolbar {
+	position: sticky;
+	top: var(--space-xs);
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--space-s);
+	width: min(72ch, 100%);
+	margin: 0 auto var(--space-m);
+	padding: var(--space-2xs) var(--space-xs);
+	border: 1px solid var(--color-gray-100);
+	border-radius: var(--border-radius-base);
+	background: var(--color-cream);
+	font: 600 var(--font-size-xs) var(--font-sans);
+}
+
+#local-writing-editor .editor-toolbar a { margin-right: auto; }
+#local-writing-editor .editor-toolbar [role="status"] { color: var(--color-gray-600); }
+#local-writing-editor .editor-toolbar button {
+	border: 0;
+	border-radius: var(--border-radius-base);
+	padding: var(--space-3xs) var(--space-xs);
+	background: var(--color-sea-blue);
+	color: white;
+	cursor: pointer;
+}
+#local-writing-editor .editor-toolbar button:hover { filter: brightness(0.94); }
+#local-writing-editor .editor-toolbar button:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }
+#local-writing-editor .editor-protected-warning {
+	max-width: 72ch;
+	margin: 0 auto var(--space-s);
+	color: var(--color-bright-crimson);
+	font: 600 var(--font-size-xs) var(--font-sans);
+}
+#local-writing-editor .editor-error { max-width: 72ch; margin: var(--space-xs) auto; color: var(--color-bright-crimson); }
+
+.title-container [contenteditable] { cursor: text; outline: none; white-space: pre-wrap; }
+.title-container [contenteditable]:focus-visible { text-decoration: underline; text-decoration-color: var(--color-tinted-cream); text-underline-offset: 0.15em; }
+.editor-empty-description:empty::before { content: attr(data-placeholder); color: var(--color-gray-400); pointer-events: none; }
+
+@media (max-width: 768px) {
+	#local-writing-editor .editor-body [data-writing-component="IntroParagraph"] .drop-cap {
+		font-size: 4.6rem;
+		line-height: 2rem;
+		margin: 1.15rem var(--space-3xs) 0 0;
+	}
+}
+@media (max-width: 767px) {
+	#local-writing-editor .editor-body { line-height: var(--leading-loose); }
+}
