@@ -4,8 +4,8 @@
 
 - Branch: `maggie/local-writing-editor`, starting at `a2593f37728b6ffb61231041b129622fe752acec` (current `origin/main`, 2026-09-24).
 - Approved handoff extracted and all five SHA-256 entries verified before implementation.
-- Baseline: dependency installation, all 66 existing tests, and the static build (195 pages) passed. Source/engine compatibility work is in progress.
-- Source foundation and request guards passed independent review. Next: complete the original Astro rendering and live-editor compatibility proof. The same-root MDXEditor strategy passes the focused source/undo browser probe; full compatibility is still pending.
+- Baseline: dependency installation, all 66 existing tests, and the static build (195 pages) passed.
+- The same-root MDXEditor adapter now passes the 116-document corpus, original-component rendering, shared history, recovery, draft creation and production-isolation checks. The seven writing checks, including rapid link-key regressions, also pass. Final committed-head verification remains pending; see [verification.md](verification.md).
 - Roles: Astra architecture/integration/delivery. Worker models match task complexity: Sol for harder implementation/testing/review, Terra or Luna for straightforward tasks. Workers share this isolated checkout and have separate file ownership.
 
 ## 2026-09-24 — Baseline and scope
@@ -119,3 +119,17 @@ Every splice must decode back to the requested text; ambiguous or oversized tran
 Wiki links use distinct editor nodes for actual links and authored escaped literals. Both the source serializer and MDXEditor's internal Markdown serializer must know those types; omitting the internal handlers caused an uncaught editor crash. Incomplete tokens return to plain text when edited. The full 116-file actual-engine corpus now passes byte-identical no-ops, supported edits and compilation with explicit browser-error checks.
 
 MDXEditor's list visitor supplies optional fields as explicit `undefined`, whereas the Markdown parser supplies `null`. JSON diagnostics hid this distinction. Validation now treats those two absent values equivalently only for list `start` and item `checked`; ordered starts, checkbox values and all other structural comparisons retain their meaning. An explicit-undefined regression and independent source review cover this correction.
+
+### Stock link dialog accessibility
+
+The stock dialog rendered its URL label without a matching input ID. A small public composer-child plugin associates that existing label with its input inside the editor's own popup container and disconnects its observer on cleanup. The browser check now finds the field by its exact accessible name. The stock dialog, keyboard command and submission behavior remain in place.
+
+### Optional titles on ordinary links
+
+The stock link form exports an empty title when none was entered, while Markdown reparses an omitted title as `null`. The source comparison now treats empty, null and undefined titles as absent only on link nodes. Nonempty titles and other node types remain strict. The exact serialization regression passes, and the browser workflow saves the default untitled link before testing its open action and wiki links.
+
+### Keyboard selection timing
+
+A real keyboard trace showed native selected text while both Lexical and MDXEditor's cached selection still held the preceding caret. The stock Cmd/Ctrl+K dialog then inserted the URL as anchor text. A narrow public composer-child command synchronizes a noncollapsed native range inside the active editable root before the stock shortcut runs. It skips composition, read-only state and selections outside that root, and keeps the existing dialog and link behavior. Browser acceptance covers selected-text linking, saving, and opening the target.
+
+The same lag could leave Lexical selecting a newly created link after ArrowRight had collapsed the browser caret. An immediate Enter then removed that link. Backspace and Delete reproduced the same loss; ordinary typing already respected the native caret. The command repairs this specific native-collapsed/Lexical-noncollapsed range mismatch before unmodified Enter, Backspace and Delete. Protected node selections retain their existing handling. Mounted browser regressions cover the delayed-selection event ordering.
