@@ -333,6 +333,23 @@ test("preserves escaped Markdown syntax when ordinary text changes", () => {
   assert.equal(serializeSourceDocument(document, { body }), fixture.replace("Change this prose.", "Changed prose."));
 });
 
+test("preserves mixed escaped and real wiki syntax beside edited prose", () => {
+  const fixture = source.replace(
+    "Repeated paragraph.\n\nRepeated paragraph.",
+    "Literal \\[[same]] and linked [[same]] ending.",
+  );
+  const document = createSourceDocument(fixture);
+  const body = structuredClone(document.body);
+  const text = textNodes(body, "Literal [[same]] and linked [[same]] ending.")[0];
+  assert.ok(text);
+  text.value = "Literal [[same]] and linked [[same]] changed.";
+
+  assert.equal(
+    serializeSourceDocument(document, { body }),
+    fixture.replace("ending.", "changed."),
+  );
+});
+
 test("accepts adjacent editor text nodes that reparse as one prose node", () => {
   const fixture = [
     "---",
@@ -366,7 +383,8 @@ test("accepts engine blockquote and unordered-list shapes that omit parser-only 
   assert.ok(quote && list);
 
   quote.children = [{ type: "text", value: "Quoted prose." }];
-  delete list.start;
+  list.start = undefined;
+  for (const item of list.children) item.checked = undefined;
 
   assert.equal(serializeSourceDocument(document, { body }), fixture);
 });

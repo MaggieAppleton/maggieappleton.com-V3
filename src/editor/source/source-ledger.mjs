@@ -1,6 +1,6 @@
 const EDITABLE_TYPES = new Set([
 	"root", "paragraph", "heading", "blockquote", "list", "listItem",
-	"text", "strong", "emphasis", "inlineCode", "link", "break",
+	"text", "editorWikiLink", "editorEscapedWiki", "strong", "emphasis", "inlineCode", "link", "break",
 ]);
 
 const EDITABLE_COMPONENTS = new Set([
@@ -47,13 +47,16 @@ export function sameSemantic(a, b) {
 /** Compare parsed meaning, allowing mdast's equivalent JSX/optional-field shapes. */
 export function sameSupportedStructure(a, b) {
 	const phrasingTypes = new Set([
-		"text", "emphasis", "strong", "delete", "inlineCode", "link", "linkReference",
+		"text", "editorWikiLink", "editorEscapedWiki", "emphasis", "strong", "delete", "inlineCode", "link", "linkReference",
 		"image", "imageReference", "break", "mdxJsxTextElement", "mdxTextExpression",
 		"footnoteReference",
 	]);
 	function project(value) {
 		if (Array.isArray(value)) return value.map(project);
 		if (!value || typeof value !== "object") return value;
+		if (value.type === "editorWikiLink" || value.type === "editorEscapedWiki") {
+			return { type: "text", value: value.value };
+		}
 		if (value.type === "paragraph" && value.children?.length === 1
 			&& value.children[0].type === "mdxJsxTextElement") {
 			return project(value.children[0]);
@@ -65,8 +68,8 @@ export function sameSupportedStructure(a, b) {
 		const result = {};
 		for (const [key, child] of Object.entries(value)) {
 			if (key === "position" || key === "data") continue;
-			if (key === "checked" && child === null) continue;
-			if (key === "start" && value.type === "list" && child === null) continue;
+			if (key === "checked" && child == null) continue;
+			if (key === "start" && value.type === "list" && child == null) continue;
 			result[key] = key === "type" && (child === "mdxJsxFlowElement" || child === "mdxJsxTextElement")
 				? "mdxJsxElement" : project(child);
 		}

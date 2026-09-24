@@ -113,3 +113,9 @@ MDXEditor exports a newly entered blockquote as direct phrasing children, while 
 Decoded text cannot be safely located by matching substrings in Markdown: repeated text is ambiguous, escapes differ from visible characters, and two edits can surround an unchanged literal wiki token. The text-source helper maps decoded offsets to source atoms for backslash escapes, character references and Unicode. It applies ordered edit hunks while retaining untouched spellings. Supported JSX prose explicitly accounts for indentation removed by MDX parsing.
 
 Every splice must decode back to the requested text; ambiguous or oversized transformations fail before saving. Newly typed syntax is escaped in context, and the source seam still reparses the complete candidate before accepting it. Independent review reproduced repeated-text and disjoint-edit failures in earlier approaches; the helper regressions and fresh source/corpus/validator checks pass 48/48. Browser wiki import/export remains a separate integration gate.
+
+### Public editor exports and wiki tokens
+
+Wiki links use distinct editor nodes for actual links and authored escaped literals. Both the source serializer and MDXEditor's internal Markdown serializer must know those types; omitting the internal handlers caused an uncaught editor crash. Incomplete tokens return to plain text when edited. The full 116-file actual-engine corpus now passes byte-identical no-ops, supported edits and compilation with explicit browser-error checks.
+
+MDXEditor's list visitor supplies optional fields as explicit `undefined`, whereas the Markdown parser supplies `null`. JSON diagnostics hid this distinction. Validation now treats those two absent values equivalently only for list `start` and item `checked`; ordered starts, checkbox values and all other structural comparisons retain their meaning. An explicit-undefined regression and independent source review cover this correction.

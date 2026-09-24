@@ -8,6 +8,7 @@ import { mdxToMarkdown } from "mdast-util-mdx";
 import { gfmToMarkdown } from "mdast-util-gfm";
 import { parseFrontmatter, frontmatterPatches } from "./frontmatter.mjs";
 import { openingTagEnd } from "./jsx-shell.mjs";
+import { spliceDecodedText } from "./text-source.mjs";
 import {
 	assertProtectedRegions,
 	createSourceLedger,
@@ -29,7 +30,11 @@ const parser = unified()
 	.use(remarkFrontmatter, ["yaml"])
 	.use(remarkGfm);
 
-const markdownOptions = { bullet: "-", extensions: [mdxToMarkdown(), gfmToMarkdown()] };
+const markdownOptions = { bullet: "-", extensions: [mdxToMarkdown(), gfmToMarkdown()],
+	handlers: {
+		editorWikiLink: (node) => node.value,
+		editorEscapedWiki: (node) => `\\${node.value}`,
+	} };
 
 function restoreBomOffsets(root) {
 	// Micromark discards a leading BOM before counting offsets. The source ledger
@@ -67,6 +72,22 @@ export function createSourceDocument(source) {
 function markdownFragment(node) {
 	const result = toMarkdown(node, markdownOptions);
 	return result.endsWith("\n") ? result.slice(0, -1) : result;
+}
+
+function changedTextSource(node, entry, ledger) {
+	let parentId = entry.parentId;
+	let jsxWhitespace = false;
+	while (parentId) {
+		const parent = ledger.nodes.get(parentId);
+		if ((parent.type === "mdxJsxFlowElement" || parent.type === "mdxJsxTextElement")
+			&& ["IntroParagraph", "Footnote", "AssumedAudience"].includes(parent.snapshot.name)) {
+			jsxWhitespace = true;
+			break;
+		}
+		parentId = parent.parentId;
+	}
+	return spliceDecodedText(ledger.source.slice(entry.start, entry.end),
+		entry.snapshot.value, node.value, { jsxWhitespace });
 }
 
 function withoutChildren(node) {
@@ -200,6 +221,10 @@ function renderBody(document, body) {
 	function renderNode(node) {
 		const entry = ledger.nodes.get(identityOf(node));
 		if (!entry) {
+			if (node.type === "editorWikiLink" || node.type === "editorEscapedWiki") {
+				if (!/^\[\[[^\[\]\n]+\]\]$/u.test(node.value)) throw new Error("Invalid wiki-link target");
+				return node.type === "editorEscapedWiki" ? `\\${node.value}` : node.value;
+			}
 			if (isProtected(node) || node.type.startsWith("mdxJsx")) {
 				throw new Error(`Cannot insert unsupported ${node.type} content`);
 			}
@@ -207,6 +232,7 @@ function renderBody(document, body) {
 		}
 		if (sameSemantic(node, entry.snapshot)) return ledger.source.slice(entry.start, entry.end);
 		if (entry.protected) throw new Error(`Protected ${entry.type} source cannot be edited`);
+		if (entry.type === "text" && node.type === "text") return changedTextSource(node, entry, ledger);
 		const wrapperChanged = node.type !== entry.type
 			|| !sameSemantic(withoutChildren(node), withoutChildren(entry.snapshot));
 		if (entry.type === "mdxJsxFlowElement" || entry.type === "mdxJsxTextElement") {
