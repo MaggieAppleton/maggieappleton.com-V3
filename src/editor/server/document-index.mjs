@@ -42,7 +42,12 @@ export function createDocumentIndex({ projectRoot, fs = defaultFs, loadEntries }
 				for (const [entryId, path] of files) scanned.set(`${collection}:${entryId}`, { collection, entryId, path });
 			}
 			const loaded = loadEntries ? await loadEntries() : null;
-			const candidates = loaded ?? [...scanned.values()].map(({ collection, entryId, path }) => ({ collection, id: entryId, filePath: path }));
+			const candidates = [
+				...(loaded ?? []),
+				...[...scanned.values()].map(({ collection, entryId, path }) => ({
+					collection, id: entryId, filePath: path, scannerFallback: true,
+				})),
+			];
 			const next = new Map();
 			const nextTrusted = new Map();
 			const pathOwners = new Map();
@@ -59,6 +64,7 @@ export function createDocumentIndex({ projectRoot, fs = defaultFs, loadEntries }
 				const collectionRoot = join(rootReal, "src/content", entry.collection);
 				const actual = await fs.realpath(scannedEntry.path);
 				if (!within(actual, collectionRoot) || actual !== scannedEntry.path) continue;
+				if (entry.scannerFallback && pathOwners.has(actual)) continue;
 				if (next.has(documentId) || pathOwners.has(actual)) {
 					throw new EditorServiceError(409, "ambiguous_document_index", "A content file has more than one editor identity");
 				}

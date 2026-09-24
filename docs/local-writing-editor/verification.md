@@ -28,7 +28,7 @@ The complete acceptance matrix is in the supplied `docs/superpowers/plans/local-
 | F1–F3 persistence/guards | Eight guard, fourteen index/store, seven deterministic race, and eight candidate-validation tests pass. Guards and service/index reviewed. Four real HTTP tests pass, including valid persistence and rejection/no-CORS/no-store matrix. | Draft creation, full integrated head rerun. |
 | R1–R2 session/recovery | 21 deterministic cases pass. Eleven live cases passed across focused runs: recovery, conflicts, restart, storage/conversion failure, lost acknowledgement and navigation. | Final integrated browser rerun after remaining UI changes. |
 | B1–B4 writing | MDXEditor same-root browser probe preserves no-op, second repeated paragraph, nested footnote, and undo after blur. | Integrated writing, selection, composition, protected nodes, watcher/caret/history tests. |
-| D1 drafts | Creation defaults documented. | Note/essay UI, exclusive service, restart/discovery and production tests. |
+| D1 drafts | Independently reviewed service passes 13 cases: defaults, covers, collisions, retries, exclusive creation, path checks and index recovery. | Note/essay UI, restart/discovery and production browser tests. |
 | V1–V2 rendering | Original Astro rendering seam independently inspected. | Representative normal/edit pairs, protected real assets/layout/custom interaction. |
 | P1 production | Base static build passes. | Feature build/output/HTTP isolation with sentinel draft. |
 | P2 regressions | Base suite: 66 pass. | Final suite, verify:html, representative normal pages. |
@@ -67,3 +67,9 @@ This is source compilation, not 116 individual Astro runtime renders. Representa
 Three focused browser runs passed 5 + 5 + 1 cases in disposable copies. They verify body/title/description recovery after reload, distinct closed-tab candidates, title undo after acknowledgement, stale-tab conflict with retained copies, pending-save navigation warnings, same-origin server restart with the live DOM retained, renewed authorization without bypassing revisions, clean-tab outside changes, disabled/full storage, and restoring a newer engine snapshot after an injected conversion fault. A lost-response case proves the already-committed candidate is retried unchanged before newer typing is saved when connectivity returns. Evidence: `.local-writing-editor/recovery-after-metadata-fix.log`, `recovery-restart-storage-conversion.log`, and `recovery-lost-response-fixed.log`.
 
 The integration exposed two session corrections: a foreign revision must not silently advance the base while the live engine still shows older text, and definitive validation failures must not become permanently uncertain requests. Fresh session tests pass 21/21, including both regressions. Final checks still need to run against the integrated implementation head.
+
+## Draft service checkpoint
+
+Fresh `node --test tests/editor/drafts.test.mjs`: 13/13 pass. Independent spec and quality review passed after fixing a reproduced parent-directory symlink swap and missing suffix suggestions for a maximum-length slug. The service validates shared schemas and decodable repository covers, serializes creation across collections, deduplicates successful request IDs, installs through an exclusive hard link, and refreshes the index. Unclaimed scanned files are indexed immediately while Astro loads new entries. Browser opening, discovery and production exclusion remain separate gates.
+
+Review evidence: `.local-writing-editor/drafts-service-report.md`, `drafts-service-review.md`, and `drafts-parent-repro.mjs`. The filesystem path rechecks reduce the external-parent race; they do not constitute an OS directory-handle transaction against unrelated processes.
