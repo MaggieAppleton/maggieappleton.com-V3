@@ -162,16 +162,132 @@ async function runFixtureCommand(projectRoot, executable, args) {
   child.stdout.on("data", (chunk) => { output += chunk.toString(); });
   child.stderr.on("data", (chunk) => { output += chunk.toString(); });
   const [code] = await once(child, "exit");
-  if (code !== 0) throw new Error(`Fixture setup command failed (${executable} ${args.join(" ")}):\n${output}`);
+  if (code !== 0) {
+    const error = new Error(`Fixture setup command failed (${executable} ${args.join(" ")}):\n${output}`);
+    error.output = output;
+    throw error;
+  }
   return output;
+}
+
+async function runFixtureBuild(projectRoot, timeout) {
+  const child = spawn("npm", ["run", "build:local"], {
+    cwd: projectRoot,
+    stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
+  });
+  let output = "";
+  const record = (chunk) => { output += chunk.toString(); };
+  child.stdout.on("data", record);
+  child.stderr.on("data", record);
+  let timeoutId;
+  const isRunning = () => child.exitCode === null && child.signalCode === null;
+  const result = await Promise.race([
+    once(child, "exit").then(([code, signal]) => ({ code, signal })),
+    new Promise((resolveTimeout) => {
+      timeoutId = setTimeout(() => resolveTimeout({ timedOut: true }), timeout);
+    }),
+  ]);
+  clearTimeout(timeoutId);
+  if (result.timedOut) {
+    if (isRunning()) {
+      const exited = once(child, "exit");
+      try { process.kill(-child.pid, "SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+      await Promise.race([exited, delay(5_000)]);
+      if (isRunning()) {
+        try { process.kill(-child.pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+      }
+      if (isRunning()) await exited;
+    }
+    const error = new Error(`Fixture production build exceeded ${timeout} ms`);
+    error.output = output;
+    throw error;
+  }
+  if (result.code !== 0) {
+    const error = new Error(`Fixture production build failed (${result.code ?? result.signal}):\n${output}`);
+    error.output = output;
+    throw error;
+  }
+  return output;
+}
+
+/** Builds a copied fixture with a unique static marker for production readiness. */
+export async function buildFixtureProject(projectRoot, { timeout = 840_000 } = {}) {
+  const logDirectory = fixturePath(projectRoot, ".local-writing-editor");
+  const logPath = join(logDirectory, "fixture-production-build.log");
+  const markerPath = `.production-fixture-${randomUUID()}.txt`;
+  const marker = randomUUID();
+  await mkdir(logDirectory, { recursive: true });
+  await writeFile(fixturePath(projectRoot, join("public", markerPath)), marker);
+  let output = "";
+  try {
+    output = await runFixtureBuild(projectRoot, timeout);
+  } catch (error) {
+    output = error.output ?? String(error);
+    await writeFile(logPath, output);
+    error.logPath = logPath;
+    throw error;
+  }
+  await writeFile(logPath, output);
+  await writeManifest(projectRoot, (current) => ({
+    ...current,
+    createdFiles: [...new Set([...current.createdFiles, ".local-writing-editor/fixture-production-build.log", `public/${markerPath}`])],
+  }));
+  return { exitCode: 0, logPath, markerPath, marker };
+}
+
+/** Starts an owned Astro preview of an already-built fixture. */
+export async function startFixturePreview(projectRoot, build, { timeout } = {}) {
+  assert.ok(build?.markerPath && build?.marker, "Production preview needs a successful fixture build");
+  const port = await availableLoopbackPort();
+  const origin = `http://127.0.0.1:${port}`;
+  const logDirectory = fixturePath(projectRoot, ".local-writing-editor");
+  const logPath = join(logDirectory, "fixture-production-preview.log");
+  await mkdir(logDirectory, { recursive: true });
+  const child = spawn(process.execPath, [join(projectRoot, "node_modules/astro/astro.js"), "preview", "--host", "127.0.0.1", "--port", String(port)], {
+    cwd: projectRoot,
+    stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
+  });
+  let output = "";
+  const record = (chunk) => { output += chunk.toString(); };
+  child.stdout.on("data", record);
+  child.stderr.on("data", record);
+
+  try {
+    await waitForReady(origin, build.markerPath, build.marker, child, timeout);
+  } catch (error) {
+    await stopFixtureServer(child, port);
+    await writeFile(logPath, output);
+    throw error;
+  }
+  await writeFile(logPath, output);
+  await writeManifest(projectRoot, (current) => ({
+    ...current,
+    createdFiles: [...new Set([...current.createdFiles, ".local-writing-editor/fixture-production-preview.log"])],
+  }));
+  return {
+    origin,
+    port,
+    process: child,
+    logPath,
+    async stop() {
+      await stopFixtureServer(child, port);
+      await writeFile(logPath, output);
+    },
+  };
 }
 
 /**
  * Starts a development server for a fixture on its own loopback port.
  * Only this spawned process is stopped by the returned `stop` function.
  */
-export async function startFixtureServer(projectRoot, { timeout } = {}) {
-  const port = await availableLoopbackPort();
+export async function startFixtureServer(projectRoot, { timeout, port: requestedPort } = {}) {
+  if (requestedPort !== undefined) {
+    assert.ok(Number.isInteger(requestedPort) && requestedPort > 0 && requestedPort < 65_536, "Fixture server port must be a valid TCP port");
+    assert.ok(await portIsFree(requestedPort), `Fixture server port ${requestedPort} is already in use`);
+  }
+  const port = requestedPort ?? await availableLoopbackPort();
   const origin = `http://127.0.0.1:${port}`;
   const logDirectory = fixturePath(projectRoot, ".local-writing-editor");
   const logPath = join(logDirectory, "fixture-server.log");
