@@ -29,8 +29,19 @@ export function semanticNode(node) {
 	return result;
 }
 
+function stableStringify(value) {
+	if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+	if (!value || typeof value !== "object") return JSON.stringify(value);
+	return `{${Object.keys(value).sort().map((key) =>
+		`${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+}
+
+export function semanticFingerprint(node) {
+	return stableStringify(semanticNode(node));
+}
+
 export function sameSemantic(a, b) {
-	return JSON.stringify(semanticNode(a)) === JSON.stringify(semanticNode(b));
+	return semanticFingerprint(a) === semanticFingerprint(b);
 }
 
 /** Compare parsed meaning, allowing mdast's equivalent JSX/optional-field shapes. */
@@ -60,7 +71,7 @@ export function sameSupportedStructure(a, b) {
 		}
 		return result;
 	}
-	return JSON.stringify(project(a)) === JSON.stringify(project(b));
+	return stableStringify(project(a)) === stableStringify(project(b));
 }
 
 /** Keep source positions and snapshots apart from the editable AST. */

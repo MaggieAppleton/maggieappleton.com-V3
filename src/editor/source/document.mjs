@@ -15,6 +15,7 @@ import {
 	isProtected,
 	sameSemantic,
 	semanticNode,
+	semanticFingerprint,
 	sameSupportedStructure,
 	reconcileIdentities,
 	markInsertedSubtree,
@@ -207,7 +208,7 @@ function renderBody(document, body) {
 		if (sameSemantic(node, entry.snapshot)) return ledger.source.slice(entry.start, entry.end);
 		if (entry.protected) throw new Error(`Protected ${entry.type} source cannot be edited`);
 		const wrapperChanged = node.type !== entry.type
-			|| JSON.stringify(withoutChildren(node)) !== JSON.stringify(withoutChildren(entry.snapshot));
+			|| !sameSemantic(withoutChildren(node), withoutChildren(entry.snapshot));
 		if (entry.type === "mdxJsxFlowElement" || entry.type === "mdxJsxTextElement") {
 			if (wrapperChanged) throw new Error(`Component ${entry.snapshot.name} wrapper and attributes are read-only`);
 		}
@@ -234,7 +235,7 @@ function applyPatches(source, patches) {
 function protectedProjection(document) {
 	const regions = [];
 	function visit(node) {
-		if (isProtected(node)) regions.push(JSON.stringify(semanticNode(node)));
+		if (isProtected(node)) regions.push(semanticFingerprint(node));
 		for (const child of node.children ?? []) visit(child);
 	}
 	visit(document.body);

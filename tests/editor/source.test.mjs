@@ -127,6 +127,25 @@ test("preserves inline formatting, links, wiki targets, and supported audience p
   );
 });
 
+test("accepts unchanged link semantics when editor object keys arrive in a different order", () => {
+  const fixture = source.replace(
+    "Repeated paragraph.\n\nRepeated paragraph.",
+    'An [annotated link](https://example.test "Example title").',
+  );
+  const document = createSourceDocument(fixture);
+  const body = structuredClone(document.body);
+  const link = nodesMatching(body, (node) => node.type === "link")[0];
+  assert.ok(link);
+
+  const { title, url } = link;
+  delete link.url;
+  delete link.title;
+  link.title = title;
+  link.url = url;
+
+  assert.equal(serializeSourceDocument(document, { body }), fixture);
+});
+
 test("patches only title and description YAML ranges while retaining comments and metadata", () => {
   const fixture = [
     "---",

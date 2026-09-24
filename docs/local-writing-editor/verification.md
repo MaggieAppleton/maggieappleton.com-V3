@@ -23,8 +23,8 @@ The complete acceptance matrix is in the supplied `docs/superpowers/plans/local-
 
 | Requirement | Current evidence | Remaining |
 | --- | --- | --- |
-| S1 / S3 source | 25 source cases pass, including independent-review regressions, BOM/CRLF/Unicode, protected removal, list marker contexts and empty supported wrappers. Pure seam independently approved. | Actual engine structural edits and complete browser corpus pending. |
-| S2 corpus | 116/116 pure-source no-op and representative edits; unusual legacy syntax retained. | Actual engine import/export and transaction corpus, compile evidence. |
+| S1 / S3 source | 26 source cases pass, including independent-review regressions, BOM/CRLF/Unicode, protected removal, list marker contexts and empty supported wrappers. Actual engine synthetic source cases pass. | Complete integrated writing and protected-node interaction gates. |
+| S2 corpus | 116/116 actual-engine byte-identical no-op; 114 existing-text edits and two component-only insertions preserve protected source/frontmatter and compile. | Final integrated rerun after remaining adapter changes. |
 | F1–F3 persistence/guards | Eight guard, fourteen index/store, seven deterministic race, and eight candidate-validation tests pass. Guards and service/index reviewed. Four real HTTP tests pass, including valid persistence and rejection/no-CORS/no-store matrix. | Draft creation, full integrated head rerun. |
 | R1–R2 session/recovery | Session module independently reviewed; 19 deterministic state, ordering, conflict, composition and storage tests pass. | Live binding, delayed/failing saves, conflict/restart/navigation browser tests. |
 | B1–B4 writing | MDXEditor same-root browser probe preserves no-op, second repeated paragraph, nested footnote, and undo after blur. | Integrated writing, selection, composition, protected nodes, watcher/caret/history tests. |
@@ -55,3 +55,9 @@ The first real MDXEditor page mounts without browser errors and transplants thre
 ## Session module checkpoint
 
 Fresh `node --test tests/editor/session.test.mjs`: exit 0, 19 passed. Independent bounded spec and quality review passed (`.local-writing-editor/session-review.md`). Cases cover debounce, one request in flight, generation-specific acknowledgements, uncertain retries, late responses, per-tab recovery, storage failure, explicit disk replacement, and composition/conversion recovery. Review regressions include conflict status while typing and retaining the durable recovery when discarded-copy archival fails. This result covers the state coordinator; live browser binding and navigation remain separate acceptance gates.
+
+## Actual engine corpus checkpoint
+
+The copied-project browser corpus passed 2/2 cases in 1.1 minutes using the production MDXEditor adapter: all 116 unchanged imports exported byte-identically; 114 files received an existing-text keyboard edit, and the two component-only files received a paragraph insertion. Every candidate preserved exact frontmatter/protected source and compiled with MDX/frontmatter/GFM. The synthetic case covers repeated prose, BOM/CRLF, Unicode, supported nesting, version identity and no terminal newline. Input copies remained unchanged. Evidence: `.local-writing-editor/corpus-engine-report.md` and `browser-evidence/corpus-engine-outcomes.json`.
+
+This is source compilation, not 116 individual Astro runtime renders. Representative real rendering and the final site build remain separate gates. The corpus exposed semantic equality depending on JavaScript key insertion order; a canonical comparison and direct regression fix that without changing source identities or supported semantics.
