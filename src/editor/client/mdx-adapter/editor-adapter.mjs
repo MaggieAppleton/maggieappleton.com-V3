@@ -12,6 +12,7 @@ import { createListTabKeysPlugin } from "./list-tab-keys.mjs";
 import { createInlineCodeKeyPlugin } from "./inline-code-key.mjs";
 import { createPlainSpaceKeyPlugin } from "./space-key.mjs";
 import { createLinkDialogLabelPlugin } from "./link-dialog-label.mjs";
+import { createKeyboardSelectionSyncPlugin } from "./selection-sync.mjs";
 
 /** One production adapter for the live page and the actual-engine corpus harness. */
 export function createEditorAdapter({ source, renderedRoot = null }) {
@@ -89,6 +90,7 @@ export function createEditorAdapter({ source, renderedRoot = null }) {
 			createInlineCodeKeyPlugin(),
 			createPlainSpaceKeyPlugin(),
 			createLinkDialogLabelPlugin(),
+			createKeyboardSelectionSyncPlugin(),
 			identity.plugin,
 		],
 		additionalLexicalNodes: [WritingJsxNode, ProtectedNode, DropCapTextNode, WikiLinkTextNode, LiteralWikiTextNode],
