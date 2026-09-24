@@ -12,19 +12,7 @@ import {
 } from "../utils/publication.mjs";
 import { getDraftPreviewSlug, mergePublicationPaths } from "../utils/publicationRoutes.mjs";
 import TableOfContents from "../components/layouts/TableOfContents.astro";
-// Component imports
-import BodyHeading1 from "../components/mdx/typography/BodyHeading1.astro";
-import Title2 from "../components/mdx/typography/Title2.astro";
-import Title3 from "../components/mdx/typography/Title3.astro";
-import Title4 from "../components/mdx/typography/Title4.astro";
-import TooltipLink from "../components/mdx/TooltipLink.astro";
-import InternalTooltipLink from "../components/mdx/InternalTooltipLink.astro";
-import Footnote from "../components/mdx/Footnote.astro";
-import IntroParagraph from "../components/mdx/IntroParagraph.astro";
-import ResourceBook from "../components/mdx/ResourceBook.astro";
-import RemoteImage from "../components/mdx/RemoteImage.astro";
-import BasicImage from "../components/mdx/BasicImage.astro";
-import Spacer from "../components/mdx/Spacer.astro";
+import { mdxComponents } from "../components/mdx/component-map.mjs";
 
 type ContentType = "essay" | "note" | "pattern" | "talk" | "smidgeon";
 type Collections = "essays" | "notes" | "patterns" | "talks" | "smidgeons";
@@ -138,22 +126,6 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
 
-const components = {
-	h1: BodyHeading1,
-	h2: Title2,
-	h3: Title3,
-	h4: Title4,
-	a: TooltipLink,
-	img: BasicImage,
-	InternalTooltipLink,
-	IntroParagraph,
-	Footnote,
-	BasicImage,
-	ResourceBook,
-	RemoteImage,
-	Spacer,
-};
-
 // Type guard for checking if data has TOC
 function hasTOC(data: any): data is { toc: boolean } {
 	return "toc" in data;
@@ -172,7 +144,7 @@ const frontmatter = entry.data;
 	isSmidgeonFrontmatter(frontmatter) ? (
 		<SmidgeonLayout frontmatter={frontmatter} entry={entry as CollectionEntry<"smidgeons">}>
 			<ProseWrapper>
-				<Content components={components} />
+				<Content components={mdxComponents} />
 			</ProseWrapper>
 		</SmidgeonLayout>
 	) : (
@@ -181,7 +153,7 @@ const frontmatter = entry.data;
 				{headings.length > 0 && hasTOC(frontmatter) && frontmatter.toc && (
 					<TableOfContents headings={headings} />
 				)}
-				<Content components={components} />
+				<Content components={mdxComponents} />
 			</ProseWrapper>
 		</PostLayout>
 	)
