@@ -4,9 +4,9 @@
 
 - Branch: `maggie/local-writing-editor`, starting at `a2593f37728b6ffb61231041b129622fe752acec` (current `origin/main`, 2026-09-24).
 - Approved handoff extracted and all five SHA-256 entries verified before implementation.
-- Dependency installation passed. Baseline checks and source/engine compatibility work are in progress.
-- Next: prove actual editor transactions preserve authored source, then integrate the original Astro rendering path.
-- Roles: Astra architecture/integration/delivery; Sol implementation; Terra tests; Luna independent review. Workers share this isolated checkout and have separate file ownership.
+- Baseline: dependency installation, all 66 existing tests, and the static build (195 pages) passed. Source/engine compatibility work is in progress.
+- Source foundation and request guards passed independent review. Next: complete the original Astro rendering and live-editor compatibility proof. The same-root MDXEditor strategy passes the focused source/undo browser probe; full compatibility is still pending.
+- Roles: Astra architecture/integration/delivery. Worker models match task complexity: Sol for harder implementation/testing/review, Terra or Luna for straightforward tasks. Workers share this isolated checkout and have separate file ownership.
 
 ## 2026-09-24 — Baseline and scope
 
@@ -27,3 +27,65 @@ Decision: retain the four approved boundaries: source ledger/adapter, editing se
 Alternative: whole-document Markdown serialization or handwritten component substitutes. Rejected because both violate the approved contract.
 
 Consequence: compatibility evidence must cover both source changes and the live rendered article before expanding the workflow. No engine choice has been made yet.
+
+## 2026-09-24 — Model allocation update
+
+Maggie superseded the fixed role/model assignment: choose models by task complexity. Existing Sol source/engine work, Terra baseline/source-test setup, and Luna focused seam inspection remain appropriate. Complex browser/concurrency testing and broad review will use Sol as needed; retain existing workers for suitable follow-ups.
+
+## 2026-09-24 — Original component lifecycle and shared styles
+
+Problem: imported Astro components do not forward arbitrary MDX marker props, protected charts initialize against original DOM IDs, and supported components use scoped CSS and client text transforms. Generic wrappers can also alter the article's grid layout.
+
+Decision: base the rendering experiment on `render(entry)` and the existing `<Content components={components}>` path. Prove source-region markers without introducing layout boxes, retain the actual component DOM/lifecycle, and isolate article text transforms from the live editing surface. Share only the narrow style rules needed by editable equivalents.
+
+Evidence: independent preflight in `.local-writing-editor/preflight-review.md`; current `GarminData.astro` initializes its D3 chart by element IDs, `IntroParagraph.astro` mutates text nodes, and the prose wrapper places direct children in a three-column grid. The wiki-link transform replaces text nodes without preserving their positions.
+
+Consequence: engine choice remains contingent on nested editing/history and this real rendering proof. Source identity annotations need the authored AST before wiki-link transformation. Production must omit all annotation/editor paths.
+
+## 2026-09-24 — Direct serializer rejected; identity adapter under test
+
+Problem: MDXEditor 4.2.5's real browser import/export rewrites an untouched import's quotes and semicolon. Its initial Markdown path also trims input, so normal serialized output cannot meet byte-preservation requirements.
+
+Decision: reject direct Markdown round trips and test the documented import/export visitors with Lexical node state for persistent region identities. If that cannot retain identities/history/rendering after at most two materially different adapter strategies, use the approved ProseMirror fallback.
+
+Evidence: executable browser probe under `.local-writing-editor/engine-spike/`; source regression tests initially exposed a BOM-relative parser offset that truncated a terminal emoji, now fixed. The initial 11 source cases pass, with broader structural/corpus coverage in progress.
+
+Consequence: a passing pure-source suite does not establish engine compatibility. Keep real engine transaction and rendering tests as the gate.
+
+## 2026-09-24 — Nested history gate
+
+Problem: MDXEditor's documented visitors and Lexical NodeState preserve source identities through real paragraph and nested-footnote edits, but the default shared nested editor loses usable undo after the footnote blurs. Undo works while it remains focused; subsequent blur/refocus leaves the DOM and exported source unchanged.
+
+Decision: try the second materially different MDXEditor adapter strategy: represent supported writing components as custom Lexical ElementNodes in one document using public node and visitor registration. If it fails the same acceptance gate, switch to ProseMirror.
+
+Evidence: `.local-writing-editor/engine-spike/transaction-probe.mjs`. No engine approval is recorded yet.
+
+Consequence: shared body history is a release requirement. Fixing source preservation alone cannot justify shipping the nested-editor failure.
+
+## 2026-09-24 — Source review and identity provenance
+
+Problem: independent review reproduced a moved bullet item retaining its old list marker, writable supported-component attributes, and a pasted clone taking the original node's identity when inserted before it. Existing tests did not cover these cases.
+
+Decision: reject changes to existing component wrappers/properties; validate supported semantics after candidate reparse; render moved list items in their new parent context. Ruling: duplicate original source identities are ambiguous and must be rejected by the source seam rather than resolved by traversal order. The engine assigns fresh identities to actual pasted/split nodes using node provenance.
+
+Evidence: exact reproductions in `.local-writing-editor/source-review/report.md`; regression tests and fixes are in progress.
+
+Consequence: normal UI paste must remain available, so identity assignment belongs at the engine transaction boundary as well as validation at serialization. Incorrect provenance would risk changing an untouched block's authored syntax.
+
+## 2026-09-24 — Browser-safe source seam
+
+Problem: gray-matter requires Buffer and prevented browser-side candidate serialization/recovery.
+
+Decision: use browser-safe js-yaml on the exact frontmatter substring for metadata interpretation, retaining YAML syntax-tree ranges for targeted patches.
+
+Evidence: metadata equality against gray-matter across all 116 notes/essays, including legacy tab-indented aliases; Vite browser import and no-op source serialization pass.
+
+Consequence: one source implementation serves browser and server without per-keystroke conversion requests or a Buffer polyfill.
+
+## 2026-09-24 — Semantic validation follow-through
+
+Independent re-review confirmed all three original source defects fixed. It then reproduced a false rejection for adjacent text nodes that the Markdown parser coalesces, and identified ordered-list reordering as a remaining safe-but-unsupported operation. Both are being fixed before the source foundation is accepted. Request guards passed scoped security review; oversized-body responses must retain 413 even if stream cancellation itself fails.
+
+## 2026-09-24 — Source foundation accepted
+
+The third focused re-review passed the bounded pure-source contract and code-quality checks. Contextual list rendering retains destination marker style, punctuation, start value, and nesting; unsupported structural changes fail rather than silently corrupting source. Fresh validation before commit: 25 source tests, two 116-file corpus tests, eight request-guard tests, and all 66 existing tests pass. Astro remains 5.1.3 and React 18.3.1; candidate MDXEditor is 4.2.5. The actual engine corpus, paste provenance, original component rendering, saving/session lifecycle, and production isolation remain separate unfinished acceptance gates.
