@@ -11,6 +11,7 @@ import { createWikiLinkPlugin, LiteralWikiTextNode, WikiLinkTextNode } from "./w
 import { createListTabKeysPlugin } from "./list-tab-keys.mjs";
 import { createInlineCodeKeyPlugin } from "./inline-code-key.mjs";
 import { createPlainSpaceKeyPlugin } from "./space-key.mjs";
+import { createLinkDialogLabelPlugin } from "./link-dialog-label.mjs";
 
 /** One production adapter for the live page and the actual-engine corpus harness. */
 export function createEditorAdapter({ source, renderedRoot = null }) {
@@ -87,6 +88,7 @@ export function createEditorAdapter({ source, renderedRoot = null }) {
 			createListTabKeysPlugin(),
 			createInlineCodeKeyPlugin(),
 			createPlainSpaceKeyPlugin(),
+			createLinkDialogLabelPlugin(),
 			identity.plugin,
 		],
 		additionalLexicalNodes: [WritingJsxNode, ProtectedNode, DropCapTextNode, WikiLinkTextNode, LiteralWikiTextNode],
