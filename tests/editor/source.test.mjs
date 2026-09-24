@@ -146,6 +146,29 @@ test("accepts unchanged link semantics when editor object keys arrive in a diffe
   assert.equal(serializeSourceDocument(document, { body }), fixture);
 });
 
+test("normalizes empty or absent editor link titles while preserving authored nonempty titles", () => {
+  const fixture = source.replace(
+    "Repeated paragraph.\n\nRepeated paragraph.",
+    'A [plain link](https://example.test/plain) and [titled link](https://example.test/titled "Example title").',
+  );
+
+  for (const title of ["", undefined]) {
+    const document = createSourceDocument(fixture);
+    const body = structuredClone(document.body);
+    const plain = nodesMatching(body, (node) => node.type === "link" && node.url.endsWith("/plain"))[0];
+    assert.ok(plain);
+    plain.title = title;
+    assert.equal(serializeSourceDocument(document, { body }), fixture);
+  }
+
+  const document = createSourceDocument(fixture);
+  const body = structuredClone(document.body);
+  const titled = nodesMatching(body, (node) => node.type === "link" && node.url.endsWith("/titled"))[0];
+  assert.ok(titled);
+  titled.title = "Example title";
+  assert.equal(serializeSourceDocument(document, { body }), fixture);
+});
+
 test("patches only title and description YAML ranges while retaining comments and metadata", () => {
   const fixture = [
     "---",

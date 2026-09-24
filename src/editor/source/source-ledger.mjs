@@ -70,6 +70,7 @@ export function sameSupportedStructure(a, b) {
 			if (key === "position" || key === "data") continue;
 			if (key === "checked" && child == null) continue;
 			if (key === "start" && value.type === "list" && child == null) continue;
+			if (key === "title" && value.type === "link" && (child == null || child === "")) continue;
 			result[key] = key === "type" && (child === "mdxJsxFlowElement" || child === "mdxJsxTextElement")
 				? "mdxJsxElement" : project(child);
 		}
