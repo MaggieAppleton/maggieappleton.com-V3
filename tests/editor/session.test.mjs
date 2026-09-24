@@ -256,6 +256,27 @@ test("observing the submitted source before its response is an own write, not a 
   session.dispose();
 });
 
+test("a clean foreign disk observation waits for explicit engine replacement", async () => {
+  const storage = memoryStorage();
+  const saver = deferredSaver();
+  const session = makeSession({ storage, save: saver.save });
+  session.observeDisk({ source: "Changed on disk.", revision: "rev-foreign" });
+  assert.equal(session.snapshot().source, "Original.",
+    "the live editor still holds the original engine document");
+  assert.equal(session.snapshot().revision, "rev-0");
+  assert.equal(session.snapshot().status, "File changed elsewhere");
+  assert.equal(session.snapshot().conflict?.source, "Changed on disk.");
+  assert.equal(session.recoveryCandidates().some((candidate) => candidate.source === "Original."), true);
+  invoke(() => session.flush());
+  await drain();
+  assert.equal(saver.calls.length, 0, "the stale engine cannot save over the foreign revision");
+  session.acceptDisk({ source: "Changed on disk.", revision: "rev-foreign" });
+  assert.equal(session.snapshot().source, "Changed on disk.");
+  assert.equal(session.snapshot().revision, "rev-foreign");
+  assert.equal(session.snapshot().status, "Saved");
+  session.dispose();
+});
+
 test("retries an uncertain save with its original candidate before later typing", async () => {
   const saver = deferredSaver();
   const session = makeSession({ save: saver.save });
@@ -542,5 +563,30 @@ test("composition saves only completed input and conversion failure keeps the ne
   assert.match([...storage.values.values()].join("\n"), /newer-unserializable-engine/);
   await timer.advance(2_000);
   assert.equal(saver.calls.length, 1, "a stale last-valid source must not save over newer engine text");
+  session.dispose();
+});
+
+test("a rejected candidate does not spin, and a later valid edit can save", async () => {
+  const timer = manualClock();
+  const calls = [];
+  const session = makeSession({ timer, save: async (request) => {
+    calls.push(request);
+    if (request.source === "Rejected.") {
+      throw Object.assign(new Error("Invalid source"), { status: 422, code: "invalid_source" });
+    }
+    return { revision: "rev-1" };
+  } });
+  session.edit("Rejected.");
+  invoke(() => session.flush());
+  await drain();
+  assert.equal(session.snapshot().status, "Couldn't save");
+  assert.equal(session.snapshot().uncertain, false, "a definitive 422 is not a lost acknowledgement");
+  await timer.advance(2_000);
+  assert.equal(calls.length, 1, "the same rejected generation must not retry automatically");
+
+  session.edit("Valid edit.");
+  await timer.advance(750);
+  assert.deepEqual(calls.map((request) => request.source), ["Rejected.", "Valid edit."]);
+  assert.equal(session.snapshot().status, "Saved");
   session.dispose();
 });

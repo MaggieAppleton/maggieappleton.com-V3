@@ -49,7 +49,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		return { source: buffer, lastValidSource, revision: baseRevision, status, dirty: dirty(),
 			generation, acknowledgedGeneration, conflict, error, storageError,
 			recoveryAvailable: !storageError, discardedCopy,
-			inFlight: inFlight ? { ...inFlight.request } : null, composing,
+			inFlight: inFlight ? { ...inFlight.request } : null, uncertain: Boolean(uncertain), composing,
 			engineSnapshot, conversionError };
 	}
 	function notify() { if (!disposed) onState(snapshot()); }
@@ -163,6 +163,9 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 				conflict = { source: failure.details?.source, revision: failure.details?.revision };
 				uncertain = null;
 				status = "File changed elsewhere";
+			} else if (failure?.status >= 400 && failure.status < 500) {
+				uncertain = null;
+				status = "Couldn't save";
 			} else {
 				uncertain = { request, generation: submittedGeneration };
 				status = "Couldn't save";
@@ -172,7 +175,10 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		} finally {
 			if (inFlight?.request === request) inFlight = null;
 			if (!disposed) notify();
-			if (!disposed && !conflict && !uncertain && !conversionError && dirty()) {
+			const unchangedInvalidCandidate = error?.status >= 400 && error.status < 500
+				&& submittedGeneration === generation;
+			if (!disposed && !conflict && !uncertain && !conversionError
+				&& !unchangedInvalidCandidate && dirty()) {
 				void flush();
 			}
 		}
@@ -197,21 +203,12 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	}
 	function observeDisk({ source: diskSource, revision: diskRevision }) {
 		if (disposed || diskRevision === baseRevision) return;
-		if (inFlight?.request.source === diskSource) return;
-		if (dirty()) {
-			clearTimer();
-			authorityEpoch++;
-			conflict = { source: diskSource, revision: diskRevision };
-			status = "File changed elsewhere";
-			persist();
-		} else {
-			authorityEpoch++;
-			buffer = diskSource;
-			needsAcknowledgement = false;
-			lastValidSource = diskSource;
-			acknowledgedSource = diskSource;
-			baseRevision = diskRevision;
-		}
+		if (inFlight?.request.source === diskSource || uncertain?.request.source === diskSource) return;
+		clearTimer();
+		authorityEpoch++;
+		conflict = { source: diskSource, revision: diskRevision };
+		status = "File changed elsewhere";
+		persist();
 		notify();
 	}
 	function acceptDisk({ source: diskSource, revision: diskRevision }) {
