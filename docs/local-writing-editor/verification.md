@@ -25,7 +25,7 @@ The complete acceptance matrix is in the supplied `docs/superpowers/plans/local-
 | --- | --- | --- |
 | S1 / S3 source | 25 source cases pass, including independent-review regressions, BOM/CRLF/Unicode, protected removal, list marker contexts and empty supported wrappers. Pure seam independently approved. | Actual engine structural edits and complete browser corpus pending. |
 | S2 corpus | 116/116 pure-source no-op and representative edits; unusual legacy syntax retained. | Actual engine import/export and transaction corpus, compile evidence. |
-| F1–F3 persistence/guards | Eight request-guard tests pass; scoped security/protocol review approved (commit `22402dc`). | File store/index implementation and unit/API tests. |
+| F1–F3 persistence/guards | Eight guard, fourteen index/store, seven deterministic race, and eight candidate-validation tests pass. Guards and service/index reviewed. | Complete live API request tests and draft creation. |
 | R1–R2 session/recovery | Session contract documented. | State machine, storage, delayed/failing saves, conflict/restart/browser tests. |
 | B1–B4 writing | MDXEditor same-root browser probe preserves no-op, second repeated paragraph, nested footnote, and undo after blur. | Integrated writing, selection, composition, protected nodes, watcher/caret/history tests. |
 | D1 drafts | Creation defaults documented. | Note/essay UI, exclusive service, restart/discovery and production tests. |
@@ -39,3 +39,9 @@ Fixture smoke proves a copied project with copied writable targets, content gene
 ## Source foundation checkpoint
 
 Fresh pre-commit checks in this worktree: `node --test tests/editor/source.test.mjs tests/editor/corpus.test.mjs tests/editor/requests.test.mjs` exited 0 (35 tests); `node --test tests/*.test.mjs tests/*.test.js` exited 0 (66 tests); `git diff --check` exited 0. Installed versions remain Astro 5.1.3 / React 18.3.1, with MDXEditor 4.2.5 under compatibility evaluation. All 173 original content hashes match the initial inventory. Detailed source review: `.local-writing-editor/source-review/rereview-3.md`.
+
+## Persistence foundation checkpoint
+
+Fresh `npm run test:editor`: exit 0, 64 tests pass; existing Node suite: exit 0, 66 pass. The shared note/essay schemas retain the site’s existing fields and date validation. Candidate validation accepts representative edits across all 116 current files. Independent tests found and verified fixes for swapped repeated-component attributes, invalid cover files, duplicate indexed identities, and a symlink alias used as a write target. Service/index spec and quality review passed. Raw evidence: `.local-writing-editor/service-*-tests.log`, `service-review/report.md`, and `validation-tests-report.md`. Live HTTP endpoints remain pending.
+
+All 172 baseline authored MDX/JSON files remain byte-identical. `src/content/config.ts` is intentionally changed only to reuse the shared schema factories.

@@ -7,6 +7,7 @@ import { toMarkdown } from "mdast-util-to-markdown";
 import { mdxToMarkdown } from "mdast-util-mdx";
 import { gfmToMarkdown } from "mdast-util-gfm";
 import { parseFrontmatter, frontmatterPatches } from "./frontmatter.mjs";
+import { openingTagEnd } from "./jsx-shell.mjs";
 import {
 	assertProtectedRegions,
 	createSourceLedger,
@@ -88,26 +89,6 @@ function defaultSeparator(parent, entry, ledger) {
 		return `\n${indent}`;
 	}
 	return "";
-}
-
-function openingTagEnd(source) {
-	let quote = null;
-	let braces = 0;
-	let escaped = false;
-	for (let index = 0; index < source.length; index++) {
-		const char = source[index];
-		if (quote) {
-			if (escaped) escaped = false;
-			else if (char === "\\") escaped = true;
-			else if (char === quote) quote = null;
-			continue;
-		}
-		if (char === '"' || char === "'" || char === "`") quote = char;
-		else if (char === "{") braces++;
-		else if (char === "}") braces--;
-		else if (char === ">" && braces === 0) return index;
-	}
-	throw new Error("Cannot find supported component opening tag");
 }
 
 function insertIntoEmptyComponent(node, entry, ledger, renderNode) {

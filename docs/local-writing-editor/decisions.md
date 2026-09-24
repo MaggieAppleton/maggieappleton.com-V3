@@ -89,3 +89,17 @@ Independent re-review confirmed all three original source defects fixed. It then
 ## 2026-09-24 — Source foundation accepted
 
 The third focused re-review passed the bounded pure-source contract and code-quality checks. Contextual list rendering retains destination marker style, punctuation, start value, and nesting; unsupported structural changes fail rather than silently corrupting source. Fresh validation before commit: 25 source tests, two 116-file corpus tests, eight request-guard tests, and all 66 existing tests pass. Astro remains 5.1.3 and React 18.3.1; candidate MDXEditor is 4.2.5. The actual engine corpus, paste provenance, original component rendering, saving/session lifecycle, and production isolation remain separate unfinished acceptance gates.
+
+## 2026-09-24 — Atomic persistence boundaries
+
+The service serializes its own writes, checks content revisions before validation and again after temporary-file sync, and atomically replaces the indexed file. Deterministic tests passed for simultaneous clients, stale queued work, outside edits during validation and after temporary writing, symlink swaps, failure recovery, and lost-response retries. A separate process can still write in the narrow interval between the final content check and the OS rename; this is not an OS compare-and-swap guarantee. No database or intrusive cross-process locks are introduced. Raw evidence: `.local-writing-editor/file-store-races-report.md`.
+
+The initial 173-file inventory contains 167 authored MDX files, five authored JSON data files, and `src/content/config.ts`. Schema extraction intentionally edits that one configuration file; the final writing-integrity audit must verify the 172 authored MDX/JSON files byte-for-byte and review schema code separately.
+
+### Save policy and canonical file paths
+
+The file service requires real candidate validation. It shares the site’s note/essay schema factories, permits only title/description YAML patches and supported prose transformations, compares protected source and supported component wrappers in occurrence order, and checks that essay covers are real decodable files in the approved cover directory. The index rejects duplicate identities and multiple identities for one physical file. Its write target is always the canonical scanned file, including when Astro supplies a symlink alias.
+
+### Active editor reload handling
+
+Vite’s documented HMR notifications provide no reload veto, and the installed client also reloads automatically after a server restart. An isolated browser probe confirmed that an editor-only WebSocket capture listener can stop reload/update/close events before Vite handles them, while ordinary preview tabs continue reloading. The guard restores the native WebSocket constructor immediately after capturing the Vite socket. This freezes development-code HMR in the active writing tab until intentional navigation/reload; HTTP revision checks and capability renewal remain the session’s responsibility. The real Astro editor still needs the same browser proof. Evidence: `.local-writing-editor/hmr-spike/`; reference: [Vite HMR API](https://vite.dev/guide/api-hmr).
