@@ -31,3 +31,9 @@ pnpm-debug.log*
 # agent planning artifacts
 docs/superpowers/plans/
 docs/superpowers/specs/
+
+# Local writing editor execution evidence
+.local-writing-editor/
+.superpowers/sdd/
+playwright-report/
+test-results/
