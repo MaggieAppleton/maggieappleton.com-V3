@@ -107,3 +107,9 @@ Vite’s documented HMR notifications provide no reload veto, and the installed 
 ### Equivalent structural exports
 
 MDXEditor exports a newly entered blockquote as direct phrasing children, while remark reparses the same source with one paragraph wrapper. It also omits an unordered list's parser-inserted `start: null`. Candidate validation now compares these two narrow equivalent forms without relaxing component, protected-source or multi-paragraph structure checks. A direct regression and fresh source/corpus/validator suite pass 37/37; the browser formatting gate remains separate.
+
+### Preserve authored spelling during text edits
+
+Decoded text cannot be safely located by matching substrings in Markdown: repeated text is ambiguous, escapes differ from visible characters, and two edits can surround an unchanged literal wiki token. The text-source helper maps decoded offsets to source atoms for backslash escapes, character references and Unicode. It applies ordered edit hunks while retaining untouched spellings. Supported JSX prose explicitly accounts for indentation removed by MDX parsing.
+
+Every splice must decode back to the requested text; ambiguous or oversized transformations fail before saving. Newly typed syntax is escaped in context, and the source seam still reparses the complete candidate before accepting it. Independent review reproduced repeated-text and disjoint-edit failures in earlier approaches; the helper regressions and fresh source/corpus/validator checks pass 48/48. Browser wiki import/export remains a separate integration gate.
