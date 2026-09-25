@@ -131,7 +131,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 			/>
 			<GrowthStage stage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"} />
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
-			{editUrl && <a class="local-edit-link" href={editUrl}>Edit</a>}
+			{editUrl && <a href={editUrl} style="margin-left: auto;">Edit</a>}
 		</div>
 		<div class="title-container">
 			<h1 class="cascade" style="--cascade: 1">{frontmatter.title}</h1>
@@ -208,7 +208,6 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 		margin: 0;
 	}
 
-	.local-edit-link { margin-left: auto; }
 
 	.above-title svg {
 		display: block;

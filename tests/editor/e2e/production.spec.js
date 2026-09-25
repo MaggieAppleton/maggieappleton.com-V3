@@ -18,6 +18,7 @@ const bannedEditorOutput = [
   "/_editor",
   "X-Local-Editor-Token",
   "local-writing-editor",
+  "local-edit-link",
   "@mdxeditor/editor",
 ];
 

@@ -5,7 +5,7 @@
 - Branch: `maggie/local-writing-editor`, starting at `a2593f37728b6ffb61231041b129622fe752acec` (current `origin/main`, 2026-09-24).
 - Approved handoff extracted and all five SHA-256 entries verified before implementation.
 - Baseline: dependency installation, all 66 existing tests, and the static build (195 pages) passed.
-- The same-root MDXEditor adapter now passes the 116-document corpus, original-component rendering, shared history, recovery, draft creation and production-isolation checks. The seven writing checks, including rapid link-key regressions, also pass. Exact final committed-head results are recorded in the PR and local handoff record; see [verification.md](verification.md).
+- The same-root MDXEditor adapter now passes the 116-document corpus, original-component rendering, shared history, recovery and production-isolation checks. The seven writing checks, including rapid link-key regressions, also pass. Exact final committed-head results are recorded in the PR and local handoff record; see [verification.md](verification.md).
 - Roles: Astra architecture/integration/delivery. Worker models match task complexity: Sol for harder implementation/testing/review, Terra or Luna for straightforward tasks. Workers share this isolated checkout and have separate file ownership.
 
 ## 2026-09-24 — Baseline and scope
@@ -161,3 +161,7 @@ Changed paragraphs now encode terminal text spaces as character references. Thei
 Editor controls live in a fixed dark pill 90px above the viewport bottom. Its details panel opens upward for errors, conflicts and recovery without taking focus from writing. Errors use actionable copy, with technical details available in the same panel. Wiki-link authoring controls are removed; existing wiki links remain supported.
 
 Loading a conflicting disk version requires a copy or download of the current browser version. Backup authorization matches its source and edit generation. The clipboard fallback rechecks live state after the asynchronous copy, so edits made while permission is pending cannot be silently discarded.
+
+### Existing files only
+
+The editor now opens only notes and essays already indexed from MDX files. The new-draft form, creation routes and supporting service are removed. The development-only drafts page remains a way to find and open existing draft files. The document save service still resolves an existing indexed file before writing, so it cannot create a document through a save request.

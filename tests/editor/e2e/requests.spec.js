@@ -155,7 +155,7 @@ Original synthetic note.\n`;
     assert.equal(drafts.headers.get("cache-control"), "no-store");
     const draftsHtml = await drafts.text();
     assert.ok(draftsHtml.includes('href="/drafts"'));
-    assert.ok(draftsHtml.includes("Open drafts or start a new draft"));
+    assert.ok(draftsHtml.includes("Open an existing note or essay"));
     const noIdentity = parseBootstrap(draftsHtml);
     assert.equal(noIdentity.origin, server.origin);
     assert.equal(noIdentity.token, bootstrap.token);

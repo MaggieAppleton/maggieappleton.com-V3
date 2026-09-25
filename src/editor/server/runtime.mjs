@@ -1,12 +1,8 @@
 import { createDocumentIndex } from "./document-index.mjs";
 import { createFileStore } from "./file-store.mjs";
-import { createDraftService } from "./drafts.mjs";
 import { assertPermittedSourceChange } from "./validate-document.mjs";
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
 
 let servicesPromise;
-let draftServicePromise;
 
 export function editorServerConfig() {
 	const origin = process.env.LOCAL_WRITING_EDITOR_ORIGIN;
@@ -26,25 +22,6 @@ export async function getEditorServices(loadEntries) {
 		servicesPromise.catch(() => { servicesPromise = undefined; });
 	}
 	return servicesPromise;
-}
-
-async function reservedDraftRoutes() {
-	const pages = await readdir(join(process.cwd(), "src/pages"), { withFileTypes: true });
-	return pages.filter((entry) => !entry.name.startsWith("[") && !entry.name.startsWith("now-["))
-		.map((entry) => entry.isDirectory() ? entry.name : entry.name.split(".")[0]);
-}
-
-export async function getDraftService(loadEntries, loadDraftEntries) {
-	if (!draftServicePromise) {
-		if (typeof loadDraftEntries !== "function") throw new TypeError("Draft routes need all content entries");
-		draftServicePromise = (async () => {
-			const { index } = await getEditorServices(loadEntries);
-			return createDraftService({ projectRoot: process.cwd(), index,
-				loadEntries: loadDraftEntries, reservedRoutes: reservedDraftRoutes });
-		})();
-		draftServicePromise.catch(() => { draftServicePromise = undefined; });
-	}
-	return draftServicePromise;
 }
 
 export function editorJson(value, status = 200) {

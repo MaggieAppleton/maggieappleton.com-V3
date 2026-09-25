@@ -9,7 +9,7 @@ npm ci
 npm run dev
 ```
 
-Open the loopback URL printed by Astro. Choose **Edit** on a note or essay, or **New draft** on the local drafts page. The editor is available only during development; production builds and previews do not provide editing or file-writing routes.
+Open the loopback URL printed by Astro. Choose **Edit** on an existing note or essay, including a draft. Create new content files through your normal development workflow, then edit them from their preview page. The editor is available only during development; production builds and previews do not provide editing or file-writing routes.
 
 ## Write and save
 
@@ -21,7 +21,7 @@ Existing wiki links keep their `[[target]]` syntax. Wiki-link insertion and reta
 
 Existing intro paragraphs, footnotes, and audience notes support editing their prose. Images, code blocks, tables, embeds, illustrations, and other components retain their real presentation and are protected against accidental changes. Their properties and internal content remain read-only.
 
-Autosave runs after 750 ms without an edit. **Save** or Cmd/Ctrl+S saves immediately. The status distinguishes unsaved work, an in-flight save, saved work, save failures, and a file changed elsewhere. An active writing tab keeps its editor instance through saves and server restarts. Development code changes require an intentional reload of that tab.
+Autosave runs after 750 ms without an edit. **Save** or Cmd/Ctrl+S saves immediately. The dock shows a green check for saved work, a spinner for unsaved or saving work, and a red X for save failures or a file changed elsewhere. An active writing tab keeps its editor instance through saves and server restarts. Development code changes require an intentional reload of that tab.
 
 Preview, save status and Save live in a dark pill centred 90px above the window bottom. Errors and recovery choices expand above it without moving the caret. **Details** reopens the panel; Escape closes it and returns focus to its button. Copy and download actions preserve writing when a save needs attention. Technical error details are available within the same panel.
 
@@ -32,10 +32,6 @@ Saving body text does not change publication dates, growth stage, draft status, 
 If another editor or browser tab changes the file, automatic saves stop. Copy or download your browser version before choosing **Load disk version**. Without a current backup, loading first attempts a clipboard copy; if that fails or your writing changes while copying, your live writing stays open. When recovery storage is available, the discarded browser version also remains available after loading the file. The editor does not merge or force-overwrite conflicting files.
 
 Recovery candidates are stored locally for each worktree, document, and writing tab. Reopening offers unsaved candidates and checks them against the current file. Duplicated or opener-created tabs keep separate recovery copies. Choosing a recovery copy first preserves current unsaved work as a copyable discarded version; if that preservation fails, the current editor stays open. If protected content changed on disk, recovery shows the browser copy's authored source for that region instead of the different disk rendering. A recovery-storage failure is shown explicitly; keep the tab open or export the buffer until it is saved. Browser storage belongs to the browser origin, so changing the development port may make earlier candidates unavailable at the new address.
-
-## New drafts
-
-Choose note or essay, enter a title, and confirm the proposed filename. Essays also need a description and an existing repository cover. New files start as drafts at the seedling growth stage with today's local calendar dates. Filename and route collisions are rejected without overwriting an existing file.
 
 ## Verify changes
 

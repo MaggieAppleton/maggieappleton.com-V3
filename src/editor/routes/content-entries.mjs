@@ -8,12 +8,3 @@ export async function loadEditorEntries() {
 			filePath: entry.filePath, data: entry.data }))
 		: []);
 }
-
-/** Collision checks include every authored collection, including route aliases. */
-export async function loadDraftRouteEntries() {
-	const collections = ["notes", "essays", "patterns", "talks", "now", "smidgeons",
-		"pages", "podcasts", "books", "antibooks"];
-	return (await Promise.all(collections.map(async (collection) =>
-		(await getCollection(collection)).map((entry) => ({ collection, id: entry.id,
-			slug: entry.slug, filePath: entry.filePath, data: entry.data }))))).flat();
-}

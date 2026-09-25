@@ -1,5 +1,7 @@
 # Local writing editor verification
 
+This is a historical acceptance record. Draft-creation evidence below predates the 25 September 2026 change that removed creation from the editor; the current workflow edits existing files only.
+
 ## Test environment and baseline
 
 Worktree: `maggie/local-writing-editor`, based on `a2593f37728b6ffb61231041b129622fe752acec`. Node 24.10.0, Astro 5.1.3, React 18.3.1, MDXEditor 4.2.5, Lexical 0.48.0 and Playwright 1.63.0.
@@ -52,7 +54,7 @@ Evidence includes `source-text-review.md`, `integration-review.md`, `recovery-in
 - Composition and drag/drop coverage use synthetic browser events, not a manual OS IME or native drag session. Chromium is the required baseline; the available WebKit reload/recovery smoke also passed in the focused run.
 - The recorded 27-character replacement on the long article took 104 ms including Playwright input overhead in headless Chromium. This is not a per-keystroke latency benchmark.
 - Reading views may apply typographic apostrophe transforms; editing retains authored characters. The writing dock is fixed above the viewport bottom and does not add space to the article flow.
-- Active writing and draft-creation tabs omit the development feedback toolbar, whose storage errors could interrupt editor startup, and suppress Vite reloads to preserve work. Development code changes require an intentional reload. Normal preview tabs continue to update.
+- Active writing tabs omit the development feedback toolbar, whose storage errors could interrupt editor startup, and suppress Vite reloads to preserve work. Development code changes require an intentional reload. Normal preview tabs continue to update.
 - File replacement is atomic and checks revisions immediately before replacement, but is not an OS compare-and-swap against unrelated external processes. Recovery storage is browser-origin scoped; changing ports can make earlier candidates unavailable at the new origin.
 
 ## Final command surface

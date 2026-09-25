@@ -16,21 +16,6 @@ export function localWritingEditor() {
 					entrypoint: new URL("./routes/document.js", import.meta.url),
 					prerender: false,
 				});
-				injectRoute({
-					pattern: "/_editor/api/drafts",
-					entrypoint: new URL("./routes/drafts.js", import.meta.url),
-					prerender: false,
-				});
-				injectRoute({
-					pattern: "/_editor/api/covers",
-					entrypoint: new URL("./routes/covers.js", import.meta.url),
-					prerender: false,
-				});
-				injectRoute({
-					pattern: "/_editor/api/ready",
-					entrypoint: new URL("./routes/ready.js", import.meta.url),
-					prerender: false,
-				});
 			},
 			"astro:server:start"({ address }) {
 				delete process.env.LOCAL_WRITING_EDITOR_ORIGIN;
