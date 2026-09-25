@@ -11,7 +11,7 @@ import { createWikiLinkPlugin, LiteralWikiTextNode, WikiLinkTextNode } from "./w
 import { createListTabKeysPlugin } from "./list-tab-keys.mjs";
 import { createInlineCodeKeyPlugin } from "./inline-code-key.mjs";
 import { createPlainSpaceKeyPlugin } from "./space-key.mjs";
-import { createLinkDialogLabelPlugin } from "./link-dialog-label.mjs";
+import { LocalLinkDialog } from "./link-dialog.mjs";
 import { createKeyboardSelectionSyncPlugin } from "./selection-sync.mjs";
 
 /** One production adapter for the live page and the actual-engine corpus harness. */
@@ -106,7 +106,7 @@ export function createEditorAdapter({ source, renderedRoot = null, renderedRegis
 		registry,
 		markdown: source.slice(bodyOffset),
 		plugins: [
-			headingsPlugin(), listsPlugin(), quotePlugin(), linkPlugin(), linkDialogPlugin(), jsxPlugin(),
+			headingsPlugin(), listsPlugin(), quotePlugin(), linkPlugin(), linkDialogPlugin({ LinkDialog: LocalLinkDialog }), jsxPlugin(),
 			markdownShortcutPlugin(),
 			createWritingJsxPlugin(identity.owners),
 			createProtectedPlugin(sourceDocument, identity.owners),
@@ -114,7 +114,6 @@ export function createEditorAdapter({ source, renderedRoot = null, renderedRegis
 			createListTabKeysPlugin(),
 			createInlineCodeKeyPlugin(),
 			createPlainSpaceKeyPlugin(),
-			createLinkDialogLabelPlugin(),
 			createKeyboardSelectionSyncPlugin(),
 			identity.plugin,
 		],
