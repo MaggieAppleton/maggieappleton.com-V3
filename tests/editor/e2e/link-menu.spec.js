@@ -66,6 +66,7 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await preview(page);
 		const open = page.getByTestId("link-dialog-preview");
 		await expect(open).toHaveAttribute("href", initialUrl);
+		await expect(open).toHaveAccessibleName(`Open ${initialUrl} in new window`);
 		if (process.env.LINK_MENU_CAPTURE_AFTER) {
 			await page.screenshot({ path: "/tmp/local-editor-link-menu-preview.png" });
 		}
@@ -95,6 +96,7 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await page.getByRole("button", { name: "Save" }).last().click();
 		await expect(page.locator(".editor-body a", { hasText: "linked phrase" })).toHaveAttribute("href", "/changed-destination");
 		await expect(page.locator(".editor-body a", { hasText: "linked phrase" })).toHaveAttribute("title", "Changed title");
+		await expect(page.getByRole("textbox", { name: "Article body" })).toBeFocused();
 	});
 
 	test("supports tab, Escape, and outside click", async ({ page }) => {
@@ -104,6 +106,10 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await page.getByTestId("link-dialog-preview").focus();
 		await page.keyboard.press("Tab");
 		await expect(page.getByRole("button", { name: "Edit link URL" })).toBeFocused();
+		await expect(page.getByRole("button", { name: "Edit link URL" })).toHaveCSS("outline-offset", "-3px");
+		if (process.env.LINK_MENU_CAPTURE_AFTER) {
+			await page.screenshot({ path: "/tmp/local-editor-link-menu-focus.png" });
+		}
 		await page.keyboard.press("Enter");
 		const url = page.getByRole("textbox", { name: "URL" });
 		await expect(url).toBeFocused();
@@ -123,9 +129,15 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		test.setTimeout(120_000);
 		await openEditor(page, 4);
 		await preview(page);
-		await page.getByRole("button", { name: "Remove link" }).click();
+		await page.getByTestId("link-dialog-preview").focus();
+		await page.keyboard.press("Tab");
+		await page.keyboard.press("Tab");
+		await page.keyboard.press("Tab");
+		await expect(page.getByRole("button", { name: "Remove link" })).toBeFocused();
+		await page.keyboard.press("Enter");
 		await expect(page.locator(".editor-body a", { hasText: "linked phrase" })).toHaveCount(0);
 		const body = page.getByRole("textbox", { name: "Article body" });
+		await expect(body).toBeFocused();
 		await body.click();
 		await page.keyboard.press("ControlOrMeta+End");
 		await page.keyboard.insertText(" new destination");

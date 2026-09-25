@@ -76,7 +76,7 @@ function LinkPreview({ state, onClickLink, edit, remove, t }) {
 			href: state.href ?? "about:blank",
 			...(external ? { target: "_blank", rel: "noreferrer" } : {}),
 			title: openLabel,
-			"aria-label": t("linkPreview.openLink", "Open link"),
+			"aria-label": openLabel,
 			onClick: (event) => {
 				if (onClickLink !== null) {
 					event.preventDefault();
@@ -158,6 +158,12 @@ export function LocalLinkDialog() {
 			},
 			state.type === "edit"
 				? h(LinkEditForm, { key: `${state.linkNodeKey}:${state.initialUrl}`,
-					state, showLinkTitleField, onSubmit: updateLink, onCancel: cancelEdit, t })
-				: h(LinkPreview, { state, onClickLink, edit, remove, t }))));
+					state, showLinkTitleField, onSubmit: (payload) => {
+						updateLink(payload);
+						editor?.focus();
+					}, onCancel: cancelEdit, t })
+				: h(LinkPreview, { state, onClickLink, edit, remove: () => {
+					remove();
+					editor?.focus();
+				}, t }))));
 }
