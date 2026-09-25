@@ -189,6 +189,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 							originalSource: boot.document.source, originalRegistry: originalRegistry.current });
 						const recovered = createSourceDocument(candidate.source).metadata;
 						session.restoreRecovery(candidate);
+						setDiscarded(session.discardedCopies());
 						for (const [key, selector] of [["title", ".title-container h1"],
 							["description", ".title-container p"]]) {
 							metadata[key] = recovered[key] ?? "";
@@ -205,7 +206,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			}, "Recover browser version")),
 		),
 		discarded.length > 0 && React.createElement("div", { className: "editor-recovery" },
-			React.createElement("p", null, "A browser version discarded when loading the disk is still available."),
+			React.createElement("p", null, "A previous browser version is still available to copy."),
 			discarded.map((candidate) => React.createElement("div", { key: candidate.storageKey },
 				React.createElement("button", { type: "button", onClick: () =>
 					navigator.clipboard.writeText(browserCopy(candidate)) }, "Copy discarded version"),

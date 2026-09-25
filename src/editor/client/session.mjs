@@ -288,10 +288,27 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		if (disposed) return;
 		if (candidate?.version !== RECOVERY_VERSION || candidate.documentId !== documentId
 			|| candidate.worktreeId !== worktreeId) throw new TypeError("Recovery belongs to another document");
+		if (dirty()) {
+			const copy = recoveryRecord();
+			try {
+				storage.setItem(`${recoveryKey}:discarded:${clock.now()}:${globalThis.crypto.randomUUID()}`,
+					JSON.stringify(copy));
+				discardedCopy = copy;
+				storageError = null;
+			} catch (failure) {
+				storageError = failure;
+				notify();
+				throw new Error("Could not preserve current writing before recovery", { cause: failure });
+			}
+		}
 		restoredFrom = { key: `${recoveryPrefix}${candidate.writerId}`,
 			sessionId: candidate.sessionId, generation: candidate.generation };
 		buffer = candidate.source;
 		authorityEpoch++;
+		uncertain = null;
+		conflict = null;
+		needsAcknowledgement = false;
+		error = null;
 		lastValidSource = candidate.lastValidSource ?? candidate.source;
 		engineSnapshot = candidate.engineSnapshot;
 		renderedRegionKeys = candidate.renderedRegionKeys;

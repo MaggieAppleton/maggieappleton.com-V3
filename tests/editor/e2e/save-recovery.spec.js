@@ -66,7 +66,7 @@ test.describe("live save recovery", () => {
   test.beforeAll(async () => {
     test.setTimeout(240_000);
     fixture = await createFixtureProject({ name: "editor-save-recovery" });
-    for (const name of ["reload", "tabs", "cloned-tabs", "protected", "protected-conflict", "conflict", "restart", "storage", "navigation", "conversion", "metadata", "outside", "lost-response", "stale-poll"]) {
+    for (const name of ["reload", "choice", "tabs", "cloned-tabs", "protected", "protected-conflict", "conflict", "restart", "storage", "navigation", "conversion", "metadata", "outside", "lost-response", "stale-poll"]) {
       const slug = `recovery-${name}-${randomUUID().slice(0, 8)}`;
       const path = `src/content/notes/${slug}.mdx`;
       await fixture.write(path, name.startsWith("protected") ? protectedSource : initialSource(`Recovery ${name}`));
@@ -125,6 +125,38 @@ test.describe("live save recovery", () => {
     expect(saved).toContain('description: "Recovered description."');
     await page.reload();
     await expect(page.getByRole("button", { name: "Recover browser version" })).toHaveCount(0);
+  });
+
+  test("choosing older recovery exposes newer current writing after reload", async ({ page, context }) => {
+    test.setTimeout(180_000);
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: server.origin });
+    await open(page, "choice");
+    await refuseWrites(page);
+    await replaceParagraph(page, "Earlier unsaved browser writing.");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Couldn't save");
+    await leave(page, () => page.reload());
+    await expect(page.getByRole("button", { name: "Recover browser version" })).toHaveCount(1);
+    await replaceParagraph(page, "Newer current writing before recovery choice.");
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill("Newer current title");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Couldn't save");
+    await page.getByRole("button", { name: "Recover browser version" }).click();
+    await expect(page.getByRole("textbox", { name: "Article body" }))
+      .toContainText("Earlier unsaved browser writing.");
+    await expect(page.getByRole("button", { name: "Copy discarded version" })).toBeVisible();
+    await page.getByRole("button", { name: "Copy discarded version" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText()))
+      .toContain("Newer current writing before recovery choice.");
+    expect(await page.evaluate(() => navigator.clipboard.readText()))
+      .toContain("Newer current title");
+    await leave(page, () => page.reload());
+    await expect(page.getByRole("button", { name: "Recover browser version" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Copy discarded version" })).toBeVisible();
+    await page.getByRole("button", { name: "Copy discarded version" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText()))
+      .toContain("Newer current writing before recovery choice.");
+    expect(await readFile(documents.choice.path, "utf8")).toBe(initialSource("Recovery choice"));
   });
 
   test("two closed tabs keep distinct candidates for the same document", async ({ context }) => {

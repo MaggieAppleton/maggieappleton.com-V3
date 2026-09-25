@@ -422,6 +422,87 @@ test("offers separate tab recovery candidates only within their worktree and res
   reopened.dispose();
 });
 
+test("choosing older recovery keeps newer current writing as a discarded copy", () => {
+  const storage = memoryStorage();
+  const earlier = makeSession({ storage, writerId: "earlier" });
+  earlier.edit("Earlier unsaved copy.");
+  earlier.dispose();
+
+  const current = makeSession({ storage, writerId: "current" });
+  const [candidate] = current.recoveryCandidates();
+  current.edit("Newer current writing.", { engineSnapshot: "Newer engine text." });
+  current.restoreRecovery(candidate);
+  assert.equal(current.snapshot().source, "Earlier unsaved copy.");
+  assert.deepEqual(current.discardedCopies().map((copy) => copy.source), ["Newer current writing."]);
+  assert.equal(current.discardedCopies()[0].engineSnapshot, "Newer engine text.");
+  current.dispose();
+
+  const reopened = makeSession({ storage, writerId: "reopened" });
+  assert.deepEqual(reopened.recoveryCandidates().map((copy) => copy.source), ["Earlier unsaved copy."]);
+  assert.deepEqual(reopened.discardedCopies().map((copy) => copy.source), ["Newer current writing."]);
+  reopened.dispose();
+});
+
+test("recovery choice keeps the live buffer when preserving it fails", () => {
+  const storage = memoryStorage();
+  const earlier = makeSession({ storage, writerId: "earlier" });
+  earlier.edit("Earlier unsaved copy.");
+  earlier.dispose();
+  const current = makeSession({ storage, writerId: "current" });
+  const [candidate] = current.recoveryCandidates();
+  current.edit("Newer current writing.");
+  const originalSetItem = storage.setItem.bind(storage);
+  storage.setItem = (key, value) => {
+    if (key.includes(":discarded:")) throw new Error("Recovery storage is full");
+    originalSetItem(key, value);
+  };
+  assert.throws(() => current.restoreRecovery(candidate), /preserve current writing/i);
+  assert.equal(current.snapshot().source, "Newer current writing.");
+  assert.equal(current.snapshot().dirty, true);
+  assert.ok(current.snapshot().storageError);
+  assert.deepEqual(new Set(current.recoveryCandidates().map((copy) => copy.source)),
+    new Set(["Earlier unsaved copy.", "Newer current writing."]));
+  current.dispose();
+});
+
+test("recovery choice archives newer engine text when conversion failed", () => {
+  const storage = memoryStorage();
+  const earlier = makeSession({ storage, writerId: "earlier" });
+  earlier.edit("Earlier unsaved copy.");
+  earlier.dispose();
+  const current = makeSession({ storage, writerId: "current" });
+  const [candidate] = current.recoveryCandidates();
+  current.conversionFailed({ engineSnapshot: "Newer unsaveable engine text.",
+    error: new Error("Conversion failed") });
+  current.restoreRecovery(candidate);
+  const [retained] = current.discardedCopies();
+  assert.equal(retained.source, "Original.");
+  assert.equal(retained.engineSnapshot, "Newer unsaveable engine text.");
+  assert.equal(retained.conversionFailed, true);
+  current.dispose();
+});
+
+test("saving after a recovery choice submits the chosen copy instead of an uncertain newer request", async () => {
+  const storage = memoryStorage();
+  const earlier = makeSession({ storage, writerId: "earlier" });
+  earlier.edit("Earlier unsaved copy.");
+  earlier.dispose();
+  const saver = deferredSaver();
+  const current = makeSession({ storage, writerId: "current", save: saver.save });
+  const [candidate] = current.recoveryCandidates();
+  current.edit("Newer current writing.");
+  invoke(() => current.flush());
+  await drain();
+  saver.calls[0].reject(new Error("Network failed"));
+  await drain();
+  assert.equal(current.snapshot().uncertain, true);
+  current.restoreRecovery(candidate);
+  invoke(() => current.retry());
+  await drain();
+  assert.equal(saver.calls[1].request.source, "Earlier unsaved copy.");
+  current.dispose();
+});
+
 test("a deliberately restored closed-tab candidate retires after its source is acknowledged", async () => {
   const storage = memoryStorage();
   const closed = makeSession({ storage, writerId: "closed-tab" });
