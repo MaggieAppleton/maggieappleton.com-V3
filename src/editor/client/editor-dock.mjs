@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { CheckCircleIcon, SpinnerGapIcon, XCircleIcon } from "@phosphor-icons/react";
 
 function copyWriting(source) {
 	return navigator.clipboard.writeText(source);
@@ -43,6 +44,26 @@ function saveFailureCopy(state) {
 		return "We couldn’t convert your last edit. Your writing is still here. Undo the last change or save a backup.";
 	}
 	return "Your latest changes couldn’t be saved. They’re still open here.";
+}
+
+function SaveStatus({ state }) {
+	const failed = Boolean(state.error || state.conflict)
+		|| state.status === "Couldn't save"
+		|| state.status === "File changed elsewhere";
+	const saved = state.status === "Saved" && !failed;
+	const kind = failed ? "error" : saved ? "saved" : "pending";
+	const StatusIcon = failed ? XCircleIcon : saved ? CheckCircleIcon : SpinnerGapIcon;
+	return React.createElement("span", {
+		className: `editor-dock-status editor-dock-status--${kind}`,
+		role: "status",
+		"aria-live": "polite",
+		"aria-atomic": "true",
+		title: state.status,
+	},
+		React.createElement("span", { className: "editor-dock-sr-only" }, state.status),
+		React.createElement(StatusIcon, { className: kind === "pending" ? "editor-dock-status-icon--spinning" : undefined,
+			size: 20, weight: saved ? "fill" : "regular", "aria-hidden": "true" }),
+	);
 }
 
 function BackupActions({ source, backupKey, onCopy, onDownload = downloadBackup, retry, canRetry = true, copyLabel = "Copy writing" }) {
@@ -163,7 +184,7 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 		React.createElement("div", { className: "editor-dock-pill" },
 			React.createElement("a", { className: "editor-dock-icon", href: previewUrl, "aria-label": "Preview", title: "Preview" },
 				React.createElement(EyeIcon)),
-			React.createElement("span", { role: "status", "aria-live": "polite", title: state.status }, state.status),
+			React.createElement(SaveStatus, { state }),
 			React.createElement("button", { type: "button", ref: saveButtonRef, onClick: onRetry,
 				disabled: Boolean(state.conflict || state.conversionError) }, "Save"),
 			hasActions && React.createElement("button", { className: "editor-dock-icon", type: "button", ref: buttonRef,

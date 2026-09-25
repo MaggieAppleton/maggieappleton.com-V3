@@ -107,13 +107,32 @@
 .editor-dock-actions button:hover,
 .editor-dock-section > button:hover { background: rgb(255 255 255 / 12%); }
 .editor-dock-pill button:disabled { cursor: not-allowed; opacity: 0.42; }
-.editor-dock-pill [role="status"] {
-	min-width: 0;
+.editor-dock-pill .editor-dock-status {
+	display: grid;
+	flex: 0 0 20px;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	color: var(--color-sea-blue);
+}
+.editor-dock-status--saved { color: var(--color-status-success); }
+.editor-dock-status--error { color: var(--color-dark-salmon); }
+.editor-dock-status svg { display: block; }
+.editor-dock-status-icon--spinning { animation: editor-dock-status-spin 1s linear infinite; }
+.editor-dock-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
 	overflow: hidden;
-	padding-inline: var(--space-2xs);
-	color: rgb(255 255 255 / 68%);
-	text-overflow: ellipsis;
+	clip: rect(0, 0, 0, 0);
 	white-space: nowrap;
+	border: 0;
+}
+@keyframes editor-dock-status-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+	.editor-dock-status-icon--spinning { animation: none; }
 }
 .editor-dock-pill .editor-dock-icon {
 	display: grid;

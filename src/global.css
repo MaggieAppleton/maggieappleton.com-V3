@@ -116,6 +116,7 @@
   --color-salmon: #fd8370;
   --color-gold: #ffd09c;
   --color-dark-salmon: #e1624f;
+  --color-status-success: #4caf70;
 
   /* Poppy palette for decorative (non-field) accents. The field's own combat/
      disease colours live in poppy-field/params.ts and are baked straight into
