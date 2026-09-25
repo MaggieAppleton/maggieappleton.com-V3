@@ -245,8 +245,14 @@ test.describe("live save recovery", () => {
     expect(saved).toContain("Further changes to the recovered paragraph.\n\n{1 + 1}\n\nFollowing paragraph.");
     expect(saved).toContain('title: "Further recovered title"');
     expect(saved).toContain('description: "Further recovered description."');
-    await expect.poll(async () => (await page.request.get(page.url())).text(), { timeout: 20_000 })
-      .toContain("Further changes to the recovered paragraph.");
+    const response = await page.request.get(page.url());
+    const html = await response.text();
+    const protectedStart = saved.indexOf("{1 + 1}");
+    expect(response.ok()).toBe(true);
+    expect(html).toContain("<title>Further recovered title</title>");
+    expect(html).toContain('name="description" content="Further recovered description."');
+    expect(html).toMatch(/<p\b[^>]*>Further changes to the recovered paragraph\.<\/p>/);
+    expect(html).toContain(`data-editor-start="${protectedStart}:${protectedStart + "{1 + 1}".length}"`);
     await page.reload();
     await expect(body).toContainText("Further changes to the recovered paragraph.");
     await expect(body.locator("[data-editor-protected-key]")).toContainText("2");

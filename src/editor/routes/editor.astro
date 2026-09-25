@@ -1,22 +1,48 @@
 ---
-import { getEntry, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import PostLayout from "../../layouts/PostLayout.astro";
 import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
 import { mdxComponents } from "../../components/mdx/component-map.mjs";
 import { editorServerConfig, getEditorServices } from "../server/runtime.mjs";
+import { createSourceDocument } from "../source/document.mjs";
+import { EDITOR_SOURCE_FINGERPRINT, sourceFingerprint } from "../rendering/source-fingerprint.mjs";
 import { loadEditorEntries } from "./content-entries.mjs";
 
 export const prerender = false;
 
-async function waitForAstroEntry(collection, entryId) {
+async function waitForAstroEntry(collection, entryId, readCurrent) {
 	const deadline = Date.now() + 12_000;
-	let loaded = await getEntry(collection, entryId);
-	while (!loaded && Date.now() < deadline) {
+	let lastRenderError;
+	do {
+		const documentRead = await readCurrent();
+		if (documentRead.parseError) return { documentRead, renderError: documentRead.parseError };
+		const frontmatter = createSourceDocument(documentRead.source).frontmatter;
+		const closingLineEnd = documentRead.source.indexOf("\n", frontmatter.region.closingStart);
+		const body = documentRead.source.slice(closingLineEnd < 0 ? documentRead.source.length : closingLineEnd + 1).trim();
+		// A static astro:content import can retain a data-store snapshot taken
+		// before Vite invalidates the module after an atomic file save.
+		const { getEntry, render } = await import("astro:content");
+		const loaded = await getEntry(collection, entryId);
+		if (loaded?.body === body
+			&& loaded.data.title === documentRead.metadata.title
+			&& loaded.data.description === documentRead.metadata.description) {
+			try {
+				const rendered = await render(loaded);
+				if (rendered.remarkPluginFrontmatter?.[EDITOR_SOURCE_FINGERPRINT]
+					=== sourceFingerprint(body, documentRead.metadata)) {
+					const latest = await readCurrent();
+					if (latest.revision === documentRead.revision) {
+						return { documentRead, entry: loaded, ...rendered };
+					}
+				}
+			} catch (error) { lastRenderError = error; }
+		}
+		if (Date.now() >= deadline) break;
 		await new Promise((resolve) => setTimeout(resolve, 150));
-		loaded = await getEntry(collection, entryId);
-	}
-	return loaded;
+	} while (true);
+	return { documentRead: await readCurrent(), renderError: lastRenderError
+		? `Astro could not render the current source: ${lastRenderError.message}`
+		: "Astro is still loading the current source. Reload this page in a moment." };
 }
 
 let capability;
@@ -41,12 +67,8 @@ if (origin && documentId) {
 	try {
 		const { index, store } = await getEditorServices(loadEditorEntries);
 		record = await index.resolve(documentId);
-		documentRead = await store.readDocument(documentId);
-		if (!documentRead.parseError) {
-			entry = await waitForAstroEntry(record.collection, record.entryId);
-			if (entry) ({ Content, headings } = await render(entry));
-			else renderError = "Astro has not loaded this source file yet";
-		} else renderError = documentRead.parseError;
+		({ documentRead, entry, Content, headings = [], renderError } = await waitForAstroEntry(
+			record.collection, record.entryId, () => store.readDocument(documentId)));
 	} catch (error) { renderError = error.message; }
 }
 const bootstrap = origin
