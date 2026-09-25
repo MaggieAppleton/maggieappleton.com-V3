@@ -16,13 +16,13 @@
 ## Issue 2 — Selection formatting menu
 
 - **Reported:** 2026-09-25
-- **State:** Design approved; written spec review pending
+- **State:** Written design spec ready for Maggie's review
 - **Request:** Show a simple black floating icon menu on text selection in edit mode. Actions: bold, italic, link, H1, H2, H3. Reference: screenshot supplied in the issue report; copy its simplicity rather than its exact appearance. Use shadcn components.
 - **Behavior:** Selecting text opens the menu. Choosing H1, H2, or H3 changes the whole paragraph containing that selection (confirmed by Maggie).
 - **Implementation and test owner:** Pending written spec handoff
 - **Reviewer:** Pending implementation
-- **Decisions:** Maggie confirmed heading actions affect the entire paragraph and approved an editor-integrated selection toolbar. Reuse Issue 1's adapted shadcn controls and link dialog. The menu will be scoped to editable body text, not title, description, or protected content.
-- **Problems and fixes:** Luna's planning review confirmed MDXEditor's public selection and formatting APIs support the design. It requested an explicit rule for multi-paragraph selections, menu dismissal, and selection scope; the spec is being clarified before implementation.
+- **Decisions:** Maggie confirmed heading actions affect the entire paragraph and approved an editor-integrated selection toolbar. Reuse Issue 1's adapted shadcn controls and link dialog. The menu will be scoped to editable body prose, including ordinary text inside links, but not title, description, code, or protected content. The spec currently applies heading changes to every paragraph touched by a multi-paragraph selection; Maggie's answer to that edge case is pending.
+- **Problems and fixes:** Luna's planning review confirmed MDXEditor's public selection and formatting APIs support the design. It requested explicit rules for multi-paragraph selections, dismissal, and selection scope; these are recorded in the written spec before implementation.
 - **Verification:** Pending
 - **PR:** Pending
 
