@@ -7,6 +7,14 @@ export function sourceRegionKey(entry) {
 
 /** Keep Astro's existing nodes alive until their editor views are mounted. */
 export function createRenderedRegionRegistry(originalRoot) {
+	let resizeFrame;
+	function notifyReattachedLayout() {
+		if (resizeFrame) return;
+		resizeFrame = requestAnimationFrame(() => {
+			resizeFrame = undefined;
+			if (originalRoot.isConnected) window.dispatchEvent(new Event("resize"));
+		});
+	}
 	const endings = new Map(
 		[...originalRoot.querySelectorAll("[data-editor-end]")]
 			.map((element) => [element.dataset.editorEnd, element]),
@@ -46,7 +54,11 @@ export function createRenderedRegionRegistry(originalRoot) {
 				region.end.remove();
 				region.mounted = true;
 			}
+			const reattached = region.nodes.some((node) => node.parentNode !== target);
 			target.replaceChildren(...region.nodes);
+			// Scripts inside preserved Astro DOM may have measured a zero-sized
+			// container while these nodes were in the hidden staging element.
+			if (reattached && target.isConnected && !target.closest("[hidden]")) notifyReattachedLayout();
 			return region.nodes;
 		},
 	};
