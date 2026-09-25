@@ -170,10 +170,13 @@ Second editable paragraph.
     server = await startFixtureServer(fixture.root, { timeout: 120_000 });
   });
 
-  test.afterAll(async () => {
+  test.afterAll(async ({}, testInfo) => {
     test.setTimeout(240_000);
     try {
-      if (server) await server.stop();
+      if (server) {
+        await server.stop();
+        await testInfo.attach("fixture-server.log", { path: server.logPath, contentType: "text/plain" });
+      }
     } finally {
       if (fixture) await fixture.cleanup();
     }
