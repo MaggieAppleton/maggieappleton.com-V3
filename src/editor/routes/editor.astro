@@ -1,10 +1,10 @@
 ---
+import { parseFrontmatter } from "@astrojs/markdown-remark";
 import Layout from "../../layouts/Layout.astro";
 import PostLayout from "../../layouts/PostLayout.astro";
 import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
 import { mdxComponents } from "../../components/mdx/component-map.mjs";
 import { editorServerConfig, getEditorServices } from "../server/runtime.mjs";
-import { createSourceDocument } from "../source/document.mjs";
 import { EDITOR_SOURCE_FINGERPRINT, sourceFingerprint } from "../rendering/source-fingerprint.mjs";
 import { loadEditorEntries } from "./content-entries.mjs";
 
@@ -16,9 +16,10 @@ async function waitForAstroEntry(collection, entryId, readCurrent) {
 	do {
 		const documentRead = await readCurrent();
 		if (documentRead.parseError) return { documentRead, renderError: documentRead.parseError };
-		const frontmatter = createSourceDocument(documentRead.source).frontmatter;
-		const closingLineEnd = documentRead.source.indexOf("\n", frontmatter.region.closingStart);
-		const body = documentRead.source.slice(closingLineEnd < 0 ? documentRead.source.length : closingLineEnd + 1).trim();
+		// Match the MDX compiler input, including blanked frontmatter and whitespace
+		// that determines protected-region source offsets.
+		const parsed = parseFrontmatter(documentRead.source, { frontmatter: "empty-with-spaces" });
+		const body = parsed.content.trim();
 		// A static astro:content import can retain a data-store snapshot taken
 		// before Vite invalidates the module after an atomic file save.
 		const { getEntry, render } = await import("astro:content");
@@ -29,7 +30,7 @@ async function waitForAstroEntry(collection, entryId, readCurrent) {
 			try {
 				const rendered = await render(loaded);
 				if (rendered.remarkPluginFrontmatter?.[EDITOR_SOURCE_FINGERPRINT]
-					=== sourceFingerprint(body, documentRead.metadata)) {
+					=== sourceFingerprint(parsed.content, parsed.frontmatter)) {
 					const latest = await readCurrent();
 					if (latest.revision === documentRead.revision) {
 						return { documentRead, entry: loaded, ...rendered };
