@@ -449,6 +449,7 @@ test.describe("live save recovery", () => {
         }
       }, unavailable);
       await open(page, "storage");
+      await expect(page.locator('astro-island[component-export="Agentation"]')).toHaveCount(0);
       await replaceParagraph(page, `Saveable writing while recovery storage is ${unavailable}.`);
       await expect(page.getByRole("alert")).toContainText(/recovery|storage/i);
       await expect(page.getByRole("button", { name: "Copy browser version", exact: true })).toBeVisible();

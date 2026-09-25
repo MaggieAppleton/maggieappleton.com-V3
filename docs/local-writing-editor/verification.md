@@ -52,7 +52,7 @@ Evidence includes `source-text-review.md`, `integration-review.md`, `recovery-in
 - Composition and drag/drop coverage use synthetic browser events, not a manual OS IME or native drag session. Chromium is the required baseline; the available WebKit reload/recovery smoke also passed in the focused run.
 - The recorded 27-character replacement on the long article took 104 ms including Playwright input overhead in headless Chromium. This is not a per-keystroke latency benchmark.
 - Reading views may apply typographic apostrophe transforms; editing retains authored characters. The editor toolbar intentionally adds vertical space, so visual checks compare relative article geometry.
-- Active writing and draft-creation tabs suppress Vite reloads to preserve work. Development code changes require an intentional reload. Normal preview tabs continue to update.
+- Active writing and draft-creation tabs omit the development feedback toolbar, whose storage errors could interrupt editor startup, and suppress Vite reloads to preserve work. Development code changes require an intentional reload. Normal preview tabs continue to update.
 - File replacement is atomic and checks revisions immediately before replacement, but is not an OS compare-and-swap against unrelated external processes. Recovery storage is browser-origin scoped; changing ports can make earlier candidates unavailable at the new origin.
 
 ## Final command surface

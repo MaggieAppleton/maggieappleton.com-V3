@@ -178,7 +178,7 @@ const isArticle = Boolean(articleMetadata);
 			<slot />
 		</main>
 		<Footer />
-		{import.meta.env.DEV && <Agentation client:only="react" />}
+		{import.meta.env.DEV && !editorHmrGuard && <Agentation client:only="react" />}
 		<style is:global>
 			/* Improve Page speed */
 			/* https://css-tricks.com/almanac/properties/c/content-visibility/ */
