@@ -283,6 +283,9 @@
 	outline: 2px solid #a9d7ec;
 	outline-offset: 2px;
 }
+.local-link-button-group > .local-link-button:focus-visible {
+	outline-offset: -3px;
+}
 .local-link-dialog[data-mode="edit"] {
 	width: min(342px, calc(100vw - 24px));
 	padding: 14px;
