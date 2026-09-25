@@ -24,7 +24,7 @@ async function waitForAstroEntry(collection, entryId, readCurrent) {
 		// before Vite invalidates the module after an atomic file save.
 		const { getEntry, render } = await import("astro:content");
 		const loaded = await getEntry(collection, entryId);
-		if (loaded?.body === body
+		if (loaded && (loaded.body ?? "") === body
 			&& loaded.data.title === documentRead.metadata.title
 			&& loaded.data.description === documentRead.metadata.description) {
 			try {
