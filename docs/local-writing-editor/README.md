@@ -1,49 +1,9 @@
 # Local writing editor
 
-The editor is a local writing surface for notes and essays, including drafts and existing versions. MDX files remain the source of truth. Use your usual Git workflow to review, commit, and publish changes.
+Run `npm run dev` and choose **Edit** on an existing note or essay, including a draft. Create new MDX files through the normal development workflow. The editor and its file-writing API are available only on the local development server; they are absent from production builds.
 
-## Run locally
+Edit the title, description, and supported prose in place. Images, code blocks, tables, embeds, and other components retain their rendered appearance but are read-only. Existing `[[wiki links]]` remain intact; the editor does not insert or retarget them.
 
-```sh
-npm ci
-npm run dev
-```
+Changes autosave after a short pause. Use **Save** or Cmd/Ctrl+S to save immediately. The fixed dock shows save status and opens a details panel for errors. If the file changed elsewhere, saving stops so you can copy or download your browser version before loading the disk version. Unsaved recovery copies are stored in this browser for the current local origin.
 
-Open the loopback URL printed by Astro. Choose **Edit** on an existing note or essay, including a draft. Create new content files through your normal development workflow, then edit them from their preview page. The editor is available only during development; production builds and previews do not provide editing or file-writing routes.
-
-## Write and save
-
-Edit the title, description, and article text in place. Paragraphs, headings, lists, blockquotes, bold, italic, inline code, and links support ordinary rich-text editing. Use Cmd/Ctrl+B for bold, Cmd/Ctrl+I for italic, Cmd/Ctrl+E for inline code, and Cmd/Ctrl+K to insert or edit a link.
-
-Start a paragraph with `#` through `####`, `-`, or `>` followed by Space for a heading, list or quote. Use Tab and Shift+Tab to indent and outdent list items. Selecting an ordinary link shows its URL and an action to open it.
-
-Existing wiki links keep their `[[target]]` syntax. Wiki-link insertion and retargeting controls are not provided.
-
-Existing intro paragraphs, footnotes, and audience notes support editing their prose. Images, code blocks, tables, embeds, illustrations, and other components retain their real presentation and are protected against accidental changes. Their properties and internal content remain read-only.
-
-Autosave runs after 750 ms without an edit. **Save** or Cmd/Ctrl+S saves immediately. The dock shows a green check for saved work, a spinner for unsaved or saving work, and a red X for save failures or a file changed elsewhere. An active writing tab keeps its editor instance through saves and server restarts. Development code changes require an intentional reload of that tab.
-
-Preview, save status and Save live in a dark pill centred 90px above the window bottom. Errors and recovery choices expand above it without moving the caret. **Details** reopens the panel; Escape closes it and returns focus to its button. Copy and download actions preserve writing when a save needs attention. Technical error details are available within the same panel.
-
-Saving body text does not change publication dates, growth stage, draft status, or version metadata. Changing a title does not rename its file.
-
-## Conflicts and recovery
-
-If another editor or browser tab changes the file, automatic saves stop. Copy or download your browser version before choosing **Load disk version**. Without a current backup, loading first attempts a clipboard copy; if that fails or your writing changes while copying, your live writing stays open. When recovery storage is available, the discarded browser version also remains available after loading the file. The editor does not merge or force-overwrite conflicting files.
-
-Recovery candidates are stored locally for each worktree, document, and writing tab. Reopening offers unsaved candidates and checks them against the current file. Duplicated or opener-created tabs keep separate recovery copies. Choosing a recovery copy first preserves current unsaved work as a copyable discarded version; if that preservation fails, the current editor stays open. If protected content changed on disk, recovery shows the browser copy's authored source for that region instead of the different disk rendering. A recovery-storage failure is shown explicitly; keep the tab open or export the buffer until it is saved. Browser storage belongs to the browser origin, so changing the development port may make earlier candidates unavailable at the new address.
-
-## Verify changes
-
-```sh
-node --test tests/*.test.mjs tests/*.test.js
-npm run test:editor
-npm run test:editor:e2e
-npm run verify:html
-npm run build:local
-git diff --check
-```
-
-Browser tests use disposable project copies and their own loopback servers. They must never write through symlinks to authored content. See [verification.md](verification.md) for acceptance evidence and [decisions.md](decisions.md) for architecture decisions.
-
-Component insertion/property editing, asset uploads, other content collections, general metadata editing, automatic merging, writing suggestions, and publishing controls are outside this release.
+To check changes, run `npm run test:editor`, `npm run test:editor:e2e`, and `npm run build:local`. Browser tests work in disposable project copies; they do not edit authored content in this checkout.

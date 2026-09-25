@@ -13,5 +13,5 @@ export default defineConfig({
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
-  reporter: [["list"], ["json", { outputFile: ".local-writing-editor/playwright-results.json" }]],
+  reporter: "list",
 });

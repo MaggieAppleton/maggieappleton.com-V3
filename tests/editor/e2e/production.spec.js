@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { copyFile, mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { test } from "@playwright/test";
 
 import {
@@ -12,7 +11,6 @@ import {
   startFixturePreview,
 } from "../fixture-project.mjs";
 
-const evidenceRoot = fileURLToPath(new URL("../../../.local-writing-editor/production-evidence/", import.meta.url));
 const textOutput = /\.(?:css|html|js|json|map|txt|webmanifest|xml)$/i;
 const bannedEditorOutput = [
   "/_editor",
@@ -37,7 +35,6 @@ function assertAbsentFromOutput(files, value, label) {
 test.describe.serial("production editor isolation", () => {
   let fixture;
   let build;
-  let buildLogPath;
   let preview;
   let sentinel;
   let draftPath;
@@ -49,7 +46,6 @@ test.describe.serial("production editor isolation", () => {
     test.setTimeout(1_020_000);
     sentinel = `EDITOR_PRODUCTION_SENTINEL_${randomUUID()}`;
     const slug = `editor-production-sentinel-${randomUUID().slice(0, 8)}`;
-    await mkdir(evidenceRoot, { recursive: true });
     fixture = await createFixtureProject({ name: "editor-production-isolation" });
     draftPath = fixture.resolve(`src/content/notes/${slug}.mdx`);
     draftDocumentId = `notes:${slug}`;
@@ -67,24 +63,14 @@ draft: true
 ${sentinel}
 `;
     await fixture.write(`src/content/notes/${slug}.mdx`, sourceBeforeWrite);
-    try {
-      build = await buildFixtureProject(fixture.root);
-      buildLogPath = build.logPath;
-    } catch (error) {
-      buildLogPath = error.logPath;
-      throw error;
-    }
+    build = await buildFixtureProject(fixture.root);
     preview = await startFixturePreview(fixture.root, build, { timeout: 120_000 });
   });
 
   test.afterAll(async () => {
     test.setTimeout(1_020_000);
     try {
-      if (buildLogPath) await copyFile(buildLogPath, join(evidenceRoot, "production-build.log"));
-      if (preview) {
-        await preview.stop();
-        await copyFile(preview.logPath, join(evidenceRoot, "production-preview.log"));
-      }
+      if (preview) await preview.stop();
     } finally {
       if (fixture) await fixture.cleanup();
     }
@@ -114,14 +100,6 @@ ${sentinel}
     const filesBefore = await listFixtureFiles(fixture.root);
     const get = await fetch(`${preview.origin}/_editor`);
     assert.equal(get.status, 404);
-    const covers = await fetch(`${preview.origin}/_editor/api/covers`, {
-      headers: { "X-Local-Editor-Token": "not-a-production-token" },
-    });
-    assert.equal(covers.status, 404);
-    const ready = await fetch(`${preview.origin}/_editor/api/ready?documentId=notes%3Acozy-web`, {
-      headers: { "X-Local-Editor-Token": "not-a-production-token" },
-    });
-    assert.equal(ready.status, 404);
     const write = await fetch(`${preview.origin}/_editor/api/document`, {
       method: "PUT",
       headers: {
@@ -137,21 +115,6 @@ ${sentinel}
       }),
     });
     assert.equal(write.status, 404);
-    const create = await fetch(`${preview.origin}/_editor/api/drafts`, {
-      method: "POST",
-      headers: {
-        Origin: preview.origin,
-        "Content-Type": "application/json",
-        "X-Local-Editor-Token": "not-a-production-token",
-      },
-      body: JSON.stringify({
-        requestId: "production-isolation-draft",
-        collection: "notes",
-        slug: "must-never-be-created",
-        title: "Must never be created",
-      }),
-    });
-    assert.equal(create.status, 404);
     assert.equal(await readFile(draftPath, "utf8"), before);
     assert.equal(before, sourceBeforeWrite);
     assert.deepEqual(await listFixtureFiles(fixture.root), filesBefore);

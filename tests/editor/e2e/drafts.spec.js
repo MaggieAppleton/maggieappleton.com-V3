@@ -44,8 +44,15 @@ Existing writing is editable.\n`;
 		await expect(page.getByRole("button", { name: "New draft" })).toHaveCount(0);
 		await page.getByRole("link", { name: title }).click();
 		await page.getByRole("link", { name: "Edit" }).click();
-		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
+		const body = page.getByRole("textbox", { name: "Article body" });
+		await expect(body).toBeVisible();
 		assert.equal(await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"), source);
+		await body.click();
+		await page.keyboard.press("ControlOrMeta+End");
+		await page.keyboard.insertText(" Updated in the editor.");
+		await page.getByRole("button", { name: "Save" }).click();
+		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"))
+			.toContain("Existing writing is editable. Updated in the editor.");
 	});
 
 	test("creation endpoints are absent in development", async () => {
