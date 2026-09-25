@@ -3,7 +3,7 @@
 ## Issue 1 — Edit-mode link menu styling
 
 - **Reported:** 2026-09-25
-- **State:** Reviewed and verified; PR preparation
+- **State:** Reviewed and verified; PR open
 - **Request:** Replace the current link menu's visual design with a minimal, dark treatment using suitable shadcn components and existing icons. Reference: screenshot supplied in the issue report.
 - **Behavior:** Keep the existing actions and opening behavior; visual redesign only (confirmed by Maggie).
 - **Implementation and test owner:** Sol agent
@@ -11,7 +11,7 @@
 - **Decisions:** The current menu is MDXEditor's stock link popover. Maggie confirmed visual-only scope and approved the design spec. She chose adapted shadcn components with editor-scoped CSS over a site-wide Tailwind setup. Use a compact Button Group and a dark floating surface, matching the existing writing dock. The taller edit form uses Radix's normal collision behavior and can flip above the link. Declare Radix Popover directly because the custom view imports it. Maggie specified that PR screenshots must be uploaded through GitHub CLI and kept out of the repo; a checksum-verified task-local `gh` 2.101.0 supplies `--attach`.
 - **Problems and fixes:** MDXEditor portals the link popup outside the editor container; Sol scoped its dark styles with dedicated menu classes. The first full browser run hit a fixture setup problem because this worktree's `node_modules` was symlinked to the original checkout; Sol made a worktree-local dependency copy. A later serial browser case saw a link changed by autosave in an earlier case; each case now uses its own disposable linked draft. Initial review found a generic preview-link accessible name, clipped keyboard focus ring, lost editor focus after Save and keyboard Unlink, and an unused stock dialog-label helper. A separate Sol agent confirmed and fixed all five in `160b89f`. An earlier full rerun hit a transient Astro SSR error before editor mount; the next full rerun passed without harness changes.
 - **Verification:** After the fix, Terra and Luna re-reviewed the changed lines and found no remaining issues. The orchestrator reran `npm run test:editor` (111/111), `npm run test:editor:e2e` (9/9), `npm run build:local` (195 pages), and `git diff --check`. An initial browser run was blocked before test startup by sandbox `listen EPERM`; the same suite passed with local socket permission.
-- **PR:** Pending
+- **PR:** https://github.com/MaggieAppleton/maggieappleton.com-V3/pull/273 (four CLI-uploaded screenshots verified inline)
 
 ## Issue 2 — Selection formatting menu
 
