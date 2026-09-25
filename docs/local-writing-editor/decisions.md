@@ -5,7 +5,7 @@
 - Branch: `maggie/local-writing-editor`, starting at `a2593f37728b6ffb61231041b129622fe752acec` (current `origin/main`, 2026-09-24).
 - Approved handoff extracted and all five SHA-256 entries verified before implementation.
 - Baseline: dependency installation, all 66 existing tests, and the static build (195 pages) passed.
-- The same-root MDXEditor adapter now passes the 116-document corpus, original-component rendering, shared history, recovery, draft creation and production-isolation checks. The seven writing checks, including rapid link-key regressions, also pass. Final committed-head verification remains pending; see [verification.md](verification.md).
+- The same-root MDXEditor adapter now passes the 116-document corpus, original-component rendering, shared history, recovery, draft creation and production-isolation checks. The seven writing checks, including rapid link-key regressions, also pass. Exact final committed-head results are recorded in the PR and local handoff record; see [verification.md](verification.md).
 - Roles: Astra architecture/integration/delivery. Worker models match task complexity: Sol for harder implementation/testing/review, Terra or Luna for straightforward tasks. Workers share this isolated checkout and have separate file ownership.
 
 ## 2026-09-24 — Baseline and scope

@@ -153,11 +153,14 @@ Original synthetic note.\n`;
     const drafts = await fetch(`${server.origin}/_editor`);
     assert.equal(drafts.status, 200);
     assert.equal(drafts.headers.get("cache-control"), "no-store");
-    const noIdentity = parseBootstrap(await drafts.text());
+    const draftsHtml = await drafts.text();
+    assert.ok(draftsHtml.includes('href="/drafts"'));
+    assert.ok(draftsHtml.includes("Open drafts or start a new draft"));
+    const noIdentity = parseBootstrap(draftsHtml);
     assert.equal(noIdentity.origin, server.origin);
     assert.equal(noIdentity.token, bootstrap.token);
     assert.equal(noIdentity.documentId, null);
-    assert.ok(noIdentity.documents.some((entry) => entry.documentId === documentId));
+    assert.equal(noIdentity.document, undefined);
 
     const malformed = await apiGet(malformedDocumentId);
     assert.equal(malformed.status, 200);
