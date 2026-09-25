@@ -8,8 +8,8 @@ import { RenderedRegionContext } from "./mdx-adapter/protected-node.mjs";
 import { createEditorSession } from "./session.mjs";
 import { createSourceDocument } from "../source/document.mjs";
 import { createDocumentTransport } from "./document-transport.mjs";
-import internalLinkPreviews from "../../internal-link-previews.json";
-import { findInternalLinkPreviewByText } from "../../utils/internalLinkPreview.js";
+import { sourceForBrowserBackup } from "./backup-source.mjs";
+import { EditorDock, MountFailureDock } from "./editor-dock.mjs";
 import "./writing-editor.css";
 
 function plainTextField(element, label, onChange) {
@@ -21,11 +21,6 @@ function plainTextField(element, label, onChange) {
 		if (event.key === "Enter") event.preventDefault();
 	});
 	element.addEventListener("input", () => onChange(element.innerText));
-}
-
-function browserCopy(state) {
-	return state.conversionError || state.conversionFailed
-		? (state.engineSnapshot ?? state.source) : state.source;
 }
 
 function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
@@ -40,7 +35,6 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
 	const [protectedWarning, setProtectedWarning] = useState(null);
-	const [wikiEdit, setWikiEdit] = useState(null);
 	const sessionRef = useRef(null);
 	const transportRef = useRef(null);
 	if (!sessionRef.current) {
@@ -74,6 +68,11 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	}
 	const session = sessionRef.current;
 	const state = view ?? session.snapshot();
+	function browserCopy(copy) {
+		// Discarded records carry their own metadata; only the live snapshot gets
+		// edits still present in the title and description fields.
+		return sourceForBrowserBackup(copy, Object.hasOwn(copy, "conversionError") ? metadata : {});
+	}
 
 	function changed(completedComposition = false) {
 		const currentAdapter = adapterRef.current;
@@ -152,69 +151,53 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	}, [adapterState.key]);
 
 	article.dataset.editorLive = "true";
-	const wikiPreview = wikiEdit && findInternalLinkPreviewByText(wikiEdit.target, internalLinkPreviews);
+	function restoreRecovery(candidate) {
+		try {
+			const recoveredAdapter = createRecoveryAdapter({ candidate,
+				originalSource: boot.document.source, originalRegistry: originalRegistry.current });
+			const recovered = createSourceDocument(candidate.source).metadata;
+			session.restoreRecovery(candidate);
+			setDiscarded(session.discardedCopies());
+			for (const [key, selector] of [["title", ".title-container h1"],
+				["description", ".title-container p"]]) {
+				metadata[key] = recovered[key] ?? "";
+				const field = document.querySelector(selector);
+				if (field) field.textContent = metadata[key];
+			}
+			const key = crypto.randomUUID();
+			pendingRecoveryKey.current = key;
+			setAdapterState({ adapter: recoveredAdapter, key });
+		} catch (failure) {
+			setProtectedWarning(`Could not restore this browser version: ${failure.message}`);
+		}
+	}
+
+	async function acceptDisk(backupPrepared) {
+		const expected = { generation: state.generation, source: browserCopy(state), conflict: state.conflict };
+		if (!backupPrepared) try {
+			// A clipboard copy survives reload even when recovery storage is denied or full.
+			await navigator.clipboard.writeText(expected.source);
+		} catch {
+			setProtectedWarning("Copy or download the browser version before loading the disk.");
+			return;
+		}
+		const current = session.snapshot();
+		if (current.generation !== expected.generation || browserCopy(current) !== expected.source
+			|| current.conflict?.revision !== expected.conflict?.revision) {
+			setProtectedWarning("Writing changed while preparing a backup. Copy or download the current version before loading the disk.");
+			return;
+		}
+		session.acceptDisk(expected.conflict);
+		location.reload();
+	}
+
 	return React.createElement(RenderedRegionContext.Provider, { value: adapter.registry },
-		React.createElement("div", { className: "editor-toolbar" },
-			React.createElement("a", { href: boot.document.previewUrl }, "Preview"),
-			React.createElement("button", { type: "button", onMouseDown: (event) => event.preventDefault(),
-				onClick: () => setWikiEdit(adapter.wiki.selectedTarget() ?? { key: null, target: "" }) }, "Wiki link"),
-			React.createElement("span", { role: "status", "aria-live": "polite" }, state.status),
-			React.createElement("button", { type: "button", onClick: () => session.retry() }, "Save"),
-		),
-		wikiEdit && React.createElement("form", { className: "editor-wiki-form", onSubmit: (event) => {
-			event.preventDefault();
-			try {
-				adapter.wiki.applyTarget(wikiEdit.target, wikiEdit.key);
-				setWikiEdit(null);
-			} catch (failure) { setProtectedWarning(failure.message); }
-		} },
-			React.createElement("label", null, "Wiki target", React.createElement("input", {
-				type: "text", value: wikiEdit.target, onChange: (event) =>
-					setWikiEdit({ ...wikiEdit, target: event.target.value }), autoFocus: true,
-			})),
-			React.createElement("button", { type: "submit" }, wikiEdit.key ? "Update wiki link" : "Insert wiki link"),
-			wikiPreview && React.createElement("a", { href: wikiPreview.pathname, target: "_blank", rel: "noopener noreferrer" }, "Open target"),
-			React.createElement("button", { type: "button", onClick: () => setWikiEdit(null) }, "Cancel"),
-		),
-		protectedWarning && React.createElement("p", { role: "alert", className: "editor-protected-warning" },
-			protectedWarning),
-		recovery.length > 0 && React.createElement("div", { className: "editor-recovery" },
-			React.createElement("p", null, "Unsaved writing is available from an earlier session."),
-			recovery.map((candidate) => React.createElement("button", {
-				key: `${candidate.writerId}:${candidate.generation}`,
-				type: "button",
-				onClick: () => {
-					try {
-						const recoveredAdapter = createRecoveryAdapter({ candidate,
-							originalSource: boot.document.source, originalRegistry: originalRegistry.current });
-						const recovered = createSourceDocument(candidate.source).metadata;
-						session.restoreRecovery(candidate);
-						setDiscarded(session.discardedCopies());
-						for (const [key, selector] of [["title", ".title-container h1"],
-							["description", ".title-container p"]]) {
-							metadata[key] = recovered[key] ?? "";
-							const field = document.querySelector(selector);
-							if (field) field.textContent = metadata[key];
-						}
-						const key = crypto.randomUUID();
-						pendingRecoveryKey.current = key;
-						setAdapterState({ adapter: recoveredAdapter, key });
-					} catch (failure) {
-						setProtectedWarning(`Could not restore this browser version: ${failure.message}`);
-					}
-				},
-			}, "Recover browser version")),
-		),
-		discarded.length > 0 && React.createElement("div", { className: "editor-recovery" },
-			React.createElement("p", null, "A previous browser version is still available to copy."),
-			discarded.map((candidate) => React.createElement("div", { key: candidate.storageKey },
-				React.createElement("button", { type: "button", onClick: () =>
-					navigator.clipboard.writeText(browserCopy(candidate)) }, "Copy discarded version"),
-				React.createElement("button", { type: "button", onClick: () => {
-					session.clearDiscardedCopy(candidate);
-					setDiscarded(session.discardedCopies());
-				} }, "Forget discarded version"))),
-		),
+		React.createElement(EditorDock, { previewUrl: boot.document.previewUrl, state, recovery, discarded,
+			protectedWarning, onRestoreRecovery: restoreRecovery,
+			onClearDiscarded: (candidate) => {
+				session.clearDiscardedCopy(candidate);
+				setDiscarded(session.discardedCopies());
+			}, onAcceptDisk: acceptDisk, onRetry: () => session.retry(), sourceForBackup: browserCopy }),
 		React.createElement(MDXEditor, {
 			key: adapterState.key,
 			ref: editorRef,
@@ -232,27 +215,6 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				engineSnapshot: editorRef.current?.getMarkdown(), error: failure,
 			}),
 		}),
-		state.conflict && React.createElement("div", { className: "editor-conflict" },
-			React.createElement("p", null, "The file changed elsewhere. Loading the disk first copies your browser version to the clipboard."),
-			React.createElement("button", { type: "button", onClick: () => navigator.clipboard.writeText(browserCopy(state)) },
-				"Copy browser version"),
-			React.createElement("button", { type: "button", onClick: async () => {
-				try {
-					// A clipboard copy survives reload even when recovery storage is denied or full.
-					await navigator.clipboard.writeText(browserCopy(state));
-				} catch {
-					setProtectedWarning("Copy the browser version before loading the disk. The clipboard is unavailable.");
-					return;
-				}
-				session.acceptDisk(state.conflict);
-				location.reload();
-			} }, "Load disk version"),
-		),
-		(state.error || state.storageError) && React.createElement("div", { role: "alert", className: "editor-error" },
-			React.createElement("p", null, state.error?.message
-				?? `Recovery unavailable: ${state.storageError.message}`),
-			state.storageError && React.createElement("button", { type: "button", onClick: () =>
-				navigator.clipboard.writeText(browserCopy(state)) }, "Copy browser version")),
 	);
 }
 
@@ -266,10 +228,12 @@ export function mountWritingEditor() {
 	try {
 		adapter = createEditorAdapter({ source: boot.document.source, renderedRoot: original });
 	} catch (failure) {
-		const alert = document.createElement("p");
-		alert.role = "alert";
-		alert.textContent = `This document is read-only: ${failure.message}`;
-		original.before(alert);
+		const dockHost = document.createElement("div");
+		dockHost.id = "local-editor-dock-fallback";
+		document.body.append(dockHost);
+		createRoot(dockHost).render(React.createElement(MountFailureDock, {
+			message: failure.message, previewUrl: boot.document.previewUrl,
+		}));
 		return;
 	}
 	const metadata = {};

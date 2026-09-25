@@ -17,17 +17,19 @@ Edit the title, description, and article text in place. Paragraphs, headings, li
 
 Start a paragraph with `#` through `####`, `-`, or `>` followed by Space for a heading, list or quote. Use Tab and Shift+Tab to indent and outdent list items. Selecting an ordinary link shows its URL and an action to open it.
 
-To insert a wiki link, place the caret and choose **Wiki link**. To retarget one, select its text first. Known targets offer **Open target**. Wiki links keep their `[[target]]` syntax.
+Existing wiki links keep their `[[target]]` syntax. Wiki-link insertion and retargeting controls are not provided.
 
 Existing intro paragraphs, footnotes, and audience notes support editing their prose. Images, code blocks, tables, embeds, illustrations, and other components retain their real presentation and are protected against accidental changes. Their properties and internal content remain read-only.
 
 Autosave runs after 750 ms without an edit. **Save** or Cmd/Ctrl+S saves immediately. The status distinguishes unsaved work, an in-flight save, saved work, save failures, and a file changed elsewhere. An active writing tab keeps its editor instance through saves and server restarts. Development code changes require an intentional reload of that tab.
 
+Preview, save status and Save live in a dark pill centred 150px above the window bottom. Errors and recovery choices expand above it without moving the caret. **Details** reopens the panel; Escape closes it and returns focus to its button. Copy and download actions preserve writing when a save needs attention. Technical error details are available within the same panel.
+
 Saving body text does not change publication dates, growth stage, draft status, or version metadata. Changing a title does not rename its file.
 
 ## Conflicts and recovery
 
-If another editor or browser tab changes the file, automatic saves stop. **Load disk version** first copies your browser version to the clipboard; if that copy fails, your live writing stays open. When recovery storage is available, the discarded browser version also remains available to copy after loading the file. The editor does not merge or force-overwrite conflicting files.
+If another editor or browser tab changes the file, automatic saves stop. Copy or download your browser version before choosing **Load disk version**. Without a current backup, loading first attempts a clipboard copy; if that fails or your writing changes while copying, your live writing stays open. When recovery storage is available, the discarded browser version also remains available after loading the file. The editor does not merge or force-overwrite conflicting files.
 
 Recovery candidates are stored locally for each worktree, document, and writing tab. Reopening offers unsaved candidates and checks them against the current file. Duplicated or opener-created tabs keep separate recovery copies. Choosing a recovery copy first preserves current unsaved work as a copyable discarded version; if that preservation fails, the current editor stays open. If protected content changed on disk, recovery shows the browser copy's authored source for that region instead of the different disk rendering. A recovery-storage failure is shown explicitly; keep the tab open or export the buffer until it is saved. Browser storage belongs to the browser origin, so changing the development port may make earlier candidates unavailable at the new address.
 

@@ -81,9 +81,10 @@ Astro.response.headers.set("Cache-Control", "no-store");
 {!origin ? (
 	<Layout title="Local writing unavailable" desc="Restart locally to edit writing">
 		<section aria-label="Writing editor" class="editor-fallback">
-			<h1>Local writing is unavailable</h1>
-			<p>Restart the development server with <code>npm run dev -- --host 127.0.0.1</code> to edit writing.</p>
-			<p><a href="/drafts">View drafts</a></p>
+			<div class="editor-fallback-dock" role="alert">
+				<div class="editor-fallback-panel"><h1>Local writing is unavailable</h1><p>Restart the development server with <code>npm run dev -- --host 127.0.0.1</code> to edit writing.</p></div>
+				<div class="editor-fallback-pill"><a href="/drafts">View drafts</a></div>
+			</div>
 		</section>
 	</Layout>
 ) : entry && Content && documentRead && !renderError ? (
@@ -104,8 +105,10 @@ Astro.response.headers.set("Cache-Control", "no-store");
 		<section aria-label="Writing editor" id="local-writing-editor" class="editor-fallback">
 			{documentId ? (
 				<>
-					<h1>Writing editor</h1>
-					<p role="alert">{renderError ?? "Document unavailable"}</p>
+					<div class="editor-fallback-dock" role="alert">
+						<div class="editor-fallback-panel"><h1>Writing editor unavailable</h1><p>{renderError ?? "Document unavailable"}</p></div>
+						<div class="editor-fallback-pill"><a href="/drafts">Back to drafts</a></div>
+					</div>
 					{documentRead && <pre>{documentRead.source}</pre>}
 				</>
 			) : (
@@ -122,4 +125,13 @@ Astro.response.headers.set("Cache-Control", "no-store");
 <style>
 	.editor-fallback { max-width: 72ch; margin: var(--space-xl) auto; padding: var(--space-s); }
 	.editor-fallback pre { overflow: auto; white-space: pre-wrap; }
+	.editor-fallback-dock { position: fixed; z-index: 30; left: 50%; bottom: 150px; width: min(34rem, calc(100vw - 24px)); transform: translateX(-50%); color: white; font: 600 var(--font-size-xs) var(--font-sans); }
+	.editor-fallback-panel, .editor-fallback-pill { border: 1px solid #343841; background: linear-gradient(180deg, #13151a 0%, rgb(19 21 26 / 88%) 100%); box-shadow: 0 4px 12px rgb(19 21 26 / 30%); }
+	.editor-fallback-panel { margin-bottom: var(--space-xs); border-radius: var(--border-radius-lg); padding: var(--space-s); font-weight: 400; max-height: calc(100dvh - 220px); overflow: auto; overflow-wrap: anywhere; }
+	.editor-fallback-panel h1, .editor-fallback-panel p { margin: 0 0 var(--space-xs); color: inherit; }
+	.editor-fallback-panel h1 { font: 700 14px/1.4 var(--font-sans); }
+	.editor-fallback-panel p { font: 400 14px/1.45 var(--font-sans); }
+	.editor-fallback-panel p:last-child { margin-bottom: 0; }
+	.editor-fallback-pill { display: flex; justify-content: center; width: max-content; max-width: 100%; margin-inline: auto; border-radius: 999px; }
+	.editor-fallback-pill a { padding: .6rem .9rem; color: inherit; text-decoration: none; white-space: nowrap; }
 </style>

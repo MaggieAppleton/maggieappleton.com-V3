@@ -205,7 +205,13 @@ function renderChildren(node, entry, ledger, renderNode) {
 		} else if (sameOrder) {
 			// The original prefix already contains the exact leading whitespace.
 		}
-		const childSource = preserveUnderscoreEmphasis(renderNode(child), child, children[index + 1], ledger);
+		let childSource = preserveUnderscoreEmphasis(renderNode(child), child, children[index + 1], ledger);
+		if (node.type === "paragraph" && index === children.length - 1 && child.type === "text"
+			&& child.value.endsWith(" ")) {
+			// Markdown discards literal spaces at a paragraph end. Character references
+			// retain the spaces the editor still shows without creating a hard break.
+			childSource = childSource.replace(/ +$/u, (spaces) => "&#32;".repeat(spaces.length));
+		}
 		text += node.type === "list"
 			? contextualListItem(childSource, child, node, index, ledger)
 			: childSource;
@@ -279,10 +285,12 @@ export function serializeSourceDocument(document, { body = document.body, metada
 	const originalProtected = protectedProjection(document);
 	const newProtected = protectedProjection(reparsed);
 	if (JSON.stringify(originalProtected) !== JSON.stringify(newProtected)) {
-		throw new Error("Edited source changed protected MDX content");
+		throw Object.assign(new Error("Edited source changed protected MDX content"),
+			{ code: "MDX_PROTECTED_CONTENT_CHANGED" });
 	}
 	if (!sameSupportedStructure(body, reparsed.body)) {
-		throw new Error("Edited source changed the requested MDX structure");
+		throw Object.assign(new Error("Edited source changed the requested MDX structure"),
+			{ code: "MDX_STRUCTURE_MISMATCH" });
 	}
 	return candidate;
 }

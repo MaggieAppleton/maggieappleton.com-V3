@@ -51,7 +51,7 @@ Evidence includes `source-text-review.md`, `integration-review.md`, `recovery-in
 
 - Composition and drag/drop coverage use synthetic browser events, not a manual OS IME or native drag session. Chromium is the required baseline; the available WebKit reload/recovery smoke also passed in the focused run.
 - The recorded 27-character replacement on the long article took 104 ms including Playwright input overhead in headless Chromium. This is not a per-keystroke latency benchmark.
-- Reading views may apply typographic apostrophe transforms; editing retains authored characters. The editor toolbar intentionally adds vertical space, so visual checks compare relative article geometry.
+- Reading views may apply typographic apostrophe transforms; editing retains authored characters. The writing dock is fixed above the viewport bottom and does not add space to the article flow.
 - Active writing and draft-creation tabs omit the development feedback toolbar, whose storage errors could interrupt editor startup, and suppress Vite reloads to preserve work. Development code changes require an intentional reload. Normal preview tabs continue to update.
 - File replacement is atomic and checks revisions immediately before replacement, but is not an OS compare-and-swap against unrelated external processes. Recovery storage is browser-origin scoped; changing ports can make earlier candidates unavailable at the new origin.
 
@@ -67,3 +67,14 @@ git diff --check
 ```
 
 The production test explicitly builds and serves its isolated fixture; a nonzero build fails acceptance. `build:local` avoids webmention refresh and deployment. Final handoff also checks the available WebKit smoke, all authored-content hashes, the full Git diff, required remote checks, the tested PR head and the rendered GitHub image attachment.
+
+## Toolbar and save-error revision — 25 September 2026
+
+- All 126 editor unit tests pass, including the reproduced terminal-space serialization failure and five full-source backup cases.
+- All seven writing, sixteen recovery and three dock browser cases have passing evidence across focused runs. The combined run passed 24/25; its remaining test tried to click Save after a conflict disabled it. The corrected test verifies the disabled control and keyboard-save guard, and passes. Final dock and conversion-backup runs also pass after their last changes.
+- A separate real-engine deletion/export/reopen regression passes. Its source-level counterpart proves the original failing path; the browser gesture replaces the paragraph identity and is complementary coverage.
+- The new recovery checks verify download contents, clipboard denial, edits after downloading, and edits during an asynchronous clipboard copy. Conversion backups include frontmatter, current valid metadata, and the raw unsaved body.
+- The production build passes with 195 pages, and all 26 normal-page HTML checks pass. Whitespace checks are clean. The pre-existing user edit to `reverse-outline.mdx` retains its starting hash and is excluded from these commits.
+- GPT-6 Sol handled the source fix, GPT-5.6 Terra implemented the dock, and an independent GPT-6 Luna review found no substantive remaining issues after fixes.
+
+Current evidence is under `.local-writing-editor/toolbar-revision/`: `unit.log`, `final-browser.json`, `final-conflict.json`, `final-dock.json`, `final-conversion.json`, `build.log`, `html.log`, and `toolbar-pr-preview.png`. The source-browser run used the list reporter and has passing command output in the task transcript rather than a JSON report. Earlier failed exploratory fixtures are retained separately in its `source/` directory.

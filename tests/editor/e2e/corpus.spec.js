@@ -31,6 +31,11 @@ const syntheticSources = {
     "---", "title: Mixed wiki", "type: note", "---", "",
     "A literal \\[[same]] sits beside real [[same]].", "",
   ].join("\n"),
+  "synthetic/deleted-nested-marks.mdx": [
+    "---", "title: Nested marks", "type: note", "---", "",
+    "Opening paragraph.", "",
+    "A [Miro](https://miro.com/) or [Mural](https://mural.co/) link. Can I **bold and *italics***\u00a0things?\u00a0", "",
+  ].join("\n"),
 };
 
 const harnessPage = `---
@@ -123,6 +128,7 @@ const harnessPage = `---
 
   window.corpusHarness = {
     load,
+    replaceSource: (path, source) => { entries[path] = source; },
     exportBody: () => adapter.exportBody(),
     exportSource: () => adapter.exportSource(),
     insertEdit: () => editorRef.current.insertMarkdown("\\n\\nCorpus engine edit."),
@@ -380,6 +386,55 @@ test.describe.serial("actual engine corpus", () => {
     assert.ok(result.source.includes("x[same]]"), "edited literal text disappeared");
     assert.ok(result.source.includes("real [[same]]"), "adjacent real wiki link changed");
     await compile(result.source, { remarkPlugins: [[remarkFrontmatter, ["yaml"]], remarkGfm] });
+  });
+
+  test("deleting nested bold and italic text after links preserves terminal spaces", async ({ page }) => {
+    test.setTimeout(120_000);
+    const path = "synthetic/deleted-nested-marks.mdx";
+    const original = syntheticSources[path];
+    assert.equal((await page.goto(`${server.origin}/corpus-harness`, { waitUntil: "domcontentloaded" })).status(), 200);
+    await page.waitForFunction(() => Boolean(window.corpusHarness));
+    assert.equal(await page.evaluate((value) => window.corpusHarness.load(value), path), original);
+    const deletedLength = await page.evaluate(() => {
+      const paragraph = [...document.querySelectorAll('#corpus-editor-root [contenteditable="true"] p')]
+        .find((node) => node.textContent.includes("Can I bold and italics"));
+      if (!paragraph) throw new Error("Missing nested-mark paragraph");
+      const start = paragraph.textContent.indexOf(" Can I ");
+      if (start < 0) throw new Error("Missing text before nested marks");
+      const range = document.createRange();
+      range.selectNodeContents(paragraph);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return paragraph.textContent.length - start;
+    });
+    for (let index = 0; index < deletedLength; index++) await page.keyboard.press("Backspace");
+    for (let index = 0; index < 3; index++) await page.keyboard.press("Space");
+    await page.waitForFunction(() => !document.querySelector('#corpus-editor-root [contenteditable="true"]')
+      ?.textContent.includes("Can I bold and italics"));
+    const edited = await page.evaluate(() => {
+      const body = window.corpusHarness.exportBody();
+      const paragraph = body.children.find((node) => node.type === "paragraph"
+        && node.children.some((child) => child.type === "link"));
+      return paragraph?.children.at(-1)?.value;
+    });
+    assert.equal(edited, " link.   ");
+    const result = await page.evaluate(() => {
+      try { return { source: window.corpusHarness.exportSource() }; }
+      catch (error) { return { error: String(error.stack ?? error), body: window.corpusHarness.exportBody() }; }
+    });
+    assert.equal(result.error, undefined, result.error);
+    assert.ok(result.source.includes("link."));
+    assert.ok(!result.source.includes("Can I **bold and *italics***"));
+    const reopened = createSourceDocument(result.source);
+    const paragraph = reopened.body.children.find((node) => node.type === "paragraph"
+      && node.children.some((child) => child.type === "link"));
+    assert.equal(paragraph.children.at(-1).value, " link.   ");
+    await page.evaluate(({ path, source }) => window.corpusHarness.replaceSource(path, source),
+      { path, source: result.source });
+    assert.equal(await page.evaluate((value) => window.corpusHarness.load(value), path), result.source,
+      "reopening the saved source must preserve all bytes");
   });
 
   test("baseline timing and component-only essays survive focused real-editor edits", async ({ page }) => {

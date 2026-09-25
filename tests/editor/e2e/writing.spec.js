@@ -152,6 +152,7 @@ test.describe.serial("writing commands on a synthetic draft", () => {
         previewPath: `/${slug}`,
         sourcePath: fixture.resolve(`src/content/notes/${slug}.mdx`),
       };
+      const authoredWikiLink = name === "links" ? "\nExisting [[AI Rent]] link.\n" : "";
       await fixture.write(`src/content/notes/${slug}.mdx`, `---
 title: Writing fixture
 description: A synthetic writing test draft.
@@ -165,6 +166,7 @@ draft: true
 First editable paragraph.
 
 Second editable paragraph.
+${authoredWikiLink}
 `);
     }
     server = await startFixtureServer(fixture.root, { timeout: 120_000 });
@@ -287,7 +289,7 @@ Second editable paragraph.
     await expect.poll(() => readFile(sourcePath, "utf8")).toContain(`[Immediate backspace text](${target})`);
   });
 
-  test("edits links and inserts then retargets styled wiki links", async ({ page }) => {
+  test("edits ordinary links while preserving authored wiki links", async ({ page }) => {
     test.setTimeout(240_000);
     const { documentId, previewPath, sourcePath } = documents.links;
     const body = await openEditor(page, server.origin, documentId);
@@ -305,6 +307,8 @@ Second editable paragraph.
     await linkDialog.getByRole("button", { name: "Set URL", exact: true }).click();
     const ordinaryLink = body.locator(`a[href="${ordinaryLinkTarget}"]`);
     await expect(ordinaryLink).toContainText("Ordinary link text.");
+    const wiki = body.locator(".editor-wiki-link");
+    await expect(wiki).toContainText("[[AI Rent]]");
     await save(page);
     await expect.poll(() => readFile(sourcePath, "utf8")).toContain(`[Ordinary link text.](${ordinaryLinkTarget})`);
     await ordinaryLink.click();
@@ -318,51 +322,9 @@ Second editable paragraph.
     await expect(ordinaryTargetPage).toHaveURL(/\/cozy-web$/);
     await ordinaryTargetPage.close();
 
-    await moveCaretToEnd(ordinaryLink);
-    await expect.poll(() => ordinaryLink.evaluate((element) => {
-      const selection = window.getSelection();
-      if (!selection?.isCollapsed || !selection.anchorNode) return false;
-      const node = selection.anchorNode.nodeType === Node.TEXT_NODE
-        ? selection.anchorNode.parentElement
-        : selection.anchorNode;
-      return node?.closest?.("a") === element;
-    })).toBe(true);
-    await page.keyboard.press("Enter");
-    await page.keyboard.insertText("Wiki insertion point.");
-    await expect(body.locator("p").last()).toHaveText("Wiki insertion point.");
-    await expect(ordinaryLink).toContainText("Ordinary link text.");
-    await expect.poll(() => body.evaluate((element) => {
-      const selection = window.getSelection();
-      if (!selection?.isCollapsed || !selection.anchorNode) return false;
-      const node = selection.anchorNode.nodeType === Node.TEXT_NODE
-        ? selection.anchorNode.parentElement
-        : selection.anchorNode;
-      return node?.parentElement?.closest("p")?.textContent === "Wiki insertion point."
-        || node?.closest?.("p")?.textContent === "Wiki insertion point.";
-    })).toBe(true);
-    await page.getByRole("button", { name: "Wiki link" }).click();
-    await page.getByRole("textbox", { name: "Wiki target" }).fill("Cozy Web");
-    const openTarget = page.getByRole("link", { name: "Open target" });
-    await expect(openTarget).toHaveAttribute("href", "/cozy-web");
-    const [targetPage] = await Promise.all([
-      page.waitForEvent("popup"),
-      openTarget.click(),
-    ]);
-    await targetPage.waitForLoadState("domcontentloaded");
-    await expect(targetPage).toHaveURL(/\/cozy-web$/);
-    await targetPage.close();
-    await page.getByRole("button", { name: "Insert wiki link" }).click();
-    const wiki = body.locator(".editor-wiki-link");
-    await expect(wiki).toContainText("[[Cozy Web]]");
-    await wiki.click();
-    await page.getByRole("button", { name: "Wiki link" }).click();
-    await page.getByRole("textbox", { name: "Wiki target" }).fill("AI Rent");
-    await page.getByRole("button", { name: "Update wiki link" }).click();
-    await expect(wiki).toContainText("[[AI Rent]]");
-
     await save(page);
     await expect.poll(() => readFile(sourcePath, "utf8")).toContain(`[Ordinary link text.](${ordinaryLinkTarget})`);
-    await expect.poll(() => readFile(sourcePath, "utf8")).toMatch(/Wiki insertion point\.[\s\S]*\[\[AI Rent\]\]/);
+    await expect.poll(() => readFile(sourcePath, "utf8")).toContain("Existing [[AI Rent]] link.");
     await page.goto(`${server.origin}${previewPath}`, { waitUntil: "domcontentloaded" });
     await expect(page.locator(`article a[href="${ordinaryLinkTarget}"]`)).toContainText("Ordinary link text.");
     await expect(page.locator("article")).toContainText("AI Rent");
@@ -429,10 +391,6 @@ Second editable paragraph.
     });
     const preview = page.getByRole("link", { name: "Preview" });
     await preview.focus();
-    await page.keyboard.press("Tab");
-    const wikiLinkButton = page.getByRole("button", { name: "Wiki link" });
-    await expect(wikiLinkButton).toBeFocused();
-    await expect(wikiLinkButton).toHaveCSS("outline-style", "solid");
     await page.keyboard.press("Tab");
     const saveButton = page.getByRole("button", { name: "Save" });
     await expect(saveButton).toBeFocused();

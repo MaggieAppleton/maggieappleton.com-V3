@@ -384,7 +384,8 @@ test.describe("live save recovery", () => {
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await expect(page.getByRole("status")).toHaveText("File changed elsewhere");
     await replaceParagraph(page, "New browser writing after the outside change.");
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+    await page.keyboard.press("ControlOrMeta+s");
     await expect(page.getByRole("status")).toHaveText("File changed elsewhere");
     expect(await readFile(documents.outside.path, "utf8")).toBe(outsideSource);
     await expect(page.getByRole("textbox", { name: "Article body" })).toContainText("New browser writing after the outside change.");
@@ -466,7 +467,6 @@ test.describe("live save recovery", () => {
         await writeFile(documents.storage.path, outsideSource);
         await page.evaluate(() => window.dispatchEvent(new Event("focus")));
         await expect(page.getByRole("status")).toHaveText("File changed elsewhere");
-        const originalCopy = await page.evaluateHandle(() => navigator.clipboard.writeText.bind(navigator.clipboard));
         await page.evaluate(() => {
           navigator.clipboard.writeText = async () => { throw new DOMException("Clipboard denied", "NotAllowedError"); };
         });
@@ -474,10 +474,39 @@ test.describe("live save recovery", () => {
         await expect(page.getByRole("textbox", { name: "Article body" })).toContainText(browserText);
         await expect(page.getByRole("status")).toHaveText("File changed elsewhere");
         expect(await readFile(documents.storage.path, "utf8")).toBe(outsideSource);
-        await page.evaluate((original) => { navigator.clipboard.writeText = original; }, originalCopy);
+        await expect(page.getByRole("button", { name: "Copy browser version", exact: true })).toHaveCount(1);
+        await expect(page.getByRole("button", { name: "Download backup", exact: true })).toHaveCount(1);
+        await expect(page.getByRole("button", { name: "Retry save", exact: true })).toHaveCount(0);
+        const downloadBackup = async (expectedText) => {
+          const downloaded = page.waitForEvent("download");
+          await page.getByRole("button", { name: "Download backup", exact: true }).click();
+          const backup = await downloaded;
+          expect(await readFile(await backup.path(), "utf8")).toContain(expectedText);
+        };
+        await downloadBackup(browserText);
+        const newerText = "New writing after the first backup.";
+        await replaceParagraph(page, newerText);
+        await page.getByRole("button", { name: "Load disk version", exact: true }).click();
+        await expect(page.getByRole("textbox", { name: "Article body" })).toContainText(newerText);
+
+        // A pending clipboard permission must not authorize discarding later typing.
+        await page.evaluate(() => {
+          navigator.clipboard.writeText = () => new Promise((resolve) => { window.finishBackup = resolve; });
+        });
+        await page.getByRole("button", { name: "Load disk version", exact: true }).click();
+        await expect.poll(() => page.evaluate(() => typeof window.finishBackup)).toBe("function");
+        const latestText = "Latest writing typed while the clipboard was pending.";
+        await replaceParagraph(page, latestText);
+        await page.evaluate(() => window.finishBackup());
+        await expect(page.getByText("Writing changed while preparing a backup.", { exact: false })).toBeVisible();
+        await expect(page.getByRole("textbox", { name: "Article body" })).toContainText(latestText);
+        await page.evaluate(() => {
+          navigator.clipboard.writeText = async () => { throw new DOMException("Clipboard denied", "NotAllowedError"); };
+        });
+        await downloadBackup(latestText);
         await leave(page, () => page.getByRole("button", { name: "Load disk version", exact: true }).click());
         await expect(page.getByRole("textbox", { name: "Article body" })).toContainText("A newer outside disk version.");
-        expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(browserText);
+        expect(await readFile(documents.storage.path, "utf8")).toBe(outsideSource);
       }
     });
   }
@@ -491,6 +520,13 @@ test.describe("live save recovery", () => {
     await expect(page.getByRole("status")).toHaveText("Couldn't save");
     await expect(page.getByRole("alert")).toContainText("Controlled fixture conversion failure");
     expect(await readFile(documents.conversion.path, "utf8")).toBe(initialSource("Recovery conversion"));
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill("Title kept in the backup");
+    const downloaded = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download backup", exact: true }).click();
+    const backup = await readFile(await (await downloaded).path(), "utf8");
+    expect(backup).toContain('title: "Title kept in the backup"');
+    expect(backup).toContain("description: Original description.");
+    expect(backup).toContain(newerText.replaceAll("_", "\\_"));
     await leave(page, () => page.reload());
     await expect(page.getByRole("button", { name: "Recover browser version" })).toHaveCount(1);
     await page.getByRole("button", { name: "Recover browser version" }).click();

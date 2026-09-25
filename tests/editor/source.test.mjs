@@ -127,6 +127,24 @@ test("preserves inline formatting, links, wiki targets, and supported audience p
   );
 });
 
+test("deleting nested marks can leave three literal spaces at a paragraph end", () => {
+  const fixture = [
+    "---", 'title: "Nested marks"', "type: note", "---", "",
+    "A [Miro](https://miro.com/) or [Mural](https://mural.co/) link. Can I **bold and *italics***\u00a0things?\u00a0", "",
+    "Keep\u00a0NBSP  ", "and a hard break.", "",
+  ].join("\n");
+  const document = createSourceDocument(fixture);
+  const body = structuredClone(document.body);
+  const paragraph = nodesMatching(body, (node) => node.type === "paragraph")[0];
+  paragraph.children.at(-3).value = " link.   ";
+  paragraph.children.splice(-2, 2);
+
+  const candidate = serializeSourceDocument(document, { body });
+  assert.equal(candidate, fixture.replace(" Can I **bold and *italics***\u00a0things?\u00a0", "&#32;&#32;&#32;"));
+  assert.equal(nodesMatching(createSourceDocument(candidate).body, (node) => node.type === "paragraph")[0]
+    .children.at(-1).value, " link.   ");
+});
+
 test("accepts unchanged link semantics when editor object keys arrive in a different order", () => {
   const fixture = source.replace(
     "Repeated paragraph.\n\nRepeated paragraph.",

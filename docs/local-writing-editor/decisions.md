@@ -149,3 +149,15 @@ An expanded WebKit recovery check reproduced a rapid-save/reload race: the boots
 The local route now waits for the current file, Astro entry, and compiled article fingerprint to agree, rereading the file before accepting the result. It resolves `astro:content` through a fresh public import on each attempt because a static import can retain the earlier data-store snapshot. The existing development-only remark plugin supplies the compiled-source fingerprint. Both sides hash the exact MDX compiler input from the public `@astrojs/markdown-remark` parser, preserving whitespace and frontmatter padding that determine protected-region offsets; trimming those bytes would hide a blank-line-only mismatch. The wait is bounded; a mismatch shows a reloadable message instead of mounting inconsistent content. No content-refresh bridge or private cache mutation is used.
 
 The regression checks rendered title, description, prose, and the protected marker after saving, then reloads into a working editor. The first WebKit failure and diagnostic probes are retained under `.local-writing-editor/recovery-fixes/`.
+
+### Paragraph-end spaces after deleting formatting
+
+Deleting nested bold and italic prose left three ASCII spaces at a paragraph's end. The source-preserving serializer emitted them literally, but Markdown parsing discarded them. The strict structure comparison therefore rejected an otherwise valid edit with “Edited source changed the requested MDX structure.” This was a conversion bug, not invalid writing.
+
+Changed paragraphs now encode terminal text spaces as character references. Their decoded text survives parsing without introducing a hard break; unchanged source, nonbreaking spaces and authored hard breaks retain their bytes. The source regression reproduces the original failure before the fix. A separate real-editor test covers deleting formatted text, exporting, and reopening; the engine replaces that fixture's paragraph identity, so the source regression remains the direct proof of the failing path.
+
+### Docked controls and recovery
+
+Editor controls live in a fixed dark pill 150px above the viewport bottom. Its details panel opens upward for errors, conflicts and recovery without taking focus from writing. Errors use actionable copy, with technical details available in the same panel. Wiki-link authoring controls are removed; existing wiki links remain supported.
+
+Loading a conflicting disk version requires a copy or download of the current browser version. Backup authorization matches its source and edit generation. The clipboard fallback rechecks live state after the asynchronous copy, so edits made while permission is pending cannot be silently discarded.
