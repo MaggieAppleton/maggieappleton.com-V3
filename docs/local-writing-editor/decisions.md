@@ -158,6 +158,6 @@ Changed paragraphs now encode terminal text spaces as character references. Thei
 
 ### Docked controls and recovery
 
-Editor controls live in a fixed dark pill 150px above the viewport bottom. Its details panel opens upward for errors, conflicts and recovery without taking focus from writing. Errors use actionable copy, with technical details available in the same panel. Wiki-link authoring controls are removed; existing wiki links remain supported.
+Editor controls live in a fixed dark pill 90px above the viewport bottom. Its details panel opens upward for errors, conflicts and recovery without taking focus from writing. Errors use actionable copy, with technical details available in the same panel. Wiki-link authoring controls are removed; existing wiki links remain supported.
 
 Loading a conflicting disk version requires a copy or download of the current browser version. Backup authorization matches its source and edit generation. The clipboard fallback rechecks live state after the asynchronous copy, so edits made while permission is pending cannot be silently discarded.

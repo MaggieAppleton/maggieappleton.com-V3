@@ -23,7 +23,7 @@ Existing intro paragraphs, footnotes, and audience notes support editing their p
 
 Autosave runs after 750 ms without an edit. **Save** or Cmd/Ctrl+S saves immediately. The status distinguishes unsaved work, an in-flight save, saved work, save failures, and a file changed elsewhere. An active writing tab keeps its editor instance through saves and server restarts. Development code changes require an intentional reload of that tab.
 
-Preview, save status and Save live in a dark pill centred 150px above the window bottom. Errors and recovery choices expand above it without moving the caret. **Details** reopens the panel; Escape closes it and returns focus to its button. Copy and download actions preserve writing when a save needs attention. Technical error details are available within the same panel.
+Preview, save status and Save live in a dark pill centred 90px above the window bottom. Errors and recovery choices expand above it without moving the caret. **Details** reopens the panel; Escape closes it and returns focus to its button. Copy and download actions preserve writing when a save needs attention. Technical error details are available within the same panel.
 
 Saving body text does not change publication dates, growth stage, draft status, or version metadata. Changing a title does not rename its file.
 

@@ -57,7 +57,7 @@ test.describe.serial("writing editor dock", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const box = await dock.boundingBox();
     expect(box).not.toBeNull();
-    expect(844 - (box.y + box.height)).toBeCloseTo(150, 0);
+    expect(844 - (box.y + box.height)).toBeCloseTo(90, 0);
     const mobileShot = testInfo.outputPath("dock-normal-mobile.png");
     await page.screenshot({ path: mobileShot });
     await testInfo.attach("dock-normal-mobile.png", { path: mobileShot, contentType: "image/png" });
@@ -112,7 +112,7 @@ test.describe.serial("writing editor dock", () => {
     await expect(dock).toContainText("Writing editor unavailable");
     const box = await dock.boundingBox();
     expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(844 - (box.y + box.height)).toBeCloseTo(150, 0);
+    expect(844 - (box.y + box.height)).toBeCloseTo(90, 0);
     await expect(dock.getByRole("link", { name: "Back to drafts" })).toBeVisible();
   });
 
