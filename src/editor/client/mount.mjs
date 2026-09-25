@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { MDXEditor } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
 import { createEditorAdapter } from "./mdx-adapter/editor-adapter.mjs";
+import { createRecoveryAdapter } from "./mdx-adapter/recovery-adapter.mjs";
 import { RenderedRegionContext } from "./mdx-adapter/protected-node.mjs";
 import { createEditorSession } from "./session.mjs";
 import { createSourceDocument } from "../source/document.mjs";
@@ -27,8 +28,14 @@ function browserCopy(state) {
 		? (state.engineSnapshot ?? state.source) : state.source;
 }
 
-function WritingEditor({ article, adapter, boot, metadata }) {
+function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const editorRef = useRef(null);
+	const [adapterState, setAdapterState] = useState({ adapter: initialAdapter, key: "initial" });
+	const adapter = adapterState.adapter;
+	const adapterRef = useRef(adapter);
+	adapterRef.current = adapter;
+	const originalRegistry = useRef(initialAdapter.registry);
+	const pendingRecoveryKey = useRef(null);
 	const [view, setView] = useState(null);
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
@@ -36,19 +43,11 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 	const [wikiEdit, setWikiEdit] = useState(null);
 	const sessionRef = useRef(null);
 	const transportRef = useRef(null);
-	const changeSeen = useRef(false);
 	if (!sessionRef.current) {
-		const writerKey = "local-writing-editor-writer";
-		let writerId;
-		try {
-			writerId = sessionStorage.getItem(writerKey);
-			if (!writerId) {
-				writerId = crypto.randomUUID();
-				sessionStorage.setItem(writerKey, writerId);
-			}
-		} catch {
-			writerId = crypto.randomUUID();
-		}
+		// sessionStorage is copied into opener-created and duplicated tabs. A fresh
+		// writer for each mount keeps their unsaved records independent; reloads
+		// discover the previous record through recoveryCandidates().
+		const writerId = crypto.randomUUID();
 		transportRef.current = createDocumentTransport({ boot,
 			onDisk: (current) => sessionRef.current?.observeDisk(current),
 			onReconnect: () => {
@@ -66,8 +65,9 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 			writerId,
 			onState: setView,
 			async save(request) {
+				const submittedAdapter = adapterRef.current;
 				const result = await transportRef.current.save(request);
-				adapter.acknowledgeSource(request.source);
+				if (adapterRef.current === submittedAdapter) submittedAdapter.acknowledgeSource(request.source);
 				return result;
 			},
 		});
@@ -76,10 +76,11 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 	const state = view ?? session.snapshot();
 
 	function changed(completedComposition = false) {
-		changeSeen.current = true;
+		const currentAdapter = adapterRef.current;
 		try {
-			const candidate = adapter.exportSource(metadata);
-			const options = { engineSnapshot: editorRef.current?.getMarkdown() };
+			const candidate = currentAdapter.exportSource(metadata);
+			const options = { engineSnapshot: editorRef.current?.getMarkdown(),
+				renderedRegionKeys: currentAdapter.recoveryRegionKeys() };
 			if (completedComposition) session.compositionEnd(candidate, options);
 			else session.edit(candidate, options);
 		} catch (failure) {
@@ -88,15 +89,6 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 	}
 	useEffect(() => {
 		transportRef.current.startObserving();
-		let baselineFrame;
-		const captureReadyBaseline = () => {
-			if (changeSeen.current || adapter.baselineReady()) return;
-			if (article.querySelector('.editor-body[contenteditable="true"]')) {
-				try { adapter.captureBaseline(); } catch { /* The root is still importing. */ }
-			}
-			if (!adapter.baselineReady()) baselineFrame = requestAnimationFrame(captureReadyBaseline);
-		};
-		baselineFrame = requestAnimationFrame(captureReadyBaseline);
 		const metadataChanged = () => changed();
 		let warningTimer;
 		const blockedProtectedEdit = (event) => {
@@ -129,7 +121,6 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 		setDiscarded(session.discardedCopies());
 		return () => {
 			transportRef.current.stopObserving();
-			cancelAnimationFrame(baselineFrame);
 			window.removeEventListener("local-editor-metadata-change", metadataChanged);
 			window.removeEventListener("local-editor-protected-edit", blockedProtectedEdit);
 			clearTimeout(warningTimer);
@@ -140,6 +131,25 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 			session.dispose();
 		};
 	}, []);
+	useEffect(() => {
+		let baselineFrame;
+		const captureReadyBaseline = () => {
+			const currentAdapter = adapterRef.current;
+			if (currentAdapter.baselineReady()) {
+				if (pendingRecoveryKey.current === adapterState.key) {
+					pendingRecoveryKey.current = null;
+					setRecovery([]);
+				}
+				return;
+			}
+			if (article.querySelector('.editor-body[contenteditable="true"]')) {
+				try { currentAdapter.captureBaseline(); } catch { /* The root is still importing. */ }
+			}
+			baselineFrame = requestAnimationFrame(captureReadyBaseline);
+		};
+		baselineFrame = requestAnimationFrame(captureReadyBaseline);
+		return () => cancelAnimationFrame(baselineFrame);
+	}, [adapterState.key]);
 
 	article.dataset.editorLive = "true";
 	const wikiPreview = wikiEdit && findInternalLinkPreviewByText(wikiEdit.target, internalLinkPreviews);
@@ -174,18 +184,23 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 				key: `${candidate.writerId}:${candidate.generation}`,
 				type: "button",
 				onClick: () => {
-					session.restoreRecovery(candidate);
 					try {
+						const recoveredAdapter = createRecoveryAdapter({ candidate,
+							originalSource: boot.document.source, originalRegistry: originalRegistry.current });
 						const recovered = createSourceDocument(candidate.source).metadata;
+						session.restoreRecovery(candidate);
 						for (const [key, selector] of [["title", ".title-container h1"],
 							["description", ".title-container p"]]) {
 							metadata[key] = recovered[key] ?? "";
 							const field = document.querySelector(selector);
 							if (field) field.textContent = metadata[key];
 						}
-					} catch { /* Keep the raw recovery source available if parsing fails. */ }
-					if (typeof candidate.engineSnapshot === "string") editorRef.current?.setMarkdown(candidate.engineSnapshot);
-					setRecovery([]);
+						const key = crypto.randomUUID();
+						pendingRecoveryKey.current = key;
+						setAdapterState({ adapter: recoveredAdapter, key });
+					} catch (failure) {
+						setProtectedWarning(`Could not restore this browser version: ${failure.message}`);
+					}
 				},
 			}, "Recover browser version")),
 		),
@@ -200,6 +215,7 @@ function WritingEditor({ article, adapter, boot, metadata }) {
 				} }, "Forget discarded version"))),
 		),
 		React.createElement(MDXEditor, {
+			key: adapterState.key,
 			ref: editorRef,
 			markdown: adapter.markdown,
 			plugins: adapter.plugins,
@@ -283,9 +299,10 @@ export function mountWritingEditor() {
 	const observer = new MutationObserver(() => {
 		const element = body();
 		if (element) {
-			element.setAttribute("role", "textbox");
-			element.setAttribute("aria-label", "Article body");
-			observer.disconnect();
+			if (element.getAttribute("role") !== "textbox") element.setAttribute("role", "textbox");
+			if (element.getAttribute("aria-label") !== "Article body") {
+				element.setAttribute("aria-label", "Article body");
+			}
 		}
 	});
 	observer.observe(original, { childList: true, subtree: true });

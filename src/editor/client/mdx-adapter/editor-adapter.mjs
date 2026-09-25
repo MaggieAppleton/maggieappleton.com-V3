@@ -1,8 +1,8 @@
 import { headingsPlugin, jsxPlugin, linkDialogPlugin, linkPlugin, listsPlugin, markdownShortcutPlugin, quotePlugin } from "@mdxeditor/editor";
 import { createSourceDocument, serializeSourceDocument } from "../../source/document.mjs";
-import { identityOf, sameSemantic, semanticFingerprint } from "../../source/source-ledger.mjs";
+import { identityOf, isProtected, sameSemantic, semanticFingerprint } from "../../source/source-ledger.mjs";
 import { frontmatterPatches } from "../../source/frontmatter.mjs";
-import { createRenderedRegionRegistry } from "../../rendering/rendered-regions.mjs";
+import { createRenderedRegionRegistry, sourceRegionKey } from "../../rendering/rendered-regions.mjs";
 import { createIdentityAdapter } from "./identity-adapter.mjs";
 import { createProtectedPlugin, ProtectedNode } from "./protected-node.mjs";
 import { createWritingJsxPlugin, WritingJsxNode } from "./writing-jsx-node.mjs";
@@ -15,13 +15,15 @@ import { createLinkDialogLabelPlugin } from "./link-dialog-label.mjs";
 import { createKeyboardSelectionSyncPlugin } from "./selection-sync.mjs";
 
 /** One production adapter for the live page and the actual-engine corpus harness. */
-export function createEditorAdapter({ source, renderedRoot = null }) {
+export function createEditorAdapter({ source, renderedRoot = null, renderedRegistry = null,
+	renderedRegionKeys = null }) {
 	const sourceDocument = createSourceDocument(source);
 	const bodyOffset = sourceDocument.body.children[0]?.position?.start?.offset ?? source.length;
 	const identity = createIdentityAdapter(sourceDocument, bodyOffset);
 	const wiki = createWikiLinkPlugin(sourceDocument, bodyOffset);
-	const registry = renderedRoot ? createRenderedRegionRegistry(renderedRoot) : null;
+	const registry = renderedRegistry ?? (renderedRoot ? createRenderedRegionRegistry(renderedRoot) : null);
 	let acknowledgedDocument = sourceDocument;
+	let lastRecoveryRegionKeys = null;
 	const original = new Map();
 	const baseline = new Map();
 	function visit(node, fn) {
@@ -65,7 +67,8 @@ export function createEditorAdapter({ source, renderedRoot = null }) {
 		return restoreUnchanged(body);
 	}
 	function exportSource(metadataPatch = {}) {
-		const bodySource = serializeSourceDocument(sourceDocument, { body: exportBody() });
+		const body = exportBody();
+		const bodySource = serializeSourceDocument(sourceDocument, { body });
 		let metadataSource = acknowledgedDocument.source;
 		for (const patch of frontmatterPatches(acknowledgedDocument.frontmatter, metadataPatch)
 			.sort((a, b) => b.start - a.start)) {
@@ -74,7 +77,29 @@ export function createEditorAdapter({ source, renderedRoot = null }) {
 		const metadataDocument = createSourceDocument(metadataSource);
 		const currentFrontmatterEnd = metadataDocument.frontmatter.region.closingStart + 3;
 		const initialFrontmatterEnd = sourceDocument.frontmatter.region.closingStart + 3;
-		return metadataSource.slice(0, currentFrontmatterEnd) + bodySource.slice(initialFrontmatterEnd);
+		const candidate = metadataSource.slice(0, currentFrontmatterEnd) + bodySource.slice(initialFrontmatterEnd);
+		const recovered = createSourceDocument(candidate);
+		const authoredProtected = [];
+		function collectProtected(node) {
+			if (isProtected(node)) {
+				if (node.type !== "mdxjsEsm") authoredProtected.push(node);
+				return;
+			}
+			for (const child of node.children ?? []) collectProtected(child);
+		}
+		collectProtected(body);
+		const recoveredProtected = [...recovered.ledger.nodes.values()].filter((entry) =>
+			entry.protected && entry.type !== "mdxjsEsm");
+		if (authoredProtected.length !== recoveredProtected.length) {
+			throw new Error("Cannot match protected regions in the recovery source");
+		}
+		lastRecoveryRegionKeys = Object.fromEntries(recoveredProtected.map((entry, index) => {
+			const originalEntry = sourceDocument.ledger.nodes.get(identityOf(authoredProtected[index]));
+			if (!originalEntry) throw new Error("Cannot identify a protected recovery region");
+			const localKey = sourceRegionKey(originalEntry);
+			return [sourceRegionKey(entry), renderedRegionKeys?.[localKey] ?? localKey];
+		}));
+		return candidate;
 	}
 	return {
 		sourceDocument,
@@ -98,6 +123,7 @@ export function createEditorAdapter({ source, renderedRoot = null }) {
 		baselineReady: () => baseline.size > 0,
 		exportBody,
 		exportSource,
+		recoveryRegionKeys: () => lastRecoveryRegionKeys,
 		wiki: { selectedTarget: wiki.selectedTarget, applyTarget: wiki.applyTarget },
 		acknowledgeSource(source) { acknowledgedDocument = createSourceDocument(source); },
 	};

@@ -29,7 +29,7 @@ Saving body text does not change publication dates, growth stage, draft status, 
 
 If another editor or browser tab changes the file, automatic saves stop. **Load disk version** first copies your browser version to the clipboard; if that copy fails, your live writing stays open. When recovery storage is available, the discarded browser version also remains available to copy after loading the file. The editor does not merge or force-overwrite conflicting files.
 
-Recovery candidates are stored locally for each worktree, document, and writing tab. Reopening offers unsaved candidates and checks them against the current file. A recovery-storage failure is shown explicitly; keep the tab open or export the buffer until it is saved. Browser storage belongs to the browser origin, so changing the development port may make earlier candidates unavailable at the new address.
+Recovery candidates are stored locally for each worktree, document, and writing tab. Reopening offers unsaved candidates and checks them against the current file. Duplicated or opener-created tabs keep separate recovery copies. If protected content changed on disk, recovery shows the browser copy's authored source for that region instead of the different disk rendering. A recovery-storage failure is shown explicitly; keep the tab open or export the buffer until it is saved. Browser storage belongs to the browser origin, so changing the development port may make earlier candidates unavailable at the new address.
 
 ## New drafts
 

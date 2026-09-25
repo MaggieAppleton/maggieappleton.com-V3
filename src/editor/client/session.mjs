@@ -26,6 +26,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	let acknowledgedSource = source;
 	let baseRevision = revision;
 	let engineSnapshot;
+	let renderedRegionKeys;
 	let generation = 0;
 	let acknowledgedGeneration = 0;
 	let status = "Saved";
@@ -50,7 +51,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			generation, acknowledgedGeneration, conflict, error, storageError,
 			recoveryAvailable: !storageError, discardedCopy,
 			inFlight: inFlight ? { ...inFlight.request } : null, uncertain: Boolean(uncertain), composing,
-			engineSnapshot, conversionError };
+			engineSnapshot, renderedRegionKeys, conversionError };
 	}
 	function notify() { if (!disposed) onState(snapshot()); }
 	function clearTimer() {
@@ -59,7 +60,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	}
 	function recoveryRecord(extra = {}) {
 		return { version: RECOVERY_VERSION, sessionId, writerId, documentId, worktreeId,
-			baseRevision, source: buffer, lastValidSource, engineSnapshot,
+			baseRevision, source: buffer, lastValidSource, engineSnapshot, renderedRegionKeys,
 			conversionFailed: Boolean(conversionError),
 			updatedAt: clock.now(), generation, ...extra };
 	}
@@ -67,7 +68,8 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		try {
 			storage.setItem(recoveryKey, JSON.stringify(recoveryRecord()));
 			storageError = null;
-		} catch (failure) { storageError = failure; }
+			return true;
+		} catch (failure) { storageError = failure; return false; }
 	}
 	function removeOwnRecovery(upToGeneration = generation) {
 		try {
@@ -96,13 +98,15 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		if (disposed || composing || conflict || conversionError || uncertain || !dirty()) return;
 		timer = clock.setTimeout(() => { timer = null; void flush(); }, SAVE_DELAY);
 	}
-	function edit(nextSource, { engineSnapshot: nextEngineSnapshot } = {}) {
+	function edit(nextSource, { engineSnapshot: nextEngineSnapshot,
+		renderedRegionKeys: nextRenderedRegionKeys } = {}) {
 		if (disposed) return;
 		if (typeof nextSource !== "string") throw new TypeError("Editor source must be a string");
 		buffer = nextSource;
 		if (inFlight) needsAcknowledgement = true;
 		lastValidSource = nextSource;
 		if (nextEngineSnapshot !== undefined) engineSnapshot = nextEngineSnapshot;
+		if (nextRenderedRegionKeys !== undefined) renderedRegionKeys = nextRenderedRegionKeys;
 		conversionError = null;
 		generation++;
 		error = null;
@@ -290,6 +294,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		authorityEpoch++;
 		lastValidSource = candidate.lastValidSource ?? candidate.source;
 		engineSnapshot = candidate.engineSnapshot;
+		renderedRegionKeys = candidate.renderedRegionKeys;
 		conversionError = candidate.conversionFailed
 			? new Error("Recovered editor content has newer unsaved changes") : null;
 		generation++;
@@ -297,7 +302,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			conflict = { source: acknowledgedSource, revision: baseRevision };
 			status = "File changed elsewhere";
 		} else status = conversionError ? "Couldn't save" : dirty() ? "Unsaved" : "Saved";
-		persist();
+		if (persist()) retireRestoredRecovery();
 		schedule();
 		notify();
 	}

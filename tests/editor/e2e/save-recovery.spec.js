@@ -16,6 +16,23 @@ draft: true
 Original recovery paragraph.
 `;
 
+const protectedSource = `---
+title: Protected recovery
+description: Original description.
+startDate: 2026-09-24
+updated: 2026-09-24
+type: note
+growthStage: seedling
+draft: true
+---
+
+Original recovery paragraph.
+
+{1 + 1}
+
+Following paragraph.
+`;
+
 async function replaceParagraph(page, text) {
   const paragraph = page.getByRole("textbox", { name: "Article body" }).locator("p").first();
   await paragraph.evaluate((element) => {
@@ -49,10 +66,10 @@ test.describe("live save recovery", () => {
   test.beforeAll(async () => {
     test.setTimeout(240_000);
     fixture = await createFixtureProject({ name: "editor-save-recovery" });
-    for (const name of ["reload", "tabs", "conflict", "restart", "storage", "navigation", "conversion", "metadata", "outside", "lost-response", "stale-poll"]) {
+    for (const name of ["reload", "tabs", "cloned-tabs", "protected", "protected-conflict", "conflict", "restart", "storage", "navigation", "conversion", "metadata", "outside", "lost-response", "stale-poll"]) {
       const slug = `recovery-${name}-${randomUUID().slice(0, 8)}`;
       const path = `src/content/notes/${slug}.mdx`;
-      await fixture.write(path, initialSource(`Recovery ${name}`));
+      await fixture.write(path, name.startsWith("protected") ? protectedSource : initialSource(`Recovery ${name}`));
       documents[name] = { id: `notes:${slug}`, path: fixture.resolve(path), preview: `/${slug}` };
     }
     // A controlled serialization fault in this owned copy exercises recovery of
@@ -130,6 +147,97 @@ test.describe("live save recovery", () => {
     await open(reopened, "tabs");
     await expect(reopened.getByRole("button", { name: "Recover browser version" })).toHaveCount(2);
     expect(await readFile(documents.tabs.path, "utf8")).toBe(initialSource("Recovery tabs"));
+  });
+
+  test("an opener-created writing tab keeps both unsaved recovery copies", async ({ context }) => {
+    test.setTimeout(180_000);
+    const first = await context.newPage();
+    await open(first, "cloned-tabs");
+    const popupEvent = context.waitForEvent("page");
+    await first.evaluate(() => window.open(location.href, "_blank"));
+    const second = await popupEvent;
+    await expect(second.getByRole("textbox", { name: "Article body" })).toBeVisible();
+    for (const [index, page] of [first, second].entries()) {
+      await refuseWrites(page);
+      await replaceParagraph(page, `Unsaved writing from cloned tab ${index + 1}.`);
+      await page.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(page.getByRole("status")).toHaveText("Couldn't save");
+    }
+    const records = await first.evaluate((documentId) => Object.entries(localStorage)
+      .filter(([key]) => key.startsWith("local-writing-editor:v1:"))
+      .map(([, value]) => JSON.parse(value))
+      .filter((record) => record.documentId === documentId), documents["cloned-tabs"].id);
+    expect(records).toHaveLength(2);
+    expect(records.some((record) => record.source.includes("Unsaved writing from cloned tab 1."))).toBe(true);
+    expect(records.some((record) => record.source.includes("Unsaved writing from cloned tab 2."))).toBe(true);
+    expect(new Set(records.map((record) => record.writerId)).size).toBe(2);
+    await Promise.all([first.close(), second.close()]);
+    const reopened = await context.newPage();
+    await open(reopened, "cloned-tabs");
+    await expect(reopened.getByRole("button", { name: "Recover browser version" })).toHaveCount(2);
+    await reopened.getByRole("button", { name: "Recover browser version" }).first().click();
+    const moved = await reopened.evaluate((documentId) => Object.entries(localStorage)
+      .filter(([key]) => key.startsWith("local-writing-editor:v1:"))
+      .map(([, value]) => JSON.parse(value))
+      .filter((record) => record.documentId === documentId), documents["cloned-tabs"].id);
+    expect(moved).toHaveLength(2);
+    expect(moved.some((record) => record.source.includes("Unsaved writing from cloned tab 1."))).toBe(true);
+    expect(moved.some((record) => record.source.includes("Unsaved writing from cloned tab 2."))).toBe(true);
+    expect(await readFile(documents["cloned-tabs"].path, "utf8")).toBe(initialSource("Recovery cloned-tabs"));
+  });
+
+  test("recovery after prose shifts protected MDX can be edited and saved", async ({ page }) => {
+    test.setTimeout(180_000);
+    await open(page, "protected");
+    const allowWrites = await refuseWrites(page);
+    await replaceParagraph(page, "A much longer recovered paragraph than the original.");
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill("Recovered protected title");
+    await page.getByRole("textbox", { name: "Description", exact: true }).fill("Recovered protected description.");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Couldn't save");
+    expect(await readFile(documents.protected.path, "utf8")).toBe(protectedSource);
+    await leave(page, () => page.reload());
+    await page.getByRole("button", { name: "Recover browser version" }).click();
+    const body = page.getByRole("textbox", { name: "Article body" });
+    await expect(body).toContainText("A much longer recovered paragraph than the original.");
+    await expect(body.locator("[data-editor-protected-key]")).toContainText("2");
+    await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveText("Recovered protected title");
+    await expect(page.getByRole("textbox", { name: "Description", exact: true })).toHaveText("Recovered protected description.");
+    await replaceParagraph(page, "Further changes to the recovered paragraph.");
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill("Further recovered title");
+    await page.getByRole("textbox", { name: "Description", exact: true }).fill("Further recovered description.");
+    await allowWrites();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Saved");
+    const saved = await readFile(documents.protected.path, "utf8");
+    expect(saved).toContain("Further changes to the recovered paragraph.\n\n{1 + 1}\n\nFollowing paragraph.");
+    expect(saved).toContain('title: "Further recovered title"');
+    expect(saved).toContain('description: "Further recovered description."');
+    await expect.poll(async () => (await page.request.get(page.url())).text(), { timeout: 20_000 })
+      .toContain("Further changes to the recovered paragraph.");
+    await page.reload();
+    await expect(body).toContainText("Further changes to the recovered paragraph.");
+    await expect(body.locator("[data-editor-protected-key]")).toContainText("2");
+    await expect(page.getByRole("button", { name: "Recover browser version" })).toHaveCount(0);
+  });
+
+  test("conflict recovery never shows changed disk MDX as the browser's protected region", async ({ page }) => {
+    test.setTimeout(180_000);
+    await open(page, "protected-conflict");
+    await refuseWrites(page);
+    await replaceParagraph(page, "Browser prose kept through a protected-content conflict.");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Couldn't save");
+    const outsideSource = protectedSource.replace("{1 + 1}", "{2 + 2}");
+    await writeFile(documents["protected-conflict"].path, outsideSource);
+    await leave(page, () => page.reload());
+    await page.getByRole("button", { name: "Recover browser version" }).click();
+    const body = page.getByRole("textbox", { name: "Article body" });
+    await expect(body).toContainText("Browser prose kept through a protected-content conflict.");
+    await expect(page.getByRole("status")).toHaveText("File changed elsewhere");
+    await expect(body.locator("[data-editor-protected-key]")).toContainText("{1 + 1}");
+    await expect(body.locator("[data-editor-protected-key]")).not.toContainText("4");
+    expect(await readFile(documents["protected-conflict"].path, "utf8")).toBe(outsideSource);
   });
 
   test("title undo after acknowledgement remains a valid metadata patch", async ({ page }) => {

@@ -410,6 +410,9 @@ test("offers separate tab recovery candidates only within their worktree and res
   reopened.restoreRecovery(candidates.find((item) => item.writerId === "tab-one"));
   assert.equal(reopened.snapshot().source, "First tab buffer.");
   assert.equal(reopened.snapshot().dirty, true);
+  assert.deepEqual(new Set(reopened.recoveryCandidates().map((item) => item.writerId)),
+    new Set(["reopened", "tab-two"]),
+    "a restored copy moves to the current writer without accumulating a duplicate");
   assert.ok([...storage.values.values()].some((raw) => raw.includes("Second tab buffer.")),
     "restoring one tab cannot erase another tab's unsaved record");
 
