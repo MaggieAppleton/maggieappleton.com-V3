@@ -1,0 +1,138 @@
+---
+import { parseFrontmatter } from "@astrojs/markdown-remark";
+import Layout from "../../layouts/Layout.astro";
+import PostLayout from "../../layouts/PostLayout.astro";
+import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
+import { mdxComponents } from "../../components/mdx/component-map.mjs";
+import { editorServerConfig, getEditorServices } from "../server/runtime.mjs";
+import { EDITOR_SOURCE_FINGERPRINT, sourceFingerprint } from "../rendering/source-fingerprint.mjs";
+import { loadEditorEntries } from "./content-entries.mjs";
+
+export const prerender = false;
+
+async function waitForAstroEntry(collection, entryId, readCurrent) {
+	const deadline = Date.now() + 12_000;
+	let lastRenderError;
+	do {
+		const documentRead = await readCurrent();
+		if (documentRead.parseError) return { documentRead, renderError: documentRead.parseError };
+		// Match the MDX compiler input, including blanked frontmatter and whitespace
+		// that determines protected-region source offsets.
+		const parsed = parseFrontmatter(documentRead.source, { frontmatter: "empty-with-spaces" });
+		const body = parsed.content.trim();
+		// A static astro:content import can retain a data-store snapshot taken
+		// before Vite invalidates the module after an atomic file save.
+		const { getEntry, render } = await import("astro:content");
+		const loaded = await getEntry(collection, entryId);
+		if (loaded && (loaded.body ?? "") === body
+			&& loaded.data.title === documentRead.metadata.title
+			&& loaded.data.description === documentRead.metadata.description) {
+			try {
+				const rendered = await render(loaded);
+				if (rendered.remarkPluginFrontmatter?.[EDITOR_SOURCE_FINGERPRINT]
+					=== sourceFingerprint(parsed.content, parsed.frontmatter)) {
+					const latest = await readCurrent();
+					if (latest.revision === documentRead.revision) {
+						return { documentRead, entry: loaded, ...rendered };
+					}
+				}
+			} catch (error) { lastRenderError = error; }
+		}
+		if (Date.now() >= deadline) break;
+		await new Promise((resolve) => setTimeout(resolve, 150));
+	} while (true);
+	return { documentRead: await readCurrent(), renderError: lastRenderError
+		? `Astro could not render the current source: ${lastRenderError.message}`
+		: "Astro is still loading the current source. Reload this page in a moment." };
+}
+
+let capability;
+try { capability = editorServerConfig(); } catch { /* Show the local restart path below. */ }
+const { origin, token } = capability ?? {};
+if (origin && Astro.url.origin !== origin) {
+	const expected = new URL(origin);
+	const loopbackAlias = ["localhost", "127.0.0.1", "[::1]"].includes(Astro.url.hostname);
+	if (!loopbackAlias || Astro.url.port !== expected.port) {
+		return new Response("Local editor origin is unavailable", { status: 403, headers: { "Cache-Control": "no-store" } });
+	}
+	return Astro.redirect(`${origin}${Astro.url.pathname}${Astro.url.search}`, 307);
+}
+const documentId = Astro.url.searchParams.get("documentId");
+let record;
+let documentRead;
+let entry;
+let Content;
+let headings = [];
+let renderError;
+if (origin && documentId) {
+	try {
+		const { index, store } = await getEditorServices(loadEditorEntries);
+		record = await index.resolve(documentId);
+		({ documentRead, entry, Content, headings = [], renderError } = await waitForAstroEntry(
+			record.collection, record.entryId, () => store.readDocument(documentId)));
+	} catch (error) { renderError = error.message; }
+}
+const bootstrap = origin
+	? JSON.stringify({ token, origin, documentId, document: documentRead }).replaceAll("<", "\\u003c")
+	: null;
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+
+{!origin ? (
+	<Layout title="Local writing unavailable" desc="Restart locally to edit writing">
+		<section aria-label="Writing editor" class="editor-fallback">
+			<div class="editor-fallback-dock" role="alert">
+				<div class="editor-fallback-panel"><h1>Local writing is unavailable</h1><p>Restart the development server with <code>npm run dev -- --host 127.0.0.1</code> to edit writing.</p></div>
+				<div class="editor-fallback-pill"><a href="/drafts">View drafts</a></div>
+			</div>
+		</section>
+	</Layout>
+) : entry && Content && documentRead && !renderError ? (
+	<PostLayout frontmatter={entry.data} headings={headings} entry={entry} editorHmrGuard>
+		<section aria-label="Writing editor" id="local-writing-editor">
+			<div id="local-editor-original">
+				<ProseWrapper><Content components={mdxComponents} /></ProseWrapper>
+			</div>
+		</section>
+		<script id="local-editor-bootstrap" type="application/json" set:html={bootstrap} />
+		<script is:inline type="module">
+			import { mountWritingEditor } from "/src/editor/client/mount.mjs";
+			mountWritingEditor();
+		</script>
+	</PostLayout>
+) : (
+	<Layout title="Writing editor" desc="Local writing editor" editorHmrGuard>
+		<section aria-label="Writing editor" id="local-writing-editor" class="editor-fallback">
+			{documentId ? (
+				<>
+					<div class="editor-fallback-dock" role="alert">
+						<div class="editor-fallback-panel"><h1>Writing editor unavailable</h1><p>{renderError ?? "Document unavailable"}</p></div>
+						<div class="editor-fallback-pill"><a href="/drafts">Back to drafts</a></div>
+					</div>
+					{documentRead && <pre>{documentRead.source}</pre>}
+				</>
+			) : (
+				<>
+					<h1>Local writing</h1>
+					<p>Open an existing note or essay and choose Edit on its page.</p>
+					<p><a href="/notes">Notes</a> · <a href="/essays">Essays</a> · <a href="/drafts">Drafts</a></p>
+				</>
+			)}
+		</section>
+		<script id="local-editor-bootstrap" type="application/json" set:html={bootstrap} />
+	</Layout>
+)}
+
+<style>
+	.editor-fallback { max-width: 72ch; margin: var(--space-xl) auto; padding: var(--space-s); }
+	.editor-fallback pre { overflow: auto; white-space: pre-wrap; }
+	.editor-fallback-dock { position: fixed; z-index: 30; left: 50%; bottom: 90px; width: min(34rem, calc(100vw - 24px)); transform: translateX(-50%); color: white; font: 600 var(--font-size-xs) var(--font-sans); }
+	.editor-fallback-panel, .editor-fallback-pill { border: 1px solid #343841; background: linear-gradient(180deg, #13151a 0%, rgb(19 21 26 / 88%) 100%); box-shadow: 0 4px 12px rgb(19 21 26 / 30%); }
+	.editor-fallback-panel { margin-bottom: var(--space-xs); border-radius: var(--border-radius-lg); padding: var(--space-s); font-weight: 400; max-height: calc(100dvh - 220px); overflow: auto; overflow-wrap: anywhere; }
+	.editor-fallback-panel h1, .editor-fallback-panel p { margin: 0 0 var(--space-xs); color: inherit; }
+	.editor-fallback-panel h1 { font: 700 14px/1.4 var(--font-sans); }
+	.editor-fallback-panel p { font: 400 14px/1.45 var(--font-sans); }
+	.editor-fallback-panel p:last-child { margin-bottom: 0; }
+	.editor-fallback-pill { display: flex; justify-content: center; width: max-content; max-width: 100%; margin-inline: auto; border-radius: 999px; }
+	.editor-fallback-pill a { padding: .6rem .9rem; color: inherit; text-decoration: none; white-space: nowrap; }
+</style>

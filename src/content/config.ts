@@ -1,52 +1,19 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { file } from "astro/loaders";
-import { hasValidCalendarDatePrefix } from "../utils/calendarDate.mjs";
+import { createContentDate, createEssaySchema, createNoteSchema } from "./publication-schemas.mjs";
 
 // Validate authored strings before Date coercion can normalize invalid days.
-const contentDate = z.unknown().refine(
-  (value) => typeof value !== "string" || hasValidCalendarDatePrefix(value),
-  "Invalid authored calendar date",
-).pipe(z.coerce.date());
+const contentDate = createContentDate(z);
 
 const notesCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/notes" }),
-  schema: () =>
-    z.object({
-      title: z.string(),
-      description: z.string().optional(),
-      aliases: z.array(z.string()).optional(),
-      startDate: contentDate,
-      updated: contentDate,
-      type: z.literal("note"),
-      topics: z.array(z.string()).optional(),
-      growthStage: z.string(),
-      draft: z.boolean().optional(),
-      toc: z.boolean().optional(),
-      version: z.number().optional(),
-      versionSummary: z.string().optional(),
-    }),
+  schema: () => createNoteSchema({ z, contentDate }),
 });
 
 const essaysCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/essays" }),
-  schema: ({ image }) =>
-    z.object({
-      title: z.string(),
-      description: z.string(),
-      updated: contentDate,
-      startDate: contentDate,
-      type: z.literal("essay"),
-      cover: image(),
-      topics: z.array(z.string()).optional(),
-      growthStage: z.string(),
-      featured: z.boolean().optional(),
-      draft: z.boolean().optional(),
-      toc: z.boolean().optional(),
-      aliases: z.array(z.string()).optional(),
-      version: z.number().optional(),
-      versionSummary: z.string().optional(),
-    }),
+  schema: ({ image }) => createEssaySchema({ z, contentDate, image }),
 });
 
 const patternsCollection = defineCollection({

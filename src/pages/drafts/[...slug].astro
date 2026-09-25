@@ -22,11 +22,10 @@ const totalDrafts =
 ---
 
 <!-- Development-only surface: intentionally no pageMetadata. -->
-<Layout title="Draft Posts | Maggie Appleton">
+<Layout title="Draft Posts | Maggie Appleton" editorHmrGuard={import.meta.env.DEV}>
 	<PageWrapper>
 		<h1>Draft Posts ({totalDrafts})</h1>
 		<p class="draft-notice">These posts are only visible in development mode</p>
-
 		{
 			essays.length > 0 && (
 				<section>

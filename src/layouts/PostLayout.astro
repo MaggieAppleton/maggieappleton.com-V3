@@ -36,9 +36,10 @@ type Props = {
 		| CollectionEntry<"notes">
 		| CollectionEntry<"patterns">
 		| CollectionEntry<"talks">;
+	editorHmrGuard?: boolean;
 };
 
-const { frontmatter, entry } = Astro.props;
+const { frontmatter, entry, editorHmrGuard = false } = Astro.props;
 
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
@@ -72,6 +73,9 @@ if (entry) {
 // Capitalise the content type for the back-link label (e.g. "essay" → "Essay")
 const contentTypeLabel =
 	frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1);
+const editUrl = import.meta.env.DEV && process.env.LOCAL_WRITING_EDITOR_ORIGIN && !editorHmrGuard && entry
+	&& (entry.collection === "notes" || entry.collection === "essays")
+	? `/_editor?documentId=${encodeURIComponent(`${entry.collection}:${entry.id}`)}` : null;
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -103,6 +107,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 ---
 
 <Layout
+	editorHmrGuard={editorHmrGuard}
 	title={frontmatter.title}
 	desc={frontmatter.description}
 	type={frontmatter.type}
@@ -126,6 +131,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 			/>
 			<GrowthStage stage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"} />
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
+			{editUrl && <a href={editUrl} style="margin-left: auto;">Edit</a>}
 		</div>
 		<div class="title-container">
 			<h1 class="cascade" style="--cascade: 1">{frontmatter.title}</h1>
@@ -201,6 +207,7 @@ const pageMetadata = entry && isCanonicalPublicArticle({
 		font-weight: bold;
 		margin: 0;
 	}
+
 
 	.above-title svg {
 		display: block;
