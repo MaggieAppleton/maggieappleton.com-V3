@@ -1,5 +1,6 @@
 import { $getRoot } from "lexical";
 import internalLinkPreviews from "../../../internal-link-previews.json" with { type: "json" };
+import { CANONICAL_ORIGIN } from "../../../utils/canonical.mjs";
 import { findInternalLinkPreviewByText } from "../../../utils/internalLinkPreview.js";
 import { hash, normaliseText } from "../shared/hash.mjs";
 
@@ -7,6 +8,16 @@ const segmenter = new Intl.Segmenter("en-GB", { granularity: "sentence" });
 const WRITING = new Set(["IntroParagraph", "Footnote", "AssumedAudience"]);
 const QUOTE_COMPONENTS = new Set(["QuoteCard", "BlockquoteCitation"]);
 const NON_TERMINAL_ABBREVIATION = /(?:^|\s)(?:Dr|Mr|Mrs|Ms|Prof|St|e\.g|i\.e)\.$/iu;
+const SITE_HOST = new URL(CANONICAL_ORIGIN).host;
+
+function internalPathname(destination) {
+	if (typeof destination !== "string" || (!destination.startsWith("/") && !/^https?:\/\//iu.test(destination))) return null;
+	try {
+		const url = new URL(destination, CANONICAL_ORIGIN);
+		if (!(["http:", "https:"].includes(url.protocol) && url.host === SITE_HOST)) return null;
+		return url.pathname.replace(/\/+$/u, "") || "/";
+	} catch { return null; }
+}
 
 function children(node) { return node.getChildren?.() ?? []; }
 function type(node) { return node.getType?.() ?? ""; }
@@ -33,7 +44,7 @@ function textPieces(node, { skipNestedLists = false } = {}) {
 		const insideLink = linked || kind === "link" || kind === "autolink" || kind === "editor-wiki-link";
 		const wikiTarget = kind === "editor-wiki-link"
 			? current.getTextContent?.().slice(2, -2).replace(/[‘’]/gu, "'").replace(/[“”]/gu, '"') : null;
-		const linkUrl = kind === "link" ? current.getURL?.() ?? inheritedLink
+		const linkUrl = kind === "link" || kind === "autolink" ? current.getURL?.() ?? inheritedLink
 			: wikiTarget ? findInternalLinkPreviewByText(wikiTarget, internalLinkPreviews)?.pathname ?? null : inheritedLink;
 		const descendants = children(current);
 		if (!descendants.length) {
@@ -99,11 +110,10 @@ export function buildSentenceSnapshot(root) {
 		const linkRanges = [];
 		let offset = 0;
 		for (const piece of pieces) {
-			if (piece.linkUrl) {
-				const pathname = piece.linkUrl.startsWith("/")
-					? piece.linkUrl.split(/[?#]/u)[0].replace(/\/$/u, "") || "/" : piece.linkUrl;
+			const pathname = internalPathname(piece.linkUrl);
+			if (pathname) {
 				linkRanges.push({ start: offset, end: offset + piece.text.length, pathname });
-				if (pathname.startsWith("/")) linkedPathnames.add(pathname);
+				linkedPathnames.add(pathname);
 			}
 			offset += piece.text.length;
 		}

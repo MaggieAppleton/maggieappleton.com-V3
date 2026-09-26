@@ -79,6 +79,33 @@ test("sentence snapshot retains linked spans and internal target paths", () => {
 	assert.deepEqual(snapshot.linkedPathnames, ["/end-user-programming"]);
 });
 
+test("Markdown links and autolinks exclude same-site targets by pathname", () => {
+	for (const kind of ["link", "autolink"]) {
+		for (const url of ["/creative-tools", "https://maggieappleton.com/creative-tools/?source=editor#notes"]) {
+			const root = node("root", "", [node("paragraph", "", [
+				node(kind, "", [node("text", "Creative tools", [], { key: "linked" })], { getURL: () => url }),
+			])]);
+			const snapshot = buildSentenceSnapshot(root);
+			assert.deepEqual(snapshot.linkedPathnames, ["/creative-tools"], `${kind}: ${url}`);
+			assert.deepEqual(snapshot.blocks[0].sentences[0].links, ["/creative-tools"], `${kind}: ${url}`);
+			assert.deepEqual(snapshot.blocks[0].sentences[0].linkedSpans, [{ start: 0, end: 14 }], `${kind}: ${url}`);
+		}
+	}
+});
+
+test("external links protect their text without excluding a site target", () => {
+	for (const kind of ["link", "autolink"]) {
+		const root = node("root", "", [node("paragraph", "", [
+			node(kind, "", [node("text", "Creative tools", [], { key: "linked" })],
+				{ getURL: () => "https://other.example/creative-tools" }),
+		])]);
+		const snapshot = buildSentenceSnapshot(root);
+		assert.deepEqual(snapshot.linkedPathnames, [], kind);
+		assert.deepEqual(snapshot.blocks[0].sentences[0].links, [], kind);
+		assert.deepEqual(snapshot.blocks[0].sentences[0].linkedSpans, [{ start: 0, end: 14 }], kind);
+	}
+});
+
 test("wiki links resolve aliases and protect only their own characters", () => {
 	const root = node("root", "", [node("paragraph", "", [
 		node("editor-wiki-link", "[[Pattern Language]]", [], { key: "wiki" }),
