@@ -10,7 +10,7 @@
 }
 .wa-word-finder-popover header, .wa-word-finder-popover footer { display: flex; align-items: center; }
 .wa-word-finder-popover header { margin-bottom: 8px; }
-.wa-word-finder-popover h3 { flex: 1; margin: 0; font: 700 12px/1.3 var(--font-sans); }
+#local-writing-editor .wa-word-finder-popover h3 { flex: 1; margin: 0; font: 700 12px/1.3 var(--font-sans); }
 .wa-word-finder-popover header button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--color-gray-600); }
 .wa-word-finder-popover input { width: 100%; margin-bottom: 8px; border: 1px solid var(--color-gray-200); border-radius: 8px; padding: 6px 9px; background: var(--color-white); color: var(--color-black); font: inherit; }
 .wa-word-finder-results { display: grid; gap: 2px; }
