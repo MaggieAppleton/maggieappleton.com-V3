@@ -17,6 +17,11 @@ const MENU_WIDTH = 228;
 const MENU_HEIGHT = 44;
 const EDGE = 12;
 
+function isInProtectedNode(node) {
+	const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+	return Boolean(element?.closest(".editor-protected-node"));
+}
+
 function selectionDetails(selection) {
 	if (!$isRangeSelection(selection) || selection.isCollapsed() || !selection.getTextContent().trim()) return null;
 	const nodes = selection.getNodes();
@@ -82,6 +87,12 @@ function SelectionMenu() {
 				lastSignature.current = null;
 				setMenu(null);
 			}
+			return;
+		}
+		if (isInProtectedNode(native.anchorNode) || isInProtectedNode(native.focusNode)) {
+			dismissed.current = null;
+			lastSignature.current = null;
+			setMenu(null);
 			return;
 		}
 		const details = editor.getEditorState().read(() => selectionDetails($getSelection()));

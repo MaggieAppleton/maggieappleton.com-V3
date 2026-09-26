@@ -253,7 +253,15 @@ test.describe("article selection menu", () => {
 		await expect(menu).toHaveCount(0);
 		await selectTextIn(page, ".title-container p", "Selection menu description 4");
 		await expect(menu).toHaveCount(0);
+		await selectText(page, "selectable words");
+		await expect(menu).toBeVisible();
 		await selectText(page, "protected table cell");
+		await expect.poll(() => page.evaluate(() => {
+			const selection = window.getSelection();
+			const protectedNode = (node) => (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)
+				?.closest(".editor-protected-node");
+			return Boolean(protectedNode(selection?.anchorNode) && protectedNode(selection?.focusNode));
+		})).toBe(true);
 		await expect(menu).toHaveCount(0);
 		await selectText(page, "codeWords");
 		await expect(menu).toHaveCount(0);
