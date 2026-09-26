@@ -98,6 +98,20 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await expect(page.getByTestId("link-dialog-preview")).toHaveCount(0);
 	});
 
+	test("opens link editing from the preview with the keyboard", async ({ page }) => {
+		test.setTimeout(120_000);
+		await openEditor(page, 2);
+		await preview(page);
+		const open = page.getByTestId("link-dialog-preview");
+		await open.focus();
+		await expect(open).toBeFocused();
+		await page.keyboard.press("Tab");
+		const edit = page.getByRole("button", { name: "Edit link URL" });
+		await expect(edit).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(page.getByRole("textbox", { name: "URL" })).toBeFocused();
+	});
+
 	test("unlinks and creates a new link with the shortcut", async ({ page }) => {
 		test.setTimeout(120_000);
 		await openEditor(page, 3);
