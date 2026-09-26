@@ -62,7 +62,7 @@ export function selectionDetails(model, selection) {
 	const range = selection.getRangeAt(0);
 	const text = range.toString();
 	for (const block of model.getSnapshot().blocks) {
-		if (block.quoted || !["paragraph", "listitem", "writing"].includes(block.kind) || !block.sentences.length) continue;
+		if (block.quoted || !["paragraph", "listitem", "writing", "heading"].includes(block.kind) || !block.sentences.length) continue;
 		const ranges = block.sentences.map((sentence) => model.rangeForSpan(sentence.id));
 		if (ranges.some((item) => !item)) continue;
 		const blockRange = ranges[0].cloneRange();
@@ -101,6 +101,15 @@ export function popoverPosition(anchor, panel, viewport) {
 	const top = preferredTop + panel.height <= viewport.height - margin
 		? preferredTop : Math.max(margin, anchor.top - panel.height - 8);
 	return { left, top: Math.min(top, Math.max(margin, viewport.height - panel.height - margin)) };
+}
+
+export function triggerPosition(anchor, width, viewport) {
+	return { left: Math.max(12, Math.min(anchor.right, viewport.width - width - 12)),
+		top: Math.max(12, anchor.top - 34) };
+}
+
+export function selectionIdentity(selection) {
+	return hash(selection.blockId, selection.sentence, selection.start, selection.end, selection.text);
 }
 
 function markedSentence(selection) {
@@ -194,11 +203,22 @@ function WordFinderPopover({ selection, finder, controller, onClose, fallbackFoc
 
 export function WordFinder({ controller, transport, root, available = false, pinned, busy = false, onOpen, onClose }) {
 	const [selection, setSelection] = useState(null);
+	const [pillPosition, setPillPosition] = useState({ left: 12, top: 12 });
+	const pill = useRef(null);
 	const opened = pinned;
 	const openedRef = useRef(opened);
 	openedRef.current = opened || busy;
 	const finder = useRef(createWordFinder({ transport }));
 	useEffect(() => { finder.current = createWordFinder({ transport }); }, [transport]);
+	useLayoutEffect(() => {
+		const view = pill.current?.ownerDocument.defaultView;
+		if (!selection || !view) return undefined;
+		const place = () => setPillPosition(triggerPosition(selection.anchorRect,
+			pill.current.getBoundingClientRect().width, { width: view.innerWidth }));
+		place();
+		view.addEventListener("resize", place);
+		return () => view.removeEventListener("resize", place);
+	}, [selection, busy]);
 	useEffect(() => {
 		if (!available || !root || !controller) return undefined;
 		let timer;
@@ -222,9 +242,9 @@ export function WordFinder({ controller, transport, root, available = false, pin
 	}, [available, root, controller, onOpen]);
 	if (!available) return null;
 	return React.createElement(React.Fragment, null,
-		selection && !busy && React.createElement("button", { type: "button", className: "wa-word-finder-trigger editor-dock-pill",
-			style: { left: selection.anchorRect.right, top: selection.anchorRect.top - 34 }, onMouseDown: (event) => event.preventDefault(),
+		selection && !busy && React.createElement("button", { ref: pill, type: "button", className: "wa-word-finder-trigger editor-dock-pill",
+			style: pillPosition, onMouseDown: (event) => event.preventDefault(),
 			onClick: () => { setSelection(null); onOpen(selection); } }, React.createElement(MagnifyingGlassIcon, { size: 14 }), "Find words"),
-		opened && React.createElement(WordFinderPopover, { selection: opened, finder: finder.current, controller,
+		opened && React.createElement(WordFinderPopover, { key: selectionIdentity(opened), selection: opened, finder: finder.current, controller,
 			fallbackFocus: root, onClose }));
 }

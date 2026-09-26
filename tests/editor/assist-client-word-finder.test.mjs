@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { candidateRows, createWordFinder, isEligibleSelection, normaliseCandidates, popoverPosition, selectionDetails } from "../../src/editor/assist/client/word-finder.mjs";
+import { candidateRows, createWordFinder, isEligibleSelection, normaliseCandidates, popoverPosition, selectionDetails, selectionIdentity, triggerPosition } from "../../src/editor/assist/client/word-finder.mjs";
 
 test("word finder only accepts a nonempty, single-block selection of twelve words or fewer", () => {
 	assert.equal(isEligibleSelection({ text: "", blockId: "one", start: 0, end: 0 }), false);
@@ -10,7 +10,7 @@ test("word finder only accepts a nonempty, single-block selection of twelve word
 	assert.equal(isEligibleSelection({ text: "one two three four five six seven eight nine ten eleven twelve thirteen", blockId: "one", start: 0, end: 71 }), false);
 });
 
-test("selection can span two sentences in a prose block and is rejected in headings and quotes", () => {
+test("selection can span sentences in one block and permits headings but rejects quotes", () => {
 	const source = "First thought. Another thought.";
 	const fakeRange = (start, end) => ({ start, end,
 		startContainer: { ownerDocument: { defaultView: { Range: { START_TO_START: 0, END_TO_END: 2 } } } },
@@ -33,9 +33,28 @@ test("selection can span two sentences in a prose block and is rejected in headi
 	assert.equal(details.sentence, source);
 	assert.equal(isEligibleSelection(details), true);
 	blocks[0].kind = "heading";
-	assert.equal(selectionDetails(model, selection), null);
+	assert.equal(selectionDetails(model, selection)?.blockId, "one");
 	blocks[0].kind = "quote"; blocks[0].quoted = true;
 	assert.equal(selectionDetails(model, selection), null);
+});
+
+test("a newly opened selection gets a fresh popover identity and candidate request", async () => {
+	const first = { blockId: "b1", text: "sadness", sentence: "A sadness remains.", paragraph: "A sadness remains.", start: 2, end: 9 };
+	const second = { blockId: "b1", text: "remains", sentence: "A sadness remains.", paragraph: "A sadness remains.", start: 10, end: 17 };
+	assert.notEqual(selectionIdentity(first), selectionIdentity(second));
+	const requested = [];
+	const finder = createWordFinder({ transport: {
+		async generate(request) { requested.push(request.sentenceWithMarker); return { json: { candidates: [{ text: "lingers", gloss: "continuing state" }] } }; },
+		async judge() { return { candidates: [{ text: "lingers", gloss: "continuing state", probability: 0.8 }] }; },
+	} });
+	await finder(first);
+	await finder(second);
+	assert.deepEqual(requested, ["A ⟦sadness⟧ remains.", "A sadness ⟦remains⟧."]);
+});
+
+test("Find words pill clamps horizontally near the viewport edge", () => {
+	assert.deepEqual(triggerPosition({ right: 380, top: 40 }, 90, { width: 400 }), { left: 298, top: 12 });
+	assert.deepEqual(triggerPosition({ right: -20, top: 100 }, 90, { width: 400 }), { left: 12, top: 66 });
 });
 
 test("popover position flips above and clamps within the viewport", () => {
