@@ -344,6 +344,10 @@
 	background: #414750;
 	color: white;
 }
+#local-writing-editor .local-selection-menu .local-link-button:disabled {
+	color: #8e929a;
+	cursor: not-allowed;
+}
 #local-writing-editor .local-selection-menu .local-link-button:focus-visible {
 	outline-offset: -3px;
 }
