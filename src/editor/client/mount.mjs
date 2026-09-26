@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { MDXEditor } from "@mdxeditor/editor";
@@ -108,6 +108,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [mapOpen, setMapOpen] = useState(false);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
+	const openWordFinder = useCallback((selection) => { setHover(null); setPinned({ tool: "word-finder", selection }); }, []);
+	const closeWordFinder = useCallback(() => setPinned(null), []);
 	const [roleAnnouncement, setRoleAnnouncement] = useState("");
 	const assistPlugin = useMemo(() => createAssistPlugin(setLexicalEditor), []);
 	const assistTransport = useMemo(() => createAssistTransport({ boot }), [boot]);
@@ -384,18 +386,20 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				? React.createElement(RepetitionHover, { annotation: hover.annotation,
 					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
 			: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
-		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
+		pinned?.annotation?.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
 		}), document.body),
-		pinned?.annotation.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
+		pinned?.annotation?.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
 		React.createElement(WordFinder, { controller: assistController, transport: assistTransport,
 			root: lexicalEditor?.getRootElement(),
-			available: Boolean(assistStatus?.tools?.["word-finder"]?.available) }),
+			available: Boolean(assistStatus?.tools?.["word-finder"]?.available),
+			pinned: pinned?.tool === "word-finder" ? pinned.selection : null, busy: Boolean(pinned),
+			onOpen: openWordFinder, onClose: closeWordFinder }),
 	);
 }
 

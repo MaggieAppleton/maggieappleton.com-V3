@@ -103,6 +103,27 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const initial = model.getSnapshot();
 	store.setModel(initial);
 	scheduler.start(initial);
+	function textSelectionPoints(target) {
+		const startId = target.startSentenceId ?? target.sentenceId;
+		const endId = target.endSentenceId ?? startId;
+		const startOffset = target.startOffset ?? target.start;
+		const endOffset = target.endOffset ?? target.end;
+		const first = model.pointsForSpan(startId, startOffset, startOffset)?.start;
+		const last = model.pointsForSpan(endId, endOffset, endOffset)?.end;
+		return first && last ? { start: first, end: last } : null;
+	}
+	function currentSelectionText(target) {
+		const startId = target.startSentenceId ?? target.sentenceId;
+		const endId = target.endSentenceId ?? startId;
+		const first = model.rangeForSpan(startId, target.startOffset ?? target.start,
+			target.startOffset ?? target.start);
+		const last = model.rangeForSpan(endId, target.endOffset ?? target.end,
+			target.endOffset ?? target.end);
+		if (!first || !last) return null;
+		const range = first.cloneRange();
+		range.setEnd(last.endContainer, last.endOffset);
+		return range.toString();
+	}
 
 	return {
 		model, store,
@@ -152,9 +173,8 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		},
 		/** Apply an explicit, current sentence span for an on-demand assist tool. */
 		applyTextSelection(target, value) {
-			const current = sentenceFor(model.getSnapshot(), target.sentenceId)?.sentence;
-			if (!current || current.text.slice(target.start, target.end) !== target.text) return false;
-			const points = model.pointsForSpan(target.sentenceId, target.start, target.end);
+			if (currentSelectionText(target) !== target.text) return false;
+			const points = textSelectionPoints(target);
 			if (!points || !value) return false;
 			let applied = false;
 			editor.update(() => {
@@ -169,7 +189,8 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			return applied;
 		},
 		canApplyTextSelection(target) {
-			const points = model.pointsForSpan(target.sentenceId, target.start, target.end);
+			if (currentSelectionText(target) !== target.text) return false;
+			const points = textSelectionPoints(target);
 			if (!points) return false;
 			let allowed = false;
 			editor.getEditorState().read(() => {
