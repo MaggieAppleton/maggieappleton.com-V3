@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { MDXEditor } from "@mdxeditor/editor";
@@ -20,19 +20,26 @@ import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
 import { LinksHover, LinksPopover } from "../assist/client/popover/LinksPopover.mjs";
+import { WordFinder } from "../assist/client/word-finder.mjs";
+import { ChecksHover, ChecksPopover, checkChatSystem } from "../assist/client/popover/ChecksPopover.mjs";
+import { enabledChecks } from "../assist/client/tools/checks.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
+import "../assist/client/word-finder.css";
 
 const TOOL_STORAGE_KEY = "writing-assist:tools";
 
 function savedTools(config) {
-	const defaults = Object.fromEntries(Object.entries(config.tools).map(([id, tool]) => [id, Boolean(tool.enabled)]));
+	const defaults = Object.fromEntries(Object.entries(config.tools).map(([id, tool]) => [id,
+		id === "checks" ? { ...(tool.enabled ?? {}) } : Boolean(tool.enabled)]));
 	try {
 		const stored = JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY) ?? "null");
 		if (!stored || typeof stored !== "object") return defaults;
 		return Object.fromEntries(Object.keys(defaults).map((id) => [id,
-			Boolean(stored[id] ?? defaults[id])]));
+			id === "checks" ? Object.fromEntries(Object.keys(defaults.checks).map((key) => [key,
+				Boolean(config.tools.checks.enabled[key] && (stored.checks?.[key] ?? defaults.checks[key]))]))
+				: Boolean(config.tools[id].enabled && (stored[id] ?? defaults[id]))]));
 	} catch { return defaults; }
 }
 
@@ -75,6 +82,14 @@ function RepetitionPinnedPopover({ pinned, controller, transport, title, fallbac
 	});
 }
 
+function checkContext(controller, annotation) {
+	const block = annotation.target?.type === "block"
+		? controller.model.getSnapshot().blocks.find((item) => item.id === annotation.target.blockId)
+		: controller.getSentence(annotation.target?.sentenceId)?.block;
+	const sentence = annotation.target?.type === "block" ? "" : controller.getSentence(annotation.target?.sentenceId)?.sentence.text ?? "";
+	return { sentence, paragraph: block?.sentences.map((item) => item.text).join(" ") ?? "" };
+}
+
 function plainTextField(element, label, onChange) {
 	element.contentEditable = "plaintext-only";
 	element.setAttribute("role", "textbox");
@@ -105,8 +120,15 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const enabledToolsRef = useRef({});
 	const [assistOpen, setAssistOpen] = useState(false);
 	const [mapOpen, setMapOpen] = useState(false);
+	const [mapAnnotation, setMapAnnotation] = useState(null);
+	const [mapError, setMapError] = useState(null);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
+	const openWordFinder = useCallback((selection) => { setHover(null); setPinned({ tool: "word-finder", selection }); }, []);
+	const closeWordFinder = useCallback(() => setPinned(null), []);
+	const [checkGenerated, setCheckGenerated] = useState({});
+	const checkCache = useRef(new Map());
+	const checkPending = useRef(new Map());
 	const [roleAnnouncement, setRoleAnnouncement] = useState("");
 	const assistPlugin = useMemo(() => createAssistPlugin(setLexicalEditor), []);
 	const assistTransport = useMemo(() => createAssistTransport({ boot }), [boot]);
@@ -165,8 +187,17 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				editor: lexicalEditor, wrapper: article, transport: assistTransport,
 				documentId: boot.documentId, pathname: boot.document.previewUrl,
 				title, config: assistStatus.config,
-				enabledTools: Object.fromEntries(Object.entries(enabledToolsRef.current).map(([id, enabled]) =>
-					[id, enabled && assistStatus.tools[id]?.available])), dismissals,
+				enabledTools: Object.fromEntries(Object.entries(enabledToolsRef.current).map(([id, enabled]) => [id,
+					id === "checks"
+						? enabledChecks(enabled, assistStatus.tools.checks?.available)
+						: Boolean(enabled && assistStatus.tools[id]?.available),
+				])), dismissals,
+				onToolResult({ annotations, meta, mapFailed }) {
+					if (!meta.tools.includes("argument-map")) return;
+					const map = annotations.some((annotation) => annotation.tool === "argument-map" && annotation.kind === "map");
+					if (map) setMapError(null);
+					else if (mapFailed) setMapError(meta.errors.find((error) => !error.tool || error.tool === "argument-map")?.message ?? "Argument map is unavailable.");
+				},
 				onHover: (next) => setHover((previous) => next ?? (previous ? { ...previous, active: false } : null)),
 				onPin: (next) => { setHover(null); setPinned(next); },
 			});
@@ -181,9 +212,63 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		};
 	}, [lexicalEditor, assistStatus, assistTransport, adapterState.key]);
 	useEffect(() => assistController?.store.subscribe((annotations) => {
-		setHover((current) => current && !annotations.some((item) => item.id === current.annotation.id)
-			? null : current);
+		setHover((current) => {
+			if (!current) return null;
+			const live = annotations.find((item) => item.id === current.annotation.id);
+			return !live ? null : live === current.annotation ? current : { ...current, annotation: live };
+		});
+		setPinned((current) => {
+			if (!current) return null;
+			if (!current.annotation) return current;
+			const live = annotations.find((item) => item.id === current.annotation.id);
+			return !live ? null : live === current.annotation ? current : { ...current, annotation: live };
+		});
 	}), [assistController]);
+	useEffect(() => {
+		const annotation = hover?.annotation ?? pinned?.annotation;
+		if (!annotation || annotation.tool !== "checks" || annotation.kind === "citation") return undefined;
+		const key = `${annotation.id}:${annotation.unitHash}`;
+		const acceptGenerated = (generated) => {
+			const phraseAccepted = annotation.kind !== "cliche" || Boolean(assistController?.setClichePhrase?.(annotation, generated.phrase));
+			const checked = annotation.kind === "cliche" ? { ...generated, phraseAccepted } : generated;
+			checkCache.current.set(key, checked);
+			setCheckGenerated((current) => current[key] === checked ? current : { ...current, [key]: checked });
+			if (annotation.kind === "cliche" && phraseAccepted) {
+				const current = assistController.getAnnotation(annotation.id);
+				if (current) setPinned((open) => open?.annotation?.id === annotation.id
+					&& open.annotation.target?.type !== "span" ? { ...open, annotation: current } : open);
+			}
+		};
+		const cached = checkCache.current.get(key);
+		if (cached) { acceptGenerated(cached); return undefined; }
+		if (checkPending.current.has(key)) return undefined;
+		const match = assistController?.getSentence(annotation.target?.sentenceId);
+		const paragraph = annotation.target?.type === "block" ? assistController?.model.getSnapshot().blocks
+			.find((block) => block.id === annotation.target.blockId)?.sentences.map((sentence) => sentence.text).join(" ") : null;
+		const prompt = paragraph ? `Paragraph: ${paragraph}` : `Sentence: ${match?.sentence.text ?? ""}`;
+		const direction = annotation.kind === "hedging" ? `\nDirection: ${annotation.data?.direction ?? "unknown"}.` : "";
+		const pending = assistTransport.generate({ tool: "checks", purpose: annotation.kind, json: true,
+			messages: [{ role: "user", content: `${prompt}${direction}\nReturn the requested check data.` }] });
+		checkPending.current.set(key, pending);
+		void pending.then(({ json: generated }) => {
+			if (generated) acceptGenerated(generated);
+			else setCheckGenerated((current) => ({ ...current, [key]: { error: true } }));
+		}, () => setCheckGenerated((current) => ({ ...current, [key]: { error: true } })))
+			.finally(() => checkPending.current.delete(key));
+		return undefined;
+	}, [hover, pinned, assistController, assistTransport]);
+	useEffect(() => {
+		if (!assistController) return undefined;
+		const updateMap = (annotations) => setMapAnnotation(annotations.find((annotation) =>
+			annotation.tool === "argument-map" && annotation.kind === "map") ?? null);
+		updateMap(assistController.store.getAnnotations());
+		return assistController.store.subscribe(updateMap);
+	}, [assistController]);
+	useEffect(() => {
+		if (!assistController) return;
+		if (mapOpen) setMapError(null);
+		assistController.setToolEnabled("argument-map", Boolean(mapOpen && assistStatus?.tools?.["argument-map"]?.available));
+	}, [assistController, assistStatus, mapOpen]);
 	useEffect(() => {
 		const root = lexicalEditor?.getRootElement();
 		if (!root || !assistController || !enabledTools.roles || !assistStatus?.tools?.roles?.available) {
@@ -211,6 +296,16 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		};
 	}, [lexicalEditor, assistController, enabledTools.roles, assistStatus]);
 	function toggleTool(id, enabled) {
+		if (id.startsWith("checks.")) {
+			const key = id.slice("checks.".length);
+			const checks = { ...(enabledToolsRef.current.checks ?? {}), [key]: enabled };
+			const next = { ...enabledToolsRef.current, checks };
+			enabledToolsRef.current = next;
+			setEnabledTools(next);
+			try { localStorage.setItem(TOOL_STORAGE_KEY, JSON.stringify(next)); } catch { /* Storage can be unavailable. */ }
+			assistController?.setChecksEnabled?.(checks);
+			return;
+		}
 		const next = { ...enabledToolsRef.current, [id]: enabled };
 		enabledToolsRef.current = next;
 		setEnabledTools(next);
@@ -347,6 +442,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			assistPanelProps: { config: assistStatus?.config, status: assistStatus,
 				enabledTools, onToggleTool: toggleTool },
 			mapOpen, onMapToggle: setMapOpen, hasDrawerViews: getDrawerViews().length > 0,
+			mapAvailable: Boolean(assistStatus?.tools?.["argument-map"]?.available),
+			mapReason: assistStatus?.tools?.["argument-map"]?.reason ?? "Writing Assist is unavailable.",
 			onClearDiscarded: (candidate) => {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
@@ -371,7 +468,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		React.createElement("span", { id: "wa-role-status", className: "visually-hidden",
 			role: "status", "aria-atomic": "true" }, roleAnnouncement),
 		createPortal(React.createElement(Drawer, { open: mapOpen, onClose: () => setMapOpen(false),
-			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId) }), document.body),
+			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId),
+			map: mapAnnotation?.data?.map, loading: mapOpen && !mapAnnotation && !mapError, error: mapError }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
 			onClose: () => setHover(null),
@@ -383,24 +481,45 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			: hover.annotation.tool === "repetition"
 				? React.createElement(RepetitionHover, { annotation: hover.annotation,
 					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
-			: hover.annotation.tool === "links"
-				? React.createElement(LinksHover, { annotation: hover.annotation })
-			: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
-		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
+				: hover.annotation.tool === "links"
+					? React.createElement(LinksHover, { annotation: hover.annotation })
+				: hover.annotation.tool === "checks"
+					? React.createElement(ChecksHover, { annotation: hover.annotation,
+						generated: checkGenerated[`${hover.annotation.id}:${hover.annotation.unitHash}`] })
+				: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
+		pinned?.annotation?.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
 		}), document.body),
-		pinned?.annotation.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
+		pinned?.annotation?.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
-		pinned?.annotation.tool === "links" && assistController && createPortal(React.createElement(LinksPopover, {
+		pinned?.annotation?.tool === "links" && assistController && createPortal(React.createElement(LinksPopover, {
 			pinned, fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
 			onDismiss: () => assistController.dismiss(pinned.annotation),
 			onLink: (target) => assistController.link(pinned.annotation, target.pathname),
 		}), document.body),
+		pinned?.annotation?.tool === "checks" && assistController && createPortal(React.createElement(ChecksPopover, {
+			key: pinned.annotation.id,
+			pinned, generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`],
+			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
+			onDismiss: () => assistController.dismiss(pinned.annotation),
+			onApply: (value) => pinned.annotation.kind === "mixed-metaphor"
+				? assistController.applyBlock?.(pinned.annotation, value) : assistController.apply(pinned.annotation, value),
+			canApply: assistController.canApply(pinned.annotation), canApplyBlock: assistController.canApplyBlock?.(pinned.annotation),
+			chat: { placeholder: pinned.annotation.kind === "objection" ? "Ask about this sentence…" : "Ask about this…",
+				streamReply: (messages, { signal }) => assistTransport.stream({ tool: "checks", purpose: "chat",
+					messages, system: checkChatSystem({ annotation: pinned.annotation, title,
+						generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`], ...checkContext(assistController, pinned.annotation) }) }, { signal }) },
+		}), document.body),
+		React.createElement(WordFinder, { controller: assistController, transport: assistTransport,
+			root: lexicalEditor?.getRootElement(),
+			available: Boolean(assistStatus?.tools?.["word-finder"]?.available),
+			pinned: pinned?.tool === "word-finder" ? pinned.selection : null, busy: Boolean(pinned),
+			onOpen: openWordFinder, onClose: closeWordFinder }),
 	);
 }
 

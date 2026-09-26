@@ -28,6 +28,10 @@ function RoleLegend({ roles }) {
 	);
 }
 
+const checkSwitches = [
+	["citation", "Citation needed"], ["hedging", "Hedging"], ["objection", "Objections"], ["cliche", "Clichés & metaphors"],
+];
+
 /** Prop-driven tool switches shown above the editor dock. */
 export function AssistPanel({ open = false, panelRef, config = {}, status = {}, enabledTools = {}, onToggleTool = () => {}, onClose = () => {} }) {
 	const configuredTools = getClientTools().filter((tool) => Boolean(config.tools?.[tool.id]
@@ -54,8 +58,12 @@ export function AssistPanel({ open = false, panelRef, config = {}, status = {}, 
 	},
 		groups.map((group) => React.createElement("section", { className: "editor-dock-section", key: group.label },
 			React.createElement("h2", null, group.label),
-			group.tools.map((tool) => {
+			group.tools.flatMap((tool) => {
 				const toolStatus = status.tools?.[tool.id] ?? { available: false, reason: "Unavailable" };
+				if (tool.id === "checks") return checkSwitches.map(([key, label]) => React.createElement(ToolSwitch, {
+					key, id: `checks.${key}`, label, enabled: Boolean(enabledTools.checks?.[key]),
+					available: Boolean(toolStatus.available), reason: toolStatus.reason, onToggle: onToggleTool,
+				}));
 				return React.createElement(React.Fragment, { key: tool.id },
 					React.createElement(ToolSwitch, {
 					id: tool.id,

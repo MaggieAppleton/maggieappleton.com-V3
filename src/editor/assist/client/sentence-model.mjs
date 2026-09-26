@@ -18,22 +18,31 @@ function mdastText(node) {
 
 function textPieces(node, { skipNestedLists = false } = {}) {
 	const pieces = [];
-	function visit(current, top = false, inheritedLink = null) {
+	const footnotes = [];
+	let position = 0;
+	function visit(current, top = false, linked = false, inheritedLink = null) {
 		const kind = type(current);
 		if (kind === "protected-source" || kind === "code" || kind === "codeblock") return;
-		if (!top && kind === "writing-jsx") return;
+		if (!top && kind === "writing-jsx") {
+			if (componentName(current) === "Footnote") footnotes.push(position);
+			return;
+		}
 		if (!top && skipNestedLists && kind === "list") return;
+		const insideLink = linked || kind === "link" || kind === "autolink" || kind === "editor-wiki-link";
 		const linkUrl = kind === "link" ? current.getURL?.() ?? inheritedLink : inheritedLink;
 		const descendants = children(current);
 		if (!descendants.length) {
 			const text = current.getTextContent?.() ?? "";
-			if (text && current.getKey) pieces.push({ key: current.getKey(), text, linkUrl });
+			if (text && current.getKey) {
+				pieces.push({ key: current.getKey(), text, hasLink: insideLink, linkUrl });
+				position += text.length;
+			}
 			return;
 		}
-		for (const child of descendants) visit(child, false, linkUrl);
+		for (const child of descendants) visit(child, false, insideLink, linkUrl);
 	}
 	visit(node, true);
-	return pieces;
+	return { pieces, footnotes };
 }
 
 function pointAt(pieces, offset, end = false) {
@@ -68,10 +77,20 @@ export function buildSentenceSnapshot(root) {
 	const blockOccurrences = new Map();
 	const sentenceOccurrences = new Map();
 	function addBlock(node, kind, quoted, overridePieces) {
-		const pieces = overridePieces ?? textPieces(node, { skipNestedLists: kind === "listitem" });
+		const { pieces, footnotes } = overridePieces ? { pieces: overridePieces, footnotes: [] }
+			: textPieces(node, { skipNestedLists: kind === "listitem" });
 		const rawText = pieces.map((piece) => piece.text).join("");
+		// Soft wraps in MDX prose are spaces for segmentation, but must keep their
+		// original character width so sentence spans still map to Lexical offsets.
+		const segmentText = rawText.replace(/[\r\n\u2028\u2029]/gu, " ");
 		const clean = normaliseText(rawText);
 		if (!clean) return;
+		let position = 0;
+		const links = pieces.flatMap((piece) => {
+			const start = position;
+			position += piece.text.length;
+			return piece.hasLink ? [{ start, end: position }] : [];
+		});
 		const linkRanges = [];
 		let offset = 0;
 		for (const piece of pieces) {
@@ -87,26 +106,32 @@ export function buildSentenceSnapshot(root) {
 		const blockOccurrence = blockOccurrences.get(blockHash) ?? 0;
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
 		const sentences = [];
-		const segments = kind === "heading" ? [{ segment: rawText, index: 0 }]
-			: sentenceSegments(rawText);
+		const sentenceRanges = [];
+		const segments = kind === "heading" ? [{ segment: segmentText, index: 0 }]
+			: sentenceSegments(segmentText);
 		for (const { segment, index } of segments) {
 			const leading = segment.match(/^\s*/u)?.[0].length ?? 0;
 			const trailing = segment.match(/\s*$/u)?.[0].length ?? 0;
 			const start = index + leading;
 			const end = index + segment.length - trailing;
 			if (end <= start) continue;
-			const text = rawText.slice(start, end);
+			const text = segmentText.slice(start, end);
 			const sentenceHash = hash(normaliseText(text));
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
 			const id = `${sentenceHash}:${occurrence}`;
 			const ownLinks = linkRanges.filter((link) => link.start < end && link.end > start);
-			sentences.push({ id, hash: sentenceHash, text, index: sentences.length,
-				hasLink: ownLinks.length > 0,
+			const hasLink = links.some((link) => link.start < end && link.end > start) || ownLinks.length > 0;
+			sentences.push({ id, hash: sentenceHash, text, index: sentences.length, hasLink,
 				linkedSpans: ownLinks.map((link) => ({ start: Math.max(0, link.start - start),
 					end: Math.min(text.length, link.end - start) })),
 				links: [...new Set(ownLinks.map((link) => link.pathname))] });
+			sentenceRanges.push({ start, end });
 			locations.set(id, { pieces, start, end });
+		}
+		for (const offset of footnotes) {
+			const index = sentenceRanges.findLastIndex((range) => range.start <= offset);
+			if (sentences.length) sentences[Math.max(0, index)].hasLink = true;
 		}
 		blocks.push({ id: `${blockHash}:${blockOccurrence}`, hash: blockHash,
 			kind, quoted, index: blocks.length, sentences,
@@ -154,9 +179,10 @@ export function buildSentenceSnapshot(root) {
 
 export function changedSince(current, previous) {
 	if (!previous) return current.blocks.map((block) => block.id);
-	const old = new Map(previous.blocks.map((block) => [block.id, block.hash]));
-	return current.blocks.filter((block) => old.get(block.id) !== block.hash)
-		.map((block) => block.id);
+	// A moved block changes its reading-order context. An unchanged neighbour at
+	// the same position does not need another sentence-level judge request.
+	return current.blocks.filter((block, index) => block.id !== previous.blocks[index]?.id
+		|| block.hash !== previous.blocks[index]?.hash).map((block) => block.id);
 }
 
 function domTextPoint(editor, lexicalPoint) {

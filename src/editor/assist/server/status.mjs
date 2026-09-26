@@ -14,8 +14,10 @@ export function assistStatus(config, env = process.env) {
 	const tools = {};
 	for (const [id, tool] of Object.entries(config.tools)) {
 		const generator = tool.generator?.provider;
+		const chatGenerator = tool.chatGenerator?.provider;
 		const firstMissing = !judge.available ? judge : generator && !providers[generator]?.available
-			? providers[generator] : null;
+			? providers[generator] : chatGenerator && !providers[chatGenerator]?.available
+				? providers[chatGenerator] : null;
 		tools[id] = firstMissing ?? { available: true };
 	}
 	return { judge, providers, tools,

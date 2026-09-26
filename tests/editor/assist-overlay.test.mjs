@@ -31,10 +31,11 @@ test("marker overlay positions margin markers in a 22px stack and end marks afte
 	const wrapper = fakeElement(document, { left: 10, top: 20 });
 	const ranges = new Map([
 		["first", fakeRange([{ left: 30, top: 50, right: 80, bottom: 68 }, { left: 30, top: 70, right: 90, bottom: 88 }])],
-		["second", fakeRange([{ left: 30, top: 50, right: 80, bottom: 68 }])],
+		["second", fakeRange([{ left: 130, top: 50, right: 180, bottom: 68 }])],
 	]);
 	const overlay = createMarkerOverlay({
 		wrapper, document, rangeForAnnotation: (item) => ranges.get(item.id),
+		marginLeftForAnnotation: () => 30,
 		markerFor: (item) => item.id === "first"
 			? { placement: "end", label: "First marker", content: "A" }
 			: { placement: "margin", label: "Second marker", content: "B", className: "wa-marker-debug" },
@@ -45,7 +46,7 @@ test("marker overlay positions margin markers in a 22px stack and end marks afte
 	const [end, margin] = overlay.element.children;
 	assert.equal(end.style.left, "80px");
 	assert.equal(end.style.top, "50.5px");
-	assert.equal(margin.style.left, "-8px");
+	assert.equal(margin.style.left, "-8px", "a sentence starting midline still has a marker in the gutter");
 	assert.equal(margin.style.top, "28px");
 	assert.equal(margin.getAttribute("aria-label"), "Second marker");
 	assert.match(margin.className, /wa-marker-debug/);

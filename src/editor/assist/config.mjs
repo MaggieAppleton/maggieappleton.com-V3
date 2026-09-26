@@ -8,11 +8,21 @@ export const assistConfig = {
 		"openai-compatible": { defaultModel: "llama3.1" },
 	},
 	tools: {
+		"word-finder": { maxShown: 6,
+			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
 		roles: { enabled: true, thresholds: { minShown: 0.10 } },
 		links: { enabled: false, shortlistSize: 30,
 			thresholds: { target: 0.4, phrase: 0.35, natural: 0.5 } },
 		repetition: { enabled: true, thresholds: { pair: 0.5, minGroup: 3 },
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
+		checks: {
+			enabled: { citation: true, hedging: true, objection: true, cliche: true },
+			thresholds: { citation: 0.7, hedgingConfidence: 0.5, objection: 0.85,
+				cliche: 0.75, mixedMetaphor: 0.75 },
+			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+			chatGenerator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+		},
+		"argument-map": { enabled: false, thresholds: { parent: 0.4, advances: 0.35 } },
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },
