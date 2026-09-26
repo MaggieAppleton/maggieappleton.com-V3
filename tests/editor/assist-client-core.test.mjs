@@ -338,3 +338,18 @@ test("annotation store never exposes an annotation on quoted evidence", () => {
 	assert.deepEqual(store.getAnnotations(), []);
 	assert.equal(store.getRole(sentence.id), null);
 });
+
+test("dismissing a link target keeps another target on the same sentence", () => {
+	const model = snapshot("End-user programming supports creative work.");
+	const sentence = model.blocks[0].sentences[0];
+	const store = createAnnotationStore();
+	store.setModel(model);
+	const makeLink = (pathname) => ({ id: `links:${sentence.id}:${pathname}`, tool: "links",
+		kind: `link:${pathname}`, target: { type: "span", sentenceId: sentence.id, start: 0, end: 8 },
+		unitHash: sentence.hash });
+	const first = makeLink("/end-user-programming");
+	const second = makeLink("/creative-work");
+	store.replaceTool("links", [first, second]);
+	store.dismiss(first);
+	assert.deepEqual(store.getAnnotations(), [second]);
+});
