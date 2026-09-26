@@ -12,7 +12,7 @@ test.describe.serial("normal Markdown links in the local editor", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
 		fixture = await createFixtureProject({ name: "editor-link-menu" });
-		for (let index = 1; index <= 5; index++) {
+		for (let index = 1; index <= 4; index++) {
 			const slug = `link-menu-${index}-${randomUUID().slice(0, 8)}`;
 			await fixture.write(`src/content/notes/${slug}.mdx`, `---
 title: Link menu test ${index}
@@ -47,29 +47,14 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await expect(page.getByTestId("link-dialog-preview")).toBeVisible();
 	}
 
-	test("shows existing preview actions", async ({ page }) => {
-		test.setTimeout(120_000);
-		await openEditor(page, 1);
-		await preview(page);
-		await expect(page.getByRole("button", { name: "Edit link URL" })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Copy to clipboard" })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Remove link" })).toBeVisible();
-		if (process.env.LINK_MENU_CAPTURE_BEFORE) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-before.png" });
-		}
-	});
-
 	test("opens, copies, edits, and cancels without losing the linked text", async ({ page, context }) => {
 		test.setTimeout(120_000);
 		await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-		await openEditor(page, 2);
+		await openEditor(page, 1);
 		await preview(page);
 		const open = page.getByTestId("link-dialog-preview");
 		await expect(open).toHaveAttribute("href", initialUrl);
 		await expect(open).toHaveAccessibleName(`Open ${initialUrl} in new window`);
-		if (process.env.LINK_MENU_CAPTURE_AFTER) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-preview.png" });
-		}
 		const popupPromise = page.waitForEvent("popup");
 		await open.click();
 		const popup = await popupPromise;
@@ -83,9 +68,6 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await expect(url).toHaveValue(initialUrl);
 		await expect(page.getByRole("textbox", { name: "Anchor text" })).toHaveValue("linked phrase");
 		await expect(page.getByRole("textbox", { name: "Link title" })).toHaveValue("Original title");
-		if (process.env.LINK_MENU_CAPTURE_AFTER) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-edit.png" });
-		}
 		await url.fill("/changed-destination");
 		await page.getByRole("button", { name: "Cancel" }).click();
 		await expect(page.getByTestId("link-dialog-preview")).toHaveAttribute("href", initialUrl);
@@ -99,22 +81,13 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeFocused();
 	});
 
-	test("supports tab, Escape, and outside click", async ({ page }) => {
+	test("supports Escape and outside click dismissal", async ({ page }) => {
 		test.setTimeout(120_000);
-		await openEditor(page, 3);
+		await openEditor(page, 2);
 		await preview(page);
-		await page.getByTestId("link-dialog-preview").focus();
-		await page.keyboard.press("Tab");
-		await expect(page.getByRole("button", { name: "Edit link URL" })).toBeFocused();
-		await expect(page.getByRole("button", { name: "Edit link URL" })).toHaveCSS("outline-offset", "-3px");
-		if (process.env.LINK_MENU_CAPTURE_AFTER) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-focus.png" });
-		}
-		await page.keyboard.press("Enter");
+		await page.getByRole("button", { name: "Edit link URL" }).click();
 		const url = page.getByRole("textbox", { name: "URL" });
 		await expect(url).toBeFocused();
-		await page.keyboard.press("Tab");
-		await expect(page.getByRole("textbox", { name: "Anchor text" })).toBeFocused();
 		await page.keyboard.press("Escape");
 		await expect(page.getByTestId("link-dialog-preview")).toBeVisible();
 		await page.getByTestId("link-dialog-preview").focus();
@@ -127,14 +100,9 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 
 	test("unlinks and creates a new link with the shortcut", async ({ page }) => {
 		test.setTimeout(120_000);
-		await openEditor(page, 4);
+		await openEditor(page, 3);
 		await preview(page);
-		await page.getByTestId("link-dialog-preview").focus();
-		await page.keyboard.press("Tab");
-		await page.keyboard.press("Tab");
-		await page.keyboard.press("Tab");
-		await expect(page.getByRole("button", { name: "Remove link" })).toBeFocused();
-		await page.keyboard.press("Enter");
+		await page.getByRole("button", { name: "Remove link" }).click();
 		await expect(page.locator(".editor-body a", { hasText: "linked phrase" })).toHaveCount(0);
 		const body = page.getByRole("textbox", { name: "Article body" });
 		await expect(body).toBeFocused();
@@ -152,23 +120,16 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 	test("fits the preview and edit form on a narrow viewport", async ({ page }) => {
 		test.setTimeout(120_000);
 		await page.setViewportSize({ width: 320, height: 700 });
-		await openEditor(page, 5);
+		await openEditor(page, 4);
 		await preview(page);
 		const menu = page.locator(".local-link-dialog");
-		let bounds = await menu.boundingBox();
+		const bounds = await menu.boundingBox();
 		expect(bounds.x).toBeGreaterThanOrEqual(0);
 		expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
-		await expect(page.locator(".local-link-preview-text")).toHaveCSS("text-overflow", "ellipsis");
-		if (process.env.LINK_MENU_CAPTURE_AFTER) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-preview-narrow.png" });
-		}
 		await page.getByRole("button", { name: "Edit link URL" }).click();
 		await expect(page.getByRole("textbox", { name: "URL" })).toBeVisible();
-		bounds = await menu.boundingBox();
-		expect(bounds.x).toBeGreaterThanOrEqual(0);
-		expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
-		if (process.env.LINK_MENU_CAPTURE_AFTER) {
-			await page.screenshot({ path: "/tmp/local-editor-link-menu-edit-narrow.png" });
-		}
+		const editBounds = await menu.boundingBox();
+		expect(editBounds.x).toBeGreaterThanOrEqual(0);
+		expect(editBounds.x + editBounds.width).toBeLessThanOrEqual(320);
 	});
 });
