@@ -1,5 +1,7 @@
 # Local editing issue log
 
+Maggie pre-approved future superpowers specs on 2026-09-26; implementation can follow a written design without another approval request.
+
 ## Issue 1 — Edit-mode link menu styling
 
 - **Reported:** 2026-09-25
@@ -16,25 +18,25 @@
 ## Issue 2 — Selection formatting menu
 
 - **Reported:** 2026-09-25
-- **State:** Written design spec ready for Maggie's review
+- **State:** Reviewed and verified; PR open
 - **Request:** Show a simple black floating icon menu on text selection in edit mode. Actions: bold, italic, link, H1, H2, H3. Reference: screenshot supplied in the issue report; copy its simplicity rather than its exact appearance. Use shadcn components.
-- **Behavior:** Selecting text opens the menu. Choosing H1, H2, or H3 changes the whole paragraph containing that selection (confirmed by Maggie).
-- **Implementation and test owner:** Pending written spec handoff
-- **Reviewer:** Pending implementation
-- **Decisions:** Maggie confirmed heading actions affect the entire paragraph and approved an editor-integrated selection toolbar. Reuse Issue 1's adapted shadcn controls and link dialog. The menu will be scoped to editable body prose, including ordinary text inside links, but not title, description, code, or protected content. The spec currently applies heading changes to every paragraph touched by a multi-paragraph selection; Maggie's answer to that edge case is pending.
-- **Problems and fixes:** Luna's planning review confirmed MDXEditor's public selection and formatting APIs support the design. It requested explicit rules for multi-paragraph selections, dismissal, and selection scope; these are recorded in the written spec before implementation.
-- **Verification:** Pending
-- **PR:** Pending
+- **Behavior:** Selecting text opens the menu. Choosing H1, H2, or H3 changes the whole paragraph containing that selection. The approved spec applies the heading to every paragraph touched by a multi-paragraph selection.
+- **Implementation and test owner:** Sol agent
+- **Reviewer:** Terra (code/standards) and Luna (spec/visual), with additional Sol/Luna review rounds
+- **Decisions:** Maggie approved the written design spec, including the multi-paragraph rule. Reuse Issue 1's adapted shadcn controls and link dialog. Scope the menu to editable body prose, including ordinary text inside links and editable IntroParagraph text, but not title, description, code, or protected content. Disable heading controls when a selection touches IntroParagraph to preserve its wrapper.
+- **Problems and fixes:** Luna's planning review confirmed MDXEditor's public selection and formatting APIs support the design. It requested explicit rules for multi-paragraph selections, dismissal, and selection scope; these are recorded in the written spec. Early reviews found that reselecting the same range after dismissal can leave the menu hidden, the Link action has an incorrect toggle announcement, the fixed-width toolbar can overflow below a 252px effective viewport, and tests do not fully exercise excluded title/description/protected selections or mixed heading states. A separate Terra agent fixed these in `d8b4c3a` after Sol's baseline commit `f6b0e70`. Sol's browser runs exposed an offscreen placement edge and two test-fixture assumptions; he corrected those before the baseline commit. Later browser runs exposed a protected-table fixture blocking unrelated source export and an autosave race in a Save click; the fix agent isolated the table to its exclusion case and made the persistence assertion tolerate autosave completion. Re-review found a five-column grid for six controls that wrapped H3 into a second row while positioning assumed 44px height. A separate Sol agent repaired the one-row layout and added atomic geometry assertions in `e3e0c4a`. The expanded browser run then exposed a protected-selection scope gap: native selection endpoints can move into protected content while Lexical retains the earlier prose selection. A separate Terra agent added a native protected-endpoint guard and regression in `53f34c2`. Final Sol/Luna review found three more edge cases: editable IntroParagraph prose was excluded, uniform heading active state ignored an empty selected paragraph, and the menu touched the fixed Save dock at 180px effective viewport width. A separate Sol agent fixed all three in `6657d7d`. IntroParagraph is an inline JSX node in the actual browser fixture, so eligibility now uses its component name; Bold, Italic, and Link remain available, while heading buttons are disabled to preserve its wrapper. The browser fixture also needed scoped navigation retry for intermittent `net::ERR_ABORTED` and actual protected-code text selection rather than a plain-text table copy.
+- **Verification:** Focused browser checks passed after each fix round. Final independent Terra code and Luna visual/spec reviews found no actionable issues. The orchestrator reran `npm run test:editor` (111/111), `npm run test:editor:e2e` (16/16), `npm run build:local` (195 pages), and `git diff --check`. Four fresh UI screenshots were uploaded with GitHub CLI, verified inline in the PR, and kept out of the repository.
+- **PR:** https://github.com/MaggieAppleton/maggieappleton.com-V3/pull/277
 
 ## Issue 3 — Save dock position and exit control
 
 - **Reported:** 2026-09-25
-- **State:** Design approved; written spec review pending
+- **State:** Reviewed and verified; PR open
 - **Request:** Move the primary Save dock 24px from the browser's bottom and right edges. Put the saved status icon inside the Save button. Replace the eye icon with an X and show a more visible "Exit editor" tooltip on hover. Reference: screenshot supplied in the issue report.
 - **Behavior:** Saving, saved, and error icons all occupy the same place inside Save (confirmed by Maggie). The X keeps the existing exit link behavior.
-- **Implementation and test owner:** Pending written spec handoff
-- **Reviewer:** Pending implementation
+- **Implementation and test owner:** Terra agent; Luna follow-up fixture/test fix
+- **Reviewer:** Sol (code/standards) and Luna (spec/visual)
 - **Decisions:** Maggie approved a focused update to the existing dock. The current dock is centered at the bottom. Its exit control already links to the preview page and only uses a native title tooltip. The details panel will follow the dock's new right anchor, with a styled tooltip on hover and focus.
-- **Problems and fixes:** Terra's planning review confirmed the focused update is feasible. It requested a separate live status outside the Save button, right alignment and width limits for both details panels, a tooltip without duplicate assistive text, and deterministic error-state verification.
-- **Verification:** Pending
-- **PR:** Pending
+- **Problems and fixes:** Terra's planning review confirmed the focused update is feasible. It requested a separate live status outside the Save button, right alignment and width limits for both details panels, a tooltip without duplicate assistive text, and deterministic error-state verification. An early Luna review found browser test gaps; a separate Luna agent added saving, saved, error, tooltip, and narrow-panel coverage. The initial mount-failure test reused cached HTML, so Luna moved it to a fresh browser context and unique editor URL. The narrow preview click was intercepted by Astro's development toolbar; the test now uses keyboard Enter. Final Sol and Luna reviews found no remaining issues.
+- **Verification:** The orchestrator reran `npm run test:editor` (111/111), `npm run test:editor:e2e` (13/13), `npm run build:local` (195 pages), and `git diff --check`. Four screenshots were uploaded with GitHub CLI and verified inline in the PR.
+- **PR:** https://github.com/MaggieAppleton/maggieappleton.com-V3/pull/274
