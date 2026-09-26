@@ -30,6 +30,10 @@ The spec's 0.7 objection threshold produced 34 markers across 53 sentences in a 
 
 Maggie's OpenAI `gpt-6-sol` default applies to word finder candidate generation. This replaces the Anthropic Sonnet model shown in spec 05; `OPENAI_MODEL` can override it. Ranking still uses Jev, and the Anthropic provider remains available and is checked live.
 
+## 2026-09-26 · 05 word finder · Selection scope
+
+Spec 05 permits a selection anywhere within one analysed block, while its generation and ranking requests require a single complete sentence with the selected text marked. The editor therefore offers Word Finder only when the selection also stays within one analysed sentence. This avoids sending a partial or ambiguous sentence to either provider; a phrase inside that sentence still works up to the specified 12-word limit.
+
 ## 2026-09-26 · 06 link suggestions · Document refresh scope
 
 Spec 06 asks to analyse only blocks changed since the last run. The document scheduler sends the full block snapshot on a refresh so the link tool can deduplicate target suggestions across the whole post and replace stale annotations in one pass. The tool rechecks every block locally, but the sidecar cache reuses Jev answers for unchanged block state. This changes local refresh work; unchanged blocks do not cause new Jev calls.
