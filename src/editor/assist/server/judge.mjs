@@ -1,6 +1,7 @@
 import { assistConfig } from "../config.mjs";
 import { hash } from "../shared/hash.mjs";
 import { toolRegistry } from "./tools/index.mjs";
+import { rolesTool } from "./tools/roles.mjs";
 
 function cacheKey(tool, model, request) {
 	return hash(tool.id, tool.version, model, request.state, request.questions);
@@ -17,27 +18,47 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 	if (!sidecars || typeof sidecars.getCache !== "function" || typeof sidecars.setCache !== "function") {
 		throw new TypeError("Judge needs a sidecar store");
 	}
+	const pending = new Map();
+
+	function answersFor(tool, documentId, builtRequest) {
+		const key = cacheKey(tool, config.judge.model, builtRequest);
+		const flightKey = `${documentId}:${key}`;
+		if (pending.has(flightKey)) return pending.get(flightKey);
+		const result = (async () => {
+			const cached = await sidecars.getCache(documentId, key);
+			if (cached?.answers) return cached.answers;
+			const response = await jev.systemOne({ model: config.judge.model,
+				state: builtRequest.state, questions: builtRequest.questions });
+			const answers = response?.answers;
+			if (!answers || typeof answers !== "object") throw new Error("Jev returned no answers");
+			await sidecars.setCache(documentId, key,
+				{ answers, model: config.judge.model, createdAt: new Date().toISOString() });
+			return answers;
+		})();
+		pending.set(flightKey, result);
+		void result.finally(() => pending.delete(flightKey)).catch(() => {});
+		return result;
+	}
+
+	async function rolesFor(context, documentId) {
+		const built = rolesTool.buildRequests(context);
+		const answers = await Promise.all(built.map((request) => answersFor(rolesTool, documentId, request)));
+		return built.flatMap((request, index) => rolesTool.mapAnswers(context, request.key, answers[index]));
+	}
 
 	async function runTool(tool, request) {
-		const model = config.judge.model;
 		const context = {
 			blocks: request.blocks, targetBlockIds: request.blockIds,
 			title: request.title, config,
 		};
+		if (tool.id === "repetition") context.roleAnnotations = await rolesFor(context, request.documentId);
 		const built = await tool.buildRequests(context);
-		const annotationSets = await Promise.all(built.map(async (builtRequest) => {
-			const key = cacheKey(tool, model, builtRequest);
-			const cached = await sidecars.getCache(request.documentId, key);
-			let answers = cached?.answers;
-			if (!answers) {
-				const response = await jev.systemOne({ model, state: builtRequest.state, questions: builtRequest.questions });
-				answers = response?.answers;
-				if (!answers || typeof answers !== "object") throw new Error("Jev returned no answers");
-				await sidecars.setCache(request.documentId, key, { answers, model, createdAt: new Date().toISOString() });
-			}
-			return tool.mapAnswers(context, builtRequest.key, answers);
-		}));
-		return annotationSets.flat();
+		const answers = await Promise.all(built.map((builtRequest) =>
+			answersFor(tool, request.documentId, builtRequest)));
+		if (tool.aggregateAnswers) {
+			return tool.mapAnswers(context, null, Object.assign({}, ...answers));
+		}
+		return built.flatMap((builtRequest, index) => tool.mapAnswers(context, builtRequest.key, answers[index]));
 	}
 
 	return {

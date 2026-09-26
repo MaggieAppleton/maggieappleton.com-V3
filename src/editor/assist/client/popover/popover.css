@@ -14,7 +14,7 @@
 }
 
 .wa-hover-card { min-width: 200px; padding: 10px 12px; }
-.wa-pinned-popover { width: 340px; padding: 10px 12px; overflow-y: auto; }
+.wa-pinned-popover { width: var(--wa-popover-width, 340px); padding: 10px 12px; overflow-y: auto; }
 :is(.wa-hover-card, .wa-pinned-popover) p { font: inherit; }
 
 .wa-role-hover { width: 194px; max-width: 100%; }
@@ -78,6 +78,33 @@
 .wa-popover-body { color: var(--color-gray-600); }
 .wa-popover-body > :first-child { margin-top: 0; }
 .wa-popover-body > :last-child { margin-bottom: 0; }
+
+.wa-repetition-rows { border-top: 1px solid var(--color-gray-200); }
+.wa-repetition-popover {
+	--wa-accent: var(--color-salmon);
+	max-width: min(520px, calc(100vw - 24px));
+}
+.wa-repetition-row {
+	display: grid;
+	grid-template-columns: 28px minmax(0, 1fr);
+	width: 100%;
+	gap: 10px;
+	border: 0;
+	border-bottom: 1px solid var(--color-gray-200);
+	padding: 9px 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.wa-repetition-row:hover { background: color-mix(in srgb, var(--color-cream) 55%, transparent); }
+.wa-repetition-row:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: -2px; }
+.wa-repetition-row.is-current .wa-repetition-sentence { font-weight: 700; }
+.wa-repetition-location { color: var(--color-gray-600); font-size: 11px; }
+.wa-repetition-sentence { line-height: 1.5; }
+.wa-repetition-hover strong { display: block; margin-bottom: 5px; color: var(--color-black); }
+.wa-repetition-hover-preview { overflow: hidden; margin: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
 
 .wa-popover-footer { display: flex; justify-content: flex-end; margin-top: 10px; }
 .wa-popover-apply {

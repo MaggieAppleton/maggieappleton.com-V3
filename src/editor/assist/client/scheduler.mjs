@@ -10,11 +10,12 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 	onClear = () => {}, timing = {}, clock = defaultClock }) {
 	const configured = new Map(tools.map((tool) => [tool.id, { ...tool }]));
 	const delay = { blocks: timing.sentenceIdleMs ?? 1500, document: timing.documentIdleMs ?? 8000 };
-	const timers = { blocks: null, document: null };
+	const timers = { blocks: null, document: null, roles: null };
 	const inFlight = new Set();
 	const dirty = new Set();
 	let model = { blocks: [] };
 	let destroyed = false;
+	let awaitingInitialRoles = false;
 
 	function enabled(level, only) {
 		return [...configured.values()].filter((tool) => tool.enabled && tool.level === level
@@ -28,9 +29,10 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		if (request.scope === "document" && current.size !== request.hashes.size) return false;
 		return [...request.hashes].every(([id, value]) => current.get(id) === value);
 	}
-	function send(scope, toolId = null) {
+	function send(scope, toolId = null, excluded = []) {
 		if (destroyed) return;
-		const names = enabled(scope === "blocks" ? "sentence" : "document", toolId);
+		const names = enabled(scope === "blocks" ? "sentence" : "document", toolId)
+			.filter((name) => !excluded.includes(name));
 		if (!names.length) return;
 		const blockIds = scope === "blocks"
 			? (toolId ? model.blocks.map((block) => block.id) : [...dirty]) : undefined;
@@ -54,6 +56,15 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 				const annotations = (result.annotations ?? []).filter((item) => active.includes(item.tool)
 					|| item.tool == null);
 				onAnnotations(annotations, { tools: active, scope, blockIds, errors: result.errors ?? [] });
+				if (awaitingInitialRoles && scope === "blocks" && active.includes("roles")) {
+					awaitingInitialRoles = false;
+					if (timers.document == null && configured.get("repetition")?.enabled) {
+						timers.roles = clock.setTimer(() => {
+							timers.roles = null;
+							send("document", "repetition");
+						}, timing.rolesFollowupMs ?? 200);
+					}
+				}
 			})
 			.catch((error) => {
 				if (!controller.signal.aborted && !destroyed) onAnnotations([], {
@@ -77,6 +88,10 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		const edited = new Set([...changed, ...[...before.keys()].filter((id) => !after.has(id))]);
 		model = next;
 		if (!edited.size) return;
+		if (timers.roles != null) {
+			clock.clearTimer(timers.roles);
+			timers.roles = null;
+		}
 		for (const flight of inFlight) {
 			if (flight.scope === "document" || [...edited].some((id) => flight.hashes.has(id))) {
 				flight.controller.abort();
@@ -91,7 +106,7 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 			if (timers.document != null) clock.clearTimer(timers.document);
 			timers.blocks = timers.document = null;
 			send("blocks");
-			send("document");
+			send("document", null, awaitingInitialRoles ? ["repetition"] : []);
 		} else {
 			if (dirty.size) schedule("blocks");
 			schedule("document");
@@ -99,7 +114,10 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 	}
 	return {
 		update,
-		start(next) { update(next, { immediate: true }); },
+		start(next) {
+			awaitingInitialRoles = Boolean(configured.get("roles")?.enabled && configured.get("repetition")?.enabled);
+			update(next, { immediate: true });
+		},
 		runNow(toolId) {
 			const tool = configured.get(toolId);
 			if (tool?.enabled) send(tool.level === "sentence" ? "blocks" : "document", toolId);
@@ -110,6 +128,10 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 			tool.enabled = active;
 			if (active) this.runNow(toolId);
 			else {
+				if (toolId === "roles" && awaitingInitialRoles) {
+					awaitingInitialRoles = false;
+					if (timers.document == null) send("document", "repetition");
+				}
 				const retry = new Set();
 				for (const flight of inFlight) if (flight.tools.includes(toolId)) {
 					flight.controller.abort();
@@ -124,7 +146,7 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		},
 		destroy() {
 			destroyed = true;
-			for (const scope of ["blocks", "document"]) if (timers[scope] != null) clock.clearTimer(timers[scope]);
+			for (const scope of ["blocks", "document", "roles"]) if (timers[scope] != null) clock.clearTimer(timers[scope]);
 			for (const flight of inFlight) flight.controller.abort();
 			inFlight.clear();
 			dirty.clear();
