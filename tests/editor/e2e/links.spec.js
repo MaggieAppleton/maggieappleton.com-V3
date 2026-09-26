@@ -105,6 +105,7 @@ ${sentenceText}\n`;
 		await expect(popover).toHaveCount(0);
 		await expect.poll(() => linkHighlightText(page)).toBe("");
 		await expect.poll(() => [...dismissalsByDocument.values()].flat()).toHaveLength(1);
+		assert.equal([...dismissalsByDocument.values()].flat()[0].kind, `link:${target.pathname}`);
 		assert.equal(await readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8"), source,
 			"dismissing a link suggestion must not modify the draft");
 
@@ -139,7 +140,7 @@ async function mockAssist(page, origin, { judgeRequests = [], dismissalsByDocume
 		const start = sentence.text.indexOf(phrase);
 		return route.fulfill({ json: { errors: [], annotations: [{
 			id: `links:${sentence.id}:${target.pathname}`,
-			tool: "links", kind: "link",
+			tool: "links", kind: `link:${target.pathname}`,
 			target: { type: "span", sentenceId: sentence.id, start, end: start + phrase.length },
 			unitHash: sentence.hash, confidence: 0.95,
 			data: { targets: [target] },
