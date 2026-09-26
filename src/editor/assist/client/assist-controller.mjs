@@ -4,7 +4,7 @@ import { createSentenceModel } from "./sentence-model.mjs";
 import { createAssistScheduler } from "./scheduler.mjs";
 import { createHighlightOverlay } from "./overlay/highlights.mjs";
 import { createMarkerOverlay } from "./overlay/markers.mjs";
-import { createHighlightHitTest } from "./overlay/hit-test.mjs";
+import { annotationAtPoint, createHighlightHitTest } from "./overlay/hit-test.mjs";
 import { getClientTool, getClientTools } from "./tools/index.mjs";
 
 function plainTextSelection(selection) {
@@ -49,7 +49,9 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		return null;
 	};
 	const highlights = createHighlightOverlay({ rangeForAnnotation,
-		classNameFor: (annotation) => annotation.tool === "debug" ? null : `wa-${annotation.tool}-${annotation.kind}` });
+		classNameFor: (annotation) => annotation.tool === "debug" ? null
+			: annotation.tool === "roles" ? `wa-role-${annotation.kind}`
+				: `wa-${annotation.tool}-${annotation.kind}` });
 	const root = editor.getRootElement();
 	const markers = createMarkerOverlay({ wrapper, rangeForAnnotation, markerFor,
 		onActivate(annotation, button) {
@@ -104,6 +106,13 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 
 	return {
 		model, store,
+		getRoleAtSelection() {
+			const selection = root.ownerDocument.getSelection();
+			if (!selection?.anchorNode || !selection.focusNode
+				|| !root.contains(selection.anchorNode) || !root.contains(selection.focusNode)) return null;
+			return annotationAtPoint(store.getAnnotations().filter((item) => item.tool === "roles"),
+				rangeForAnnotation, selection.focusNode, selection.focusOffset);
+		},
 		setToolEnabled: (id, enabled) => scheduler.setToolEnabled(id, enabled),
 		getSentence: (id) => sentenceFor(model.getSnapshot(), id),
 		getAnnotation: (id) => store.getAnnotations().find((item) => item.id === id) ?? null,

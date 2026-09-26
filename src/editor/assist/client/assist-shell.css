@@ -60,6 +60,23 @@
 	font-size: 0.9em;
 }
 
+.editor-assist-role-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px 10px;
+	margin: 3px 0 7px;
+	font-size: 0.78em;
+	color: var(--color-gray-600);
+}
+
+.editor-assist-role-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.editor-assist-role-legend-item i {
+	width: 10px;
+	height: 10px;
+	border-radius: 3px;
+	background: var(--wa-role-colour);
+}
+
 .editor-assist-drawer {
 	position: fixed;
 	inset: 0 0 0 auto;

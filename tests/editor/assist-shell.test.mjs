@@ -117,6 +117,35 @@ test("Assist panel stays hidden until the dock opens it", () => {
 	assert.equal(html, "");
 });
 
+test("Assist panel shows the Sentence roles legend while its switch is on", () => {
+	const html = renderToStaticMarkup(React.createElement(AssistPanel, {
+		open: true,
+		config: { tools: { roles: { enabled: true } } },
+		status: { tools: { roles: { available: true } } },
+		enabledTools: { roles: true },
+		onToggleTool() {},
+	}));
+
+	assert.match(html, /Highlights/);
+	assert.match(html, /Sentence roles/);
+	assert.match(html, /editor-assist-role-legend/);
+	assert.match(html, /Claim/);
+	assert.match(html, /Framing/);
+});
+
+test("Assist panel hides the Sentence roles legend when its switch is off", () => {
+	const html = renderToStaticMarkup(React.createElement(AssistPanel, {
+		open: true,
+		config: { tools: { roles: { enabled: true } } },
+		status: { tools: { roles: { available: true } } },
+		enabledTools: { roles: false },
+		onToggleTool() {},
+	}));
+
+	assert.match(html, /Sentence roles/);
+	assert.doesNotMatch(html, /editor-assist-role-legend/);
+});
+
 test("Drawer renders registered views and passes through the shared jump callback", () => {
 	let viewJumpTo;
 	const unregister = registerDrawerView({

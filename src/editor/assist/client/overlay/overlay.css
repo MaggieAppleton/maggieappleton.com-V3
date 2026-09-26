@@ -1,5 +1,22 @@
 #local-writing-editor .prose-wrapper { position: relative; }
 ::highlight(wa-jump) { background-color: color-mix(in srgb, var(--color-sea-blue) 22%, transparent); }
+::highlight(wa-role-claim) { background-color: color-mix(in srgb, var(--color-salmon) 20%, transparent); }
+::highlight(wa-role-opinion) { background-color: color-mix(in srgb, var(--color-gold) 44%, transparent); }
+::highlight(wa-role-evidence) { background-color: color-mix(in srgb, var(--color-status-success) 20%, transparent); }
+::highlight(wa-role-example) { background-color: color-mix(in srgb, var(--color-sea-blue) 20%, transparent); }
+::highlight(wa-role-qualification) { background-color: color-mix(in srgb, var(--color-purple) 20%, transparent); }
+::highlight(wa-role-speculation) { background-color: color-mix(in srgb, var(--color-bright-crimson) 20%, transparent); }
+::highlight(wa-role-concession) { background-color: color-mix(in srgb, var(--color-dark-sea-blue) 16%, color-mix(in srgb, var(--color-status-success) 10%, transparent)); }
+::highlight(wa-role-framing) { background-color: color-mix(in srgb, var(--color-gray-400) 20%, transparent); }
+
+.editor-assist-role--claim, .wa-role-hover-row--claim { --wa-role-colour: var(--color-salmon); }
+.editor-assist-role--opinion, .wa-role-hover-row--opinion { --wa-role-colour: var(--color-gold); }
+.editor-assist-role--evidence, .wa-role-hover-row--evidence { --wa-role-colour: var(--color-status-success); }
+.editor-assist-role--example, .wa-role-hover-row--example { --wa-role-colour: var(--color-sea-blue); }
+.editor-assist-role--qualification, .wa-role-hover-row--qualification { --wa-role-colour: var(--color-purple); }
+.editor-assist-role--speculation, .wa-role-hover-row--speculation { --wa-role-colour: var(--color-bright-crimson); }
+.editor-assist-role--concession, .wa-role-hover-row--concession { --wa-role-colour: color-mix(in srgb, var(--color-dark-sea-blue) 62%, var(--color-status-success)); }
+.editor-assist-role--framing, .wa-role-hover-row--framing { --wa-role-colour: var(--color-gray-400); }
 .writing-assist-marker-layer {
 	position: absolute;
 	inset: 0;

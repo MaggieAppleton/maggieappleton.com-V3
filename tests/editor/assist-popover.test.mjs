@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createHoverController, HoverCard } from "../../src/editor/assist/client/popover/HoverCard.mjs";
 import { PinnedPopover } from "../../src/editor/assist/client/popover/PinnedPopover.mjs";
+import { RoleHover, roleHoverRows } from "../../src/editor/assist/client/popover/RoleHover.mjs";
 import { extractRewrite, consumeChatStream } from "../../src/editor/assist/client/popover/ChatThread.mjs";
 
 function clock() {
@@ -85,6 +86,19 @@ test("hover and pinned popovers keep body slots and accessible controls", () => 
 	assert.doesNotMatch(noApply, />Apply<\/button>/);
 	assert.doesNotMatch(noApply, /aria-label="Dismiss"/);
 	assert.match(noApply, /aria-label="Close"/);
+});
+
+test("role hover filters low confidence rows and orders the rest by probability", () => {
+	const probabilities = { framing: 0.09, opinion: 0.6, claim: 0.3, evidence: 0.1 };
+	assert.deepEqual(roleHoverRows(probabilities).map(({ key, percent }) => [key, percent]), [
+		["opinion", 60], ["claim", 30], ["evidence", 10],
+	]);
+	assert.deepEqual(roleHoverRows(probabilities, 0.25).map(({ key }) => key), ["opinion", "claim"]);
+	const html = renderToStaticMarkup(React.createElement(RoleHover, { probabilities }));
+	assert.match(html, /class="wa-role-hover"/);
+	assert.match(html, /data-role="opinion"/);
+	assert.match(html, /60%/);
+	assert.doesNotMatch(html, /Framing/);
 });
 
 test("chat consumes streamed chunks and extracts a rewrite for Apply", async () => {

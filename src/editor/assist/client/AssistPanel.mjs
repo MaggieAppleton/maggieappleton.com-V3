@@ -21,6 +21,13 @@ function ToolSwitch({ id, label, enabled, available, reason, onToggle }) {
 	);
 }
 
+function RoleLegend({ roles }) {
+	return React.createElement("div", { className: "editor-assist-role-legend", "aria-label": "Sentence role colours" },
+		roles.map((role) => React.createElement("span", { className: `editor-assist-role-legend-item editor-assist-role--${role.key}`, key: role.key },
+			React.createElement("i", { "aria-hidden": "true" }), role.label)),
+	);
+}
+
 /** Prop-driven tool switches shown above the editor dock. */
 export function AssistPanel({ open = false, panelRef, config = {}, status = {}, enabledTools = {}, onToggleTool = () => {}, onClose = () => {} }) {
 	const configuredTools = getClientTools().filter((tool) => Boolean(config.tools?.[tool.id]?.enabled));
@@ -48,15 +55,17 @@ export function AssistPanel({ open = false, panelRef, config = {}, status = {}, 
 			React.createElement("h2", null, group.label),
 			group.tools.map((tool) => {
 				const toolStatus = status.tools?.[tool.id] ?? { available: false, reason: "Unavailable" };
-				return React.createElement(ToolSwitch, {
-					key: tool.id,
+				return React.createElement(React.Fragment, { key: tool.id },
+					React.createElement(ToolSwitch, {
 					id: tool.id,
 					label: tool.label,
 					enabled: Boolean(enabledTools[tool.id]),
 					available: Boolean(toolStatus.available),
 					reason: toolStatus.reason,
 					onToggle: onToggleTool,
-				});
+					}),
+					tool.id === "roles" && enabledTools[tool.id] && React.createElement(RoleLegend, { roles: tool.roles }),
+				);
 			}))),
 	);
 }

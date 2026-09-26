@@ -264,13 +264,13 @@ test("annotation store filters dismissals and stale hashes, and exposes a senten
 	store.setModel(model);
 	const role = { id: "roles:first:claim", tool: "roles", kind: "claim",
 		target: { type: "sentence", sentenceId: first.id }, unitHash: first.hash,
-		confidence: 0.8, data: { claim: 0.8 } };
+		confidence: 0.8, data: { probabilities: { claim: 0.8, opinion: 0.2 } } };
 	const other = { id: "debug:second:colour", tool: "debug", kind: "colour",
 		target: { type: "sentence", sentenceId: second.id }, unitHash: second.hash,
 		confidence: 0.7, data: {} };
 	store.replaceTool("roles", [role]);
 	store.replaceTool("debug", [other]);
-	assert.equal(store.getRole(first.id), role);
+	assert.deepEqual(store.getRole(first.id), { role: "claim", probabilities: { claim: 0.8, opinion: 0.2 } });
 	assert.equal(store.getAnnotations().length, 2);
 	store.dismiss({ tool: "roles", kind: "claim", unitHash: first.hash });
 	assert.equal(store.getRole(first.id), null);
