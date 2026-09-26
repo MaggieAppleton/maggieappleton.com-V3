@@ -1,4 +1,5 @@
 import { $createRangeSelection, $isTextNode, $setSelection } from "lexical";
+import { $toggleLink } from "@lexical/link";
 import { createAnnotationStore } from "./annotation-store.mjs";
 import { createSentenceModel } from "./sentence-model.mjs";
 import { createAssistScheduler } from "./scheduler.mjs";
@@ -31,7 +32,7 @@ function sentenceFor(snapshot, id) {
 }
 
 /** Keep the analysis, sidecar and visual overlays outside Lexical's document. */
-export function createAssistController({ editor, wrapper, transport, documentId, title, config,
+export function createAssistController({ editor, wrapper, transport, documentId, pathname, title, config,
 	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {} }) {
 	const model = createSentenceModel(editor);
 	let jumpTimer;
@@ -51,6 +52,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const highlights = createHighlightOverlay({ rangeForAnnotation,
 		classNameFor: (annotation) => annotation.tool === "debug" ? null
 			: annotation.tool === "roles" ? `wa-role-${annotation.kind}`
+				: annotation.tool === "links" ? "wa-link"
 				: `wa-${annotation.tool}-${annotation.kind}` });
 	const root = editor.getRootElement();
 	const markers = createMarkerOverlay({ wrapper, rangeForAnnotation, markerFor,
@@ -84,11 +86,12 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const unsubscribeStore = store.subscribe((annotations) => {
 		highlights.update(annotations);
 		markers.update(annotations);
-		hitTest.update(annotations.filter((item) => item.tool !== "debug"));
+		hitTest.update(annotations.filter((item) => item.tool === "links")
+			.concat(annotations.filter((item) => item.tool !== "debug" && item.tool !== "links")));
 	});
-	const scheduler = createAssistScheduler({ documentId, title, timing: config.timing,
+	const scheduler = createAssistScheduler({ documentId, pathname, title, timing: config.timing,
 		tools: getClientTools().filter(({ id }) => config.tools[id]).map(({ id, level }) => ({
-			id, level, enabled: Boolean(config.tools[id].enabled && enabledTools[id]),
+			id, level, enabled: Boolean(enabledTools[id]),
 		})),
 		judge: (request, options) => transport.judge(request, options),
 		onAnnotations: (annotations, meta) => store.applyResult(annotations, meta),
@@ -136,6 +139,22 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 				$setSelection(selection);
 				selection.insertText(value);
 			});
+		},
+		link(annotation, pathname) {
+			if (annotation.tool !== "links" || !annotation.data?.targets?.some((target) => target.pathname === pathname)
+				|| !store.getAnnotations().some((item) => item.id === annotation.id) || !this.canApply(annotation)) return false;
+			const { sentenceId, start, end } = annotation.target;
+			const points = model.pointsForSpan(sentenceId, start, end);
+			if (!points) return false;
+			editor.update(() => {
+				const selection = $createRangeSelection();
+				selection.anchor.set(points.start.key, points.start.offset, "text");
+				selection.focus.set(points.end.key, points.end.offset, "text");
+				if (!plainTextSelection(selection)) return;
+				$setSelection(selection);
+				$toggleLink(pathname);
+			});
+			return true;
 		},
 		canApply(annotation) {
 			const target = annotation.target;

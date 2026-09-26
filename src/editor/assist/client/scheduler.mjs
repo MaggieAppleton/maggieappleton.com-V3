@@ -6,7 +6,7 @@ const defaultClock = {
 };
 
 /** Judge requests are scoped by block IDs; results are accepted only for the same hashes. */
-export function createAssistScheduler({ documentId, title, tools, judge, onAnnotations,
+export function createAssistScheduler({ documentId, pathname, title, tools, judge, onAnnotations,
 	onClear = () => {}, timing = {}, clock = defaultClock }) {
 	const configured = new Map(tools.map((tool) => [tool.id, { ...tool }]));
 	const delay = { blocks: timing.sentenceIdleMs ?? 1500, document: timing.documentIdleMs ?? 8000 };
@@ -41,7 +41,8 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		const hashes = hashMap(model);
 		const covered = scope === "blocks" ? new Map(blockIds.map((id) => [id, hashes.get(id)])) : hashes;
 		const controller = new AbortController();
-		const request = { documentId, title, tools: names, blocks: model.blocks, scope };
+		const request = { documentId, pathname, title, tools: names, blocks: model.blocks,
+			linkedPathnames: model.linkedPathnames ?? [], scope };
 		if (scope === "blocks") request.blockIds = blockIds;
 		const flight = { scope, tools: names, hashes: covered, controller };
 		inFlight.add(flight);

@@ -19,6 +19,7 @@ import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
+import { LinksHover, LinksPopover } from "../assist/client/popover/LinksPopover.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
@@ -31,7 +32,7 @@ function savedTools(config) {
 		const stored = JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY) ?? "null");
 		if (!stored || typeof stored !== "object") return defaults;
 		return Object.fromEntries(Object.keys(defaults).map((id) => [id,
-			Boolean(config.tools[id].enabled && (stored[id] ?? defaults[id]))]));
+			Boolean(stored[id] ?? defaults[id])]));
 	} catch { return defaults; }
 }
 
@@ -162,7 +163,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			if (!active) return;
 			controller = createAssistController({
 				editor: lexicalEditor, wrapper: article, transport: assistTransport,
-				documentId: boot.documentId, title, config: assistStatus.config,
+				documentId: boot.documentId, pathname: boot.document.previewUrl,
+				title, config: assistStatus.config,
 				enabledTools: Object.fromEntries(Object.entries(enabledToolsRef.current).map(([id, enabled]) =>
 					[id, enabled && assistStatus.tools[id]?.available])), dismissals,
 				onHover: (next) => setHover((previous) => next ?? (previous ? { ...previous, active: false } : null)),
@@ -381,6 +383,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			: hover.annotation.tool === "repetition"
 				? React.createElement(RepetitionHover, { annotation: hover.annotation,
 					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
+			: hover.annotation.tool === "links"
+				? React.createElement(LinksHover, { annotation: hover.annotation })
 			: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
 		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
@@ -390,6 +394,12 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		pinned?.annotation.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
+		}), document.body),
+		pinned?.annotation.tool === "links" && assistController && createPortal(React.createElement(LinksPopover, {
+			pinned, fallbackFocus: lexicalEditor?.getRootElement(),
+			onClose: () => setPinned(null),
+			onDismiss: () => assistController.dismiss(pinned.annotation),
+			onLink: (target) => assistController.link(pinned.annotation, target.pathname),
 		}), document.body),
 	);
 }

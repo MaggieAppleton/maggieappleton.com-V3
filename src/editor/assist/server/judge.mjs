@@ -49,8 +49,12 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 	async function runTool(tool, request) {
 		const context = {
 			blocks: request.blocks, targetBlockIds: request.blockIds,
-			title: request.title, config,
+			allBlocks: request.blocks, linkedPathnames: request.linkedPathnames,
+			pathname: request.pathname, title: request.title, config,
 		};
+		if (typeof tool.run === "function") {
+			return tool.run(context, (builtRequest) => answersFor(tool, request.documentId, builtRequest));
+		}
 		if (tool.id === "repetition") context.roleAnnotations = await rolesFor(context, request.documentId);
 		const built = await tool.buildRequests(context);
 		const answers = await Promise.all(built.map((builtRequest) =>
