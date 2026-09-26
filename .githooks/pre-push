@@ -5,11 +5,6 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-if ! git rev-parse --verify 'origin/main^{commit}' >/dev/null 2>&1; then
-  echo "PR hygiene: origin/main is unavailable; fetch it before pushing." >&2
-  exit 2
-fi
-
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_ref" in
     refs/heads/*) ;;
@@ -22,6 +17,11 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     *[!0]*) ;;
     *) continue ;;
   esac
+
+  if ! git rev-parse --verify 'origin/main^{commit}' >/dev/null 2>&1; then
+    echo "PR hygiene: origin/main is unavailable; fetch it before pushing." >&2
+    exit 2
+  fi
 
   echo "PR hygiene: checking $branch ($local_sha) against origin/main"
   node scripts/check-pr-artifacts.mjs origin/main "$local_sha"

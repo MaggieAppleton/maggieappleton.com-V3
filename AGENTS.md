@@ -20,6 +20,8 @@ npm run build        # Production build
 
 ## Pull requests
 
+Run `npm run setup:hooks` once per clone to install the local pre-push check.
+
 Before creating a PR, use the [PR hygiene skill](.agents/skills/pr-hygiene/SKILL.md) to clean up process notes and review changed tests.
 
 ## Content Collections
