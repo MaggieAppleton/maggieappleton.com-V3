@@ -17,9 +17,19 @@ export function getDrawerViews() {
 	return [...drawerViews.values()];
 }
 
-/** Shared right-hand drawer. Registered views receive the editor's jumpTo callback. */
-export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () => {} }) {
-	const [selectedId, setSelectedId] = useState(views[0]?.id ?? null);
+const MAP_VIEW_STORAGE_KEY = "writing-assist:map-view";
+
+function savedViewId(views) {
+	try {
+		const saved = localStorage.getItem(MAP_VIEW_STORAGE_KEY);
+		if (views.some((view) => view.id === saved)) return saved;
+	} catch { /* Storage can be unavailable. */ }
+	return views[0]?.id ?? null;
+}
+
+/** Shared right-hand drawer. Registered views receive the editor's jumpTo callback and current map. */
+export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () => {}, map, loading = false, error = null }) {
+	const [selectedId, setSelectedId] = useState(() => savedViewId(views));
 	const closeButton = useRef(null);
 	useEffect(() => {
 		if (!open) return undefined;
@@ -50,12 +60,15 @@ export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () =>
 					key: view.id,
 					type: "button",
 					"aria-pressed": activeView?.id === view.id,
-					onClick: () => setSelectedId(view.id),
+					onClick: () => {
+						setSelectedId(view.id);
+						try { localStorage.setItem(MAP_VIEW_STORAGE_KEY, view.id); } catch { /* Storage can be unavailable. */ }
+					},
 				}, view.label))),
 			React.createElement("button", { ref: closeButton, type: "button", className: "editor-assist-drawer-close", onClick: onClose, "aria-label": "Close" },
 				React.createElement(XIcon, { size: 18, "aria-hidden": "true" })),
 		),
 		activeView && React.createElement("div", { className: "editor-assist-drawer-body", key: activeView.id },
-			activeView.render({ jumpTo })),
+			activeView.render({ jumpTo, map, loading, error })),
 	);
 }

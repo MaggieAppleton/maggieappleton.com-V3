@@ -1,4 +1,5 @@
 function targetKey(target) {
+	if (target.type === "document") return "document";
 	if (target.type === "span") return `${target.sentenceId}:${target.start}-${target.end}`;
 	if (target.type === "sentence") return target.sentenceId;
 	if (target.type === "block") return target.blockId;

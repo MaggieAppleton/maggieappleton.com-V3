@@ -8,7 +8,7 @@ import { AssistPanel } from "../../src/editor/assist/client/AssistPanel.mjs";
 import { Drawer, getDrawerViews, registerDrawerView } from "../../src/editor/assist/client/Drawer.mjs";
 import { getClientTool, getClientTools, registerClientTool } from "../../src/editor/assist/client/tools/index.mjs";
 
-function renderDock({ hasDrawerViews = false, assistPanelProps } = {}) {
+function renderDock({ hasDrawerViews = false, mapAvailable = true, mapReason, assistPanelProps } = {}) {
 	return renderToStaticMarkup(React.createElement(EditorDock, {
 		previewUrl: "/preview",
 		state: { status: "Saved" },
@@ -24,6 +24,8 @@ function renderDock({ hasDrawerViews = false, assistPanelProps } = {}) {
 		mapOpen: false,
 		onMapToggle() {},
 		hasDrawerViews,
+		mapAvailable,
+		mapReason,
 		assistPanelProps,
 	}));
 }
@@ -162,20 +164,21 @@ test("Drawer renders registered views and passes through the shared jump callbac
 		const html = renderToStaticMarkup(React.createElement(Drawer, {
 			open: true,
 			onClose() {},
+			views: [getDrawerViews().find((view) => view.id === "structure-test")],
 			jumpTo: (sentenceId) => jumpedTo.push(sentenceId),
 		}));
 		assert.match(html, /role="dialog"/);
 		assert.match(html, /aria-label="Argument map"/);
 		assert.match(html, /Structure/);
 		assert.match(html, /Structure view/);
-		assert.deepEqual(getDrawerViews().map(({ id }) => id), ["structure-test"]);
+		assert.ok(getDrawerViews().some(({ id }) => id === "structure-test"));
 
 		viewJumpTo("sentence-7");
 		assert.deepEqual(jumpedTo, ["sentence-7"]);
 	} finally {
 		unregister();
 	}
-	assert.deepEqual(getDrawerViews(), []);
+	assert.ok(getDrawerViews().every(({ id }) => id !== "structure-test"));
 });
 
 test("dock adds Assist and disabled Map controls after a divider until a drawer view registers", () => {
@@ -189,6 +192,12 @@ test("dock enables Map when the root reports a registered drawer view", () => {
 	const html = renderDock({ hasDrawerViews: true });
 	assert.match(html, /aria-expanded="false" aria-label="Map"/);
 	assert.doesNotMatch(html, /aria-label="Map"[^>]*disabled=""/);
+});
+
+test("dock disables Map with an accessible Jev availability reason", () => {
+	const html = renderDock({ hasDrawerViews: true, mapAvailable: false, mapReason: "Needs TYPESAFE_API_KEY" });
+	assert.match(html, /aria-label="Map"[^>]*aria-describedby="editor-map-unavailable"[^>]*title="Needs TYPESAFE_API_KEY"[^>]*disabled=""/);
+	assert.match(html, /id="editor-map-unavailable"[^>]*>Needs TYPESAFE_API_KEY/);
 });
 
 test("dock renders the open Assist panel inside its existing panel anchor", () => {
