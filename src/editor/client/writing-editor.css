@@ -336,6 +336,41 @@
 	gap: 6px;
 	margin-top: 2px;
 }
+/* Article text selection controls are portaled into this editor's root. */
+#local-writing-editor .local-selection-menu {
+	position: fixed;
+	z-index: 55;
+	box-sizing: border-box;
+	width: min(228px, calc(100vw - 24px));
+	padding: 4px;
+	border: 1px solid #343841;
+	border-radius: 9px;
+	background: #191b20;
+	box-shadow: 0 2px 5px rgb(0 0 0 / 18%), 0 12px 28px rgb(0 0 0 / 20%);
+}
+#local-writing-editor .local-selection-menu .local-link-button-group {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	width: 100%;
+	border: 0;
+	background: transparent;
+}
+#local-writing-editor .local-selection-menu .local-link-button {
+	width: auto;
+	min-width: 0;
+	min-height: 34px;
+}
+#local-writing-editor .local-selection-menu .local-link-button[aria-pressed="true"] {
+	background: #414750;
+	color: white;
+}
+#local-writing-editor .local-selection-menu .local-link-button:disabled {
+	color: #8e929a;
+	cursor: not-allowed;
+}
+#local-writing-editor .local-selection-menu .local-link-button:focus-visible {
+	outline-offset: -3px;
+}
 @media (prefers-reduced-motion: reduce) {
 	.local-link-button { transition: none; }
 }
