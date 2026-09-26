@@ -1,6 +1,7 @@
 @import "./assist-shell.css";
 @import "./overlay/overlay.css";
 @import "./popover/popover.css";
+@import "./argument-map.css";
 
 .writing-assist-marker--debug {
 	background: var(--color-sea-blue);

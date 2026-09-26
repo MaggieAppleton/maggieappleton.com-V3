@@ -85,7 +85,7 @@ function PanelSection({ title, children, alert = false }) {
 export function EditorDock({ previewUrl, state, recovery, discarded, protectedWarning,
 	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onRetry, sourceForBackup,
 	assistOpen = false, onAssistToggle = () => {}, assistPanelProps = {},
-	mapOpen = false, onMapToggle = () => {}, hasDrawerViews = false }) {
+	mapOpen = false, onMapToggle = () => {}, hasDrawerViews = false, mapAvailable = true, mapReason = "" }) {
 	const [open, setOpen] = useState(false);
 	const [copyError, setCopyError] = useState(null);
 	const [preparedBackupKey, setPreparedBackupKey] = useState(null);
@@ -228,9 +228,11 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 				React.createElement(SparkleIcon, { size: 18, "aria-hidden": "true" }), "Assist"),
 			React.createElement("button", { type: "button", className: `editor-dock-tool-button${mapOpen ? " is-open" : ""}`,
 				"aria-controls": "editor-assist-drawer", "aria-expanded": mapOpen,
-				"aria-label": "Map", title: "Map", disabled: !hasDrawerViews,
+				"aria-label": "Map", "aria-describedby": !mapAvailable ? "editor-map-unavailable" : undefined,
+				title: !mapAvailable ? mapReason : "Map", disabled: !hasDrawerViews || !mapAvailable,
 				onClick: () => onMapToggle(!mapOpen) },
 				React.createElement(TreeStructureIcon, { size: 18, "aria-hidden": "true" }), "Map"),
+			!mapAvailable && React.createElement("span", { id: "editor-map-unavailable", className: "editor-dock-sr-only" }, mapReason),
 		),
 	);
 }

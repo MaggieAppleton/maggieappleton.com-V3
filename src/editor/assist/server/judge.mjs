@@ -51,7 +51,9 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 			blocks: request.blocks, targetBlockIds: request.blockIds,
 			title: request.title, config,
 		};
-		if (tool.id === "repetition") context.roleAnnotations = await rolesFor(context, request.documentId);
+		if (tool.id === "repetition" || tool.id === "argument-map") {
+			context.roleAnnotations = await rolesFor(context, request.documentId);
+		}
 		const built = await tool.buildRequests(context);
 		const answers = await Promise.all(built.map((builtRequest) =>
 			answersFor(tool, request.documentId, builtRequest)));

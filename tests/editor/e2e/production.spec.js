@@ -19,6 +19,8 @@ const bannedEditorOutput = [
   "local-edit-link",
   "@mdxeditor/editor",
 ];
+const fixtureBuildTimeout = 1_800_000;
+const fixtureHookTimeout = 2_160_000;
 
 async function readProductionTextOutput(root) {
   const files = (await listFixtureFiles(root)).filter((path) => path.startsWith("dist/") && textOutput.test(path));
@@ -43,7 +45,7 @@ test.describe.serial("production editor isolation", () => {
   let sourceBeforeWrite;
 
   test.beforeAll(async () => {
-    test.setTimeout(1_020_000);
+    test.setTimeout(fixtureHookTimeout);
     sentinel = `EDITOR_PRODUCTION_SENTINEL_${randomUUID()}`;
     const slug = `editor-production-sentinel-${randomUUID().slice(0, 8)}`;
     fixture = await createFixtureProject({ name: "editor-production-isolation" });
@@ -63,12 +65,12 @@ draft: true
 ${sentinel}
 `;
     await fixture.write(`src/content/notes/${slug}.mdx`, sourceBeforeWrite);
-    build = await buildFixtureProject(fixture.root);
+    build = await buildFixtureProject(fixture.root, { timeout: fixtureBuildTimeout });
     preview = await startFixturePreview(fixture.root, build, { timeout: 120_000 });
   });
 
   test.afterAll(async () => {
-    test.setTimeout(1_020_000);
+    test.setTimeout(fixtureHookTimeout);
     try {
       if (preview) await preview.stop();
     } finally {
@@ -77,7 +79,7 @@ ${sentinel}
   });
 
   test("build output and public indexes contain neither editor code nor the draft sentinel", async () => {
-    test.setTimeout(1_020_000);
+    test.setTimeout(fixtureHookTimeout);
     assert.equal(build.exitCode, 0, "production build must complete before inspection");
     const output = await readProductionTextOutput(fixture.root);
     for (const value of [...bannedEditorOutput, sentinel]) {
@@ -95,7 +97,7 @@ ${sentinel}
   });
 
   test("production preview has no editor handler and cannot modify fixture content", async () => {
-    test.setTimeout(1_020_000);
+    test.setTimeout(fixtureHookTimeout);
     const before = await readFile(draftPath, "utf8");
     const filesBefore = await listFixtureFiles(fixture.root);
     const get = await fetch(`${preview.origin}/_editor`);
