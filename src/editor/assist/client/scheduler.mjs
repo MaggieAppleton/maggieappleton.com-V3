@@ -27,6 +27,8 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 	function sameHashes(request) {
 		const current = hashMap(model);
 		if (request.scope === "document" && current.size !== request.hashes.size) return false;
+		if (request.scope === "document" && (request.order.length !== model.blocks.length
+			|| request.order.some((id, index) => id !== model.blocks[index].id))) return false;
 		return [...request.hashes].every(([id, value]) => current.get(id) === value);
 	}
 	function send(scope, toolId = null, excluded = []) {
@@ -43,7 +45,8 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		const controller = new AbortController();
 		const request = { documentId, title, tools: names, blocks: model.blocks, scope };
 		if (scope === "blocks") request.blockIds = blockIds;
-		const flight = { scope, tools: names, hashes: covered, controller };
+		const flight = { scope, tools: names, hashes: covered,
+			order: model.blocks.map((block) => block.id), controller };
 		inFlight.add(flight);
 		let response;
 		try { response = judge(request, { signal: controller.signal }); }

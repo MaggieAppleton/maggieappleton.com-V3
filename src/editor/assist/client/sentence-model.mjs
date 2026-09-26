@@ -135,9 +135,11 @@ export function buildSentenceSnapshot(root) {
 
 export function changedSince(current, previous) {
 	if (!previous) return current.blocks.map((block) => block.id);
-	const old = new Map(previous.blocks.map((block) => [block.id, block.hash]));
-	return current.blocks.filter((block) => old.get(block.id) !== block.hash)
-		.map((block) => block.id);
+	const firstChange = current.blocks.findIndex((block, index) =>
+		block.id !== previous.blocks[index]?.id || block.hash !== previous.blocks[index]?.hash);
+	// Role requests include the preceding paragraph; map and repetition depend on
+	// reading order. A move or edit can therefore change later requests too.
+	return firstChange < 0 ? [] : current.blocks.slice(firstChange).map((block) => block.id);
 }
 
 function domTextPoint(editor, lexicalPoint) {

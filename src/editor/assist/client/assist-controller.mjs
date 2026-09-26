@@ -32,7 +32,7 @@ function sentenceFor(snapshot, id) {
 
 /** Keep the analysis, sidecar and visual overlays outside Lexical's document. */
 export function createAssistController({ editor, wrapper, transport, documentId, title, config,
-	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {} }) {
+	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {}, onToolResult = () => {} }) {
 	const model = createSentenceModel(editor);
 	let jumpTimer;
 	let jumpFrame;
@@ -89,9 +89,17 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const scheduler = createAssistScheduler({ documentId, title, timing: config.timing,
 		tools: getClientTools().filter(({ id }) => config.tools[id]).map(({ id, level }) => ({
 			id, level, enabled: Boolean(config.tools[id].enabled && enabledTools[id]),
+			...(id === "argument-map" ? { enabled: Boolean(enabledTools[id]) } : {}),
 		})),
 		judge: (request, options) => transport.judge(request, options),
-		onAnnotations: (annotations, meta) => store.applyResult(annotations, meta),
+		onAnnotations: (annotations, meta) => {
+			const hasMap = annotations.some((annotation) => annotation.tool === "argument-map" && annotation.kind === "map");
+			const mapFailed = meta.tools.includes("argument-map") && !hasMap && meta.errors?.some((error) =>
+				!error.tool || error.tool === "argument-map");
+			const tools = mapFailed ? meta.tools.filter((tool) => tool !== "argument-map") : meta.tools;
+			if (tools.length) store.applyResult(annotations, { ...meta, tools });
+			onToolResult({ annotations, meta, mapFailed });
+		},
 		onClear: (toolId) => store.clearTool(toolId),
 	});
 	const unsubscribeModel = model.subscribe((snapshot) => {

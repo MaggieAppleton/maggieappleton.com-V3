@@ -7,3 +7,13 @@ Maggie asked for OpenAI `gpt-6-sol` as Writing Assist's default text generator. 
 ## 2026-09-26 · 02 repetition · Default text generator
 
 Maggie confirmed that OpenAI `gpt-6-sol` is the default text generator for Writing Assist itself. Repetition chat therefore uses OpenAI `gpt-6-sol` instead of the Anthropic model in spec 02. `OPENAI_MODEL` can override it; the Anthropic provider remains selectable and is still checked live at the end of the slice. The repetition analysis remains with Jev.
+
+## 2026-09-26 · 03 argument map · Oversized Jev requests
+
+Spec 03 asks Requests A and B to run in parallel, with A using each paragraph's first two sentences plus the main sentence chosen by B when the full document is too large. Because B's answer is unavailable when parallel requests are built, oversized A states use the first two sentences only. A's title is capped at 256 characters. Each request state is capped at 32,000 characters, and each serialised `{ state, questions }` request at 64,000 characters. Oversized A and B question sets are batched with the same relevant state; B groups paragraphs with their following quotes and keeps at least 32 characters of each longer candidate sentence and quote when compacting. Normal documents still use the specified two parallel requests. An extreme document whose A paragraph and quote tags cannot fit, or whose single B paragraph group cannot retain that minimum text, returns an error instead of sending a content-free or oversized request.
+
+Jev `choice` allows at most 255 options. Spec 03 caps parent choices but does not cap the thesis or main-sentence choices. Those two questions sample up to 255 evenly spaced candidates when a document has more than 255 analysed paragraphs or a paragraph has more than 255 sentences. The full candidate set cannot be represented in one choice question.
+
+## 2026-09-26 · 03 argument map · Quoted evidence
+
+Spec 03 says quoted blocks count as evidence, but does not ask Jev which claim each quote supports. A quote immediately after a claim, before the next analysed paragraph or heading, therefore prevents the “No supporting evidence” flag for that claim. Quotes stay in both Jev request states as `[quote]` context. They are not clickable map leaves because protected quoted blocks do not provide a reliable editor jump target.

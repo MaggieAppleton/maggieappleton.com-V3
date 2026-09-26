@@ -1,0 +1,62 @@
+.editor-argument-map { color: var(--color-black); }
+.editor-argument-map-node,
+.editor-argument-map-leaf,
+.editor-argument-map-flow-row,
+.editor-argument-map-off-thread-link {
+	border: 0;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.editor-argument-map-node,
+.editor-argument-map-leaf {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	width: 100%;
+	padding: 5px 6px;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+}
+.editor-argument-map-node:hover,
+.editor-argument-map-leaf:hover,
+.editor-argument-map-flow-row:hover { background: var(--color-cream); }
+.editor-argument-map-node.is-thesis { background: color-mix(in srgb, var(--color-salmon) 14%, transparent); font-weight: 600; }
+.editor-argument-map-node.is-off-thread,
+.editor-argument-map-flow-row.is-off-thread { color: var(--color-gray-400); }
+.editor-argument-map-node-text,
+.editor-argument-map-flow-text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.editor-argument-map-node-text { flex: 1; }
+.editor-argument-map-location { flex: 0 0 auto; color: var(--color-gray-600); font: 600 10px/1.4 var(--font-sans); }
+.editor-argument-map-role { display: inline-block; flex: 0 0 8px; width: 8px; height: 8px; margin-top: 4px; border-radius: 2px; background: var(--color-gray-400); }
+.editor-argument-map-role--claim { background: var(--color-salmon); }
+.editor-argument-map-role--opinion { background: var(--color-gold); }
+.editor-argument-map-role--evidence { background: var(--color-status-success); }
+.editor-argument-map-role--example { background: var(--color-sea-blue); }
+.editor-argument-map-role--qualification { background: var(--color-purple); }
+.editor-argument-map-role--speculation { background: var(--color-bright-crimson); }
+.editor-argument-map-role--concession { background: color-mix(in srgb, var(--color-dark-sea-blue) 60%, var(--color-status-success)); }
+.editor-argument-map-children { margin: 0 0 0 14px; padding-left: 6px; border-left: 1px solid var(--color-gray-200); }
+.editor-argument-map-warning { padding: 4px 6px 4px 20px; color: var(--color-bright-crimson); font-weight: 600; font-size: 11px; }
+.editor-argument-map-off-thread { margin-top: var(--space-s); color: var(--color-gray-600); }
+.editor-argument-map-off-thread-link { padding: 0; background: transparent; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.editor-argument-map-flow-row { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 6px; width: 100%; padding: 7px 4px; border-bottom: 1px solid var(--color-gray-200); background: transparent; color: inherit; }
+.editor-argument-map-flow-body { min-width: 0; }
+.editor-argument-map-flow-meta { min-height: 14px; font-size: 10px; }
+.editor-argument-map-job { color: var(--color-gray-600); font: 700 10px/1 var(--font-sans); letter-spacing: .05em; text-transform: uppercase; }
+.editor-argument-map-job--thesis,
+.editor-argument-map-job--claim { color: color-mix(in srgb, var(--color-salmon) 75%, var(--color-black)); }
+.editor-argument-map-job--support { color: color-mix(in srgb, var(--color-status-success) 75%, var(--color-black)); }
+.editor-argument-map-job--concession { color: color-mix(in srgb, var(--color-dark-sea-blue) 75%, var(--color-black)); }
+.editor-argument-map-relation { margin-left: 5px; color: var(--color-gray-600); font-weight: 600; }
+.editor-argument-map-unsupported { margin-left: 5px; color: var(--color-bright-crimson); font-weight: 600; }
+.editor-argument-map-role-strip { display: flex; gap: 2px; max-width: 120px; margin-top: 4px; }
+.editor-argument-map-role-strip .editor-argument-map-role { flex: 0 1 18px; width: 14px; height: 5px; margin-top: 0; opacity: .65; }
+.editor-argument-map-heading { padding: 10px 4px 4px; color: var(--color-gray-600); font: 700 10px/1 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; }
+.editor-argument-map-empty { color: var(--color-gray-600); }
+.editor-argument-map-error { margin: 0 0 var(--space-s); color: var(--color-bright-crimson); }
+.editor-argument-map-skeleton { display: grid; gap: 10px; padding: 6px 2px; }
+.editor-argument-map-skeleton i { display: block; width: 82%; height: 11px; border-radius: 3px; background: var(--color-gray-200); }
+.editor-argument-map-skeleton i:nth-child(2) { width: 65%; }
+.editor-argument-map-skeleton i:nth-child(3) { width: 90%; }
