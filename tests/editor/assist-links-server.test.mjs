@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import test from "node:test";
 
 import { linksTool } from "../../src/editor/assist/server/tools/links.mjs";
+import { buildSentenceSnapshot } from "../../src/editor/assist/client/sentence-model.mjs";
 
 async function fixture(previews) {
 	const root = await mkdtemp(join(tmpdir(), "wa-links-"));
@@ -69,6 +70,36 @@ test("links excludes pages linked elsewhere and ranks a specific title above a b
 		});
 		assert.deepEqual(Object.values(targetRequest.questions.target.criteria),
 			["No useful link", "/end-user-programming", "/creative-tools"]);
+	} finally { await files.close(); }
+});
+
+test("a wiki link excludes its page while leaving other phrases eligible", async () => {
+	const files = await fixture({
+		"/pattern-languages": { title: "Pattern Languages", aliases: ["Pattern Language"], description: "A design vocabulary" },
+		"/creative-tools": { title: "Creative tools", description: "Software for creative work" },
+	});
+	try {
+		const leaf = (kind, value, key) => ({ getType: () => kind, getTextContent: () => value,
+			getChildren: () => [], getKey: () => key });
+		const paragraph = { getType: () => "paragraph", getChildren: () => [
+			leaf("editor-wiki-link", "[[Pattern Language]]", "wiki"),
+			leaf("text", " and creative tools help us.", "tail"),
+		] };
+		const snapshot = buildSentenceSnapshot({ getType: () => "root", getChildren: () => [paragraph] });
+		let targetRequest;
+		let phraseRequest;
+		await linksTool.run(context(files, snapshot.blocks, { linkedPathnames: snapshot.linkedPathnames }), async (request) => {
+			if (request.questions.target) {
+				targetRequest = request;
+				return { target: { type: "choice", probabilities: { T1: 0.9, none: 0.1 } } };
+			}
+			phraseRequest = request;
+			return { phrase: { type: "choice", probabilities: {} }, natural: { type: "noul", noul: 0 } };
+		});
+		assert.deepEqual(Object.values(targetRequest.questions.target.criteria), ["No useful link", "/creative-tools"]);
+		assert.ok(phraseRequest);
+		assert.ok(Object.values(phraseRequest.questions.phrase.criteria).includes("creative tools"));
+		assert.ok(Object.values(phraseRequest.questions.phrase.criteria).every((phrase) => !phrase.includes("Pattern")));
 	} finally { await files.close(); }
 });
 

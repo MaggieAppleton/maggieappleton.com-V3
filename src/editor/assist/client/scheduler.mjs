@@ -1,4 +1,4 @@
-import { changedSince } from "./sentence-model.mjs";
+import { blockSignature, changedSince } from "./sentence-model.mjs";
 
 const defaultClock = {
 	setTimer: (callback, delay) => globalThis.setTimeout(callback, delay),
@@ -22,7 +22,11 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 			&& (!only || tool.id === only)).map((tool) => tool.id);
 	}
 	function hashMap(snapshot) {
-		return new Map(snapshot.blocks.map((block) => [block.id, block.hash]));
+		return new Map(snapshot.blocks.map((block) => [block.id, blockSignature(block)]));
+	}
+	function linkState(snapshot) {
+		return JSON.stringify([snapshot.linkedPathnames ?? [], snapshot.blocks.map((block) =>
+			[block.links, block.sentences.map((sentence) => [sentence.linkedSpans, sentence.links])])]);
 	}
 	function sameHashes(request) {
 		const current = hashMap(model);
@@ -86,12 +90,14 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 	}
 	function update(next, { immediate = false } = {}) {
 		if (destroyed) return;
+		const linksChanged = model.blocks.length > 0 && linkState(next) !== linkState(model);
 		const changed = changedSince(next, model);
 		const before = hashMap(model);
 		const after = hashMap(next);
 		const edited = new Set([...changed, ...[...before.keys()].filter((id) => !after.has(id))]);
 		model = next;
 		if (!edited.size) return;
+		if (linksChanged && configured.get("links")?.enabled) onClear("links");
 		if (timers.roles != null) {
 			clock.clearTimer(timers.roles);
 			timers.roles = null;

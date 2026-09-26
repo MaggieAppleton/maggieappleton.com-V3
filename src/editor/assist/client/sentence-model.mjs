@@ -1,4 +1,6 @@
 import { $getRoot } from "lexical";
+import internalLinkPreviews from "../../../internal-link-previews.json" with { type: "json" };
+import { findInternalLinkPreviewByText } from "../../../utils/internalLinkPreview.js";
 import { hash, normaliseText } from "../shared/hash.mjs";
 
 const segmenter = new Intl.Segmenter("en-GB", { granularity: "sentence" });
@@ -29,7 +31,10 @@ function textPieces(node, { skipNestedLists = false } = {}) {
 		}
 		if (!top && skipNestedLists && kind === "list") return;
 		const insideLink = linked || kind === "link" || kind === "autolink" || kind === "editor-wiki-link";
-		const linkUrl = kind === "link" ? current.getURL?.() ?? inheritedLink : inheritedLink;
+		const wikiTarget = kind === "editor-wiki-link"
+			? current.getTextContent?.().slice(2, -2).replace(/[‘’]/gu, "'").replace(/[“”]/gu, '"') : null;
+		const linkUrl = kind === "link" ? current.getURL?.() ?? inheritedLink
+			: wikiTarget ? findInternalLinkPreviewByText(wikiTarget, internalLinkPreviews)?.pathname ?? null : inheritedLink;
 		const descendants = children(current);
 		if (!descendants.length) {
 			const text = current.getTextContent?.() ?? "";
@@ -120,12 +125,13 @@ export function buildSentenceSnapshot(root) {
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
 			const id = `${sentenceHash}:${occurrence}`;
-			const ownLinks = linkRanges.filter((link) => link.start < end && link.end > start);
-			const hasLink = links.some((link) => link.start < end && link.end > start) || ownLinks.length > 0;
+			const ownLinks = links.filter((link) => link.start < end && link.end > start);
+			const ownTargets = linkRanges.filter((link) => link.start < end && link.end > start);
+			const hasLink = ownLinks.length > 0;
 			sentences.push({ id, hash: sentenceHash, text, index: sentences.length, hasLink,
 				linkedSpans: ownLinks.map((link) => ({ start: Math.max(0, link.start - start),
 					end: Math.min(text.length, link.end - start) })),
-				links: [...new Set(ownLinks.map((link) => link.pathname))] });
+				links: [...new Set(ownTargets.map((link) => link.pathname))] });
 			sentenceRanges.push({ start, end });
 			locations.set(id, { pieces, start, end });
 		}
@@ -182,7 +188,14 @@ export function changedSince(current, previous) {
 	// A moved block changes its reading-order context. An unchanged neighbour at
 	// the same position does not need another sentence-level judge request.
 	return current.blocks.filter((block, index) => block.id !== previous.blocks[index]?.id
-		|| block.hash !== previous.blocks[index]?.hash).map((block) => block.id);
+		|| blockSignature(block) !== blockSignature(previous.blocks[index])).map((block) => block.id);
+}
+
+/** Text plus link context used to invalidate judge results without changing stable IDs. */
+export function blockSignature(block) {
+	if (!block) return null;
+	return JSON.stringify([block.hash, block.links, block.sentences.map((sentence) =>
+		[sentence.hasLink, sentence.linkedSpans, sentence.links])]);
 }
 
 function domTextPoint(editor, lexicalPoint) {
