@@ -1,5 +1,6 @@
 import { EditorServiceError } from "../../server/errors.mjs";
 import { assistStatus } from "./status.mjs";
+import { validateWordFinderCandidates, wordFinderPrompt } from "./word-finder.mjs";
 
 function invalid(message) {
 	return new EditorServiceError(400, "invalid_generation_request", message);
@@ -40,7 +41,12 @@ export function createGenerateService({ config, env = process.env, createProvide
 	return {
 		async run(request, { signal } = {}) {
 			const generator = selectedGenerator(request, config);
-			const messages = validatedMessages(request);
+			const wordFinder = request.tool === "word-finder" && request.purpose === "candidates";
+			if (request.tool === "word-finder" && (!wordFinder || request.json !== true || request.stream)) {
+				throw invalid("Word finder requires candidate JSON generation");
+			}
+			const prompt = wordFinder ? wordFinderPrompt(request) : null;
+			const messages = wordFinder ? prompt.messages : validatedMessages(request);
 			const configured = assistStatus(config, env).providers[generator.provider];
 			if (!configured?.available) {
 				const error = new EditorServiceError(503, "provider_unavailable", configured?.reason ?? "Provider is unavailable");
@@ -48,13 +54,14 @@ export function createGenerateService({ config, env = process.env, createProvide
 				throw error;
 			}
 			const provider = createProvider(generator.provider, { env });
-			const system = `Write in British English (en-GB).${request.system ? `\n\n${request.system}` : ""}`;
+			const system = `Write in British English (en-GB).${(wordFinder ? prompt.system : request.system) ? `\n\n${wordFinder ? prompt.system : request.system}` : ""}`;
 			const input = { model: generator.model, system, messages, signal };
 			if (request.stream) return { stream: provider.stream(input) };
 			const result = await provider.generate({ ...input, json: Boolean(request.json) });
 			if (typeof result?.text !== "string") {
 				throw new EditorServiceError(502, "invalid_generation_response", "The model returned no text");
 			}
+			if (wordFinder) return { json: validateWordFinderCandidates(parsedObject(result.text), request.originalText) };
 			return request.json ? { json: parsedObject(result.text) } : { text: result.text };
 		},
 	};

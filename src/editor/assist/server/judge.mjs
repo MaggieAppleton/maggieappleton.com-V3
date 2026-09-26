@@ -2,6 +2,7 @@ import { assistConfig } from "../config.mjs";
 import { hash } from "../shared/hash.mjs";
 import { toolRegistry } from "./tools/index.mjs";
 import { rolesTool } from "./tools/roles.mjs";
+import { rankWordFinder } from "./word-finder.mjs";
 
 function cacheKey(tool, model, request) {
 	return hash(tool.id, tool.version, model, request.state, request.questions);
@@ -65,6 +66,9 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 		async judge(request) {
 			if (!request || typeof request.documentId !== "string" || !Array.isArray(request.tools) || !Array.isArray(request.blocks)) {
 				throw new TypeError("Invalid judge request");
+			}
+			if (request.scope === "selection" && request.tools.length === 1 && request.tools[0] === "word-finder") {
+				return rankWordFinder(request.selection, { jev, config });
 			}
 			const candidates = request.tools.map((id) => [id, tools.get(id)]);
 			const outcomes = await Promise.all(candidates.map(async ([id, tool]) => {

@@ -8,6 +8,8 @@ export const assistConfig = {
 		"openai-compatible": { defaultModel: "llama3.1" },
 	},
 	tools: {
+		"word-finder": { maxShown: 6,
+			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
 		roles: { enabled: true, thresholds: { minShown: 0.10 } },
 		repetition: { enabled: true, thresholds: { pair: 0.5, minGroup: 3 },
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
