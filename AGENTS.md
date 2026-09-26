@@ -20,8 +20,7 @@ npm run build        # Production build
 
 ## Pull requests
 
-- Keep process artifacts out of PR branches. The artifact check rejects `planning/**`, `process/**`, `docs/plans/**`, `docs/specs/**`, `docs/superpowers/{plans,specs}/**`, and Markdown files named or ending in `plan`, `spec`, `design`, `implementation`, or `issue-log`. `README.md` files outside blocked directories and normal user-facing documentation are allowed. Before creating a PR, run `npm run check:pr-artifacts -- <base-ref-or-sha>` as a preflight.
-- Before `gh pr create`, an independent final reviewer must inspect every changed test for a future user-visible regression. Remove duplicate tests, assertions that mirror implementation, and fixture-only assertions. This is a process requirement: CI checks artifact paths only and cannot judge test value. Add concise evidence to the PR body: reviewer, tests reviewed, and conclusion.
+Before creating a PR, use the [PR hygiene skill](.agents/skills/pr-hygiene/SKILL.md) to clean up process notes and review changed tests.
 
 ## Content Collections
 

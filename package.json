@@ -16,7 +16,8 @@
     "smidgeon": "node scripts/create-smidgeon.js",
     "date": "node scripts/current-date.js",
     "test:editor": "node --test tests/editor/*.test.mjs",
-    "test:editor:e2e": "playwright test --config playwright.editor.config.mjs"
+    "test:editor:e2e": "playwright test --config playwright.editor.config.mjs",
+    "setup:hooks": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^6.0.0",
