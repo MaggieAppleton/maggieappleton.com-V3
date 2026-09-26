@@ -12,7 +12,7 @@ function LinkTarget({ target, selected = false, onSelect, interactive = false })
 		...(interactive ? { type: "button", "aria-pressed": selected ? "true" : "false", onClick: onSelect } : {}),
 	};
 	return React.createElement(interactive ? "button" : "div", props,
-		target.stage && React.createElement("span", { className: `wa-link-stage wa-link-stage--${target.stage}` }, target.stage),
+		target.stage && React.createElement("span", { className: `wa-link-stage wa-link-stage--${target.stage}` }, target.stage.toUpperCase()),
 		React.createElement("strong", null, target.title),
 		target.description && React.createElement("span", { className: "wa-link-description" }, target.description),
 	);
