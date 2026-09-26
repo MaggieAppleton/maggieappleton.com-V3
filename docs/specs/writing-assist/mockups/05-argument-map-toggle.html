@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Superpowers Brainstorming</title>
+  <style>
+    /*
+     * BRAINSTORM COMPANION FRAME TEMPLATE
+     *
+     * This template provides a consistent frame with:
+     * - OS-aware light/dark theming
+     * - Header branding and connection status
+     * - Scrollable main content area
+     * - CSS helpers for common UI patterns
+     *
+     * Content is injected via placeholder comment in #frame-content.
+     */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e7;
+      --border: #d1d1d6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --success: #34c759;
+      --warning: #ff9f0a;
+      --error: #ff3b30;
+      --selected-bg: #e8f4fd;
+      --selected-border: #0071e3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1d1d1f;
+        --bg-secondary: #2d2d2f;
+        --bg-tertiary: #3d3d3f;
+        --border: #424245;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --text-tertiary: #636366;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --selected-bg: rgba(10, 132, 255, 0.15);
+        --selected-border: #0a84ff;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* ===== FRAME STRUCTURE ===== */
+    .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; color: var(--text-secondary); line-height: 1; }
+    .brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
+    .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
+    .brand-logo { display: block; height: 1em; width: auto; max-width: 180px; flex-shrink: 0; filter: invert(1); }
+    @media (prefers-color-scheme: dark) {
+      .brand-logo { filter: none; }
+    }
+    .status { font-size: 0.7rem; color: var(--status-color, var(--success)); display: flex; align-items: center; gap: 0.4rem; justify-self: end; white-space: nowrap; line-height: 1; }
+    .status::before { content: ''; width: 6px; height: 6px; background: var(--status-color, var(--success)); border-radius: 50%; }
+
+    .main { flex: 1; overflow-y: auto; }
+    #frame-content { padding: 2rem; min-height: 100%; }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-height: 42px;
+    }
+    .header .brand { justify-self: start; width: 100%; font-size: 0.75rem; line-height: 1; }
+    .header .status { grid-column: 2; line-height: 1; }
+    .header span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .header .selected-text {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .section { margin-bottom: 2rem; }
+    .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ===== OPTIONS (for A/B/C choices) ===== */
+    .options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .option {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+    .option .letter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .option.selected .letter { background: var(--accent); color: white; }
+    .option .content { flex: 1; }
+    .option .content h3 { font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .option .content p { color: var(--text-secondary); font-size: 0.85rem; margin: 0; }
+
+    /* ===== CARDS (for showing designs/mockups) ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card.selected { border-color: var(--selected-border); border-width: 2px; }
+    .card-image { background: var(--bg-tertiary); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .card-body { padding: 1rem; }
+    .card-body h3 { margin-bottom: 0.25rem; }
+    .card-body p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* ===== MOCKUP CONTAINER ===== */
+    .mockup {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .mockup-header {
+      background: var(--bg-tertiary);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-body { padding: 1.5rem; }
+
+    /* ===== SPLIT VIEW (side-by-side comparison) ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+
+    /* ===== PROS/CONS ===== */
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .pros, .cons { background: var(--bg-secondary); border-radius: 8px; padding: 1rem; }
+    .pros h4 { color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .cons h4 { color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .pros ul, .cons ul { margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .pros li, .cons li { margin-bottom: 0.25rem; }
+
+    /* ===== PLACEHOLDER (for mockup areas) ===== */
+    .placeholder {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    /* ===== INLINE MOCKUP ELEMENTS ===== */
+    .mock-nav { background: var(--accent); color: white; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+    .mock-sidebar { background: var(--bg-tertiary); padding: 1rem; min-width: 180px; }
+    .mock-content { padding: 1.5rem; flex: 1; }
+    .mock-button { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .mock-input { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body><div class="main"><div id="frame-content">
+<div style="border:2px solid #4caf70;background:#eef8f1;color:#1d4d2e;border-radius:10px;padding:10px 14px;margin-bottom:18px;font:600 13px system-ui">APPROVED: Toggle (Structure | Flow segmented control in the drawer header). The combined view was rejected.</div>
+<script>function toggleSelect(){}</script>
+<style>
+  :root{ --salmon:#fd8370; --gold:#ffd09c; --green:#4caf70; --sea:#04a5bb; --purple:#7558b2; --crimson:#960462; --teal:#2a9a8e; --ink:#353534; --g6:#73706d; --g4:#afb0b6; --g2:#e3e3e0; }
+  .drawer { background:#fff; border-left:1px solid var(--g2); border-radius:10px; box-shadow:-6px 0 20px rgb(0 0 0/.06); padding:14px; font:500 12px/1.45 system-ui; color:var(--ink); height:470px; overflow:hidden; }
+  .dh { display:flex; align-items:center; font-weight:700; font-size:13px; margin-bottom:12px; gap:8px; }
+  .dh .t { flex:1; }
+  .x { color:var(--g6); font-size:14px; }
+  .seg { display:inline-flex; background:#f1f0ec; border-radius:99px; padding:2px; font:600 11px system-ui; }
+  .seg span { padding:3px 10px; border-radius:99px; color:var(--g6); }
+  .seg .on { background:#fff; color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0/.1); }
+  .row { display:grid; grid-template-columns:26px 1fr; gap:6px; padding:5px 4px; border-radius:6px; }
+  .row:hover { background:#f6f5f1; }
+  .loc { font:600 10px system-ui; color:var(--g6); padding-top:2px; }
+  .body { position:relative; }
+  .d1 { margin-left:0; } .d2 { margin-left:16px; } .d3 { margin-left:32px; }
+  .body.d2::before, .body.d3::before { content:""; position:absolute; left:-9px; top:-5px; bottom:-5px; border-left:1px solid var(--g2); }
+  .job { font:700 9.5px system-ui; text-transform:uppercase; letter-spacing:.05em; }
+  .rel { font:600 10px system-ui; color:var(--g6); }
+  .warn { color:var(--crimson); font:600 10px system-ui; }
+  .strip { display:flex; gap:2px; margin-top:4px; max-width:120px; }
+  .strip i { height:5px; flex:1; border-radius:2px; }
+  .muted { color:var(--g4); }
+  .thesis { background:color-mix(in srgb,var(--salmon) 14%,transparent); }
+  .role { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; }
+  .node { display:flex; gap:4px; padding:5px 6px; border-radius:6px; }
+  .node .l { font:600 10px system-ui; color:var(--g6); margin-left:auto; padding-left:8px; }
+  .kids { margin-left:14px; border-left:1px solid var(--g2); padding-left:6px; }
+</style>
+
+<h2>Combine, or toggle?</h2>
+<p class="subtitle">A combined view keeps reading order (from C) but indents each paragraph by its depth in the argument (from A).</p>
+
+<div class="cards">
+  <div class="card" data-choice="combined" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="drawer">
+      <div class="dh"><span class="t">Argument</span><span class="x">✕</span></div>
+
+      <div class="row thesis"><span class="loc">¶1</span><div class="body d1"><span class="job" style="color:#c9503f">Thesis</span><br>Designers can't imagine beyond the average user.<div class="strip"><i style="background:#fed9d2"></i><i style="background:#fed9d2"></i><i style="background:#ece9e4"></i></div></div></div>
+      <div class="row"><span class="loc">¶2</span><div class="body d2"><span class="job" style="color:#c9503f">Claim</span><br>Most tools target an imagined average.<div class="strip"><i style="background:#fed9d2"></i><i style="background:#dbefe1"></i><i style="background:#dbefe1"></i></div></div></div>
+      <div class="row"><span class="loc">¶3</span><div class="body d3"><span class="job" style="color:#04a5bb">Example</span><br>The settings page nobody opens.<div class="strip"><i style="background:#d6eff3"></i><i style="background:#d6eff3"></i></div></div></div>
+      <div class="row"><span class="loc">¶5</span><div class="body d2"><span class="job" style="color:#c9503f">Claim</span> <span class="warn">· unsupported</span><br>Imagination is the bottleneck.<div class="strip"><i style="background:#fed9d2"></i><i style="background:#fff0dc"></i><i style="background:#fff0dc"></i></div></div></div>
+      <div class="row"><span class="loc">¶6</span><div class="body d1"><span class="job muted">Off-thread</span><br><span class="muted">A tangent about Figma plugins.</span></div></div>
+      <div class="row"><span class="loc">¶8</span><div class="body d3"><span class="job" style="color:#2a9a8e">Concession</span> <span class="rel">↩ answers ¶5</span><br>Defaults can be a kindness.</div></div>
+      <div class="row"><span class="loc">¶11</span><div class="body d2"><span class="job" style="color:#c9503f">Claim</span><br>Agents could personalise at scale.<div class="strip"><i style="background:#fed9d2"></i><i style="background:#f4d9e7"></i></div></div></div>
+    </div></div>
+    <div class="card-body"><h3>Combined · indented spine</h3><p>One view. Indent = depth in the argument. When a paragraph's parent isn't the nearest shallower row above it, show a "↩ answers ¶5" back-reference.</p></div>
+  </div>
+
+  <div class="card" data-choice="toggle" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="drawer">
+      <div class="dh"><span class="t">Argument</span><span class="seg"><span class="on">Structure</span><span>Flow</span></span><span class="x">✕</span></div>
+      <div class="node thesis"><i class="role" style="background:var(--salmon)"></i>Designers can't imagine beyond the average user.<span class="l">¶1</span></div>
+      <div class="kids">
+        <div class="node"><i class="role" style="background:var(--salmon)"></i>Most tools target an imagined average.<span class="l">¶2</span></div>
+        <div class="kids">
+          <div class="node"><i class="role" style="background:var(--green)"></i>70% of features go unused<span class="l">¶2</span></div>
+          <div class="node"><i class="role" style="background:var(--sea)"></i>The settings page nobody opens<span class="l">¶3</span></div>
+        </div>
+        <div class="node"><i class="role" style="background:var(--salmon)"></i>Imagination is the bottleneck.<span class="l">¶5</span></div>
+        <div class="kids">
+          <div class="node"><i class="role" style="background:var(--teal)"></i>Defaults can be a kindness<span class="l">¶8</span></div>
+          <div class="node"><span class="warn">⚠ No supporting evidence</span></div>
+        </div>
+        <div class="node"><i class="role" style="background:var(--salmon)"></i>Agents could personalise at scale.<span class="l">¶11</span></div>
+      </div>
+      <div class="node muted" style="margin-top:8px">Off-thread: ¶6, ¶13</div>
+    </div></div>
+    <div class="card-body"><h3>Toggle · Structure | Flow</h3><p>Two views in one drawer, switched with a segmented control. Structure = pure tree (A); Flow = paragraph spine (C). Clearer each, but twice the UI.</p></div>
+  </div>
+</div>
+
+</div></div></body></html>

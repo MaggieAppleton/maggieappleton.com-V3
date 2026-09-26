@@ -9,6 +9,10 @@ There are two kinds of model:
 
 The principle: **Jev decides what is worth showing, and a generation model writes only when asked.**
 
+## Mockups
+
+The approved visual designs are in [`mockups/`](mockups/README.md). Open them in a browser before building any UI.
+
 ## Specs and build order
 
 Each spec is one vertical slice and one PR. Build them in this order:
