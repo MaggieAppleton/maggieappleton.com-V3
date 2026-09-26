@@ -20,6 +20,8 @@ const checkSchemas = {
 	objection: objectSchema({ objection: string }),
 	"mixed-metaphor": objectSchema({ metaphors: strings, reason: string }),
 };
+const wordFinderSchema = objectSchema({ candidates: { type: "array",
+	items: objectSchema({ text: string, gloss: string }) } });
 
 function invalid(message) {
 	return new EditorServiceError(400, "invalid_generation_request", message);
@@ -109,7 +111,8 @@ export function createGenerateService({ config, env = process.env, createProvide
 			const additionalSystem = wordFinder ? prompt.system : request.system;
 			const system = `Write in British English (en-GB).${checksSystem}${additionalSystem ? `\n\n${additionalSystem}` : ""}`;
 			const input = { model: generator.model, system, messages, signal,
-				...(request.tool === "checks" && request.json ? { jsonSchema: checkSchemas[request.purpose] } : {}) };
+				...(wordFinder ? { jsonSchema: wordFinderSchema }
+					: request.tool === "checks" && request.json ? { jsonSchema: checkSchemas[request.purpose] } : {}) };
 			if (request.stream) return { stream: provider.stream(input) };
 			const result = await provider.generate({ ...input, json: Boolean(request.json) });
 			if (typeof result?.text !== "string") {
