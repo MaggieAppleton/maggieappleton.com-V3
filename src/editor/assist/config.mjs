@@ -18,6 +18,7 @@ export const assistConfig = {
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
 			chatGenerator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
 		},
+		"argument-map": { enabled: false, thresholds: { parent: 0.4, advances: 0.35 } },
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },

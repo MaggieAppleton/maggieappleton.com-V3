@@ -59,7 +59,7 @@ export function plainParagraphSelection(block, model) {
 
 /** Keep the analysis, sidecar and visual overlays outside Lexical's document. */
 export function createAssistController({ editor, wrapper, transport, documentId, title, config,
-	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {} }) {
+	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {}, onToolResult = () => {} }) {
 	const model = createSentenceModel(editor);
 	let enabledChecks = activeChecks(enabledTools.checks);
 	let jumpTimer;
@@ -129,7 +129,14 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		})),
 		judge: (request, options) => transport.judge(request.tools.includes("checks")
 			? { ...request, enabledChecks: [...enabledChecks] } : request, options),
-		onAnnotations: (annotations, meta) => store.applyResult(annotations, meta),
+		onAnnotations: (annotations, meta) => {
+			const hasMap = annotations.some((annotation) => annotation.tool === "argument-map" && annotation.kind === "map");
+			const mapFailed = meta.tools.includes("argument-map") && !hasMap && meta.errors?.some((error) =>
+				!error.tool || error.tool === "argument-map");
+			const tools = mapFailed ? meta.tools.filter((tool) => tool !== "argument-map") : meta.tools;
+			if (tools.length) store.applyResult(annotations, { ...meta, tools });
+			onToolResult({ annotations, meta, mapFailed });
+		},
 		onClear: (toolId) => store.clearTool(toolId),
 	});
 	const unsubscribeModel = model.subscribe((snapshot) => {

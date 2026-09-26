@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildSentenceSnapshot } from "../../src/editor/assist/client/sentence-model.mjs";
+import { buildSentenceSnapshot, changedSince } from "../../src/editor/assist/client/sentence-model.mjs";
 import { plainParagraphSelection } from "../../src/editor/assist/client/assist-controller.mjs";
 import { createAssistScheduler } from "../../src/editor/assist/client/scheduler.mjs";
 import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
@@ -46,6 +46,19 @@ test("sentence snapshot marks only the sentences containing links or footnotes",
 		["A second claim.", true],
 		["A third claim.", false],
 	]);
+});
+
+test("soft line wraps stay inside a sentence and preserve Lexical offsets", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "The opening wraps across a\nline before its full stop. A second sentence.", [], { key: "wrapped" }),
+	])]);
+	const model = buildSentenceSnapshot(root);
+	assert.deepEqual(model.blocks[0].sentences.map((sentence) => sentence.text), [
+		"The opening wraps across a line before its full stop.",
+		"A second sentence.",
+	]);
+	const second = model.blocks[0].sentences[1];
+	assert.equal(model.blocks._locations.get(second.id).start, 54);
 });
 
 test("sentence IDs survive unrelated edits and occurrence numbers distinguish repeats", () => {
@@ -190,6 +203,42 @@ function snapshot(...texts) {
 	return buildSentenceSnapshot(node("root", "", texts.map((text, index) =>
 		node("paragraph", "", [node("text", text, [], { key: `text-${index}` })]))));
 }
+
+test("reordering unchanged blocks invalidates the document and its paragraph context", () => {
+	const before = snapshot("Opening.", "First claim.", "Second claim.");
+	const after = snapshot("Opening.", "Second claim.", "First claim.");
+	assert.deepEqual(changedSince(after, before), after.blocks.slice(1).map((block) => block.id));
+});
+
+test("editing one paragraph does not dirty its unchanged neighbours", () => {
+	const before = snapshot("Opening.", "First claim.", "Second claim.");
+	const after = snapshot("Revised opening.", "First claim.", "Second claim.");
+	assert.deepEqual(changedSince(after, before), [after.blocks[0].id]);
+});
+
+test("scheduler rejects a pre-reorder map and requests the new reading order", async () => {
+	const clock = fakeClock();
+	const pending = [];
+	const accepted = [];
+	const scheduler = createAssistScheduler({ documentId: "essay/test",
+		tools: [{ id: "argument-map", level: "document", enabled: true }],
+		judge(request, { signal }) { return new Promise((resolve) => pending.push({ request, signal, resolve })); },
+		onAnnotations: (annotations) => accepted.push(annotations), clock,
+		timing: { documentIdleMs: 8000 } });
+	scheduler.start(snapshot("Opening.", "First claim.", "Second claim."));
+	assert.equal(pending.length, 1);
+	scheduler.update(snapshot("Opening.", "Second claim.", "First claim."));
+	assert.equal(pending[0].signal.aborted, true);
+	clock.tick(8000);
+	assert.equal(pending.length, 2);
+	assert.deepEqual(pending[1].request.blocks.map((block) => block.sentences[0].text),
+		["Opening.", "Second claim.", "First claim."]);
+	pending[0].resolve({ annotations: [{ id: "stale" }] });
+	pending[1].resolve({ annotations: [{ id: "fresh" }] });
+	await Promise.resolve();
+	assert.deepEqual(accepted, [[{ id: "fresh" }]]);
+	scheduler.destroy();
+});
 
 test("scheduler debounces dirty blocks, aborts covered requests, and discards stale results", async () => {
 	const clock = fakeClock();

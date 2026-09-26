@@ -117,6 +117,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const enabledToolsRef = useRef({});
 	const [assistOpen, setAssistOpen] = useState(false);
 	const [mapOpen, setMapOpen] = useState(false);
+	const [mapAnnotation, setMapAnnotation] = useState(null);
+	const [mapError, setMapError] = useState(null);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
 	const [checkGenerated, setCheckGenerated] = useState({});
@@ -184,6 +186,12 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 						? enabledChecks(enabled, assistStatus.tools.checks?.available)
 						: Boolean(enabled && assistStatus.tools[id]?.available),
 				])), dismissals,
+				onToolResult({ annotations, meta, mapFailed }) {
+					if (!meta.tools.includes("argument-map")) return;
+					const map = annotations.some((annotation) => annotation.tool === "argument-map" && annotation.kind === "map");
+					if (map) setMapError(null);
+					else if (mapFailed) setMapError(meta.errors.find((error) => !error.tool || error.tool === "argument-map")?.message ?? "Argument map is unavailable.");
+				},
 				onHover: (next) => setHover((previous) => next ?? (previous ? { ...previous, active: false } : null)),
 				onPin: (next) => { setHover(null); setPinned(next); },
 			});
@@ -242,6 +250,18 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			.finally(() => checkPending.current.delete(key));
 		return undefined;
 	}, [hover, pinned, assistController, assistTransport]);
+	useEffect(() => {
+		if (!assistController) return undefined;
+		const updateMap = (annotations) => setMapAnnotation(annotations.find((annotation) =>
+			annotation.tool === "argument-map" && annotation.kind === "map") ?? null);
+		updateMap(assistController.store.getAnnotations());
+		return assistController.store.subscribe(updateMap);
+	}, [assistController]);
+	useEffect(() => {
+		if (!assistController) return;
+		if (mapOpen) setMapError(null);
+		assistController.setToolEnabled("argument-map", Boolean(mapOpen && assistStatus?.tools?.["argument-map"]?.available));
+	}, [assistController, assistStatus, mapOpen]);
 	useEffect(() => {
 		const root = lexicalEditor?.getRootElement();
 		if (!root || !assistController || !enabledTools.roles || !assistStatus?.tools?.roles?.available) {
@@ -415,6 +435,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			assistPanelProps: { config: assistStatus?.config, status: assistStatus,
 				enabledTools, onToggleTool: toggleTool },
 			mapOpen, onMapToggle: setMapOpen, hasDrawerViews: getDrawerViews().length > 0,
+			mapAvailable: Boolean(assistStatus?.tools?.["argument-map"]?.available),
+			mapReason: assistStatus?.tools?.["argument-map"]?.reason ?? "Writing Assist is unavailable.",
 			onClearDiscarded: (candidate) => {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
@@ -439,7 +461,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		React.createElement("span", { id: "wa-role-status", className: "visually-hidden",
 			role: "status", "aria-atomic": "true" }, roleAnnouncement),
 		createPortal(React.createElement(Drawer, { open: mapOpen, onClose: () => setMapOpen(false),
-			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId) }), document.body),
+			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId),
+			map: mapAnnotation?.data?.map, loading: mapOpen && !mapAnnotation && !mapError, error: mapError }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
 			onClose: () => setHover(null),

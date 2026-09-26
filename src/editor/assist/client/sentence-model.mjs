@@ -78,6 +78,9 @@ export function buildSentenceSnapshot(root) {
 		const { pieces, footnotes } = overridePieces ? { pieces: overridePieces, footnotes: [] }
 			: textPieces(node, { skipNestedLists: kind === "listitem" });
 		const rawText = pieces.map((piece) => piece.text).join("");
+		// Soft wraps in MDX prose are spaces for segmentation, but must keep their
+		// original character width so sentence spans still map to Lexical offsets.
+		const segmentText = rawText.replace(/[\r\n\u2028\u2029]/gu, " ");
 		const clean = normaliseText(rawText);
 		if (!clean) return;
 		let position = 0;
@@ -91,15 +94,15 @@ export function buildSentenceSnapshot(root) {
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
 		const sentences = [];
 		const sentenceRanges = [];
-		const segments = kind === "heading" ? [{ segment: rawText, index: 0 }]
-			: sentenceSegments(rawText);
+		const segments = kind === "heading" ? [{ segment: segmentText, index: 0 }]
+			: sentenceSegments(segmentText);
 		for (const { segment, index } of segments) {
 			const leading = segment.match(/^\s*/u)?.[0].length ?? 0;
 			const trailing = segment.match(/\s*$/u)?.[0].length ?? 0;
 			const start = index + leading;
 			const end = index + segment.length - trailing;
 			if (end <= start) continue;
-			const text = rawText.slice(start, end);
+			const text = segmentText.slice(start, end);
 			const sentenceHash = hash(normaliseText(text));
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
@@ -159,9 +162,10 @@ export function buildSentenceSnapshot(root) {
 
 export function changedSince(current, previous) {
 	if (!previous) return current.blocks.map((block) => block.id);
-	const old = new Map(previous.blocks.map((block) => [block.id, block.hash]));
-	return current.blocks.filter((block) => old.get(block.id) !== block.hash)
-		.map((block) => block.id);
+	// A moved block changes its reading-order context. An unchanged neighbour at
+	// the same position does not need another sentence-level judge request.
+	return current.blocks.filter((block, index) => block.id !== previous.blocks[index]?.id
+		|| block.hash !== previous.blocks[index]?.hash).map((block) => block.id);
 }
 
 function domTextPoint(editor, lexicalPoint) {

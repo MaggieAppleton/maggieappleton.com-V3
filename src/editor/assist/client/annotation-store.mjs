@@ -12,6 +12,7 @@ export function createAnnotationStore({ dismissals = [], onDismiss = () => {} } 
 	function notify() { for (const listener of listeners) listener(getAnnotations()); }
 	function current(annotation) {
 		const target = annotation.target ?? {};
+		if (target.type === "document") return true;
 		if (quotedBlocks.has(target.blockId ?? sentenceBlocks.get(target.sentenceId))) return false;
 		const expected = target.type === "block" ? blockHashes.get(target.blockId)
 			: sentenceHashes.get(target.sentenceId);

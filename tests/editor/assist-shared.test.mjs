@@ -24,3 +24,9 @@ test("annotation identity includes its span while keeping the payload separate",
 	assert.deepEqual(annotation.target, target);
 	assert.equal(annotation.confidence, 0.8);
 });
+
+test("document annotations have a stable identity across map refreshes", () => {
+	const annotation = createAnnotation({ tool: "argument-map", kind: "map",
+		target: { type: "document" }, unitHash: "revision-one", confidence: 1 });
+	assert.equal(annotation.id, "argument-map:document:map");
+});

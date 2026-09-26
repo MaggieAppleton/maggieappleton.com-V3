@@ -29,7 +29,7 @@ The sky is blue. The path feels quiet.\n`;
 		await fixture.write(`src/content/notes/${slug}.mdx`, source);
 		const configPath = fixture.resolve("src/editor/assist/config.mjs");
 		await fixture.write("src/editor/assist/config.mjs",
-			(await readFile(configPath, "utf8")).replace("enabled: false", "enabled: true"));
+			(await readFile(configPath, "utf8")).replace("debug: {\n\t\t\tenabled: false", "debug: {\n\t\t\tenabled: true"));
 		const drawerPath = fixture.resolve("src/editor/assist/client/Drawer.mjs");
 		await fixture.write("src/editor/assist/client/Drawer.mjs",
 			`${await readFile(drawerPath, "utf8")}\nregisterDrawerView({ id: "fixture", label: "Fixture", render: () => null });\n`);
@@ -51,8 +51,9 @@ The sky is blue. The path feels quiet.\n`;
 		});
 		await page.route("**/_editor/api/assist/status", (route) => route.fulfill({ json: {
 			judge: { available: true }, providers: { anthropic: { available: true } },
-			tools: { debug: { available: true } },
-			config: { tools: { debug: { enabled: true } }, timing: { sentenceIdleMs: 20, documentIdleMs: 50 } },
+			tools: { debug: { available: true }, "argument-map": { available: true } },
+			config: { tools: { debug: { enabled: true }, "argument-map": { enabled: false } },
+				timing: { sentenceIdleMs: 20, documentIdleMs: 50 } },
 		} }));
 		await page.route("**/_editor/api/assist/judge", async (route) => {
 			const input = route.request().postDataJSON();

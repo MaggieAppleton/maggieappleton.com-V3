@@ -1,6 +1,7 @@
 @import "./assist-shell.css";
 @import "./overlay/overlay.css";
 @import "./popover/popover.css";
+@import "./argument-map.css";
 
 .writing-assist-marker--check { color: var(--color-white); box-shadow: 0 1px 4px rgb(0 0 0 / 20%); }
 .writing-assist-marker--citation { background: var(--color-sea-blue); }
