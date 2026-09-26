@@ -34,6 +34,7 @@ docs/superpowers/specs/
 
 # Local writing editor execution evidence
 .local-writing-editor/
+.writing-assist/
 .superpowers/
 playwright-report/
 test-results/

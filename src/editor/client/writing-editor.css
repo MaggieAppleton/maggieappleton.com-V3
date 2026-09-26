@@ -20,6 +20,7 @@
 
 #local-writing-editor .editor-body {
 	display: grid;
+	color: var(--color-black);
 	/* ProseWrapper's 72ch track is measured in its Times grid font (36em). */
 	grid-template-columns: 1fr min(36em, 100%) 1fr;
 	font-family: var(--font-body);

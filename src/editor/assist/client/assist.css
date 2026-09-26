@@ -1,0 +1,13 @@
+@import "./assist-shell.css";
+@import "./overlay/overlay.css";
+@import "./popover/popover.css";
+
+.writing-assist-marker--debug {
+	background: var(--color-sea-blue);
+	color: var(--color-white);
+	box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+}
+
+.writing-assist-marker--debug:hover {
+	filter: brightness(1.12);
+}

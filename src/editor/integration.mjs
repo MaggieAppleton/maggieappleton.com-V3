@@ -16,6 +16,13 @@ export function localWritingEditor() {
 					entrypoint: new URL("./routes/document.js", import.meta.url),
 					prerender: false,
 				});
+				for (const path of ["judge", "generate", "sidecar", "status"]) {
+					injectRoute({
+						pattern: `/_editor/api/assist/${path}`,
+						entrypoint: new URL(`./assist/routes/${path}.js`, import.meta.url),
+						prerender: false,
+					});
+				}
 			},
 			"astro:server:start"({ address }) {
 				delete process.env.LOCAL_WRITING_EDITOR_ORIGIN;

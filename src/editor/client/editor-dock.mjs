@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CheckCircleIcon, SpinnerGapIcon, XCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, SpinnerGapIcon, SparkleIcon, TreeStructureIcon, XCircleIcon } from "@phosphor-icons/react";
+import { AssistPanel } from "../assist/client/AssistPanel.mjs";
 
 function copyWriting(source) {
 	return navigator.clipboard.writeText(source);
@@ -82,11 +83,15 @@ function PanelSection({ title, children, alert = false }) {
 
 /** A fixed, quiet writing dock that expands only when there is something to resolve. */
 export function EditorDock({ previewUrl, state, recovery, discarded, protectedWarning,
-	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onRetry, sourceForBackup }) {
+	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onRetry, sourceForBackup,
+	assistOpen = false, onAssistToggle = () => {}, assistPanelProps = {},
+	mapOpen = false, onMapToggle = () => {}, hasDrawerViews = false }) {
 	const [open, setOpen] = useState(false);
 	const [copyError, setCopyError] = useState(null);
 	const [preparedBackupKey, setPreparedBackupKey] = useState(null);
 	const buttonRef = useRef(null);
+	const assistButtonRef = useRef(null);
+	const assistPanelRef = useRef(null);
 	const saveButtonRef = useRef(null);
 	const panelRef = useRef(null);
 	const previousActionKey = useRef(null);
@@ -115,9 +120,12 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 		}
 	}
 	useEffect(() => {
-		if (hasActions && actionKey !== previousActionKey.current) setOpen(true);
+		if (hasActions && actionKey !== previousActionKey.current) {
+			setOpen(true);
+			closeAssist();
+		}
 		previousActionKey.current = actionKey;
-	}, [actionKey, hasActions]);
+	}, [actionKey, hasActions, onAssistToggle]);
 	useEffect(() => {
 		if (!hasSaveFailure && restoreFocusAfterRetry.current) {
 			restoreFocusAfterRetry.current = false;
@@ -127,6 +135,18 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 	function retrySave() {
 		restoreFocusAfterRetry.current = Boolean(panelRef.current?.contains(document.activeElement));
 		onRetry();
+	}
+
+	function toggleAssist() {
+		const nextOpen = !assistOpen;
+		if (nextOpen) setOpen(false);
+		onAssistToggle(nextOpen);
+	}
+
+	function closeAssist() {
+		const hadFocus = assistPanelRef.current?.contains(document.activeElement);
+		onAssistToggle(false);
+		if (hadFocus) requestAnimationFrame(() => assistButtonRef.current?.focus());
 	}
 
 	function closePanel() {
@@ -143,6 +163,12 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 	}
 
 	return React.createElement("div", { className: "editor-dock" },
+		assistOpen && React.createElement(AssistPanel, {
+			...assistPanelProps,
+			open: true,
+			panelRef: assistPanelRef,
+			onClose: closeAssist,
+		}),
 		open && hasActions && React.createElement("div", { id: "editor-dock-panel", ref: panelRef,
 			className: "editor-dock-panel", role: "region", "aria-label": "Writing editor details",
 			onKeyDown: onPanelKeyDown },
@@ -190,7 +216,21 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 			hasActions && React.createElement("button", { className: "editor-dock-icon", type: "button", ref: buttonRef,
 				"aria-controls": "editor-dock-panel", "aria-expanded": open,
 				"aria-label": open ? "Close details" : "Details", title: open ? "Close details" : "Details",
-				onClick: () => setOpen((current) => !current) }, React.createElement(DetailsIcon)),
+				onClick: () => {
+					onAssistToggle(false);
+					setOpen((current) => !current);
+				} }, React.createElement(DetailsIcon)),
+			React.createElement("span", { className: "editor-dock-divider", "aria-hidden": "true" }),
+			React.createElement("button", { type: "button", className: `editor-dock-tool-button${assistOpen ? " is-open" : ""}`,
+				ref: assistButtonRef,
+				"aria-controls": "editor-assist-panel", "aria-expanded": assistOpen,
+				"aria-label": "Assist", title: "Assist", onClick: toggleAssist },
+				React.createElement(SparkleIcon, { size: 18, "aria-hidden": "true" }), "Assist"),
+			React.createElement("button", { type: "button", className: `editor-dock-tool-button${mapOpen ? " is-open" : ""}`,
+				"aria-controls": "editor-assist-drawer", "aria-expanded": mapOpen,
+				"aria-label": "Map", title: "Map", disabled: !hasDrawerViews,
+				onClick: () => onMapToggle(!mapOpen) },
+				React.createElement(TreeStructureIcon, { size: 18, "aria-hidden": "true" }), "Map"),
 		),
 	);
 }
