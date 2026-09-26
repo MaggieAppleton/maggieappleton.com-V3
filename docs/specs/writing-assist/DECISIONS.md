@@ -11,3 +11,7 @@ Maggie confirmed that OpenAI `gpt-6-sol` is the default text generator for Writi
 ## 2026-09-26 · 04 margin checks · Default text generator
 
 Maggie's OpenAI `gpt-6-sol` default also applies to margin check hover suggestions and chat. Both use OpenAI `gpt-6-sol` instead of the two Anthropic models shown in spec 04; `OPENAI_MODEL` can override the model. Check detection remains with Jev, and the Anthropic provider remains available and is checked live.
+
+## 2026-09-26 · 04 margin checks · Objection threshold
+
+The spec's 0.7 objection threshold produced 34 markers across 53 sentences in a real essay, obscuring the writing. At 0.85, three sentences qualify. The configured threshold is 0.85; the other margin-check thresholds remain at their specified starting values. This follows the spec's preference for fewer unnecessary flags.

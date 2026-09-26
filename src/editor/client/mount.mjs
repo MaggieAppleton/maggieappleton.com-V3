@@ -474,7 +474,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			canApply: assistController.canApply(pinned.annotation), canApplyBlock: assistController.canApplyBlock?.(pinned.annotation),
 			chat: { placeholder: pinned.annotation.kind === "objection" ? "Ask about this sentence…" : "Ask about this…",
 				streamReply: (messages, { signal }) => assistTransport.stream({ tool: "checks", purpose: "chat",
-					messages, system: checkChatSystem({ annotation: pinned.annotation,
+					messages, system: checkChatSystem({ annotation: pinned.annotation, title,
 						generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`], ...checkContext(assistController, pinned.annotation) }) }, { signal }) },
 		}), document.body),
 	);

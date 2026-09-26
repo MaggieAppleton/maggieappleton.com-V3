@@ -25,10 +25,12 @@ export const checksTool = {
 	label: "Checks",
 	group: "Markers",
 	level: "sentence",
-	markerPresenter(annotation) {
+	markerPresenter(annotation, { targetText = "" } = {}) {
 		const detail = checkDetails(annotation.kind, annotation.data?.direction);
 		const Icon = detail.icon;
-		return { placement: "margin", order: detail.order, label: detail.title,
+		const excerpt = targetText.trim().replace(/\s+/g, " ").slice(0, 120);
+		return { placement: "margin", order: detail.order,
+			label: excerpt ? `${detail.title}: ${excerpt}` : detail.title,
 			className: `writing-assist-marker--check writing-assist-marker--${annotation.kind}`,
 			content: React.createElement(Icon, { size: 13, weight: "bold", "aria-hidden": "true" }) };
 	},

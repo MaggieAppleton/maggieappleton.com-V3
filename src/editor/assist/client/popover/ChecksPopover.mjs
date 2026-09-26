@@ -3,7 +3,7 @@ import { PinnedPopover } from "./PinnedPopover.mjs";
 import { checkDetails } from "../tools/checks.mjs";
 export { validateClichePhrase } from "../check-phrase.mjs";
 
-export function checkChatSystem({ annotation, sentence = "", paragraph = "", generated = {} }) {
+export function checkChatSystem({ annotation, title = "", sentence = "", paragraph = "", generated = {} }) {
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const checkReason = reason(annotation, generated) || "No additional reason was supplied.";
 	const scope = annotation.kind === "cliche" ? "only the flagged cliché phrase"
@@ -12,7 +12,7 @@ export function checkChatSystem({ annotation, sentence = "", paragraph = "", gen
 	const context = annotation.kind === "mixed-metaphor"
 		? `Paragraph: ${paragraph}` : `Sentence: ${sentence}\nParagraph: ${paragraph}`;
 	const phrase = annotation.kind === "cliche" && generated.phrase ? ` Flagged phrase: ${generated.phrase}.` : "";
-	return `Check: ${detail.title}. Reason: ${checkReason}.${phrase} ${context}\nWrite in British English. Keep the author's plain, conversational voice; do not add claims. If you use <rewrite>, it must replace ${scope}.${annotation.kind === "citation" ? " Never invent specific citations, titles, URLs, or statistics." : ""}`;
+	return `Post title: ${title}. Check: ${detail.title}. Reason: ${checkReason}.${phrase} ${context}\nWrite in British English. Keep the author's plain, conversational voice; do not add claims. If you use <rewrite>, it must replace ${scope}.${annotation.kind === "citation" ? " Never invent specific citations, titles, URLs, or statistics." : ""}`;
 }
 
 function CheckIcon({ annotation }) {

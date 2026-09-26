@@ -17,6 +17,8 @@ test("checks tool provides ordered coloured margin markers", () => {
 	assert.equal(marker.placement, "margin");
 	assert.equal(marker.order, 4);
 	assert.equal(marker.label, "Mixed metaphor");
+	assert.equal(checksTool.markerPresenter(cliche, { targetText: "tip of the iceberg" }).label,
+		"Cliché: tip of the iceberg");
 });
 
 test("checks panel renders four independently controlled switches", () => {
@@ -90,8 +92,9 @@ test("cliché Apply stays hidden until the controller accepts its exact phrase s
 });
 
 test("checks chat gets the live context, reason and exact rewrite scope", () => {
-	const clicheSystem = checkChatSystem({ annotation: cliche, sentence: "The tip of the iceberg remains.",
+	const clicheSystem = checkChatSystem({ annotation: cliche, title: "The garden", sentence: "The tip of the iceberg remains.",
 		paragraph: "The tip of the iceberg remains. Another sentence.", generated: { reason: "A worn phrase." } });
+	assert.match(clicheSystem, /Post title: The garden/);
 	assert.match(clicheSystem, /Sentence: The tip of the iceberg remains\./);
 	assert.match(clicheSystem, /Paragraph: The tip of the iceberg remains\. Another sentence\./);
 	assert.match(clicheSystem, /only the flagged cliché phrase/);

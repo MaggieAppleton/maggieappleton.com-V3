@@ -19,8 +19,13 @@ function plainTextSelection(selection) {
 	});
 }
 
-function markerFor(annotation) {
-	return getClientTool(annotation.tool)?.markerPresenter?.(annotation) ?? null;
+function markerFor(annotation, snapshot) {
+	const match = sentenceFor(snapshot, annotation.target?.sentenceId);
+	const targetText = annotation.target?.type === "span" && match
+		? match.sentence.text.slice(annotation.target.start, annotation.target.end)
+		: match?.sentence.text ?? snapshot.blocks.find((block) => block.id === annotation.target?.blockId)
+			?.sentences.map((sentence) => sentence.text).join(" ") ?? "";
+	return getClientTool(annotation.tool)?.markerPresenter?.(annotation, { targetText }) ?? null;
 }
 
 function sentenceFor(snapshot, id) {
@@ -79,7 +84,12 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const markers = createMarkerOverlay({ wrapper,
 		rangeForAnnotation: (annotation) => annotation.tool === "checks" && annotation.kind === "cliche"
 			&& annotation.target?.type === "span" ? model.rangeFor(annotation.target.sentenceId) : rangeForAnnotation(annotation),
-		markerFor,
+		marginLeftForAnnotation: (annotation) => {
+			const block = model.getSnapshot().blocks.find((item) => item.id === annotation.target?.blockId
+				|| item.sentences.some((sentence) => sentence.id === annotation.target?.sentenceId));
+			return block?.sentences[0] ? model.rangeFor(block.sentences[0].id)?.getClientRects?.()[0]?.left : null;
+		},
+		markerFor: (annotation) => markerFor(annotation, model.getSnapshot()),
 		onActivate(annotation, button) {
 			onHover(null);
 			onPin({ annotation, trigger: button, anchorRect: button.getBoundingClientRect() });
