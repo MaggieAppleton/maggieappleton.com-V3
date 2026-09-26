@@ -81,14 +81,12 @@ export function selectionDetails(model, selection) {
 		});
 		const first = intervals.find((item) => startInBlock >= item.start && startInBlock < item.end);
 		const final = intervals.find((item) => endInBlock > item.start && endInBlock <= item.end);
-		if (!first || !final) continue;
-		const acrossSentences = first !== final;
+		if (!first || !final || first !== final) continue;
 		return { text, blockId: block.id, sentenceId: first.sentence.id,
 			startSentenceId: first.sentence.id, endSentenceId: final.sentence.id,
 			startOffset: startInBlock - first.start, endOffset: endInBlock - final.start,
-			start: acrossSentences ? startInBlock : startInBlock - first.start,
-			end: acrossSentences ? endInBlock : endInBlock - first.start,
-			sentence: acrossSentences ? blockRange.toString() : first.sentence.text,
+			start: startInBlock - first.start, end: endInBlock - first.start,
+			sentence: first.sentence.text,
 			paragraph: blockRange.toString(), anchorRect: range.getBoundingClientRect() };
 	}
 	return null;
@@ -231,14 +229,17 @@ export function WordFinder({ controller, transport, root, available = false, pin
 			timer = setTimeout(() => setSelection(next), 300);
 		};
 		const keydown = (event) => {
-			if (event.key.toLowerCase() !== "k" || !event.shiftKey || !(event.metaKey || event.ctrlKey)) return;
+			if (event.key.toLowerCase() !== "k" || !event.shiftKey || !(event.metaKey || event.ctrlKey) || event.altKey) return;
+			// Capture before MDXEditor's Cmd+K handler, which also matches Shift+K.
+			event.preventDefault();
+			event.stopImmediatePropagation();
 			const next = selectionDetails(controller.model, root.ownerDocument.getSelection());
 			if (!isEligibleSelection(next ?? {}) || !controller.canApplyTextSelection(next)) return;
-			event.preventDefault(); clearTimeout(timer); setSelection(null); onOpen(next);
+			clearTimeout(timer); setSelection(null); onOpen(next);
 		};
 		root.ownerDocument.addEventListener("selectionchange", refresh);
-		root.addEventListener("keydown", keydown);
-		return () => { clearTimeout(timer); root.ownerDocument.removeEventListener("selectionchange", refresh); root.removeEventListener("keydown", keydown); };
+		root.addEventListener("keydown", keydown, true);
+		return () => { clearTimeout(timer); root.ownerDocument.removeEventListener("selectionchange", refresh); root.removeEventListener("keydown", keydown, true); };
 	}, [available, root, controller, onOpen]);
 	if (!available) return null;
 	return React.createElement(React.Fragment, null,

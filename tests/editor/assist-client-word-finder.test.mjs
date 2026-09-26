@@ -10,7 +10,7 @@ test("word finder only accepts a nonempty, single-block selection of twelve word
 	assert.equal(isEligibleSelection({ text: "one two three four five six seven eight nine ten eleven twelve thirteen", blockId: "one", start: 0, end: 71 }), false);
 });
 
-test("selection can span sentences in one block and permits headings but rejects quotes", () => {
+test("selection stays within one sentence, permits headings, and rejects quotes", () => {
 	const source = "First thought. Another thought.";
 	const fakeRange = (start, end) => ({ start, end,
 		startContainer: { ownerDocument: { defaultView: { Range: { START_TO_START: 0, END_TO_END: 2 } } } },
@@ -25,12 +25,12 @@ test("selection can span sentences in one block and permits headings but rejects
 		{ id: "first", text: "First thought." }, { id: "second", text: "Another thought." },
 	] }];
 	const model = { getSnapshot: () => ({ blocks }), rangeForSpan: (id) => id === "first" ? fakeRange(0, 14) : fakeRange(15, 31) };
-	const selection = { rangeCount: 1, isCollapsed: false, getRangeAt: () => fakeRange(6, 22) };
+	const crossing = { rangeCount: 1, isCollapsed: false, getRangeAt: () => fakeRange(6, 22) };
+	assert.equal(selectionDetails(model, crossing), null);
+	const selection = { rangeCount: 1, isCollapsed: false, getRangeAt: () => fakeRange(6, 13) };
 	const details = selectionDetails(model, selection);
-	assert.equal(details.text, "thought. Another");
-	assert.equal(details.startSentenceId, "first");
-	assert.equal(details.endSentenceId, "second");
-	assert.equal(details.sentence, source);
+	assert.equal(details.text, "thought");
+	assert.equal(details.sentence, "First thought.");
 	assert.equal(isEligibleSelection(details), true);
 	blocks[0].kind = "heading";
 	assert.equal(selectionDetails(model, selection)?.blockId, "one");
