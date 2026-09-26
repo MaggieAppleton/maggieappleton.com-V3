@@ -76,7 +76,7 @@ export const checksTool = {
 				paragraph: block.sentences.map((sentence, sentenceIndex) =>
 					`S${sentenceIndex + 1}| ${sentence.text}`).join("\n"),
 				links_in_paragraph: block.sentences.flatMap((sentence, sentenceIndex) =>
-					sentence.hasLink ? [`S${sentenceIndex + 1}`] : []),
+					(sentence.hasLink || sentence.hasFootnote) ? [`S${sentenceIndex + 1}`] : []),
 			}, questions: questionsFor(block, checks) }];
 		});
 	},
@@ -91,7 +91,7 @@ export const checksTool = {
 			const tag = `S${index + 1}`;
 			const target = { type: "sentence", sentenceId: sentence.id };
 			const cite = probability(answers[`cite_${tag}`]);
-			if (checks.includes("citation") && !sentence.hasLink && cite !== null
+			if (checks.includes("citation") && !sentence.hasLink && !sentence.hasFootnote && cite !== null
 				&& cite >= (thresholds.citation ?? 0.7)) {
 				results.push(annotation("citation", target, sentence.hash, cite,
 					{ reason: "This reads as a factual claim without a source." }));

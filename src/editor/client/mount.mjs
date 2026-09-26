@@ -19,6 +19,7 @@ import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
+import { LinksHover, LinksPopover } from "../assist/client/popover/LinksPopover.mjs";
 import { WordFinder } from "../assist/client/word-finder.mjs";
 import { ChecksHover, ChecksPopover, checkChatSystem } from "../assist/client/popover/ChecksPopover.mjs";
 import { enabledChecks } from "../assist/client/tools/checks.mjs";
@@ -184,7 +185,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			if (!active) return;
 			controller = createAssistController({
 				editor: lexicalEditor, wrapper: article, transport: assistTransport,
-				documentId: boot.documentId, title, config: assistStatus.config,
+				documentId: boot.documentId, pathname: boot.document.previewUrl,
+				title, config: assistStatus.config,
 				enabledTools: Object.fromEntries(Object.entries(enabledToolsRef.current).map(([id, enabled]) => [id,
 					id === "checks"
 						? enabledChecks(enabled, assistStatus.tools.checks?.available)
@@ -479,6 +481,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			: hover.annotation.tool === "repetition"
 				? React.createElement(RepetitionHover, { annotation: hover.annotation,
 					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
+				: hover.annotation.tool === "links"
+					? React.createElement(LinksHover, { annotation: hover.annotation })
 				: hover.annotation.tool === "checks"
 					? React.createElement(ChecksHover, { annotation: hover.annotation,
 						generated: checkGenerated[`${hover.annotation.id}:${hover.annotation.unitHash}`] })
@@ -491,6 +495,12 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		pinned?.annotation?.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
+		}), document.body),
+		pinned?.annotation?.tool === "links" && assistController && createPortal(React.createElement(LinksPopover, {
+			pinned, fallbackFocus: lexicalEditor?.getRootElement(),
+			onClose: () => setPinned(null),
+			onDismiss: () => assistController.dismiss(pinned.annotation),
+			onLink: (target) => assistController.link(pinned.annotation, target.pathname),
 		}), document.body),
 		pinned?.annotation?.tool === "checks" && assistController && createPortal(React.createElement(ChecksPopover, {
 			key: pinned.annotation.id,

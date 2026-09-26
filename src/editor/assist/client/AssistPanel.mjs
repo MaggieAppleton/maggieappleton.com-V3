@@ -34,7 +34,8 @@ const checkSwitches = [
 
 /** Prop-driven tool switches shown above the editor dock. */
 export function AssistPanel({ open = false, panelRef, config = {}, status = {}, enabledTools = {}, onToggleTool = () => {}, onClose = () => {} }) {
-	const configuredTools = getClientTools().filter((tool) => Boolean(config.tools?.[tool.id]?.enabled));
+	const configuredTools = getClientTools().filter((tool) => Boolean(config.tools?.[tool.id]
+		&& (config.tools[tool.id].enabled || tool.id === "links")));
 	if (!open || configuredTools.length === 0) return null;
 	const groups = configuredTools.reduce((result, tool) => {
 		const group = result.find((item) => item.label === tool.group);

@@ -50,8 +50,12 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 	async function runTool(tool, request) {
 		const context = {
 			blocks: request.blocks, targetBlockIds: request.blockIds,
-			title: request.title, config, enabledChecks: request.enabledChecks,
+			allBlocks: request.blocks, linkedPathnames: request.linkedPathnames,
+			pathname: request.pathname, title: request.title, config, enabledChecks: request.enabledChecks,
 		};
+		if (typeof tool.run === "function") {
+			return tool.run(context, (builtRequest) => answersFor(tool, request.documentId, builtRequest));
+		}
 		if (tool.id === "repetition" || tool.id === "argument-map") {
 			context.roleAnnotations = await rolesFor(context, request.documentId);
 		}

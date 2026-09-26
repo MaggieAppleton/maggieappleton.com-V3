@@ -11,6 +11,8 @@ export const assistConfig = {
 		"word-finder": { maxShown: 6,
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
 		roles: { enabled: true, thresholds: { minShown: 0.10 } },
+		links: { enabled: false, shortlistSize: 30,
+			thresholds: { target: 0.4, phrase: 0.35, natural: 0.5 } },
 		repetition: { enabled: true, thresholds: { pair: 0.5, minGroup: 3 },
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
 		checks: {

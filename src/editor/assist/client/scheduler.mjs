@@ -1,4 +1,4 @@
-import { changedSince } from "./sentence-model.mjs";
+import { blockSignature, changedSince } from "./sentence-model.mjs";
 
 const defaultClock = {
 	setTimer: (callback, delay) => globalThis.setTimeout(callback, delay),
@@ -6,7 +6,7 @@ const defaultClock = {
 };
 
 /** Judge requests are scoped by block IDs; results are accepted only for the same hashes. */
-export function createAssistScheduler({ documentId, title, tools, judge, onAnnotations,
+export function createAssistScheduler({ documentId, pathname, title, tools, judge, onAnnotations,
 	onClear = () => {}, timing = {}, clock = defaultClock }) {
 	const configured = new Map(tools.map((tool) => [tool.id, { ...tool }]));
 	const delay = { blocks: timing.sentenceIdleMs ?? 1500, document: timing.documentIdleMs ?? 8000 };
@@ -22,7 +22,12 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 			&& (!only || tool.id === only)).map((tool) => tool.id);
 	}
 	function hashMap(snapshot) {
-		return new Map(snapshot.blocks.map((block) => [block.id, block.hash]));
+		return new Map(snapshot.blocks.map((block) => [block.id, blockSignature(block)]));
+	}
+	function linkState(snapshot) {
+		return JSON.stringify([snapshot.linkedPathnames ?? [], snapshot.blocks.map((block) =>
+			[block.kind, block.quoted, block.links,
+				block.sentences.map((sentence) => [sentence.linkedSpans, sentence.links])])]);
 	}
 	function sameHashes(request) {
 		const current = hashMap(model);
@@ -43,7 +48,8 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 		const hashes = hashMap(model);
 		const covered = scope === "blocks" ? new Map(blockIds.map((id) => [id, hashes.get(id)])) : hashes;
 		const controller = new AbortController();
-		const request = { documentId, title, tools: names, blocks: model.blocks, scope };
+		const request = { documentId, pathname, title, tools: names, blocks: model.blocks,
+			linkedPathnames: model.linkedPathnames ?? [], scope };
 		if (scope === "blocks") request.blockIds = blockIds;
 		const flight = { scope, tools: names, hashes: covered,
 			order: model.blocks.map((block) => block.id), controller };
@@ -85,12 +91,14 @@ export function createAssistScheduler({ documentId, title, tools, judge, onAnnot
 	}
 	function update(next, { immediate = false } = {}) {
 		if (destroyed) return;
+		const linksChanged = model.blocks.length > 0 && linkState(next) !== linkState(model);
 		const changed = changedSince(next, model);
 		const before = hashMap(model);
 		const after = hashMap(next);
 		const edited = new Set([...changed, ...[...before.keys()].filter((id) => !after.has(id))]);
 		model = next;
 		if (!edited.size) return;
+		if (linksChanged && configured.get("links")?.enabled) onClear("links");
 		if (timers.roles != null) {
 			clock.clearTimer(timers.roles);
 			timers.roles = null;

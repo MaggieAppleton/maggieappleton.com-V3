@@ -41,11 +41,94 @@ test("sentence snapshot marks only the sentences containing links or footnotes",
 		node("text", " A third claim.", [], { key: "plain-3" }),
 	])]);
 	const snapshot = buildSentenceSnapshot(root);
-	assert.deepEqual(snapshot.blocks[0].sentences.map((sentence) => [sentence.text, Boolean(sentence.hasLink)]), [
-		["An asserted fact needs a source.", true],
-		["A second claim.", true],
-		["A third claim.", false],
+	assert.deepEqual(snapshot.blocks[0].sentences.map((sentence) =>
+		[sentence.text, Boolean(sentence.hasLink), Boolean(sentence.hasFootnote)]), [
+		["An asserted fact needs a source.", true, false],
+		["A second claim.", false, true],
+		["A third claim.", false, false],
 	]);
+});
+
+test("inline footnote marks citation context without occupying a link span", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "Creative tools help us.", [], { key: "prose" }),
+		node("writing-jsx", "", [node("paragraph", "", [node("text", "A source.", [], { key: "note" })])],
+			{ __name: "Footnote" }),
+	])]);
+	const sentence = buildSentenceSnapshot(root).blocks[0].sentences[0];
+	assert.equal(sentence.hasLink, false);
+	assert.equal(sentence.hasFootnote, true);
+	assert.deepEqual(sentence.linkedSpans, []);
+	assert.equal(sentence.text, "Creative tools help us.");
+});
+
+test("sentence snapshot retains linked spans and internal target paths", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "Learn ", [], { key: "lead" }),
+		node("link", "", [node("text", "end-user programming", [], { key: "linked-path" })],
+			{ getURL: () => "/end-user-programming" }),
+		node("text", " today. Next sentence.", [], { key: "tail" }),
+	])]);
+	const snapshot = buildSentenceSnapshot(root);
+	const [first, second] = snapshot.blocks[0].sentences;
+	assert.deepEqual(first.linkedSpans, [{ start: 6, end: 26 }]);
+	assert.deepEqual(first.links, ["/end-user-programming"]);
+	assert.equal(first.hasLink, true);
+	assert.deepEqual(second.linkedSpans, []);
+	assert.equal(second.hasLink, false);
+	assert.deepEqual(snapshot.linkedPathnames, ["/end-user-programming"]);
+});
+
+test("Markdown links and autolinks exclude same-site targets by pathname", () => {
+	for (const kind of ["link", "autolink"]) {
+		for (const url of ["/creative-tools", "https://maggieappleton.com/creative-tools/?source=editor#notes"]) {
+			const root = node("root", "", [node("paragraph", "", [
+				node(kind, "", [node("text", "Creative tools", [], { key: "linked" })], { getURL: () => url }),
+			])]);
+			const snapshot = buildSentenceSnapshot(root);
+			assert.deepEqual(snapshot.linkedPathnames, ["/creative-tools"], `${kind}: ${url}`);
+			assert.deepEqual(snapshot.blocks[0].sentences[0].links, ["/creative-tools"], `${kind}: ${url}`);
+			assert.deepEqual(snapshot.blocks[0].sentences[0].linkedSpans, [{ start: 0, end: 14 }], `${kind}: ${url}`);
+		}
+	}
+});
+
+test("external links protect their text without excluding a site target", () => {
+	for (const kind of ["link", "autolink"]) {
+		const root = node("root", "", [node("paragraph", "", [
+			node(kind, "", [node("text", "Creative tools", [], { key: "linked" })],
+				{ getURL: () => "https://other.example/creative-tools" }),
+		])]);
+		const snapshot = buildSentenceSnapshot(root);
+		assert.deepEqual(snapshot.linkedPathnames, [], kind);
+		assert.deepEqual(snapshot.blocks[0].sentences[0].links, [], kind);
+		assert.deepEqual(snapshot.blocks[0].sentences[0].linkedSpans, [{ start: 0, end: 14 }], kind);
+	}
+});
+
+test("wiki links resolve aliases and protect only their own characters", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("editor-wiki-link", "[[Pattern Language]]", [], { key: "wiki" }),
+		node("text", " helps creative tools.", [], { key: "tail" }),
+	])]);
+	const snapshot = buildSentenceSnapshot(root);
+	const sentence = snapshot.blocks[0].sentences[0];
+	assert.deepEqual(snapshot.linkedPathnames, ["/pattern-languages"]);
+	assert.deepEqual(sentence.links, ["/pattern-languages"]);
+	assert.deepEqual(sentence.linkedSpans, [{ start: 0, end: 20 }]);
+	assert.equal(sentence.text.slice(sentence.linkedSpans[0].end), " helps creative tools.");
+});
+
+test("unresolved wiki tokens protect their text without blocking later phrases", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("editor-wiki-link", "[[An Unlisted Note]]", [], { key: "wiki" }),
+		node("text", " and creative tools help us.", [], { key: "tail" }),
+	])]);
+	const snapshot = buildSentenceSnapshot(root);
+	const sentence = snapshot.blocks[0].sentences[0];
+	assert.deepEqual(snapshot.linkedPathnames, []);
+	assert.deepEqual(sentence.linkedSpans, [{ start: 0, end: 20 }]);
+	assert.equal(sentence.text.slice(sentence.linkedSpans[0].end), " and creative tools help us.");
 });
 
 test("soft line wraps stay inside a sentence and preserve Lexical offsets", () => {
@@ -214,6 +297,90 @@ test("editing one paragraph does not dirty its unchanged neighbours", () => {
 	const before = snapshot("Opening.", "First claim.", "Second claim.");
 	const after = snapshot("Revised opening.", "First claim.", "Second claim.");
 	assert.deepEqual(changedSince(after, before), [after.blocks[0].id]);
+});
+
+test("adding a Markdown link changes the affected block despite identical prose", () => {
+	const plain = buildSentenceSnapshot(node("root", "", [node("paragraph", "", [
+		node("text", "Creative tools help us.", [], { key: "plain" }),
+	])]));
+	const linked = buildSentenceSnapshot(node("root", "", [node("paragraph", "", [
+		node("link", "", [node("text", "Creative tools", [], { key: "linked" })],
+			{ getURL: () => "/creative-tools" }),
+		node("text", " help us.", [], { key: "tail" }),
+	])]));
+	assert.equal(plain.blocks[0].hash, linked.blocks[0].hash);
+	assert.deepEqual(changedSince(linked, plain), [linked.blocks[0].id]);
+	assert.deepEqual(changedSince(plain, linked), [plain.blocks[0].id]);
+});
+
+test("changing paragraph eligibility invalidates identical text", () => {
+	const make = (kind) => buildSentenceSnapshot(node("root", "", [node(kind, "", [
+		node("text", "Creative tools help us.", [], { key: "text" }),
+	])]));
+	const paragraph = make("paragraph");
+	for (const kind of ["heading", "quote"]) {
+		const after = make(kind);
+		assert.equal(after.blocks[0].hash, paragraph.blocks[0].hash);
+		assert.equal(after.blocks[0].sentences[0].hash, paragraph.blocks[0].sentences[0].hash);
+		assert.deepEqual(changedSince(after, paragraph), [after.blocks[0].id]);
+	}
+});
+
+test("heading and quote conversions clear stale link suggestions and reject pending results", async () => {
+	const make = (kind) => buildSentenceSnapshot(node("root", "", [node(kind, "", [
+		node("text", "Creative tools help us.", [], { key: "text" }),
+	])]));
+	for (const kind of ["heading", "quote"]) {
+		const clock = fakeClock();
+		const pending = [];
+		const accepted = [];
+		const cleared = [];
+		const scheduler = createAssistScheduler({ documentId: "notes:test", clock,
+			tools: [{ id: "links", level: "document", enabled: true }],
+			judge(request, { signal }) { return new Promise((resolve) => pending.push({ request, signal, resolve })); },
+			onAnnotations: (items) => accepted.push(items), onClear: (tool) => cleared.push(tool),
+		});
+		scheduler.start(make("paragraph"));
+		scheduler.update(make(kind));
+		assert.deepEqual(cleared, ["links"], kind);
+		assert.equal(pending[0].signal.aborted, true, kind);
+		pending[0].resolve({ annotations: [{ id: "stale", tool: "links" }] });
+		await Promise.resolve();
+		assert.deepEqual(accepted, [], kind);
+		clock.tick(8000);
+		assert.equal(pending[1].request.blocks[0].kind, kind);
+		scheduler.destroy();
+	}
+});
+
+test("link edits clear suggestions and reject an in-flight result with unchanged text", async () => {
+	const clock = fakeClock();
+	const pending = [];
+	const accepted = [];
+	const cleared = [];
+	const make = (linked) => buildSentenceSnapshot(node("root", "", [node("paragraph", "", [
+		linked ? node("link", "", [node("text", "Creative tools", [], { key: "linked" })],
+			{ getURL: () => "/creative-tools" }) : node("text", "Creative tools", [], { key: "plain" }),
+		node("text", " help us.", [], { key: "tail" }),
+	])]));
+	const scheduler = createAssistScheduler({ documentId: "notes:test", clock,
+		tools: [{ id: "links", level: "document", enabled: true }],
+		judge(request, { signal }) { return new Promise((resolve) => pending.push({ request, signal, resolve })); },
+		onAnnotations: (items) => accepted.push(items), onClear: (tool) => cleared.push(tool),
+	});
+	scheduler.start(make(false));
+	scheduler.update(make(true));
+	assert.deepEqual(cleared, ["links"]);
+	assert.equal(pending[0].signal.aborted, true);
+	pending[0].resolve({ annotations: [{ id: "stale", tool: "links" }] });
+	await Promise.resolve();
+	assert.deepEqual(accepted, []);
+	clock.tick(8000);
+	assert.deepEqual(pending[1].request.linkedPathnames, ["/creative-tools"]);
+	scheduler.update(make(false));
+	assert.equal(pending[1].signal.aborted, true);
+	assert.deepEqual(cleared, ["links", "links"]);
+	scheduler.destroy();
 });
 
 test("scheduler rejects a pre-reorder map and requests the new reading order", async () => {

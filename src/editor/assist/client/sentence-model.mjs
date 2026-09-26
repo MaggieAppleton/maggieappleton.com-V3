@@ -1,10 +1,23 @@
 import { $getRoot } from "lexical";
+import internalLinkPreviews from "../../../internal-link-previews.json" with { type: "json" };
+import { CANONICAL_ORIGIN } from "../../../utils/canonical.mjs";
+import { findInternalLinkPreviewByText } from "../../../utils/internalLinkPreview.js";
 import { hash, normaliseText } from "../shared/hash.mjs";
 
 const segmenter = new Intl.Segmenter("en-GB", { granularity: "sentence" });
 const WRITING = new Set(["IntroParagraph", "Footnote", "AssumedAudience"]);
 const QUOTE_COMPONENTS = new Set(["QuoteCard", "BlockquoteCitation"]);
 const NON_TERMINAL_ABBREVIATION = /(?:^|\s)(?:Dr|Mr|Mrs|Ms|Prof|St|e\.g|i\.e)\.$/iu;
+const SITE_HOST = new URL(CANONICAL_ORIGIN).host;
+
+function internalPathname(destination) {
+	if (typeof destination !== "string" || (!destination.startsWith("/") && !/^https?:\/\//iu.test(destination))) return null;
+	try {
+		const url = new URL(destination, CANONICAL_ORIGIN);
+		if (!(["http:", "https:"].includes(url.protocol) && url.host === SITE_HOST)) return null;
+		return url.pathname.replace(/\/+$/u, "") || "/";
+	} catch { return null; }
+}
 
 function children(node) { return node.getChildren?.() ?? []; }
 function type(node) { return node.getType?.() ?? ""; }
@@ -20,7 +33,7 @@ function textPieces(node, { skipNestedLists = false } = {}) {
 	const pieces = [];
 	const footnotes = [];
 	let position = 0;
-	function visit(current, top = false, linked = false) {
+	function visit(current, top = false, linked = false, inheritedLink = null) {
 		const kind = type(current);
 		if (kind === "protected-source" || kind === "code" || kind === "codeblock") return;
 		if (!top && kind === "writing-jsx") {
@@ -29,16 +42,20 @@ function textPieces(node, { skipNestedLists = false } = {}) {
 		}
 		if (!top && skipNestedLists && kind === "list") return;
 		const insideLink = linked || kind === "link" || kind === "autolink" || kind === "editor-wiki-link";
+		const wikiTarget = kind === "editor-wiki-link"
+			? current.getTextContent?.().slice(2, -2).replace(/[‘’]/gu, "'").replace(/[“”]/gu, '"') : null;
+		const linkUrl = kind === "link" || kind === "autolink" ? current.getURL?.() ?? inheritedLink
+			: wikiTarget ? findInternalLinkPreviewByText(wikiTarget, internalLinkPreviews)?.pathname ?? null : inheritedLink;
 		const descendants = children(current);
 		if (!descendants.length) {
 			const text = current.getTextContent?.() ?? "";
 			if (text && current.getKey) {
-				pieces.push({ key: current.getKey(), text, hasLink: insideLink });
+				pieces.push({ key: current.getKey(), text, hasLink: insideLink, linkUrl });
 				position += text.length;
 			}
 			return;
 		}
-		for (const child of descendants) visit(child, false, insideLink);
+		for (const child of descendants) visit(child, false, insideLink, linkUrl);
 	}
 	visit(node, true);
 	return { pieces, footnotes };
@@ -72,6 +89,7 @@ function sentenceSegments(text) {
 export function buildSentenceSnapshot(root) {
 	const blocks = [];
 	const locations = new Map();
+	const linkedPathnames = new Set();
 	const blockOccurrences = new Map();
 	const sentenceOccurrences = new Map();
 	function addBlock(node, kind, quoted, overridePieces) {
@@ -89,6 +107,16 @@ export function buildSentenceSnapshot(root) {
 			position += piece.text.length;
 			return piece.hasLink ? [{ start, end: position }] : [];
 		});
+		const linkRanges = [];
+		let offset = 0;
+		for (const piece of pieces) {
+			const pathname = internalPathname(piece.linkUrl);
+			if (pathname) {
+				linkRanges.push({ start: offset, end: offset + piece.text.length, pathname });
+				linkedPathnames.add(pathname);
+			}
+			offset += piece.text.length;
+		}
 		const blockHash = hash(clean);
 		const blockOccurrence = blockOccurrences.get(blockHash) ?? 0;
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
@@ -107,18 +135,23 @@ export function buildSentenceSnapshot(root) {
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
 			const id = `${sentenceHash}:${occurrence}`;
-			const hasLink = links.some((link) => link.start < end && link.end > start);
-			sentences.push({ id, hash: sentenceHash, text, index: sentences.length,
-				...(hasLink ? { hasLink: true } : {}) });
+			const ownLinks = links.filter((link) => link.start < end && link.end > start);
+			const ownTargets = linkRanges.filter((link) => link.start < end && link.end > start);
+			const hasLink = ownLinks.length > 0;
+			sentences.push({ id, hash: sentenceHash, text, index: sentences.length, hasLink,
+				linkedSpans: ownLinks.map((link) => ({ start: Math.max(0, link.start - start),
+					end: Math.min(text.length, link.end - start) })),
+				links: [...new Set(ownTargets.map((link) => link.pathname))] });
 			sentenceRanges.push({ start, end });
 			locations.set(id, { pieces, start, end });
 		}
 		for (const offset of footnotes) {
 			const index = sentenceRanges.findLastIndex((range) => range.start <= offset);
-			if (sentences.length) sentences[Math.max(0, index)].hasLink = true;
+			if (sentences.length) sentences[Math.max(0, index)].hasFootnote = true;
 		}
 		blocks.push({ id: `${blockHash}:${blockOccurrence}`, hash: blockHash,
-			kind, quoted, index: blocks.length, sentences });
+			kind, quoted, index: blocks.length, sentences,
+			links: [...new Set(linkRanges.map((link) => link.pathname))] });
 	}
 	function visit(node) {
 		const kind = type(node);
@@ -157,7 +190,7 @@ export function buildSentenceSnapshot(root) {
 	}
 	visit(root);
 	Object.defineProperty(blocks, "_locations", { value: locations });
-	return { blocks };
+	return { blocks, linkedPathnames: [...linkedPathnames] };
 }
 
 export function changedSince(current, previous) {
@@ -165,7 +198,14 @@ export function changedSince(current, previous) {
 	// A moved block changes its reading-order context. An unchanged neighbour at
 	// the same position does not need another sentence-level judge request.
 	return current.blocks.filter((block, index) => block.id !== previous.blocks[index]?.id
-		|| block.hash !== previous.blocks[index]?.hash).map((block) => block.id);
+		|| blockSignature(block) !== blockSignature(previous.blocks[index])).map((block) => block.id);
+}
+
+/** Content and eligibility context used to invalidate judge results without changing stable IDs. */
+export function blockSignature(block) {
+	if (!block) return null;
+	return JSON.stringify([block.hash, block.kind, block.quoted, block.links, block.sentences.map((sentence) =>
+		[sentence.hasLink, sentence.hasFootnote, sentence.linkedSpans, sentence.links])]);
 }
 
 function domTextPoint(editor, lexicalPoint) {

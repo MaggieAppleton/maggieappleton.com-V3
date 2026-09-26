@@ -9,6 +9,7 @@
 ::highlight(wa-role-concession) { background-color: color-mix(in srgb, var(--color-dark-sea-blue) 16%, color-mix(in srgb, var(--color-status-success) 10%, transparent)); }
 ::highlight(wa-role-framing) { background-color: color-mix(in srgb, var(--color-gray-400) 20%, transparent); }
 ::highlight(wa-checks-cliche) { text-decoration: underline 1px var(--color-dark-sea-blue); text-underline-offset: 2px; }
+::highlight(wa-link) { text-decoration: underline dotted var(--color-purple); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 
 .editor-assist-role--claim, .wa-role-hover-row--claim { --wa-role-colour: var(--color-salmon); }
 .editor-assist-role--opinion, .wa-role-hover-row--opinion { --wa-role-colour: var(--color-gold); }

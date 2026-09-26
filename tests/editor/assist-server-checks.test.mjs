@@ -62,6 +62,16 @@ test("citation skips linked sentences and applies its threshold inclusively", ()
 	]);
 });
 
+test("an inline footnote still suppresses a citation prompt", () => {
+	const footnoted = { id: "footnoted", hash: "paragraph-hash", kind: "paragraph", sentences: [
+		{ id: "sentence", hash: "sentence-hash", text: "Creative tools help us.",
+			hasLink: false, hasFootnote: true, linkedSpans: [] },
+	] };
+	const footnoteContext = { ...context, blocks: [footnoted], targetBlockIds: [footnoted.id], enabledChecks: ["citation"] };
+	assert.deepEqual(checksTool.buildRequests(footnoteContext)[0].state.links_in_paragraph, ["S1"]);
+	assert.deepEqual(checksTool.mapAnswers(footnoteContext, footnoted.id, { cite_S1: noul(0.9) }), []);
+});
+
 test("hedging uses weighted score gap in both directions and requires confidence", () => {
 	const result = checksTool.mapAnswers(context, "second", {
 		certainty_S1: score(4, 0.5), contested_S1: score(1.5, 0.8),
