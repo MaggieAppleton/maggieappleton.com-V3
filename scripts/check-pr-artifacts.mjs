@@ -3,9 +3,9 @@
 import { execFileSync } from 'node:child_process';
 import { basename } from 'node:path';
 
-const base = process.argv[2];
-if (!base || process.argv.length !== 3) {
-  console.error('Usage: npm run check:pr-artifacts -- <base-ref-or-sha>');
+const [base, head = 'HEAD'] = process.argv.slice(2);
+if (!base || process.argv.length < 3 || process.argv.length > 4) {
+  console.error('Usage: npm run check:pr-artifacts -- <base-ref-or-sha> [head-ref-or-sha]');
   process.exit(2);
 }
 
@@ -16,15 +16,18 @@ function git(...args) {
 function isProcessArtifact(path) {
   const normalized = path.replaceAll('\\', '/');
   const name = basename(normalized).toLowerCase();
-  return normalized.startsWith('planning/')
-    || /^docs\/superpowers\/(plans|specs)\//.test(normalized)
+  if (name === 'readme.md') return false;
+
+  return /^(planning|process)\//.test(normalized)
+    || /^docs\/(plans|specs|superpowers\/(plans|specs))\//.test(normalized)
+    || /^(plan|spec|design|implementation|issue-log)\.md$/i.test(name)
     || /(?:-plan|-spec|-design|issue-log)\.md$/i.test(name);
 }
 
 try {
-  const mergeBase = git('merge-base', base, 'HEAD');
+  const mergeBase = git('merge-base', base, head);
   const output = execFileSync('git', [
-    'diff', '--name-status', '-z', '--find-renames', '--diff-filter=ACMR', mergeBase, 'HEAD',
+    'diff', '--name-status', '-z', '--find-renames', '--diff-filter=ACMR', mergeBase, head,
   ]).toString('utf8');
   const fields = output.split('\0');
   const blocked = [];
