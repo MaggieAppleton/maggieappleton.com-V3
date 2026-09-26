@@ -21,5 +21,6 @@ export function assistStatus(config, env = process.env) {
 	return { judge, providers, tools,
 		config: { tools: Object.fromEntries(Object.entries(config.tools).map(([id, tool]) => [id, {
 			enabled: tool.enabled,
+			...(tool.thresholds ? { thresholds: tool.thresholds } : {}),
 		}])), timing: config.timing } };
 }

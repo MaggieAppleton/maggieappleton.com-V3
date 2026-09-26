@@ -64,8 +64,9 @@ export function createAnnotationStore({ dismissals = [], onDismiss = () => {} } 
 		},
 		getAnnotations,
 		getRole(sentenceId) {
-			return (byTool.get("roles") ?? []).find((item) => item.target?.sentenceId === sentenceId
-				&& current(item)) ?? null;
+			const annotation = (byTool.get("roles") ?? []).find((item) =>
+				item.target?.sentenceId === sentenceId && current(item));
+			return annotation ? { role: annotation.kind, probabilities: annotation.data?.probabilities ?? {} } : null;
 		},
 		subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
 	};

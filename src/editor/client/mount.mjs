@@ -16,6 +16,7 @@ import { createAssistTransport } from "../assist/client/assist-transport.mjs";
 import { createAssistController } from "../assist/client/assist-controller.mjs";
 import { Drawer, getDrawerViews } from "../assist/client/Drawer.mjs";
 import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
+import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
@@ -85,6 +86,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [mapOpen, setMapOpen] = useState(false);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
+	const [roleAnnouncement, setRoleAnnouncement] = useState("");
 	const assistPlugin = useMemo(() => createAssistPlugin(setLexicalEditor), []);
 	const assistTransport = useMemo(() => createAssistTransport({ boot }), [boot]);
 	const title = useMemo(() => createSourceDocument(boot.document.source).metadata.title ?? "Untitled", [boot]);
@@ -156,6 +158,36 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			setPinned(null);
 		};
 	}, [lexicalEditor, assistStatus, assistTransport, adapterState.key]);
+	useEffect(() => assistController?.store.subscribe((annotations) => {
+		setHover((current) => current && !annotations.some((item) => item.id === current.annotation.id)
+			? null : current);
+	}), [assistController]);
+	useEffect(() => {
+		const root = lexicalEditor?.getRootElement();
+		if (!root || !assistController || !enabledTools.roles || !assistStatus?.tools?.roles?.available) {
+			setRoleAnnouncement("");
+			return undefined;
+		}
+		const priorDescription = root.getAttribute("aria-describedby");
+		root.setAttribute("aria-describedby", [priorDescription, "wa-role-status"].filter(Boolean).join(" "));
+		const announce = () => {
+			const annotation = assistController.getRoleAtSelection();
+			const rows = roleHoverRows(annotation?.data?.probabilities,
+				assistStatus.config.tools.roles?.thresholds?.minShown);
+			setRoleAnnouncement(rows.length
+				? `Sentence roles: ${rows.map((row) => `${row.percent}% ${row.label}`).join(", ")}.`
+				: "");
+		};
+		root.ownerDocument.addEventListener("selectionchange", announce);
+		const unsubscribe = assistController.store.subscribe(announce);
+		announce();
+		return () => {
+			root.ownerDocument.removeEventListener("selectionchange", announce);
+			unsubscribe();
+			if (priorDescription === null) root.removeAttribute("aria-describedby");
+			else root.setAttribute("aria-describedby", priorDescription);
+		};
+	}, [lexicalEditor, assistController, enabledTools.roles, assistStatus]);
 	function toggleTool(id, enabled) {
 		const next = { ...enabledToolsRef.current, [id]: enabled };
 		enabledToolsRef.current = next;
@@ -314,12 +346,19 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				engineSnapshot: editorRef.current?.getMarkdown(), error: failure,
 			}),
 		}),
+		React.createElement("span", { id: "wa-role-status", className: "visually-hidden",
+			role: "status", "aria-atomic": "true" }, roleAnnouncement),
 		createPortal(React.createElement(Drawer, { open: mapOpen, onClose: () => setMapOpen(false),
 			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId) }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
 			onClose: () => setHover(null),
-		}, `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
+		}, hover.annotation.tool === "roles"
+			? React.createElement(RoleHover, {
+				probabilities: assistController?.store.getRole(hover.annotation.target.sentenceId)?.probabilities,
+				minShown: assistStatus?.config?.tools?.roles?.thresholds?.minShown,
+			})
+			: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
 		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(),

@@ -8,6 +8,7 @@ export const assistConfig = {
 		"openai-compatible": { defaultModel: "llama3.1" },
 	},
 	tools: {
+		roles: { enabled: true, thresholds: { minShown: 0.10 } },
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },

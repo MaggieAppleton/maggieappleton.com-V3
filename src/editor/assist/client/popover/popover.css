@@ -17,6 +17,19 @@
 .wa-pinned-popover { width: 340px; padding: 10px 12px; overflow-y: auto; }
 :is(.wa-hover-card, .wa-pinned-popover) p { font: inherit; }
 
+.wa-role-hover { width: 194px; max-width: 100%; }
+.wa-role-hover-row {
+	display: grid;
+	grid-template-columns: 64px 34px minmax(0, 1fr);
+	align-items: center;
+	gap: 8px;
+	min-height: 18px;
+	margin: 4px 0;
+}
+.wa-role-hover-bar { display: block; min-width: 2px; height: 6px; border-radius: 3px; background: var(--wa-role-colour); }
+.wa-role-hover-row b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wa-role-hover-row span { white-space: nowrap; }
+
 .wa-popover-header {
 	display: flex;
 	align-items: center;

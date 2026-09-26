@@ -18,7 +18,8 @@ test("assist routes exist in dev and are absent from production registration", (
 
 test("status names the exact missing credential for each optional provider", () => {
 	const config = {
-		tools: { debug: { enabled: false, generator: { provider: "anthropic", model: "test" } } },
+		tools: { debug: { enabled: false, generator: { provider: "anthropic", model: "test" } },
+			roles: { enabled: true, thresholds: { minShown: 0.25 } } },
 	};
 	const missing = assistStatus(config, {});
 	assert.equal(missing.judge.available, false);
@@ -29,6 +30,7 @@ test("status names the exact missing credential for each optional provider", () 
 	assert.equal(configured.tools.debug.available, true);
 	assert.equal(configured.providers.openai.available, true);
 	assert.equal(configured.providers["openai-compatible"].available, true);
+	assert.equal(configured.config.tools.roles.thresholds.minShown, 0.25);
 	const defaultModel = assistStatus({ ...config, providers: { openai: { defaultModel: "gpt-6-sol" } } },
 		{ OPENAI_API_KEY: "test" });
 	assert.equal(defaultModel.providers.openai.available, true);

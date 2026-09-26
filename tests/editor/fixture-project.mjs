@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
+import { constants } from "node:fs";
 import { createServer } from "node:net";
 import { once } from "node:events";
 import { randomUUID } from "node:crypto";
@@ -72,6 +73,7 @@ export async function createFixtureProject({ name = "editor", sourceRoot = repos
   await cp(sourceRoot, projectRoot, {
     recursive: true,
     dereference: true,
+    mode: constants.COPYFILE_FICLONE,
     filter: (entry) => {
       const localPath = relative(sourceRoot, entry);
       return !excludedProjectEntries.has(localPath)
