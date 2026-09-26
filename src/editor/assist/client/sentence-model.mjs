@@ -191,10 +191,10 @@ export function changedSince(current, previous) {
 		|| blockSignature(block) !== blockSignature(previous.blocks[index])).map((block) => block.id);
 }
 
-/** Text plus link context used to invalidate judge results without changing stable IDs. */
+/** Content and eligibility context used to invalidate judge results without changing stable IDs. */
 export function blockSignature(block) {
 	if (!block) return null;
-	return JSON.stringify([block.hash, block.links, block.sentences.map((sentence) =>
+	return JSON.stringify([block.hash, block.kind, block.quoted, block.links, block.sentences.map((sentence) =>
 		[sentence.hasLink, sentence.linkedSpans, sentence.links])]);
 }
 

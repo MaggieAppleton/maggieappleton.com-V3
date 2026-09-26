@@ -272,6 +272,46 @@ test("adding a Markdown link changes the affected block despite identical prose"
 	assert.deepEqual(changedSince(plain, linked), [plain.blocks[0].id]);
 });
 
+test("changing paragraph eligibility invalidates identical text", () => {
+	const make = (kind) => buildSentenceSnapshot(node("root", "", [node(kind, "", [
+		node("text", "Creative tools help us.", [], { key: "text" }),
+	])]));
+	const paragraph = make("paragraph");
+	for (const kind of ["heading", "quote"]) {
+		const after = make(kind);
+		assert.equal(after.blocks[0].hash, paragraph.blocks[0].hash);
+		assert.equal(after.blocks[0].sentences[0].hash, paragraph.blocks[0].sentences[0].hash);
+		assert.deepEqual(changedSince(after, paragraph), [after.blocks[0].id]);
+	}
+});
+
+test("heading and quote conversions clear stale link suggestions and reject pending results", async () => {
+	const make = (kind) => buildSentenceSnapshot(node("root", "", [node(kind, "", [
+		node("text", "Creative tools help us.", [], { key: "text" }),
+	])]));
+	for (const kind of ["heading", "quote"]) {
+		const clock = fakeClock();
+		const pending = [];
+		const accepted = [];
+		const cleared = [];
+		const scheduler = createAssistScheduler({ documentId: "notes:test", clock,
+			tools: [{ id: "links", level: "document", enabled: true }],
+			judge(request, { signal }) { return new Promise((resolve) => pending.push({ request, signal, resolve })); },
+			onAnnotations: (items) => accepted.push(items), onClear: (tool) => cleared.push(tool),
+		});
+		scheduler.start(make("paragraph"));
+		scheduler.update(make(kind));
+		assert.deepEqual(cleared, ["links"], kind);
+		assert.equal(pending[0].signal.aborted, true, kind);
+		pending[0].resolve({ annotations: [{ id: "stale", tool: "links" }] });
+		await Promise.resolve();
+		assert.deepEqual(accepted, [], kind);
+		clock.tick(8000);
+		assert.equal(pending[1].request.blocks[0].kind, kind);
+		scheduler.destroy();
+	}
+});
+
 test("link edits clear suggestions and reject an in-flight result with unchanged text", async () => {
 	const clock = fakeClock();
 	const pending = [];

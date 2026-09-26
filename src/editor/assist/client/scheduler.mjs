@@ -26,7 +26,8 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 	}
 	function linkState(snapshot) {
 		return JSON.stringify([snapshot.linkedPathnames ?? [], snapshot.blocks.map((block) =>
-			[block.links, block.sentences.map((sentence) => [sentence.linkedSpans, sentence.links])])]);
+			[block.kind, block.quoted, block.links,
+				block.sentences.map((sentence) => [sentence.linkedSpans, sentence.links])])]);
 	}
 	function sameHashes(request) {
 		const current = hashMap(model);
