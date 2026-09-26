@@ -29,6 +29,13 @@ const markerColours = {
 	cliche: "dark-sea-blue",
 	"mixed-metaphor": "gold",
 };
+const markerNames = {
+	citation: `Citation needed: ${sentences.citation}`,
+	hedging: `Hedging · overclaiming: ${sentences.citation}`,
+	objection: `Likely objection: ${sentences.objection}`,
+	cliche: `Cliché: ${sentences.cliche}`,
+	"mixed-metaphor": `Mixed metaphor: ${sentences.mixed}`,
+};
 
 test.describe.serial("Writing Assist margin checks", () => {
 	let fixture;
@@ -78,10 +85,7 @@ ${sentences.mixed}
 		for (const [kind, colour] of Object.entries(markerColours)) {
 			const marker = page.locator(`.writing-assist-marker--${kind}`);
 			await expect(marker).toBeVisible();
-			await expect(marker).toHaveAccessibleName(kind === "hedging" ? "Hedging · overclaiming"
-				: kind === "objection" ? "Likely objection"
-					: kind === "cliche" ? "Cliché"
-						: kind === "mixed-metaphor" ? "Mixed metaphor" : "Citation needed");
+			await expect(marker).toHaveAccessibleName(markerNames[kind]);
 			const colours = await marker.evaluate((element, token) => ({
 				background: getComputedStyle(element).backgroundColor,
 				icon: getComputedStyle(element).color,
