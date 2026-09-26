@@ -8,6 +8,14 @@ Maggie asked for OpenAI `gpt-6-sol` as Writing Assist's default text generator. 
 
 Maggie confirmed that OpenAI `gpt-6-sol` is the default text generator for Writing Assist itself. Repetition chat therefore uses OpenAI `gpt-6-sol` instead of the Anthropic model in spec 02. `OPENAI_MODEL` can override it; the Anthropic provider remains selectable and is still checked live at the end of the slice. The repetition analysis remains with Jev.
 
+## 2026-09-26 · 05 word finder · Default text generator
+
+Maggie's OpenAI `gpt-6-sol` default applies to word finder candidate generation. This replaces the Anthropic Sonnet model shown in spec 05; `OPENAI_MODEL` can override it. Ranking still uses Jev, and the Anthropic provider remains available and is checked live.
+
+## 2026-09-26 · 05 word finder · Selection scope
+
+Spec 05 permits a selection anywhere within one analysed block, while its generation and ranking requests require a single complete sentence with the selected text marked. The editor therefore offers Word Finder only when the selection also stays within one analysed sentence. This avoids sending a partial or ambiguous sentence to either provider; a phrase inside that sentence still works up to the specified 12-word limit.
+
 ## 2026-09-26 · 04 margin checks · Default text generator
 
 Maggie's OpenAI `gpt-6-sol` default also applies to margin check hover suggestions and chat. Both use OpenAI `gpt-6-sol` instead of the two Anthropic models shown in spec 04; `OPENAI_MODEL` can override the model. Check detection remains with Jev, and the Anthropic provider remains available and is checked live.

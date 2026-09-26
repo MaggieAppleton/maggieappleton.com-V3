@@ -1,5 +1,6 @@
 import { EditorServiceError } from "../../server/errors.mjs";
 import { assistStatus } from "./status.mjs";
+import { validateWordFinderCandidates, wordFinderPrompt } from "./word-finder.mjs";
 
 const checkInstructions = {
 	cliche: " Find the cliché, stock phrase, or dead metaphor in the supplied sentence. Return only JSON with phrase, reason, suggestions. The phrase must be an exact substring of the sentence. Give one short reason and three replacements for the phrase only, not the whole sentence.",
@@ -19,6 +20,8 @@ const checkSchemas = {
 	objection: objectSchema({ objection: string }),
 	"mixed-metaphor": objectSchema({ metaphors: strings, reason: string }),
 };
+const wordFinderSchema = objectSchema({ candidates: { type: "array",
+	items: objectSchema({ text: string, gloss: string }) } });
 
 function invalid(message) {
 	return new EditorServiceError(400, "invalid_generation_request", message);
@@ -86,7 +89,12 @@ export function createGenerateService({ config, env = process.env, createProvide
 	return {
 		async run(request, { signal } = {}) {
 			const generator = selectedGenerator(request, config);
-			const messages = validatedMessages(request);
+			const wordFinder = request.tool === "word-finder" && request.purpose === "candidates";
+			if (request.tool === "word-finder" && (!wordFinder || request.json !== true || request.stream)) {
+				throw invalid("Word finder requires candidate JSON generation");
+			}
+			const prompt = wordFinder ? wordFinderPrompt(request) : null;
+			const messages = wordFinder ? prompt.messages : validatedMessages(request);
 			const configured = assistStatus(config, env).providers[generator.provider];
 			if (!configured?.available) {
 				const error = new EditorServiceError(503, "provider_unavailable", configured?.reason ?? "Provider is unavailable");
@@ -100,9 +108,11 @@ export function createGenerateService({ config, env = process.env, createProvide
 						? " For sources, never invent specific citations, titles, URLs or statistics."
 						: checkInstructions[request.purpose])
 				: "";
-			const system = `Write in British English (en-GB).${checksSystem}${request.system ? `\n\n${request.system}` : ""}`;
+			const additionalSystem = wordFinder ? prompt.system : request.system;
+			const system = `Write in British English (en-GB).${checksSystem}${additionalSystem ? `\n\n${additionalSystem}` : ""}`;
 			const input = { model: generator.model, system, messages, signal,
-				...(request.tool === "checks" && request.json ? { jsonSchema: checkSchemas[request.purpose] } : {}) };
+				...(wordFinder ? { jsonSchema: wordFinderSchema }
+					: request.tool === "checks" && request.json ? { jsonSchema: checkSchemas[request.purpose] } : {}) };
 			if (request.stream) return { stream: provider.stream(input) };
 			const result = await provider.generate({ ...input, json: Boolean(request.json) });
 			if (typeof result?.text !== "string") {
@@ -110,7 +120,8 @@ export function createGenerateService({ config, env = process.env, createProvide
 			}
 			if (!request.json) return { text: result.text };
 			const value = parsedObject(result.text);
-			return { json: request.tool === "checks" ? checkedJson(request.purpose, value) : value };
+			return { json: wordFinder ? validateWordFinderCandidates(value, request.originalText)
+				: request.tool === "checks" ? checkedJson(request.purpose, value) : value };
 		},
 	};
 }

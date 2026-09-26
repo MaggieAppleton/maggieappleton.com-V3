@@ -148,6 +148,27 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	const initial = model.getSnapshot();
 	store.setModel(initial);
 	scheduler.start(initial);
+	function textSelectionPoints(target) {
+		const startId = target.startSentenceId ?? target.sentenceId;
+		const endId = target.endSentenceId ?? startId;
+		const startOffset = target.startOffset ?? target.start;
+		const endOffset = target.endOffset ?? target.end;
+		const first = model.pointsForSpan(startId, startOffset, startOffset)?.start;
+		const last = model.pointsForSpan(endId, endOffset, endOffset)?.end;
+		return first && last ? { start: first, end: last } : null;
+	}
+	function currentSelectionText(target) {
+		const startId = target.startSentenceId ?? target.sentenceId;
+		const endId = target.endSentenceId ?? startId;
+		const first = model.rangeForSpan(startId, target.startOffset ?? target.start,
+			target.startOffset ?? target.start);
+		const last = model.rangeForSpan(endId, target.endOffset ?? target.end,
+			target.endOffset ?? target.end);
+		if (!first || !last) return null;
+		const range = first.cloneRange();
+		range.setEnd(last.endContainer, last.endOffset);
+		return range.toString();
+	}
 
 	return {
 		model, store,
@@ -208,6 +229,36 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			if (!target || target.type === "block") return false;
 			if (current.tool === "checks" && current.kind === "cliche" && target.type !== "span") return false;
 			const points = model.pointsForSpan(target.sentenceId, target.start, target.end);
+			if (!points) return false;
+			let allowed = false;
+			editor.getEditorState().read(() => {
+				const selection = $createRangeSelection();
+				selection.anchor.set(points.start.key, points.start.offset, "text");
+				selection.focus.set(points.end.key, points.end.offset, "text");
+				allowed = plainTextSelection(selection);
+			});
+			return allowed;
+		},
+		/** Apply an explicit, current sentence span for an on-demand assist tool. */
+		applyTextSelection(target, value) {
+			if (currentSelectionText(target) !== target.text) return false;
+			const points = textSelectionPoints(target);
+			if (!points || !value) return false;
+			let applied = false;
+			editor.update(() => {
+				const selection = $createRangeSelection();
+				selection.anchor.set(points.start.key, points.start.offset, "text");
+				selection.focus.set(points.end.key, points.end.offset, "text");
+				if (!plainTextSelection(selection)) return;
+				$setSelection(selection);
+				selection.insertText(value);
+				applied = true;
+			});
+			return applied;
+		},
+		canApplyTextSelection(target) {
+			if (currentSelectionText(target) !== target.text) return false;
+			const points = textSelectionPoints(target);
 			if (!points) return false;
 			let allowed = false;
 			editor.getEditorState().read(() => {

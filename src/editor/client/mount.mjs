@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { MDXEditor } from "@mdxeditor/editor";
@@ -19,11 +19,13 @@ import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
+import { WordFinder } from "../assist/client/word-finder.mjs";
 import { ChecksHover, ChecksPopover, checkChatSystem } from "../assist/client/popover/ChecksPopover.mjs";
 import { enabledChecks } from "../assist/client/tools/checks.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
+import "../assist/client/word-finder.css";
 
 const TOOL_STORAGE_KEY = "writing-assist:tools";
 
@@ -121,6 +123,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [mapError, setMapError] = useState(null);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
+	const openWordFinder = useCallback((selection) => { setHover(null); setPinned({ tool: "word-finder", selection }); }, []);
+	const closeWordFinder = useCallback(() => setPinned(null), []);
 	const [checkGenerated, setCheckGenerated] = useState({});
 	const checkCache = useRef(new Map());
 	const checkPending = useRef(new Map());
@@ -213,6 +217,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		});
 		setPinned((current) => {
 			if (!current) return null;
+			if (!current.annotation) return current;
 			const live = annotations.find((item) => item.id === current.annotation.id);
 			return !live ? null : live === current.annotation ? current : { ...current, annotation: live };
 		});
@@ -228,7 +233,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			setCheckGenerated((current) => current[key] === checked ? current : { ...current, [key]: checked });
 			if (annotation.kind === "cliche" && phraseAccepted) {
 				const current = assistController.getAnnotation(annotation.id);
-				if (current) setPinned((open) => open?.annotation.id === annotation.id
+				if (current) setPinned((open) => open?.annotation?.id === annotation.id
 					&& open.annotation.target?.type !== "span" ? { ...open, annotation: current } : open);
 			}
 		};
@@ -478,16 +483,16 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 					? React.createElement(ChecksHover, { annotation: hover.annotation,
 						generated: checkGenerated[`${hover.annotation.id}:${hover.annotation.unitHash}`] })
 				: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
-		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
+		pinned?.annotation?.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
 		}), document.body),
-		pinned?.annotation.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
+		pinned?.annotation?.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
-		pinned?.annotation.tool === "checks" && assistController && createPortal(React.createElement(ChecksPopover, {
+		pinned?.annotation?.tool === "checks" && assistController && createPortal(React.createElement(ChecksPopover, {
 			key: pinned.annotation.id,
 			pinned, generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`],
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
@@ -500,6 +505,11 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 					messages, system: checkChatSystem({ annotation: pinned.annotation, title,
 						generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`], ...checkContext(assistController, pinned.annotation) }) }, { signal }) },
 		}), document.body),
+		React.createElement(WordFinder, { controller: assistController, transport: assistTransport,
+			root: lexicalEditor?.getRootElement(),
+			available: Boolean(assistStatus?.tools?.["word-finder"]?.available),
+			pinned: pinned?.tool === "word-finder" ? pinned.selection : null, busy: Boolean(pinned),
+			onOpen: openWordFinder, onClose: closeWordFinder }),
 	);
 }
 
