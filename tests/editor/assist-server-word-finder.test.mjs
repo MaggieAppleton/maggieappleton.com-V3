@@ -36,6 +36,11 @@ test("word finder generates structured British English candidates and removes du
 	const result = await generator.run({ tool: "word-finder", purpose: "candidates", json: true, ...selection });
 	assert.equal(calls[0].model, "gpt-6-sol");
 	assert.equal(calls[0].json, true);
+	assert.deepEqual(calls[0].jsonSchema, { type: "object", properties: {
+		candidates: { type: "array", items: { type: "object", properties: {
+			text: { type: "string" }, gloss: { type: "string" },
+		}, required: ["text", "gloss"], additionalProperties: false } },
+	}, required: ["candidates"], additionalProperties: false });
 	assert.match(calls[0].system, /British English/);
 	assert.match(calls[0].messages[0].content, /⟦quiet⟧/);
 	assert.match(calls[0].messages[0].content, /Rain touched the windows/);
