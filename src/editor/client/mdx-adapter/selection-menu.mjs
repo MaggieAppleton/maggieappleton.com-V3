@@ -5,7 +5,7 @@ import {
 } from "@mdxeditor/editor";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext.js";
 import { $createHeadingNode, $isHeadingNode } from "@lexical/rich-text";
-import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
+import { $createParagraphNode, $getSelection, $isRangeSelection, $isTextNode } from "lexical";
 import { LinkSimple, TextB, TextHOne, TextHThree, TextHTwo, TextItalic } from "@phosphor-icons/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -191,6 +191,9 @@ function SelectionMenu() {
 		if (toggle) props["aria-pressed"] = active;
 		return h(Button, props, h(Icon, { size: 17, weight: active ? "bold" : "regular", "aria-hidden": true }));
 	}
+	function toggleHeading(tag) {
+		convertBlocks(() => menu.heading === tag ? $createParagraphNode() : $createHeadingNode(tag));
+	}
 	return createPortal(h("div", {
 		ref: menuRef, className: "local-selection-menu", style: { left: menu.left, top: menu.top },
 		"data-testid": "selection-menu",
@@ -198,9 +201,9 @@ function SelectionMenu() {
 		button("Bold", TextB, menu.bold, () => applyFormat("bold")),
 		button("Italic", TextItalic, menu.italic, () => applyFormat("italic")),
 		button("Link", LinkSimple, false, () => { setMenu(null); openLink(); }, false),
-		button("Heading 1", TextHOne, menu.heading === "h1", () => convertBlocks(() => $createHeadingNode("h1")), true, menu.headingDisabled),
-		button("Heading 2", TextHTwo, menu.heading === "h2", () => convertBlocks(() => $createHeadingNode("h2")), true, menu.headingDisabled),
-		button("Heading 3", TextHThree, menu.heading === "h3", () => convertBlocks(() => $createHeadingNode("h3")), true, menu.headingDisabled))), root);
+		button("Heading 1", TextHOne, menu.heading === "h1", () => toggleHeading("h1"), true, menu.headingDisabled),
+		button("Heading 2", TextHTwo, menu.heading === "h2", () => toggleHeading("h2"), true, menu.headingDisabled),
+		button("Heading 3", TextHThree, menu.heading === "h3", () => toggleHeading("h3"), true, menu.headingDisabled))), root);
 }
 
 export function createSelectionMenuPlugin() {

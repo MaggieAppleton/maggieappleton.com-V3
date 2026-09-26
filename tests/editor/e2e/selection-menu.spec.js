@@ -137,7 +137,7 @@ test.describe("article selection menu", () => {
 			.toContain("**selectable words**");
 	});
 
-	test("applies headings to every selected paragraph", async ({ page }) => {
+	test("converts selected paragraphs to headings and back", async ({ page }) => {
 		test.setTimeout(120_000);
 		await openEditor(page, 2);
 		const menu = page.getByRole("group", { name: "Selection formatting" });
@@ -149,6 +149,20 @@ test.describe("article selection menu", () => {
 			.toContain("## First plain paragraph with selectable words.");
 		const saved = await readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8");
 		expect(saved).toContain("## Second paragraph with [linked words](https://example.com) and more text.");
+		await selectText(page, "selectable words", "linked words");
+		for (const level of [2, 1, 3]) {
+			await expect(menu.getByRole("button", { name: `Heading ${level}` })).toHaveAttribute("aria-pressed", "true");
+			await menu.getByRole("button", { name: `Heading ${level}` }).click();
+			await expect(page.locator(".editor-body > h1, .editor-body > h2, .editor-body > h3")).toHaveCount(0);
+			await expect(page.locator(".editor-body > p").filter({ hasText: "First plain paragraph with selectable words." })).toHaveCount(1);
+			await expect(page.locator(".editor-body > p").filter({ hasText: "Second paragraph with linked words and more text." })).toHaveCount(1);
+			await expect(menu.getByRole("button", { name: `Heading ${level}` })).toHaveAttribute("aria-pressed", "false");
+			await selectText(page, "selectable words", "linked words");
+			if (level !== 3) await menu.getByRole("button", { name: `Heading ${level === 2 ? 1 : 3}` }).click();
+		}
+		await saveIfPending(page);
+		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8"))
+			.toContain("First plain paragraph with selectable words.\n\nSecond paragraph with [linked words](https://example.com) and more text.");
 	});
 
 	test("shows mixed heading and bold selections as inactive", async ({ page }) => {
@@ -163,6 +177,22 @@ test.describe("article selection menu", () => {
 		for (const label of ["Heading 1", "Heading 2", "Heading 3"]) {
 			await expect(menu.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
 		}
+		await menu.getByRole("button", { name: "Heading 2" }).click();
+		await expect(page.locator(".editor-body > h2")).toHaveCount(2);
+		await expect(page.locator(".editor-body > h1, .editor-body > h3")).toHaveCount(0);
+		await expect(menu.getByRole("button", { name: "Heading 2" })).toHaveAttribute("aria-pressed", "true");
+		await saveIfPending(page);
+		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[6]}.mdx`), "utf8"))
+			.toContain("## First plain paragraph with selectable words.\n\n## Second paragraph with [linked words](https://example.com) and more text.");
+		await selectText(page, "selectable words", "linked words");
+		await menu.getByRole("button", { name: "Heading 2" }).click();
+		await expect(page.locator(".editor-body > h1, .editor-body > h2, .editor-body > h3")).toHaveCount(0);
+		await expect(page.locator(".editor-body > p").filter({ hasText: "First plain paragraph with selectable words." })).toHaveCount(1);
+		await expect(page.locator(".editor-body > p").filter({ hasText: "Second paragraph with linked words and more text." })).toHaveCount(1);
+		await expect(menu.getByRole("button", { name: "Heading 2" })).toHaveAttribute("aria-pressed", "false");
+		await saveIfPending(page);
+		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[6]}.mdx`), "utf8"))
+			.toContain("First plain paragraph with selectable words.\n\nSecond paragraph with [linked words](https://example.com) and more text.");
 		await selectText(page, "strong words", "plain words");
 		await expect(menu.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "false");
 	});
