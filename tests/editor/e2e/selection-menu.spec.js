@@ -15,7 +15,8 @@ test.describe("article selection menu", () => {
 		for (let index = 1; index <= 5; index++) {
 			const slug = `selection-menu-${index}-${randomUUID().slice(0, 8)}`;
 			slugs.push(slug);
-			await fixture.write(`src/content/notes/${slug}.mdx`, `---\ntitle: Selection menu test ${index}\nstartDate: 2026-09-25\nupdated: 2026-09-25\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\nFirst plain paragraph with selectable words.\n\nSecond paragraph with [linked words](https://example.com) and more text.\n\nThird paragraph has **strong words** and plain words.\n\n\`\`\`js\nconst codeWords = true;\n\`\`\`\n`);
+			const protectedTable = index === 4 ? "\n| Protected column |\n| --- |\n| protected table cell |\n" : "";
+			await fixture.write(`src/content/notes/${slug}.mdx`, `---\ntitle: Selection menu test ${index}\ndescription: Selection menu description ${index}\nstartDate: 2026-09-25\nupdated: 2026-09-25\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\nFirst plain paragraph with selectable words.\n\nSecond paragraph with [linked words](https://example.com) and more text.\n\nThird paragraph has **strong words** and plain words.\n${protectedTable}\n\`\`\`js\nconst codeWords = true;\n\`\`\`\n`);
 		}
 		server = await startFixtureServer(fixture.root, { timeout: 120_000 });
 	});
@@ -56,6 +57,38 @@ test.describe("article selection menu", () => {
 			selection.addRange(range);
 			document.dispatchEvent(new Event("selectionchange"));
 		}, { start, end });
+	}
+
+	async function selectTextIn(page, selector, text) {
+		await page.evaluate(({ selector, text }) => {
+			const root = document.querySelector(selector);
+			const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+			while (walker.nextNode()) {
+				const index = walker.currentNode.textContent.indexOf(text);
+				if (index === -1) continue;
+				const range = document.createRange();
+				range.setStart(walker.currentNode, index);
+				range.setEnd(walker.currentNode, index + text.length);
+				window.getSelection().removeAllRanges();
+				window.getSelection().addRange(range);
+				document.dispatchEvent(new Event("selectionchange"));
+				return;
+			}
+			throw new Error(`Cannot find ${text} in ${selector}`);
+		}, { selector, text });
+	}
+
+	async function collapseSelection(page) {
+		await page.evaluate(() => {
+			window.getSelection().collapseToEnd();
+			document.dispatchEvent(new Event("selectionchange"));
+		});
+	}
+
+	async function saveIfPending(page) {
+		await page.getByRole("button", { name: "Save" }).evaluate((button) => {
+			if (!button.disabled) button.click();
+		});
 	}
 
 	async function mouseSelectText(page, text) {
@@ -100,7 +133,7 @@ test.describe("article selection menu", () => {
 		await menu.getByRole("button", { name: "Bold" }).click();
 		await expect(menu).toBeVisible();
 		await expect(menu.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "true");
-		await page.getByRole("button", { name: "Save" }).click();
+		await saveIfPending(page);
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[0]}.mdx`), "utf8"))
 			.toContain("**selectable words**");
 	});
@@ -114,11 +147,19 @@ test.describe("article selection menu", () => {
 		await menu.getByRole("button", { name: "Heading 2" }).click();
 		await expect(menu.getByRole("button", { name: "Heading 2" })).toHaveAttribute("aria-pressed", "true");
 		await expect(page.locator(".editor-body > h2")).toHaveCount(2);
-		await page.getByRole("button", { name: "Save" }).click();
+		await saveIfPending(page);
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8"))
 			.toContain("## First plain paragraph with selectable words.");
 		const saved = await readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8");
 		expect(saved).toContain("## Second paragraph with [linked words](https://example.com) and more text.");
+		await selectText(page, "selectable words");
+		await menu.getByRole("button", { name: "Heading 1" }).click();
+		await selectText(page, "strong words");
+		await menu.getByRole("button", { name: "Heading 3" }).click();
+		await selectText(page, "selectable words", "plain words");
+		for (const label of ["Heading 1", "Heading 2", "Heading 3"]) {
+			await expect(menu.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
+		}
 
 		await selectText(page, "strong words", "plain words");
 		await expect(menu.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "false");
@@ -142,6 +183,7 @@ test.describe("article selection menu", () => {
 		await expect(menu.getByRole("button", { name: "Italic" })).toBeFocused();
 		await page.keyboard.press("Enter");
 		await expect(menu.getByRole("button", { name: "Italic" })).toHaveAttribute("aria-pressed", "true");
+		await expect(menu.getByRole("button", { name: "Link" })).not.toHaveAttribute("aria-pressed");
 		await menu.getByRole("button", { name: "Link" }).click();
 		await expect(menu).toHaveCount(0);
 		const url = page.getByRole("textbox", { name: "URL" });
@@ -150,12 +192,12 @@ test.describe("article selection menu", () => {
 		await page.getByRole("button", { name: "Save" }).last().click();
 		await expect(page.locator(".editor-body a", { hasText: "selectable words" }))
 			.toHaveAttribute("href", "https://example.org/selected");
-		await page.getByRole("button", { name: "Save" }).click();
+		await saveIfPending(page);
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[2]}.mdx`), "utf8"))
 			.toContain("[*selectable words*](https://example.org/selected)");
 	});
 
-	test("dismisses on Escape, outside click, collapse, and non-prose selection", async ({ page }) => {
+	test("excludes metadata and protected content, and reopens after dismissal", async ({ page }) => {
 		test.setTimeout(120_000);
 		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
 		await page.getByRole("link", { name: "Selection menu test 4" }).click();
@@ -170,21 +212,27 @@ test.describe("article selection menu", () => {
 		await expect(page.getByTestId("selection-menu")).toHaveCount(0);
 		await openEditor(page, 4);
 		const menu = page.getByRole("group", { name: "Selection formatting" });
+		await selectTextIn(page, ".title-container h1", "Selection menu test 4");
+		await expect(menu).toHaveCount(0);
+		await selectTextIn(page, ".title-container p", "Selection menu description 4");
+		await expect(menu).toHaveCount(0);
+		await selectText(page, "protected table cell");
+		await expect(menu).toHaveCount(0);
+		await selectText(page, "codeWords");
+		await expect(menu).toHaveCount(0);
 		await selectText(page, "selectable words");
 		await expect(menu).toBeVisible();
 		await page.keyboard.press("Escape");
 		await expect(menu).toHaveCount(0);
+		await collapseSelection(page);
 		await selectText(page, "selectable words");
-		await expect(menu).toHaveCount(0);
-		await selectText(page, "linked words");
 		await expect(menu).toBeVisible();
 		await page.locator(".title-container h1").click();
 		await expect(menu).toHaveCount(0);
-		await selectText(page, "plain words");
+		await collapseSelection(page);
+		await selectText(page, "selectable words");
 		await expect(menu).toBeVisible();
-		await page.evaluate(() => window.getSelection().collapseToEnd());
-		await expect(menu).toHaveCount(0);
-		await selectText(page, "codeWords");
+		await collapseSelection(page);
 		await expect(menu).toHaveCount(0);
 		await selectText(page, "plain words", "codeWords");
 		await expect(menu).toHaveCount(0);
@@ -193,17 +241,28 @@ test.describe("article selection menu", () => {
 	test("opens with keyboard selection and stays in a narrow viewport", async ({ page }) => {
 		test.setTimeout(120_000);
 		await openEditor(page, 5);
-		await page.setViewportSize({ width: 320, height: 700 });
+		await page.setViewportSize({ width: 252, height: 700 });
 		await page.locator(".editor-body > p").first().click();
 		await page.keyboard.press("Home");
 		await page.keyboard.press("Shift+ArrowRight");
 		const menu = page.getByRole("group", { name: "Selection formatting" });
 		await expect(menu).toBeVisible();
-		const bounds = await page.getByTestId("selection-menu").boundingBox();
-		expect(bounds.x).toBeGreaterThanOrEqual(0);
-		expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+		let bounds = await page.getByTestId("selection-menu").boundingBox();
+		expect(bounds.x).toBeGreaterThanOrEqual(12);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(240);
 		expect(bounds.y).toBeGreaterThanOrEqual(0);
 		await page.screenshot({ path: "/tmp/local-editor-selection-menu-narrow.png" });
+		await page.setViewportSize({ width: 180, height: 700 });
+		await expect(menu).toBeVisible();
+		bounds = await page.getByTestId("selection-menu").boundingBox();
+		expect(bounds.x).toBeGreaterThanOrEqual(12);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(168);
+		for (const button of await menu.getByRole("button").all()) {
+			const buttonBounds = await button.boundingBox();
+			expect(buttonBounds.x).toBeGreaterThanOrEqual(12);
+			expect(buttonBounds.x + buttonBounds.width).toBeLessThanOrEqual(168);
+		}
+		await page.screenshot({ path: "/tmp/local-editor-selection-menu-zoom-narrow.png" });
 		await menu.getByRole("button", { name: "Heading 1" }).click();
 		await expect(page.locator(".editor-body > h1")).toHaveCount(1);
 	});

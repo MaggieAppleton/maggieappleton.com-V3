@@ -41,8 +41,9 @@ function selectionDetails(selection) {
 }
 
 function menuPosition(rect) {
-	const left = Math.max(EDGE, Math.min(rect.left + rect.width / 2 - MENU_WIDTH / 2,
-		window.innerWidth - MENU_WIDTH - EDGE));
+	const width = Math.min(MENU_WIDTH, window.innerWidth - EDGE * 2);
+	const left = Math.max(EDGE, Math.min(rect.left + rect.width / 2 - width / 2,
+		window.innerWidth - width - EDGE));
 	const above = rect.top - MENU_HEIGHT - 7;
 	const below = rect.top + rect.height + 7;
 	const preferredTop = above >= EDGE ? above : below + MENU_HEIGHT <= window.innerHeight - EDGE
@@ -76,11 +77,17 @@ function SelectionMenu() {
 		const root = editor.getRootElement();
 		const native = window.getSelection();
 		if (!root || !native || !root.contains(native.anchorNode) || !root.contains(native.focusNode)) {
-			if (!menuRef.current?.contains(document.activeElement)) setMenu(null);
+			if (!menuRef.current?.contains(document.activeElement)) {
+				dismissed.current = null;
+				lastSignature.current = null;
+				setMenu(null);
+			}
 			return;
 		}
 		const details = editor.getEditorState().read(() => selectionDetails($getSelection()));
 		if (!details) {
+			dismissed.current = null;
+			lastSignature.current = null;
 			setMenu(null);
 			return;
 		}
@@ -133,13 +140,15 @@ function SelectionMenu() {
 	if (!menu || linkState.type !== "inactive") return null;
 	const root = editor.getRootElement()?.closest(".mdxeditor");
 	if (!root) return null;
-	function button(label, Icon, active, action) {
-		return h(Button, {
+	function button(label, Icon, active, action, toggle = true) {
+		const props = {
 			key: label, variant: "ghost", size: "icon", title: label,
-			"aria-label": label, "aria-pressed": active,
+			"aria-label": label,
 			onMouseDown: (event) => event.preventDefault(),
 			onClick: action,
-		}, h(Icon, { size: 17, weight: active ? "bold" : "regular", "aria-hidden": true }));
+		};
+		if (toggle) props["aria-pressed"] = active;
+		return h(Button, props, h(Icon, { size: 17, weight: active ? "bold" : "regular", "aria-hidden": true }));
 	}
 	return createPortal(h("div", {
 		ref: menuRef, className: "local-selection-menu", style: { left: menu.left, top: menu.top },
@@ -147,7 +156,7 @@ function SelectionMenu() {
 	}, h(ButtonGroup, { "aria-label": "Selection formatting" },
 		button("Bold", TextB, menu.bold, () => applyFormat("bold")),
 		button("Italic", TextItalic, menu.italic, () => applyFormat("italic")),
-		button("Link", LinkSimple, false, () => { setMenu(null); openLink(); }),
+		button("Link", LinkSimple, false, () => { setMenu(null); openLink(); }, false),
 		button("Heading 1", TextHOne, menu.heading === "h1", () => convertBlocks(() => $createHeadingNode("h1"))),
 		button("Heading 2", TextHTwo, menu.heading === "h2", () => convertBlocks(() => $createHeadingNode("h2"))),
 		button("Heading 3", TextHThree, menu.heading === "h3", () => convertBlocks(() => $createHeadingNode("h3"))))), root);

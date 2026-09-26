@@ -321,7 +321,7 @@
 	position: fixed;
 	z-index: 55;
 	box-sizing: border-box;
-	width: 228px;
+	width: min(228px, calc(100vw - 24px));
 	padding: 4px;
 	border: 1px solid #343841;
 	border-radius: 9px;
@@ -329,12 +329,15 @@
 	box-shadow: 0 2px 5px rgb(0 0 0 / 18%), 0 12px 28px rgb(0 0 0 / 20%);
 }
 #local-writing-editor .local-selection-menu .local-link-button-group {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
 	width: 100%;
 	border: 0;
 	background: transparent;
 }
 #local-writing-editor .local-selection-menu .local-link-button {
-	width: 36px;
+	width: auto;
+	min-width: 0;
 	min-height: 34px;
 }
 #local-writing-editor .local-selection-menu .local-link-button[aria-pressed="true"] {
