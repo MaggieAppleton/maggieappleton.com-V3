@@ -12,12 +12,14 @@ test("assist requests carry the local capability and only send serialisable mode
 		} });
 	await transport.judge({ tools: ["debug"], scope: "blocks", blockIds: ["b1"], blocks: [{ id: "b1",
 		hash: "hash", kind: "paragraph", quoted: false, index: 0,
-		sentences: [{ id: "s1", hash: "s-hash", text: "Blue sky.", index: 0, privateRange: "not sent" }] }] });
+		sentences: [{ id: "s1", hash: "s-hash", text: "Blue sky.", index: 0,
+			hasLink: true, linkedSpans: [{ start: 0, end: 4 }], privateRange: "not sent" }] }] });
 	assert.equal(calls[0].url, "/_editor/api/assist/judge");
 	assert.equal(calls[0].options.headers["X-Local-Editor-Token"], "local-token");
 	const sent = JSON.parse(calls[0].options.body);
 	assert.equal(sent.documentId, "notes:test");
 	assert.equal(sent.blocks[0].sentences[0].privateRange, undefined);
+	assert.deepEqual(sent.blocks[0].sentences[0].linkedSpans, [{ start: 0, end: 4 }]);
 });
 
 test("stream parser reads SSE text even when a frame crosses chunks", async () => {
