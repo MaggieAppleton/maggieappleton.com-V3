@@ -13,8 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # pull_request_target uses this trusted base revision. Never check out PR code.
-          ref: ${{ github.event.pull_request.base.sha }}
+          # pull_request_target runs at the default-branch commit, even for stacked PRs.
+          # Keep the checker from that trusted commit; fetch both PR revisions as data.
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -23,12 +24,15 @@ jobs:
       - name: Fetch the PR commit as data
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "$PR_NUMBER" in
             ''|*[!0-9]*) echo "Invalid pull request number" >&2; exit 1 ;;
           esac
-          git fetch --no-tags origin "+refs/pull/$PR_NUMBER/head:refs/pr/$PR_NUMBER"
+          git fetch --no-tags origin "+refs/heads/$PR_BASE_REF:refs/pr-base/$PR_NUMBER" "+refs/pull/$PR_NUMBER/head:refs/pr/$PR_NUMBER"
+          test "$(git rev-parse "refs/pr-base/$PR_NUMBER")" = "$PR_BASE_SHA"
           test "$(git rev-parse "refs/pr/$PR_NUMBER")" = "$PR_HEAD_SHA"
       - name: Check PR paths with trusted code
         env:

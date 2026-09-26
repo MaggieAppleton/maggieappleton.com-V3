@@ -16,12 +16,12 @@ function git(...args) {
 function isProcessArtifact(path) {
   const normalized = path.replaceAll('\\', '/');
   const name = basename(normalized).toLowerCase();
+  if (/^(planning|process)\//.test(normalized)
+    || /^docs\/(plans|specs|superpowers\/(plans|specs))\//.test(normalized)) return true;
   if (name === 'readme.md') return false;
 
-  return /^(planning|process)\//.test(normalized)
-    || /^docs\/(plans|specs|superpowers\/(plans|specs))\//.test(normalized)
-    || /^(plan|spec|design|implementation|issue-log)\.md$/i.test(name)
-    || /(?:-plan|-spec|-design|issue-log)\.md$/i.test(name);
+  return /^(plan|spec|design|implementation|issue-log)\.md$/i.test(name)
+    || /(?:-plan|-spec|-design|-implementation|-issue-log)\.md$/i.test(name);
 }
 
 try {

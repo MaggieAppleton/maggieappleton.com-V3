@@ -11,7 +11,7 @@ function git(directory, ...args) {
   return execFileSync('git', args, { cwd: directory, encoding: 'utf8' }).trim();
 }
 
-function withRepository({ setup = () => {}, change }, assertion) {
+function withRepository({ setup = () => {}, change, checkoutBaseBeforeCheck = false }, assertion) {
   const directory = mkdtempSync(join(tmpdir(), 'pr-artifact-check-'));
   try {
     git(directory, 'init', '--quiet');
@@ -27,6 +27,7 @@ function withRepository({ setup = () => {}, change }, assertion) {
     git(directory, 'add', '-A');
     git(directory, 'commit', '--quiet', '-m', 'change');
     const head = git(directory, 'rev-parse', 'HEAD');
+    if (checkoutBaseBeforeCheck) git(directory, 'checkout', '--quiet', '--detach', base);
     const result = spawnSync(process.execPath, [checker, base, head], {
       cwd: directory,
       encoding: 'utf8',
@@ -40,6 +41,7 @@ function withRepository({ setup = () => {}, change }, assertion) {
 test('checks an explicit head commit instead of the checked-out HEAD', () => {
   withRepository(
     {
+      checkoutBaseBeforeCheck: true,
       change(directory) {
         mkdirSync(join(directory, 'planning'));
         writeFileSync(join(directory, 'planning', 'steps.md'), 'steps\n');
@@ -48,6 +50,22 @@ test('checks an explicit head commit instead of the checked-out HEAD', () => {
     (result) => {
       assert.equal(result.status, 1);
       assert.match(result.stderr, /planning\/steps\.md/);
+    },
+  );
+});
+
+test('rejects process suffixes in Markdown filenames', () => {
+  withRepository(
+    {
+      change(directory) {
+        writeFileSync(join(directory, 'feature-implementation.md'), 'implementation notes\n');
+        writeFileSync(join(directory, 'feature-issue-log.md'), 'issue notes\n');
+      },
+    },
+    (result) => {
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /feature-implementation\.md/);
+      assert.match(result.stderr, /feature-issue-log\.md/);
     },
   );
 });
@@ -63,6 +81,7 @@ test('rejects added, modified, renamed, and space-containing process artifacts',
         writeFileSync(join(directory, 'spec.md'), 'new spec\n');
         mkdirSync(join(directory, 'planning'));
         writeFileSync(join(directory, 'planning', 'added.md'), 'plan\n');
+        writeFileSync(join(directory, 'planning', 'README.md'), 'plan index\n');
         mkdirSync(join(directory, 'docs', 'plans'), { recursive: true });
         renameSync(join(directory, 'notes.md'), join(directory, 'docs', 'plans', 'brief with spaces.md'));
       },
@@ -71,6 +90,7 @@ test('rejects added, modified, renamed, and space-containing process artifacts',
       assert.equal(result.status, 1);
       assert.match(result.stderr, /spec\.md/);
       assert.match(result.stderr, /planning\/added\.md/);
+      assert.match(result.stderr, /planning\/README\.md/);
       assert.match(result.stderr, /docs\/plans\/brief with spaces\.md/);
     },
   );
