@@ -18,18 +18,19 @@ function mdastText(node) {
 
 function textPieces(node, { skipNestedLists = false } = {}) {
 	const pieces = [];
-	function visit(current, top = false) {
+	function visit(current, top = false, inheritedLink = null) {
 		const kind = type(current);
 		if (kind === "protected-source" || kind === "code" || kind === "codeblock") return;
 		if (!top && kind === "writing-jsx") return;
 		if (!top && skipNestedLists && kind === "list") return;
+		const linkUrl = kind === "link" ? current.getURL?.() ?? inheritedLink : inheritedLink;
 		const descendants = children(current);
 		if (!descendants.length) {
 			const text = current.getTextContent?.() ?? "";
-			if (text && current.getKey) pieces.push({ key: current.getKey(), text });
+			if (text && current.getKey) pieces.push({ key: current.getKey(), text, linkUrl });
 			return;
 		}
-		for (const child of descendants) visit(child);
+		for (const child of descendants) visit(child, false, linkUrl);
 	}
 	visit(node, true);
 	return pieces;
@@ -63,6 +64,7 @@ function sentenceSegments(text) {
 export function buildSentenceSnapshot(root) {
 	const blocks = [];
 	const locations = new Map();
+	const linkedPathnames = new Set();
 	const blockOccurrences = new Map();
 	const sentenceOccurrences = new Map();
 	function addBlock(node, kind, quoted, overridePieces) {
@@ -70,6 +72,17 @@ export function buildSentenceSnapshot(root) {
 		const rawText = pieces.map((piece) => piece.text).join("");
 		const clean = normaliseText(rawText);
 		if (!clean) return;
+		const linkRanges = [];
+		let offset = 0;
+		for (const piece of pieces) {
+			if (piece.linkUrl) {
+				const pathname = piece.linkUrl.startsWith("/")
+					? piece.linkUrl.split(/[?#]/u)[0].replace(/\/$/u, "") || "/" : piece.linkUrl;
+				linkRanges.push({ start: offset, end: offset + piece.text.length, pathname });
+				if (pathname.startsWith("/")) linkedPathnames.add(pathname);
+			}
+			offset += piece.text.length;
+		}
 		const blockHash = hash(clean);
 		const blockOccurrence = blockOccurrences.get(blockHash) ?? 0;
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
@@ -87,11 +100,17 @@ export function buildSentenceSnapshot(root) {
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
 			const id = `${sentenceHash}:${occurrence}`;
-			sentences.push({ id, hash: sentenceHash, text, index: sentences.length });
+			const ownLinks = linkRanges.filter((link) => link.start < end && link.end > start);
+			sentences.push({ id, hash: sentenceHash, text, index: sentences.length,
+				hasLink: ownLinks.length > 0,
+				linkedSpans: ownLinks.map((link) => ({ start: Math.max(0, link.start - start),
+					end: Math.min(text.length, link.end - start) })),
+				links: [...new Set(ownLinks.map((link) => link.pathname))] });
 			locations.set(id, { pieces, start, end });
 		}
 		blocks.push({ id: `${blockHash}:${blockOccurrence}`, hash: blockHash,
-			kind, quoted, index: blocks.length, sentences });
+			kind, quoted, index: blocks.length, sentences,
+			links: [...new Set(linkRanges.map((link) => link.pathname))] });
 	}
 	function visit(node) {
 		const kind = type(node);
@@ -130,7 +149,7 @@ export function buildSentenceSnapshot(root) {
 	}
 	visit(root);
 	Object.defineProperty(blocks, "_locations", { value: locations });
-	return { blocks };
+	return { blocks, linkedPathnames: [...linkedPathnames] };
 }
 
 export function changedSince(current, previous) {

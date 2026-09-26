@@ -30,6 +30,23 @@ test("sentence snapshot segments en-GB prose and retains quoted evidence", () =>
 	]);
 });
 
+test("sentence snapshot keeps linked spans and internal target paths", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "Learn ", [], { key: "lead" }),
+		node("link", "", [node("text", "end-user programming", [], { key: "linked" })],
+			{ getURL: () => "/end-user-programming" }),
+		node("text", " today. Next sentence.", [], { key: "tail" }),
+	])]);
+	const snapshot = buildSentenceSnapshot(root);
+	const [first, second] = snapshot.blocks[0].sentences;
+	assert.deepEqual(first.linkedSpans, [{ start: 6, end: 26 }]);
+	assert.deepEqual(first.links, ["/end-user-programming"]);
+	assert.equal(first.hasLink, true);
+	assert.deepEqual(second.linkedSpans, []);
+	assert.equal(second.hasLink, false);
+	assert.deepEqual(snapshot.linkedPathnames, ["/end-user-programming"]);
+});
+
 test("sentence IDs survive unrelated edits and occurrence numbers distinguish repeats", () => {
 	const makeRoot = (first) => node("root", "", [
 		node("paragraph", "", [node("text", first, [], { key: "first" })]),
