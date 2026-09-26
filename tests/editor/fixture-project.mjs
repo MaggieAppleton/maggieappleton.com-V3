@@ -55,10 +55,17 @@ async function writeManifest(projectRoot, update) {
 async function cloneDependencies(sourceRoot, projectRoot) {
   const source = join(sourceRoot, "node_modules");
   const destination = join(projectRoot, "node_modules");
+  // Astro and Vite rebuild these caches while dev servers run. Copying them is
+  // unnecessary and can make cp fail mid-copy, triggering a much slower retry.
+  const cacheNames = new Set([".astro", ".vite"]);
+  const entries = (await readdir(source)).filter((entry) => !cacheNames.has(entry));
+  await mkdir(destination);
   try {
-    await execFileAsync("cp", ["-cR", source, projectRoot]);
+    await execFileAsync("cp", ["-cR", ...entries.map((entry) => join(source, entry)), destination]);
   } catch {
-    await cp(source, destination, { recursive: true, dereference: true, force: true });
+    await cp(source, destination, { recursive: true, dereference: true,
+      force: true, mode: constants.COPYFILE_FICLONE,
+      filter: (entry) => !cacheNames.has(relative(source, entry)) });
   }
 }
 
