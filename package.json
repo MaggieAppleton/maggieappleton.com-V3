@@ -11,11 +11,13 @@
     "generate-links": "node src/scripts/generate-links.js",
     "fetch-webmentions": "node src/scripts/get-webmentions.js",
     "verify:html": "node src/scripts/verify-html.mjs",
+    "check:pr-artifacts": "node scripts/check-pr-artifacts.mjs",
     "generate-now-descriptions": "node scripts/generate-now-descriptions.js",
     "smidgeon": "node scripts/create-smidgeon.js",
     "date": "node scripts/current-date.js",
     "test:editor": "node --test tests/editor/*.test.mjs",
-    "test:editor:e2e": "playwright test --config playwright.editor.config.mjs"
+    "test:editor:e2e": "playwright test --config playwright.editor.config.mjs",
+    "setup:hooks": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^6.0.0",

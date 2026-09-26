@@ -315,7 +315,6 @@
 	gap: 6px;
 	margin-top: 2px;
 }
-
 /* Article text selection controls are portaled into this editor's root. */
 #local-writing-editor .local-selection-menu {
 	position: fixed;

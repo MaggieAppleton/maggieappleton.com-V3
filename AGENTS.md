@@ -18,6 +18,12 @@ npm run build        # Production build
 ./deploy.sh          # Deploy to Vercel
 ```
 
+## Pull requests
+
+Run `npm run setup:hooks` once per clone to install the local pre-push check.
+
+Before creating a PR, use the [PR hygiene skill](.agents/skills/pr-hygiene/SKILL.md) to clean up process notes and review changed tests.
+
 ## Content Collections
 
 - **Essays** - Opinionated, longform narrative writing with an agenda
