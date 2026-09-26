@@ -18,6 +18,11 @@ npm run build        # Production build
 ./deploy.sh          # Deploy to Vercel
 ```
 
+## Pull requests
+
+- Keep planning, spec, and process artifacts out of PR branches. Remove them before creating a PR, then run `npm run check:pr-artifacts -- <base-ref-or-sha>` as a preflight.
+- Before `gh pr create`, ask an independent final reviewer to inspect every changed test for a future user-visible regression. Remove duplicate tests, assertions that mirror implementation, and fixture-only assertions. Summarize the test-value review in the PR body.
+
 ## Content Collections
 
 - **Essays** - Opinionated, longform narrative writing with an agenda

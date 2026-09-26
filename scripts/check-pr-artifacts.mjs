@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+import { execFileSync } from 'node:child_process';
+import { basename } from 'node:path';
+
+const base = process.argv[2];
+if (!base || process.argv.length !== 3) {
+  console.error('Usage: npm run check:pr-artifacts -- <base-ref-or-sha>');
+  process.exit(2);
+}
+
+function git(...args) {
+  return execFileSync('git', args, { encoding: 'utf8' }).trim();
+}
+
+function isProcessArtifact(path) {
+  const normalized = path.replaceAll('\\', '/');
+  const name = basename(normalized).toLowerCase();
+  return normalized.startsWith('planning/')
+    || /^docs\/superpowers\/(plans|specs)\//.test(normalized)
+    || /(?:-plan|-spec|-design|issue-log)\.md$/i.test(name);
+}
+
+try {
+  const mergeBase = git('merge-base', base, 'HEAD');
+  const output = execFileSync('git', [
+    'diff', '--name-status', '-z', '--find-renames', '--diff-filter=ACMR', mergeBase, 'HEAD',
+  ]).toString('utf8');
+  const fields = output.split('\0');
+  const blocked = [];
+
+  for (let i = 0; i < fields.length - 1;) {
+    const status = fields[i++];
+    if (!status) break;
+    if (status.startsWith('R')) i++; // Skip the old name; check the new destination.
+    const path = fields[i++];
+    if (isProcessArtifact(path)) blocked.push(path);
+  }
+
+  if (blocked.length) {
+    console.error(`Process artifacts in PR diff:\n${blocked.map((path) => `  ${path}`).join('\n')}`);
+    process.exitCode = 1;
+  } else {
+    console.log('PR artifact check passed.');
+  }
+} catch (error) {
+  console.error(`Could not check PR artifacts: ${error.message}`);
+  process.exitCode = 2;
+}
