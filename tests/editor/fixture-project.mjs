@@ -25,6 +25,7 @@ const manifestName = ".local-writing-editor-fixture.json";
 const excludedProjectEntries = new Set([
   ".git",
   ".local-writing-editor",
+  ".writing-assist",
   ".astro",
   "dist",
   "node_modules",
@@ -71,7 +72,11 @@ export async function createFixtureProject({ name = "editor", sourceRoot = repos
   await cp(sourceRoot, projectRoot, {
     recursive: true,
     dereference: true,
-    filter: (entry) => !excludedProjectEntries.has(relative(sourceRoot, entry)),
+    filter: (entry) => {
+      const localPath = relative(sourceRoot, entry);
+      return !excludedProjectEntries.has(localPath)
+        && (localPath === ".env.example" || !/^\.env(?:\.|$)/u.test(localPath));
+    },
   });
   await cloneDependencies(sourceRoot, projectRoot);
 

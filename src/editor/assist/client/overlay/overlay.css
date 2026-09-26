@@ -1,0 +1,22 @@
+#local-writing-editor .prose-wrapper { position: relative; }
+::highlight(wa-jump) { background-color: color-mix(in srgb, var(--color-sea-blue) 22%, transparent); }
+.writing-assist-marker-layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 2;
+}
+.writing-assist-marker {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	box-sizing: border-box;
+	border: 0;
+	border-radius: 50%;
+	padding: 0;
+	pointer-events: auto;
+	cursor: pointer;
+}
+.writing-assist-marker--margin { width: 22px; height: 22px; }
+.writing-assist-marker--end { width: 17px; height: 17px; }
+.writing-assist-marker:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }

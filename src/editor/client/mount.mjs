@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { MDXEditor } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
@@ -10,7 +11,47 @@ import { createSourceDocument } from "../source/document.mjs";
 import { createDocumentTransport } from "./document-transport.mjs";
 import { sourceForBrowserBackup } from "./backup-source.mjs";
 import { EditorDock, MountFailureDock } from "./editor-dock.mjs";
+import { createAssistPlugin } from "../assist/client/assist-plugin.mjs";
+import { createAssistTransport } from "../assist/client/assist-transport.mjs";
+import { createAssistController } from "../assist/client/assist-controller.mjs";
+import { Drawer, getDrawerViews } from "../assist/client/Drawer.mjs";
+import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
+import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
+import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
+import "../assist/client/assist.css";
+
+const TOOL_STORAGE_KEY = "writing-assist:tools";
+
+function savedTools(config) {
+	const defaults = Object.fromEntries(Object.entries(config.tools).map(([id, tool]) => [id, Boolean(tool.enabled)]));
+	try {
+		const stored = JSON.parse(localStorage.getItem(TOOL_STORAGE_KEY) ?? "null");
+		if (!stored || typeof stored !== "object") return defaults;
+		return Object.fromEntries(Object.keys(defaults).map((id) => [id,
+			Boolean(config.tools[id].enabled && (stored[id] ?? defaults[id]))]));
+	} catch { return defaults; }
+}
+
+function DebugPopover({ pinned, controller, transport, title, fallbackFocus, onClose }) {
+	const { annotation, anchorRect, trigger } = pinned;
+	const match = controller.getSentence(annotation.target.sentenceId);
+	if (!match) return null;
+	const sentence = match.sentence.text;
+	const paragraph = match.block.sentences.map((item) => item.text).join(" ");
+	return React.createElement(PinnedPopover, {
+		key: annotation.id, open: true, title: "Colour mention",
+		icon: React.createElement(BugIcon, { size: 14, "aria-hidden": "true" }),
+		triggerRef: trigger, fallbackFocus, anchorRect, onClose,
+		onDismiss: () => controller.dismiss(annotation),
+		applyValue: controller.canApply(annotation) ? sentence.toUpperCase() : null,
+		onApply: (value) => controller.apply(annotation, value),
+		chat: { streamReply: (messages, { signal }) => transport.stream({
+			tool: "debug", purpose: "chat", messages,
+			system: `Post title: ${title}\nTarget sentence: ${sentence}\nParagraph: ${paragraph}\nReason: The sentence may mention a colour.`,
+		}, { signal }) },
+	}, React.createElement("p", null, sentence));
+}
 
 function plainTextField(element, label, onChange) {
 	element.contentEditable = "plaintext-only";
@@ -35,6 +76,18 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
 	const [protectedWarning, setProtectedWarning] = useState(null);
+	const [lexicalEditor, setLexicalEditor] = useState(null);
+	const [assistStatus, setAssistStatus] = useState(null);
+	const [assistController, setAssistController] = useState(null);
+	const [enabledTools, setEnabledTools] = useState({});
+	const enabledToolsRef = useRef({});
+	const [assistOpen, setAssistOpen] = useState(false);
+	const [mapOpen, setMapOpen] = useState(false);
+	const [hover, setHover] = useState(null);
+	const [pinned, setPinned] = useState(null);
+	const assistPlugin = useMemo(() => createAssistPlugin(setLexicalEditor), []);
+	const assistTransport = useMemo(() => createAssistTransport({ boot }), [boot]);
+	const title = useMemo(() => createSourceDocument(boot.document.source).metadata.title ?? "Untitled", [boot]);
 	const sessionRef = useRef(null);
 	const transportRef = useRef(null);
 	if (!sessionRef.current) {
@@ -68,6 +121,48 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	}
 	const session = sessionRef.current;
 	const state = view ?? session.snapshot();
+	useEffect(() => {
+		let active = true;
+		void assistTransport.status().then((status) => {
+			if (!active) return;
+			setAssistStatus(status);
+			const saved = savedTools(status.config);
+			enabledToolsRef.current = saved;
+			setEnabledTools(saved);
+		}, () => {});
+		return () => { active = false; };
+	}, [assistTransport]);
+	useEffect(() => {
+		if (!lexicalEditor || !assistStatus) return undefined;
+		let active = true;
+		let controller;
+		void assistTransport.getSidecar().then(({ dismissals }) => {
+			if (!active) return;
+			controller = createAssistController({
+				editor: lexicalEditor, wrapper: article, transport: assistTransport,
+				documentId: boot.documentId, title, config: assistStatus.config,
+				enabledTools: Object.fromEntries(Object.entries(enabledToolsRef.current).map(([id, enabled]) =>
+					[id, enabled && assistStatus.tools[id]?.available])), dismissals,
+				onHover: (next) => setHover((previous) => next ?? (previous ? { ...previous, active: false } : null)),
+				onPin: (next) => { setHover(null); setPinned(next); },
+			});
+			setAssistController(controller);
+		}, () => {});
+		return () => {
+			active = false;
+			controller?.destroy();
+			setAssistController(null);
+			setHover(null);
+			setPinned(null);
+		};
+	}, [lexicalEditor, assistStatus, assistTransport, adapterState.key]);
+	function toggleTool(id, enabled) {
+		const next = { ...enabledToolsRef.current, [id]: enabled };
+		enabledToolsRef.current = next;
+		setEnabledTools(next);
+		try { localStorage.setItem(TOOL_STORAGE_KEY, JSON.stringify(next)); } catch { /* Storage can be unavailable. */ }
+		assistController?.setToolEnabled(id, enabled);
+	}
 	function browserCopy(copy) {
 		// Discarded records carry their own metadata; only the live snapshot gets
 		// edits still present in the title and description fields.
@@ -194,6 +289,10 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	return React.createElement(RenderedRegionContext.Provider, { value: adapter.registry },
 		React.createElement(EditorDock, { previewUrl: boot.document.previewUrl, state, recovery, discarded,
 			protectedWarning, onRestoreRecovery: restoreRecovery,
+			assistOpen, onAssistToggle: setAssistOpen,
+			assistPanelProps: { config: assistStatus?.config, status: assistStatus,
+				enabledTools, onToggleTool: toggleTool },
+			mapOpen, onMapToggle: setMapOpen, hasDrawerViews: getDrawerViews().length > 0,
 			onClearDiscarded: (candidate) => {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
@@ -202,7 +301,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			key: adapterState.key,
 			ref: editorRef,
 			markdown: adapter.markdown,
-			plugins: adapter.plugins,
+			plugins: [...adapter.plugins, assistPlugin],
 			additionalLexicalNodes: adapter.additionalLexicalNodes,
 			contentEditableClassName: "editor-body",
 			onChange: (_markdown, initial) => {
@@ -215,6 +314,17 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				engineSnapshot: editorRef.current?.getMarkdown(), error: failure,
 			}),
 		}),
+		createPortal(React.createElement(Drawer, { open: mapOpen, onClose: () => setMapOpen(false),
+			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId) }), document.body),
+		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
+			active: hover.active && !pinned, anchorRect: hover.anchorRect,
+			onClose: () => setHover(null),
+		}, `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
+		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
+			pinned, controller: assistController, transport: assistTransport, title,
+			fallbackFocus: lexicalEditor?.getRootElement(),
+			onClose: () => setPinned(null),
+		}), document.body),
 	);
 }
 
