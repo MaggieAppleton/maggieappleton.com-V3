@@ -18,6 +18,18 @@
 :is(.wa-hover-card, .wa-pinned-popover) p { font: inherit; }
 
 .wa-role-hover { width: 194px; max-width: 100%; }
+.wa-check-header { display: flex; align-items: center; gap: 7px; color: var(--color-black); font-weight: 700; }
+.wa-check-icon { display: grid; width: 20px; height: 20px; place-items: center; border-radius: 50%; background: var(--wa-accent, var(--color-sea-blue)); color: var(--color-white); }
+.wa-check--hedging { --wa-accent: var(--color-purple); }
+.wa-check--objection { --wa-accent: var(--color-bright-crimson); }
+.wa-check--cliche { --wa-accent: var(--color-dark-sea-blue); }
+.wa-check--mixed-metaphor { --wa-accent: var(--color-gold); }
+.wa-check--mixed-metaphor :is(.wa-check-icon, .wa-popover-icon) { color: var(--color-black); }
+.wa-check-reason, .wa-check-error { color: var(--color-gray-600); }
+.wa-check-preview, .wa-check-suggestion { margin-top: 6px; border: 1px solid var(--color-gray-200); border-radius: 6px; padding: 5px 7px; }
+.wa-check-suggestion { display: block; width: 100%; background: var(--color-white); color: var(--color-black); font: inherit; text-align: left; cursor: pointer; }
+.wa-check-suggestion[aria-pressed="true"] { border-color: var(--color-sea-blue); }
+.wa-check-shimmer { width: 80%; height: 10px; border-radius: 3px; background: var(--color-gray-200); }
 .wa-role-hover-row {
 	display: grid;
 	grid-template-columns: 64px 34px minmax(0, 1fr);

@@ -16,10 +16,10 @@ function lastRect(range) {
 	return rects?.[rects.length - 1] ?? null;
 }
 
-function position(rect, wrapperRect, placement, stack = 0) {
+function position(rect, wrapperRect, placement, stack = 0, marginLeft = rect.left) {
 	const size = MARKER_SIZE[placement];
 	return {
-		left: placement === "margin" ? rect.left - wrapperRect.left - size - 6 : rect.right - wrapperRect.left,
+		left: placement === "margin" ? marginLeft - wrapperRect.left - size - 6 : rect.right - wrapperRect.left,
 		top: rect.top - wrapperRect.top + ((rect.bottom - rect.top - size) / 2) + stack * (size + STACK_GAP),
 	};
 }
@@ -51,7 +51,7 @@ function updateButton(entry, item, marker) {
 /** Place marker buttons beside live DOM ranges without modifying Lexical. */
 export function createMarkerOverlay({
 	wrapper, document = wrapper?.ownerDocument ?? globalThis.document, rangeForAnnotation,
-	markerFor, onActivate, ResizeObserver = globalThis.ResizeObserver,
+	markerFor, marginLeftForAnnotation = () => null, onActivate, ResizeObserver = globalThis.ResizeObserver,
 } = {}) {
 	if (!wrapper || !document || typeof rangeForAnnotation !== "function" || typeof markerFor !== "function") {
 		throw new TypeError("Marker overlay needs a wrapper, document, range resolver, and marker resolver");
@@ -79,7 +79,8 @@ export function createMarkerOverlay({
 			if (!marker || !MARKER_SIZE[marker.placement]) return [];
 			const range = rangeForAnnotation(item);
 			const rect = marker.placement === "margin" ? firstRect(range) : lastRect(range);
-			return rect ? [{ item, marker, rect }] : [];
+			return rect ? [{ item, marker, rect,
+				marginLeft: marginLeftForAnnotation(item) ?? rect.left }] : [];
 		}).sort((left, right) => orderFor(left.item, left.marker) - orderFor(right.item, right.marker)
 			|| left.item.id.localeCompare(right.item.id));
 		const stacks = new Map();
@@ -96,7 +97,7 @@ export function createMarkerOverlay({
 				layer.append(record.button);
 			}
 			updateButton(record, entry.item, entry.marker);
-			const point = position(entry.rect, wrapperRect, entry.marker.placement, stack);
+			const point = position(entry.rect, wrapperRect, entry.marker.placement, stack, entry.marginLeft);
 			record.button.style.left = `${point.left}px`;
 			record.button.style.top = `${point.top}px`;
 		}

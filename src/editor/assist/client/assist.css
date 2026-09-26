@@ -3,6 +3,13 @@
 @import "./popover/popover.css";
 @import "./argument-map.css";
 
+.writing-assist-marker--check { color: var(--color-white); box-shadow: 0 1px 4px rgb(0 0 0 / 20%); }
+.writing-assist-marker--citation { background: var(--color-sea-blue); }
+.writing-assist-marker--hedging { background: var(--color-purple); }
+.writing-assist-marker--objection { background: var(--color-bright-crimson); }
+.writing-assist-marker--cliche { background: var(--color-dark-sea-blue); }
+.writing-assist-marker--mixed-metaphor { background: var(--color-gold); color: var(--color-black); }
+
 .writing-assist-marker--debug {
 	background: var(--color-sea-blue);
 	color: var(--color-white);

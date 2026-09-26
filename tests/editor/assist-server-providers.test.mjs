@@ -13,11 +13,14 @@ test("Anthropic provider shapes JSON generation requests and passes the abort si
 	const provider = createAnthropicProvider({ apiKey: "key", client: { messages: { async create(...args) {
 		calls.push(args); return { content: [{ type: "text", text: '{"answer":true}' }] };
 	} } } });
-	const result = await provider.generate({ model: "claude-test", system: "Be concise.", messages, json: true, signal });
+	const jsonSchema = { type: "object", properties: { answer: { type: "boolean" } },
+		required: ["answer"], additionalProperties: false };
+	const result = await provider.generate({ model: "claude-test", system: "Be concise.", messages,
+		json: true, jsonSchema, signal });
 
 	assert.deepEqual(calls[0], [{
 		model: "claude-test", system: "Be concise.", messages,
-		max_tokens: 1024, output_config: { format: { type: "json_schema", schema: { type: "object" } } },
+		max_tokens: 1024, output_config: { format: { type: "json_schema", schema: jsonSchema } },
 	}, { signal }]);
 	assert.deepEqual(result, { text: '{"answer":true}' });
 });

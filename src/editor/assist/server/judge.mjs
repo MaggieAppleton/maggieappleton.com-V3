@@ -49,7 +49,7 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 	async function runTool(tool, request) {
 		const context = {
 			blocks: request.blocks, targetBlockIds: request.blockIds,
-			title: request.title, config,
+			title: request.title, config, enabledChecks: request.enabledChecks,
 		};
 		if (tool.id === "repetition" || tool.id === "argument-map") {
 			context.roleAnnotations = await rolesFor(context, request.documentId);

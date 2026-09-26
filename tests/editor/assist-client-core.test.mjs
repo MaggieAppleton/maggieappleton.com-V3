@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildSentenceSnapshot, changedSince } from "../../src/editor/assist/client/sentence-model.mjs";
+import { plainParagraphSelection } from "../../src/editor/assist/client/assist-controller.mjs";
 import { createAssistScheduler } from "../../src/editor/assist/client/scheduler.mjs";
 import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
 import { createEditor, $createParagraphNode, $createTextNode, $getRoot } from "lexical";
@@ -27,6 +28,23 @@ test("sentence snapshot segments en-GB prose and retains quoted evidence", () =>
 	assert.deepEqual(snapshot.blocks.map((block) => [block.kind, block.quoted, block.sentences.map((sentence) => sentence.text)]), [
 		["paragraph", false, ["Dr. Smith used e.g. a blue pen.", "It worked."]],
 		["quote", true, ["A red sky.", "Another line."]],
+	]);
+});
+
+test("sentence snapshot marks only the sentences containing links or footnotes", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "An asserted ", [], { key: "plain-1" }),
+		node("link", "", [node("text", "fact", [], { key: "linked" })]),
+		node("text", " needs a source. A second claim.", [], { key: "plain-2" }),
+		node("writing-jsx", "", [node("paragraph", "", [node("text", "A footnote.", [], { key: "footnote" })])],
+			{ __name: "Footnote" }),
+		node("text", " A third claim.", [], { key: "plain-3" }),
+	])]);
+	const snapshot = buildSentenceSnapshot(root);
+	assert.deepEqual(snapshot.blocks[0].sentences.map((sentence) => [sentence.text, Boolean(sentence.hasLink)]), [
+		["An asserted fact needs a source.", true],
+		["A second claim.", true],
+		["A third claim.", false],
 	]);
 });
 
@@ -108,6 +126,28 @@ test("sentence ranges resolve current DOM text nodes on demand", () => {
 	range = model.rangeForSpan(sentenceId, 0, 3);
 	assert.equal(range.start[0], activeText);
 	assert.notEqual(rangeCalls[0].start[0], activeText);
+	model.destroy();
+});
+
+test("whole-paragraph Apply accepts formatted text but rejects inline code", () => {
+	const editor = createEditor({ namespace: "checks-block-apply-test", onError: (error) => { throw error; } });
+	editor.update(() => {
+		$getRoot().append(
+			$createParagraphNode().append($createTextNode("A mixed "), $createTextNode("metaphor.")),
+			$createParagraphNode().append($createTextNode("Styled text.").toggleFormat("bold")),
+			$createParagraphNode().append($createTextNode("Code text.").toggleFormat("code")),
+		);
+	}, { discrete: true });
+	const model = createSentenceModel(editor);
+	const blocks = model.getSnapshot().blocks;
+	editor.getEditorState().read(() => {
+		const selection = plainParagraphSelection(blocks[0], model);
+		assert.ok(selection);
+		assert.equal(selection.anchor.offset, 0);
+		assert.equal(selection.focus.offset, "A mixed metaphor.".length);
+		assert.ok(plainParagraphSelection(blocks[1], model));
+		assert.equal(plainParagraphSelection(blocks[2], model), null);
+	});
 	model.destroy();
 });
 
