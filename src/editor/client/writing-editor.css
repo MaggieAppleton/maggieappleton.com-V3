@@ -330,7 +330,7 @@
 }
 #local-writing-editor .local-selection-menu .local-link-button-group {
 	display: grid;
-	grid-template-columns: repeat(5, minmax(0, 1fr));
+	grid-template-columns: repeat(6, minmax(0, 1fr));
 	width: 100%;
 	border: 0;
 	background: transparent;
