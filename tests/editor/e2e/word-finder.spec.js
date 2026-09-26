@@ -58,7 +58,7 @@ test.describe.serial("Writing Assist word finder", () => {
 
 	test("selection pill opens ranked rows and sends the marked sentence to both mocked routes", async ({ page }) => {
 		const { generateRequests, judgeRequests } = await mockWordFinder(page);
-		await openDocument(page, slugs[0]);
+		await openDocument(page, server.origin, slugs[0]);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await selectText(editor, "quiet", 0);
 		const trigger = page.getByRole("button", { name: "Find words" });
@@ -86,11 +86,12 @@ test.describe.serial("Writing Assist word finder", () => {
 
 	test("keyboard shortcut opens the finder, meaning re-ranks results, and Escape restores editor focus", async ({ page }) => {
 		const { generateRequests, judgeRequests } = await mockWordFinder(page);
-		await openDocument(page, slugs[1]);
+		await openDocument(page, server.origin, slugs[1]);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await selectText(editor, "quiet", 0);
 		await page.keyboard.press("ControlOrMeta+Shift+K");
 
+		await expect(page.getByRole("textbox", { name: "URL" })).toHaveCount(0);
 		const dialog = page.getByRole("dialog", { name: "Find words" });
 		await expect(dialog).toBeVisible();
 		const rows = dialog.getByRole("option");
@@ -111,13 +112,13 @@ test.describe.serial("Writing Assist word finder", () => {
 
 	test("Apply replaces only the selected text and saves the exact candidate", async ({ page }) => {
 		await mockWordFinder(page);
-		await openDocument(page, slugs[2]);
+		await openDocument(page, server.origin, slugs[2]);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await selectText(editor, "quiet", 0);
 		await page.getByRole("button", { name: "Find words" }).click();
 
 		const dialog = page.getByRole("dialog", { name: "Find words" });
-		await dialog.getByRole("option", { name: /still/ }).click();
+		await dialog.getByRole("option", { name: "still without movement", exact: true }).click();
 		await dialog.getByRole("button", { name: "Apply" }).click();
 		await expect(dialog).toHaveCount(0);
 		await expect(editor).toBeFocused();
@@ -131,7 +132,7 @@ test.describe.serial("Writing Assist word finder", () => {
 
 	test("phrase selections receive phrase candidates", async ({ page }) => {
 		const { generateRequests } = await mockWordFinder(page);
-		await openDocument(page, slugs[3]);
+		await openDocument(page, server.origin, slugs[3]);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await selectText(editor, "settles over", 0);
 		await page.keyboard.press("ControlOrMeta+Shift+K");
@@ -188,9 +189,12 @@ async function mockWordFinder(page) {
 	return { generateRequests, judgeRequests };
 }
 
-async function openDocument(page, slug) {
-	await page.goto(`${server.origin}/_editor?documentId=${encodeURIComponent(`notes:${slug}`)}`);
+async function openDocument(page, origin, slug) {
+	const status = page.waitForResponse((response) => response.url().includes("/_editor/api/assist/status"));
+	const sidecar = page.waitForResponse((response) => response.url().includes("/_editor/api/assist/sidecar"));
+	await page.goto(`${origin}/_editor?documentId=${encodeURIComponent(`notes:${slug}`)}`);
 	await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
+	await Promise.all([status, sidecar]);
 }
 
 async function selectText(editor, text, occurrence = 0) {
@@ -209,6 +213,7 @@ async function selectText(editor, text, occurrence = 0) {
 					const selection = window.getSelection();
 					selection.removeAllRanges();
 					selection.addRange(range);
+					document.dispatchEvent(new Event("selectionchange"));
 					return;
 				}
 				matches++;
