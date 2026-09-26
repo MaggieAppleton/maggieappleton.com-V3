@@ -13,6 +13,7 @@ import { createInlineCodeKeyPlugin } from "./inline-code-key.mjs";
 import { createPlainSpaceKeyPlugin } from "./space-key.mjs";
 import { LocalLinkDialog } from "./link-dialog.mjs";
 import { createKeyboardSelectionSyncPlugin } from "./selection-sync.mjs";
+import { createSelectionMenuPlugin } from "./selection-menu.mjs";
 
 /** One production adapter for the live page and the actual-engine corpus harness. */
 export function createEditorAdapter({ source, renderedRoot = null, renderedRegistry = null,
@@ -115,6 +116,7 @@ export function createEditorAdapter({ source, renderedRoot = null, renderedRegis
 			createInlineCodeKeyPlugin(),
 			createPlainSpaceKeyPlugin(),
 			createKeyboardSelectionSyncPlugin(),
+			createSelectionMenuPlugin(),
 			identity.plugin,
 		],
 		additionalLexicalNodes: [WritingJsxNode, ProtectedNode, DropCapTextNode, WikiLinkTextNode, LiteralWikiTextNode],
