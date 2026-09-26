@@ -151,6 +151,22 @@ test.describe("article selection menu", () => {
 		expect(saved).toContain("## Second paragraph with [linked words](https://example.com) and more text.");
 	});
 
+	test("shows mixed heading and bold selections as inactive", async ({ page }) => {
+		test.setTimeout(120_000);
+		await openEditor(page, 7);
+		const menu = page.getByRole("group", { name: "Selection formatting" });
+		await selectText(page, "selectable words");
+		await menu.getByRole("button", { name: "Heading 1" }).click();
+		await selectText(page, "linked words");
+		await menu.getByRole("button", { name: "Heading 3" }).click();
+		await selectText(page, "selectable words", "linked words");
+		for (const label of ["Heading 1", "Heading 2", "Heading 3"]) {
+			await expect(menu.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
+		}
+		await selectText(page, "strong words", "plain words");
+		await expect(menu.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "false");
+	});
+
 	test("uses the existing link dialog and supports keyboard focus", async ({ page }) => {
 		test.setTimeout(120_000);
 		await openEditor(page, 3);
