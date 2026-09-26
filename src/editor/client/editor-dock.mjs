@@ -1,15 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CheckCircleIcon, SpinnerGapIcon, XCircleIcon } from "@phosphor-icons/react";
+import { CheckCircleIcon, SpinnerGapIcon, XCircleIcon, XIcon } from "@phosphor-icons/react";
 
 function copyWriting(source) {
 	return navigator.clipboard.writeText(source);
-}
-
-function EyeIcon() {
-	return React.createElement("svg", { viewBox: "0 0 24 24", width: "18", height: "18", fill: "none",
-		stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
-		React.createElement("path", { d: "M2.5 12s3.4-5.5 9.5-5.5S21.5 12 21.5 12 18.1 17.5 12 17.5 2.5 12 2.5 12Z" }),
-		React.createElement("circle", { cx: "12", cy: "12", r: "2.5" }));
 }
 
 function DetailsIcon() {
@@ -46,24 +39,28 @@ function saveFailureCopy(state) {
 	return "Your latest changes couldn’t be saved. They’re still open here.";
 }
 
-function SaveStatus({ state }) {
+function saveStatusKind(state) {
 	const failed = Boolean(state.error || state.conflict)
 		|| state.status === "Couldn't save"
 		|| state.status === "File changed elsewhere";
-	const saved = state.status === "Saved" && !failed;
-	const kind = failed ? "error" : saved ? "saved" : "pending";
-	const StatusIcon = failed ? XCircleIcon : saved ? CheckCircleIcon : SpinnerGapIcon;
+	return failed ? "error" : state.status === "Saved" ? "saved" : "saving";
+}
+
+function SaveStatusIcon({ state }) {
+	const kind = saveStatusKind(state);
+	const StatusIcon = kind === "error" ? XCircleIcon : kind === "saved" ? CheckCircleIcon : SpinnerGapIcon;
 	return React.createElement("span", {
-		className: `editor-dock-status editor-dock-status--${kind}`,
-		role: "status",
-		"aria-live": "polite",
-		"aria-atomic": "true",
-		title: state.status,
+		className: `editor-dock-save-status editor-dock-save-status--${kind}`,
+		"aria-hidden": "true",
 	},
-		React.createElement("span", { className: "editor-dock-sr-only" }, state.status),
-		React.createElement(StatusIcon, { className: kind === "pending" ? "editor-dock-status-icon--spinning" : undefined,
-			size: 20, weight: saved ? "fill" : "regular", "aria-hidden": "true" }),
+		React.createElement(StatusIcon, { className: kind === "saving" ? "editor-dock-status-icon--spinning" : undefined,
+			size: 20, weight: kind === "saved" ? "fill" : "regular", "aria-hidden": "true" }),
 	);
+}
+
+function SaveLiveStatus({ state }) {
+	return React.createElement("span", { className: "editor-dock-sr-only editor-dock-save-live-status",
+		role: "status", "aria-live": "polite", "aria-atomic": "true" }, state.status);
 }
 
 function BackupActions({ source, backupKey, onCopy, onDownload = downloadBackup, retry, canRetry = true, copyLabel = "Copy writing" }) {
@@ -182,11 +179,13 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 				React.createElement(TechnicalDetails, { error: state.storageError })),
 		),
 		React.createElement("div", { className: "editor-dock-pill" },
-			React.createElement("a", { className: "editor-dock-icon", href: previewUrl, "aria-label": "Preview", title: "Preview" },
-				React.createElement(EyeIcon)),
-			React.createElement(SaveStatus, { state }),
+			React.createElement("a", { className: "editor-dock-icon editor-dock-exit", href: previewUrl, "aria-label": "Exit editor" },
+				React.createElement(XIcon, { size: 20, "aria-hidden": "true" })),
+			React.createElement("span", { className: "editor-dock-tooltip", "aria-hidden": "true" }, "Exit editor"),
 			React.createElement("button", { type: "button", ref: saveButtonRef, onClick: onRetry,
-				disabled: Boolean(state.conflict || state.conversionError) }, "Save"),
+				disabled: Boolean(state.conflict || state.conversionError) },
+				React.createElement(SaveStatusIcon, { state }), "Save"),
+			React.createElement(SaveLiveStatus, { state }),
 			hasActions && React.createElement("button", { className: "editor-dock-icon", type: "button", ref: buttonRef,
 				"aria-controls": "editor-dock-panel", "aria-expanded": open,
 				"aria-label": open ? "Close details" : "Details", title: open ? "Close details" : "Details",

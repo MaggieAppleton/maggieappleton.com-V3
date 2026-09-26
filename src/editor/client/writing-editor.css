@@ -61,12 +61,11 @@
 
 .editor-dock {
 	position: fixed;
-	left: 50%;
-	bottom: 90px;
+	right: 24px;
+	bottom: 24px;
 	z-index: 30;
 	width: max-content;
-	max-width: calc(100vw - 24px);
-	transform: translateX(-50%);
+	max-width: calc(100vw - 48px);
 	font: 600 var(--font-size-xs) var(--font-sans);
 }
 .editor-dock-pill,
@@ -107,7 +106,12 @@
 .editor-dock-actions button:hover,
 .editor-dock-section > button:hover { background: rgb(255 255 255 / 12%); }
 .editor-dock-pill button:disabled { cursor: not-allowed; opacity: 0.42; }
-.editor-dock-pill .editor-dock-status {
+.editor-dock-pill > button:not(.editor-dock-icon) {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.editor-dock-pill .editor-dock-save-status {
 	display: grid;
 	flex: 0 0 20px;
 	place-items: center;
@@ -115,9 +119,9 @@
 	height: 20px;
 	color: var(--color-sea-blue);
 }
-.editor-dock-status--saved { color: var(--color-status-success); }
-.editor-dock-status--error { color: var(--color-dark-salmon); }
-.editor-dock-status svg { display: block; }
+.editor-dock-save-status--saved { color: var(--color-status-success); }
+.editor-dock-save-status--error { color: var(--color-dark-salmon); }
+.editor-dock-save-status svg { display: block; }
 .editor-dock-status-icon--spinning { animation: editor-dock-status-spin 1s linear infinite; }
 .editor-dock-sr-only {
 	position: absolute;
@@ -143,6 +147,24 @@
 	height: 40px;
 	padding: 0;
 }
+.editor-dock-exit { position: relative; }
+.editor-dock-tooltip {
+	position: absolute;
+	bottom: calc(100% + 8px);
+	left: 28px;
+	display: none;
+	box-sizing: border-box;
+	padding: 6px 8px;
+	border: 1px solid #343841;
+	border-radius: var(--border-radius-sm);
+	background: #13151a;
+	box-shadow: 0 4px 12px rgb(0 0 0 / 28%);
+	color: white;
+	white-space: nowrap;
+	pointer-events: none;
+}
+.editor-dock-exit:hover + .editor-dock-tooltip,
+.editor-dock-exit:focus-visible + .editor-dock-tooltip { display: block; }
 .editor-dock :is(a, button, summary):focus-visible {
 	outline: 2px solid white;
 	outline-offset: -3px;
@@ -150,16 +172,15 @@
 .editor-dock-panel {
 	position: absolute;
 	bottom: calc(100% + var(--space-xs));
-	left: 50%;
-	width: min(34rem, calc(100vw - 24px));
+	right: 0;
+	width: min(34rem, calc(100vw - 48px));
 	max-height: max(4rem, calc(100dvh - 170px));
 	overflow: auto;
-	transform: translateX(-50%);
 	border-radius: var(--border-radius-lg);
 	padding: 14px;
 	font: 400 var(--font-size-xs) / 1.45 var(--font-sans);
 }
-.editor-dock-panel--static { position: static; transform: none; margin-bottom: var(--space-xs); }
+.editor-dock-panel--static { position: static; width: min(34rem, calc(100vw - 48px)); margin-bottom: var(--space-xs); }
 .editor-dock-section + .editor-dock-section {
 	margin-top: var(--space-s);
 	padding-top: var(--space-s);
