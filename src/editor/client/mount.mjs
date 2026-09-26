@@ -19,9 +19,11 @@ import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
+import { WordFinder } from "../assist/client/word-finder.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
+import "../assist/client/word-finder.css";
 
 const TOOL_STORAGE_KEY = "writing-assist:tools";
 
@@ -391,6 +393,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
+		React.createElement(WordFinder, { controller: assistController, transport: assistTransport,
+			root: lexicalEditor?.getRootElement(),
+			available: Boolean(assistStatus?.tools?.["word-finder"]?.available) }),
 	);
 }
 

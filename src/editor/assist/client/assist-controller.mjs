@@ -150,6 +150,36 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			});
 			return allowed;
 		},
+		/** Apply an explicit, current sentence span for an on-demand assist tool. */
+		applyTextSelection(target, value) {
+			const current = sentenceFor(model.getSnapshot(), target.sentenceId)?.sentence;
+			if (!current || current.text.slice(target.start, target.end) !== target.text) return false;
+			const points = model.pointsForSpan(target.sentenceId, target.start, target.end);
+			if (!points || !value) return false;
+			let applied = false;
+			editor.update(() => {
+				const selection = $createRangeSelection();
+				selection.anchor.set(points.start.key, points.start.offset, "text");
+				selection.focus.set(points.end.key, points.end.offset, "text");
+				if (!plainTextSelection(selection)) return;
+				$setSelection(selection);
+				selection.insertText(value);
+				applied = true;
+			});
+			return applied;
+		},
+		canApplyTextSelection(target) {
+			const points = model.pointsForSpan(target.sentenceId, target.start, target.end);
+			if (!points) return false;
+			let allowed = false;
+			editor.getEditorState().read(() => {
+				const selection = $createRangeSelection();
+				selection.anchor.set(points.start.key, points.start.offset, "text");
+				selection.focus.set(points.end.key, points.end.offset, "text");
+				allowed = plainTextSelection(selection);
+			});
+			return allowed;
+		},
 		jumpTo(sentenceId) {
 			const range = model.rangeFor(sentenceId);
 			const point = model.pointsForSpan(sentenceId);

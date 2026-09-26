@@ -1,0 +1,29 @@
+.wa-word-finder-trigger {
+	position: fixed; z-index: 1101; display: inline-flex; align-items: center; gap: 5px;
+	border: 0; border-radius: 999px; padding: 5px 9px; background: #13151a; color: #fff;
+	font: 600 11px/1 var(--font-sans); box-shadow: 0 3px 10px rgb(0 0 0 / .18);
+}
+.wa-word-finder-popover {
+	position: fixed; z-index: 1102; width: min(290px, calc(100vw - 24px)); max-height: min(420px, calc(100vh - 24px)); overflow-y: auto;
+	padding: 10px 12px; border: 1px solid var(--color-gray-200); border-radius: 12px; background: var(--color-white); color: var(--color-black);
+	box-shadow: 0 8px 24px color-mix(in srgb, var(--color-black) 15%, transparent); font: 500 12px/1.45 var(--font-sans);
+}
+.wa-word-finder-popover header, .wa-word-finder-popover footer { display: flex; align-items: center; }
+.wa-word-finder-popover header { margin-bottom: 8px; }
+.wa-word-finder-popover h3 { flex: 1; margin: 0; font: 700 12px/1.3 var(--font-sans); }
+.wa-word-finder-popover header button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--color-gray-600); }
+.wa-word-finder-popover input { width: 100%; margin-bottom: 8px; border: 1px solid var(--color-gray-200); border-radius: 8px; padding: 6px 9px; background: var(--color-white); color: var(--color-black); font: inherit; }
+.wa-word-finder-results { display: grid; gap: 2px; }
+.wa-word-finder-results > button { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px; align-items: center; width: 100%; border: 0; border-radius: 6px; padding: 5px 6px; background: transparent; color: inherit; text-align: left; }
+.wa-word-finder-results > button:is(:hover, .is-selected) { background: #eef7f9; }
+.wa-word-finder-results b { display: block; font: 16px/1.25 var(--font-serif, Georgia, serif); font-weight: 400; }
+.wa-word-finder-results small { display: block; color: var(--color-gray-600); font-size: 10.5px; }
+.wa-word-finder-meter { display: block; height: 4px; overflow: hidden; border-radius: 2px; background: var(--color-gray-200); }
+.wa-word-finder-meter i { display: block; height: 100%; background: var(--color-sea-blue); }
+.wa-word-finder-popover footer { justify-content: flex-end; margin-top: 8px; }
+.wa-word-finder-apply { border: 0; border-radius: 999px; padding: 4px 11px; background: var(--color-black); color: var(--color-white); font: 600 11px/1.25 var(--font-sans); }
+.wa-word-finder-apply:disabled { opacity: .45; }
+.wa-word-finder-loading { display: grid; gap: 6px; padding: 6px 0; }
+.wa-word-finder-loading i { height: 28px; border-radius: 6px; background: linear-gradient(90deg, #f1f0ec, #e3e3e0, #f1f0ec); background-size: 200% 100%; animation: wa-word-finder-shimmer 1.2s linear infinite; }
+.wa-word-finder-error { margin: 6px 0; color: #a64032; }
+@keyframes wa-word-finder-shimmer { to { background-position: -200% 0; } }
