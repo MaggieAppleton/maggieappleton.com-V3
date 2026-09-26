@@ -55,6 +55,18 @@ export function createAnnotationStore({ dismissals = [], onDismiss = () => {} } 
 			}
 		},
 		clearTool(toolId) { byTool.delete(toolId); notify(); },
+		updateTarget(id, target) {
+			for (const [toolId, annotations] of byTool) {
+				const index = annotations.findIndex((annotation) => annotation.id === id);
+				if (index < 0) continue;
+				const next = [...annotations];
+				next[index] = { ...next[index], target };
+				byTool.set(toolId, next);
+				notify();
+				return true;
+			}
+			return false;
+		},
 		setDismissals(next) { dismissed = new Set(next.map(dismissalKey)); notify(); },
 		dismiss({ tool, kind, unitHash }) {
 			const dismissal = { tool, kind, unitHash };

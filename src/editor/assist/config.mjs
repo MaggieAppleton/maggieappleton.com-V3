@@ -11,6 +11,13 @@ export const assistConfig = {
 		roles: { enabled: true, thresholds: { minShown: 0.10 } },
 		repetition: { enabled: true, thresholds: { pair: 0.5, minGroup: 3 },
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
+		checks: {
+			enabled: { citation: true, hedging: true, objection: true, cliche: true },
+			thresholds: { citation: 0.7, hedgingConfidence: 0.5, objection: 0.7,
+				cliche: 0.75, mixedMetaphor: 0.75 },
+			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+			chatGenerator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+		},
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },

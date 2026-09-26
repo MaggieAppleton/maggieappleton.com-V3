@@ -26,7 +26,7 @@ function position(anchorRect, height = 240, width = 340) {
 
 /** Tool-neutral pinned popover. The parent applies text and persists dismissals. */
 export function PinnedPopover({ open = false, title, icon, children, triggerRef, fallbackFocus, anchorRect,
-	onClose = () => {}, onDismiss, applyValue, onApply, chat, className = "", popoverWidth = 340 }) {
+	onClose = () => {}, onDismiss, applyValue, onApply, chat, onRewrite, useChatRewrite = true, className = "", popoverWidth = 340 }) {
 	const titleId = useId();
 	const panel = useRef(null);
 	const applied = useRef(false);
@@ -58,7 +58,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		};
 	}, [open, triggerRef, fallbackFocus]);
 	if (!open) return null;
-	const value = pendingRewrite ?? applyValue;
+	const value = useChatRewrite ? pendingRewrite ?? applyValue : applyValue;
 	return React.createElement("div", {
 		ref: panel,
 		className: `wa-pinned-popover ${className}`.trim(),
@@ -86,7 +86,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		chat?.streamReply && React.createElement(ChatThread, {
 			streamReply: chat.streamReply,
 			placeholder: chat.placeholder,
-			onRewrite: setPendingRewrite,
+			onRewrite: (rewrite) => { if (useChatRewrite) setPendingRewrite(rewrite); onRewrite?.(rewrite); },
 		}),
 		value != null && value !== "" && onApply && React.createElement("footer", { className: "wa-popover-footer" },
 			React.createElement("button", {

@@ -18,21 +18,30 @@ function mdastText(node) {
 
 function textPieces(node, { skipNestedLists = false } = {}) {
 	const pieces = [];
-	function visit(current, top = false) {
+	const footnotes = [];
+	let position = 0;
+	function visit(current, top = false, linked = false) {
 		const kind = type(current);
 		if (kind === "protected-source" || kind === "code" || kind === "codeblock") return;
-		if (!top && kind === "writing-jsx") return;
+		if (!top && kind === "writing-jsx") {
+			if (componentName(current) === "Footnote") footnotes.push(position);
+			return;
+		}
 		if (!top && skipNestedLists && kind === "list") return;
+		const insideLink = linked || kind === "link" || kind === "autolink" || kind === "editor-wiki-link";
 		const descendants = children(current);
 		if (!descendants.length) {
 			const text = current.getTextContent?.() ?? "";
-			if (text && current.getKey) pieces.push({ key: current.getKey(), text });
+			if (text && current.getKey) {
+				pieces.push({ key: current.getKey(), text, hasLink: insideLink });
+				position += text.length;
+			}
 			return;
 		}
-		for (const child of descendants) visit(child);
+		for (const child of descendants) visit(child, false, insideLink);
 	}
 	visit(node, true);
-	return pieces;
+	return { pieces, footnotes };
 }
 
 function pointAt(pieces, offset, end = false) {
@@ -66,14 +75,22 @@ export function buildSentenceSnapshot(root) {
 	const blockOccurrences = new Map();
 	const sentenceOccurrences = new Map();
 	function addBlock(node, kind, quoted, overridePieces) {
-		const pieces = overridePieces ?? textPieces(node, { skipNestedLists: kind === "listitem" });
+		const { pieces, footnotes } = overridePieces ? { pieces: overridePieces, footnotes: [] }
+			: textPieces(node, { skipNestedLists: kind === "listitem" });
 		const rawText = pieces.map((piece) => piece.text).join("");
 		const clean = normaliseText(rawText);
 		if (!clean) return;
+		let position = 0;
+		const links = pieces.flatMap((piece) => {
+			const start = position;
+			position += piece.text.length;
+			return piece.hasLink ? [{ start, end: position }] : [];
+		});
 		const blockHash = hash(clean);
 		const blockOccurrence = blockOccurrences.get(blockHash) ?? 0;
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
 		const sentences = [];
+		const sentenceRanges = [];
 		const segments = kind === "heading" ? [{ segment: rawText, index: 0 }]
 			: sentenceSegments(rawText);
 		for (const { segment, index } of segments) {
@@ -87,8 +104,15 @@ export function buildSentenceSnapshot(root) {
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);
 			const id = `${sentenceHash}:${occurrence}`;
-			sentences.push({ id, hash: sentenceHash, text, index: sentences.length });
+			const hasLink = links.some((link) => link.start < end && link.end > start);
+			sentences.push({ id, hash: sentenceHash, text, index: sentences.length,
+				...(hasLink ? { hasLink: true } : {}) });
+			sentenceRanges.push({ start, end });
 			locations.set(id, { pieces, start, end });
+		}
+		for (const offset of footnotes) {
+			const index = sentenceRanges.findLastIndex((range) => range.start <= offset);
+			if (sentences.length) sentences[Math.max(0, index)].hasLink = true;
 		}
 		blocks.push({ id: `${blockHash}:${blockOccurrence}`, hash: blockHash,
 			kind, quoted, index: blocks.length, sentences });

@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { unavailable } from "./errors.mjs";
 
-function request({ model, system, messages, json, stream = false }) {
+function request({ model, system, messages, json, jsonSchema, stream = false }) {
 	return {
-		model, ...(system ? { system } : {}), messages, max_tokens: 1024,
-		...(json ? { output_config: { format: { type: "json_schema", schema: { type: "object" } } } } : {}),
+		model, ...(system || json ? { system: json && !jsonSchema
+			? `${system ?? ""}\nReturn only a valid JSON object.`.trim() : system } : {}), messages, max_tokens: 1024,
+		...(json && jsonSchema ? { output_config: { format: { type: "json_schema", schema: jsonSchema } } } : {}),
 		...(stream ? { stream: true } : {}),
 	};
 }
