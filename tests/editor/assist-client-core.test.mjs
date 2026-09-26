@@ -202,22 +202,50 @@ test("aborting a shared block request requeues unchanged blocks it covered", () 
 	scheduler.destroy();
 });
 
-test("scheduler analyses the whole document on mount and after document idle", () => {
+test("scheduler runs repetition shortly after initial roles and after document idle", async () => {
 	const clock = fakeClock();
 	const requests = [];
+	const pending = [];
 	const scheduler = createAssistScheduler({
 		documentId: "essay/test",
 		tools: [{ id: "roles", level: "sentence", enabled: true },
 			{ id: "repetition", level: "document", enabled: true }],
-		judge(request) { requests.push(request); return { annotations: [] }; },
+		judge(request) { requests.push(request); return new Promise((resolve) => pending.push(resolve)); },
 		onAnnotations: () => {}, clock,
 	});
 	scheduler.start(snapshot("An opening."));
+	assert.deepEqual(requests.map((request) => request.scope), ["blocks"]);
+	pending[0]({ annotations: [] });
+	await Promise.resolve();
+	clock.tick(199);
+	assert.equal(requests.length, 1);
+	clock.tick(1);
 	assert.deepEqual(requests.map((request) => request.scope), ["blocks", "document"]);
 	scheduler.update(snapshot("A changed opening."));
 	clock.tick(1500);
 	assert.deepEqual(requests.map((request) => request.scope), ["blocks", "document", "blocks"]);
 	clock.tick(6500);
+	assert.equal(requests.at(-1).scope, "document");
+	scheduler.destroy();
+});
+
+test("scheduler keeps document debounce when initial roles finish after an edit", async () => {
+	const clock = fakeClock();
+	const requests = [];
+	const pending = [];
+	const scheduler = createAssistScheduler({ documentId: "essay/test",
+		tools: [{ id: "roles", level: "sentence", enabled: true },
+			{ id: "repetition", level: "document", enabled: true }],
+		judge(request) { requests.push(request); return new Promise((resolve) => pending.push(resolve)); },
+		onAnnotations: () => {}, clock });
+	scheduler.start(snapshot("Opening."));
+	scheduler.update(snapshot("Revised opening."));
+	clock.tick(1500);
+	pending[1]({ annotations: [] });
+	await Promise.resolve();
+	clock.tick(200);
+	assert.deepEqual(requests.map((request) => request.scope), ["blocks", "blocks"]);
+	clock.tick(6300);
 	assert.equal(requests.at(-1).scope, "document");
 	scheduler.destroy();
 });

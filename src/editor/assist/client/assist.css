@@ -11,3 +11,9 @@
 .writing-assist-marker--debug:hover {
 	filter: brightness(1.12);
 }
+
+.writing-assist-marker--repetition {
+	background: var(--color-salmon);
+	color: var(--color-white);
+	box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+}

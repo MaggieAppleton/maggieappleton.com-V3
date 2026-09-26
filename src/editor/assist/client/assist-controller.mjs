@@ -117,6 +117,12 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		getSentence: (id) => sentenceFor(model.getSnapshot(), id),
 		getAnnotation: (id) => store.getAnnotations().find((item) => item.id === id) ?? null,
 		dismiss(annotation) { store.dismiss(annotation); },
+		dismissRepetition(annotation) {
+			for (const member of annotation.data?.members ?? []) {
+				const match = sentenceFor(model.getSnapshot(), member);
+				if (match) store.dismiss({ tool: "repetition", kind: "repeat", unitHash: match.sentence.hash });
+			}
+		},
 		apply(annotation, value) {
 			if (!store.getAnnotations().some((item) => item.id === annotation.id)) return;
 			const target = annotation.target;

@@ -18,6 +18,7 @@ import { Drawer, getDrawerViews } from "../assist/client/Drawer.mjs";
 import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
+import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
 import { BugIcon } from "@phosphor-icons/react";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
@@ -52,6 +53,25 @@ function DebugPopover({ pinned, controller, transport, title, fallbackFocus, onC
 			system: `Post title: ${title}\nTarget sentence: ${sentence}\nParagraph: ${paragraph}\nReason: The sentence may mention a colour.`,
 		}, { signal }) },
 	}, React.createElement("p", null, sentence));
+}
+
+function RepetitionPinnedPopover({ pinned, controller, transport, title, fallbackFocus, onClose }) {
+	const { annotation } = pinned;
+	const members = repetitionMembers(annotation, controller.model.getSnapshot());
+	const context = members.map(({ sentence, block }) => `¶${block.index + 1}: ${sentence.text}`).join("\n");
+	const opened = members.find(({ sentence }) => sentence.id === annotation.target?.sentenceId);
+	const openedContext = opened ? `¶${opened.block.index + 1}: ${opened.sentence.text}` : "Unavailable";
+	return React.createElement(RepetitionPopover, {
+		pinned, members, fallbackFocus, onClose,
+		onDismiss: () => controller.dismissRepetition(annotation),
+		onJumpTo: (sentenceId) => controller.jumpTo(sentenceId),
+		canApply: controller.canApply(annotation),
+		onApply: (value) => controller.apply(annotation, value),
+		chat: { streamReply: (messages, { signal }) => transport.stream({
+			tool: "repetition", purpose: "chat", messages,
+			system: `Post title: ${title}\nOpened sentence (the only sentence a <rewrite> may replace): ${openedContext}\nRepeated sentences:\n${context}\nIf you include <rewrite>, rewrite only the opened sentence.`,
+		}, { signal }), placeholder: "Ask about these sentences…" },
+	});
 }
 
 function plainTextField(element, label, onChange) {
@@ -358,11 +378,18 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				probabilities: assistController?.store.getRole(hover.annotation.target.sentenceId)?.probabilities,
 				minShown: assistStatus?.config?.tools?.roles?.thresholds?.minShown,
 			})
+			: hover.annotation.tool === "repetition"
+				? React.createElement(RepetitionHover, { annotation: hover.annotation,
+					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
 			: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
 		pinned?.annotation.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
 			fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
+		}), document.body),
+		pinned?.annotation.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
+			pinned, controller: assistController, transport: assistTransport, title,
+			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
 	);
 }
