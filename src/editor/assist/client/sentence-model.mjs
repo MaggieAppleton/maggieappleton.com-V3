@@ -68,21 +68,24 @@ export function buildSentenceSnapshot(root) {
 	function addBlock(node, kind, quoted, overridePieces) {
 		const pieces = overridePieces ?? textPieces(node, { skipNestedLists: kind === "listitem" });
 		const rawText = pieces.map((piece) => piece.text).join("");
+		// Soft wraps in MDX prose are spaces for segmentation, but must keep their
+		// original character width so sentence spans still map to Lexical offsets.
+		const segmentText = rawText.replace(/[\r\n\u2028\u2029]/gu, " ");
 		const clean = normaliseText(rawText);
 		if (!clean) return;
 		const blockHash = hash(clean);
 		const blockOccurrence = blockOccurrences.get(blockHash) ?? 0;
 		blockOccurrences.set(blockHash, blockOccurrence + 1);
 		const sentences = [];
-		const segments = kind === "heading" ? [{ segment: rawText, index: 0 }]
-			: sentenceSegments(rawText);
+		const segments = kind === "heading" ? [{ segment: segmentText, index: 0 }]
+			: sentenceSegments(segmentText);
 		for (const { segment, index } of segments) {
 			const leading = segment.match(/^\s*/u)?.[0].length ?? 0;
 			const trailing = segment.match(/\s*$/u)?.[0].length ?? 0;
 			const start = index + leading;
 			const end = index + segment.length - trailing;
 			if (end <= start) continue;
-			const text = rawText.slice(start, end);
+			const text = segmentText.slice(start, end);
 			const sentenceHash = hash(normaliseText(text));
 			const occurrence = sentenceOccurrences.get(sentenceHash) ?? 0;
 			sentenceOccurrences.set(sentenceHash, occurrence + 1);

@@ -30,6 +30,19 @@ test("sentence snapshot segments en-GB prose and retains quoted evidence", () =>
 	]);
 });
 
+test("soft line wraps stay inside a sentence and preserve Lexical offsets", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "The opening wraps across a\nline before its full stop. A second sentence.", [], { key: "wrapped" }),
+	])]);
+	const model = buildSentenceSnapshot(root);
+	assert.deepEqual(model.blocks[0].sentences.map((sentence) => sentence.text), [
+		"The opening wraps across a line before its full stop.",
+		"A second sentence.",
+	]);
+	const second = model.blocks[0].sentences[1];
+	assert.equal(model.blocks._locations.get(second.id).start, 54);
+});
+
 test("sentence IDs survive unrelated edits and occurrence numbers distinguish repeats", () => {
 	const makeRoot = (first) => node("root", "", [
 		node("paragraph", "", [node("text", first, [], { key: "first" })]),
