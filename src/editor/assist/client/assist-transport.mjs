@@ -6,6 +6,7 @@ function publicBlocks(blocks) {
 		sentences: block.sentences.map((sentence) => ({
 			id: sentence.id, hash: sentence.hash, text: sentence.text, index: sentence.index,
 			...(sentence.hasLink ? { hasLink: true } : {}),
+			...(sentence.hasFootnote ? { hasFootnote: true } : {}),
 			...(Array.isArray(sentence.linkedSpans) ? { linkedSpans: sentence.linkedSpans.map(({ start, end }) => ({ start, end })) } : {}),
 		})),
 	}));

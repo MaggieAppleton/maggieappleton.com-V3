@@ -41,11 +41,25 @@ test("sentence snapshot marks only the sentences containing links or footnotes",
 		node("text", " A third claim.", [], { key: "plain-3" }),
 	])]);
 	const snapshot = buildSentenceSnapshot(root);
-	assert.deepEqual(snapshot.blocks[0].sentences.map((sentence) => [sentence.text, Boolean(sentence.hasLink)]), [
-		["An asserted fact needs a source.", true],
-		["A second claim.", true],
-		["A third claim.", false],
+	assert.deepEqual(snapshot.blocks[0].sentences.map((sentence) =>
+		[sentence.text, Boolean(sentence.hasLink), Boolean(sentence.hasFootnote)]), [
+		["An asserted fact needs a source.", true, false],
+		["A second claim.", false, true],
+		["A third claim.", false, false],
 	]);
+});
+
+test("inline footnote marks citation context without occupying a link span", () => {
+	const root = node("root", "", [node("paragraph", "", [
+		node("text", "Creative tools help us.", [], { key: "prose" }),
+		node("writing-jsx", "", [node("paragraph", "", [node("text", "A source.", [], { key: "note" })])],
+			{ __name: "Footnote" }),
+	])]);
+	const sentence = buildSentenceSnapshot(root).blocks[0].sentences[0];
+	assert.equal(sentence.hasLink, false);
+	assert.equal(sentence.hasFootnote, true);
+	assert.deepEqual(sentence.linkedSpans, []);
+	assert.equal(sentence.text, "Creative tools help us.");
 });
 
 test("sentence snapshot retains linked spans and internal target paths", () => {

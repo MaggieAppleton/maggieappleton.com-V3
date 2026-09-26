@@ -137,7 +137,7 @@ export function buildSentenceSnapshot(root) {
 		}
 		for (const offset of footnotes) {
 			const index = sentenceRanges.findLastIndex((range) => range.start <= offset);
-			if (sentences.length) sentences[Math.max(0, index)].hasLink = true;
+			if (sentences.length) sentences[Math.max(0, index)].hasFootnote = true;
 		}
 		blocks.push({ id: `${blockHash}:${blockOccurrence}`, hash: blockHash,
 			kind, quoted, index: blocks.length, sentences,
@@ -195,7 +195,7 @@ export function changedSince(current, previous) {
 export function blockSignature(block) {
 	if (!block) return null;
 	return JSON.stringify([block.hash, block.kind, block.quoted, block.links, block.sentences.map((sentence) =>
-		[sentence.hasLink, sentence.linkedSpans, sentence.links])]);
+		[sentence.hasLink, sentence.hasFootnote, sentence.linkedSpans, sentence.links])]);
 }
 
 function domTextPoint(editor, lexicalPoint) {

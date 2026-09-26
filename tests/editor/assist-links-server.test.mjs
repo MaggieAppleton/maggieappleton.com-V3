@@ -103,6 +103,29 @@ test("a wiki link excludes its page while leaving other phrases eligible", async
 	} finally { await files.close(); }
 });
 
+test("an inline footnote does not hide a prose link opportunity", async () => {
+	const files = await fixture({ "/creative-tools": { title: "Creative tools", description: "Software for creative work" } });
+	try {
+		const leaf = (kind, value, key) => ({ getType: () => kind, getTextContent: () => value,
+			getChildren: () => [], getKey: () => key });
+		const footnote = { getType: () => "writing-jsx", __name: "Footnote", getChildren: () => [
+			{ getType: () => "paragraph", getChildren: () => [leaf("text", "A source.", "note")] },
+		] };
+		const paragraph = { getType: () => "paragraph", getChildren: () => [
+			leaf("text", "Creative tools help us.", "prose"), footnote,
+		] };
+		const snapshot = buildSentenceSnapshot({ getType: () => "root", getChildren: () => [paragraph] });
+		let phraseRequest;
+		await linksTool.run(context(files, snapshot.blocks), async (request) => {
+			if (request.questions.target) return { target: { type: "choice", probabilities: { T1: 0.9, none: 0.1 } } };
+			phraseRequest = request;
+			return { phrase: { type: "choice", probabilities: {} }, natural: { type: "noul", noul: 0 } };
+		});
+		assert.ok(phraseRequest);
+		assert.ok(Object.values(phraseRequest.questions.phrase.criteria).includes("Creative tools"));
+	} finally { await files.close(); }
+});
+
 test("phrase options stay within punctuation, avoid linked text and stop-word edges, and cap at 200", async () => {
 	const files = await fixture({ "/creative-tools": { title: "Creative tools", description: "Creative software" } });
 	try {
