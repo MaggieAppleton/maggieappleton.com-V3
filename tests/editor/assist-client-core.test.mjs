@@ -170,6 +170,12 @@ test("reordering unchanged blocks invalidates the document and its paragraph con
 	assert.deepEqual(changedSince(after, before), after.blocks.slice(1).map((block) => block.id));
 });
 
+test("editing one paragraph does not dirty its unchanged neighbours", () => {
+	const before = snapshot("Opening.", "First claim.", "Second claim.");
+	const after = snapshot("Revised opening.", "First claim.", "Second claim.");
+	assert.deepEqual(changedSince(after, before), [after.blocks[0].id]);
+});
+
 test("scheduler rejects a pre-reorder map and requests the new reading order", async () => {
 	const clock = fakeClock();
 	const pending = [];
