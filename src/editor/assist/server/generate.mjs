@@ -2,6 +2,8 @@ import { EditorServiceError } from "../../server/errors.mjs";
 import { assistStatus } from "./status.mjs";
 import { validateWordFinderCandidates, wordFinderPrompt } from "./word-finder.mjs";
 
+import { outlinePrompt } from "./reverse-outline-schema.mjs";
+
 const checkInstructions = {
 	cliche: " Find the cliché, stock phrase, or dead metaphor in the supplied sentence. Return only JSON with phrase, reason, suggestions. The phrase must be an exact substring of the sentence. Give one short reason and three replacements for the phrase only, not the whole sentence.",
 	hedging: [
@@ -100,8 +102,9 @@ export function createGenerateService({ config, env = process.env, createProvide
 			if (request.tool === "word-finder" && (!wordFinder || request.json !== true || request.stream)) {
 				throw invalid("Word finder requires candidate JSON generation");
 			}
-			const prompt = wordFinder ? wordFinderPrompt(request) : null;
-			const messages = wordFinder ? prompt.messages : validatedMessages(request);
+			const outline = request.tool === "argument-map";
+			const prompt = wordFinder ? wordFinderPrompt(request) : outline ? outlinePrompt(request) : null;
+			const messages = prompt ? prompt.messages : validatedMessages(request);
 			const configured = assistStatus(config, env).providers[generator.provider];
 			if (!configured?.available) {
 				const error = new EditorServiceError(503, "provider_unavailable", configured?.reason ?? "Provider is unavailable");
@@ -115,7 +118,7 @@ export function createGenerateService({ config, env = process.env, createProvide
 						? " For sources, never invent specific citations, titles, URLs or statistics."
 						: checkInstructions[request.purpose])
 				: "";
-			const additionalSystem = wordFinder ? prompt.system : request.system;
+			const additionalSystem = prompt ? prompt.system : request.system;
 			const system = `Write in British English (en-GB).${checksSystem}${additionalSystem ? `\n\n${additionalSystem}` : ""}`;
 			const input = { model: generator.model, system, messages, signal,
 				...(wordFinder ? { jsonSchema: wordFinderSchema }

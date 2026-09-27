@@ -15,8 +15,8 @@ export async function getAssistServices(loadEntries) {
 			const sidecars = createSidecarStore({ index });
 			const jev = process.env.TYPESAFE_API_KEY
 				? new TypeSafeClient({ apiKey: process.env.TYPESAFE_API_KEY }) : null;
-			const judge = jev ? createJudge({ jev, sidecars, config: assistConfig }) : null;
 			const generator = createGenerateService({ config: assistConfig, createProvider });
+			const judge = jev ? createJudge({ jev, sidecars, config: assistConfig, generator }) : null;
 			return { index, sidecars, judge, generator };
 		})();
 		servicesPromise.catch(() => { servicesPromise = undefined; });

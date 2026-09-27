@@ -22,7 +22,9 @@ export const assistConfig = {
 			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
 			chatGenerator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
 		},
-		"argument-map": { enabled: false, thresholds: { parent: 0.4, advances: 0.35 } },
+		"argument-map": { enabled: false,
+			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+			thresholds: { faithful: 0.8, relevant: 0.65, grouping: 0.75, observation: 0.85 } },
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },
