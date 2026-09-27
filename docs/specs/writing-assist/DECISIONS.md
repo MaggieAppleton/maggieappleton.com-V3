@@ -45,3 +45,7 @@ Spec 06 asks to analyse only blocks changed since the last run. The document sch
 ## 2026-09-27 · 04 margin checks · Show the validated cliché phrase
 
 The spec 04 popover body now identifies the exact cliché phrase in hover and pinned popovers after the editor validates and marks its source span, before the replacement suggestions. Unaccepted or stale generated phrases stay hidden from the UI and chat context; replacement suggestions and the existing Apply safety gate remain unchanged.
+
+## 2026-09-27 · Hover cards · Select from the preview
+
+Maggie asked to move from a Writing Assist trigger into its hover card and click a suggestion. Cliché and hedging preview rows, and link target previews, therefore open the pinned popover with the clicked option selected. Applying a rewrite or link still requires the explicit Apply or Link action in that popover. This adds a click path to the previously read-only hover previews in specs 04 and 06; clicking a marker to pin and the existing keyboard and touch path remain available.
