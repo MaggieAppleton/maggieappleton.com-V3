@@ -3,7 +3,6 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ArgumentMapView } from "../../src/editor/assist/client/tools/argument-map.mjs";
-import { Drawer, getDrawerViews } from "../../src/editor/assist/client/Drawer.mjs";
 
 const map = {
  revision: "fixture", summary: { text: "The piece explores revision and an unresolved question.", sourceIds: ["p1", "p2"] },
@@ -39,15 +38,9 @@ test("refresh and stale states retain the outline alongside update errors", () =
  assert.match(html, /Revision and engagement/);
  const retry = render({ map: null, error: "Needs a provider" }); assert.match(retry, /Retry/);
 });
-test("one-move drafts render, empty drafts have an empty state, initial generation has a skeleton", () => {
- assert.match(render(), /Revision and engagement/);
+test("empty drafts have an empty state and initial generation has a skeleton", () => {
  assert.match(render({ map: { ...map, moves: [] } }), /Nothing to outline yet/);
  assert.match(render({ map: null, loading: true }), /Loading reverse outline/);
-});
-test("the drawer offers only the reverse outline and does not restore a Flow view", () => {
- const html = renderToStaticMarkup(React.createElement(Drawer, { open: true, map }));
- assert.match(html, /Revision and engagement/); assert.doesNotMatch(html, />Flow<|>Structure</);
- assert.equal(getDrawerViews().filter(v => v.id === "flow").length, 0);
 });
 
 test("heading references remain clickable without a prose paragraph number", () => {

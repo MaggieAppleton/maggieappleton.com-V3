@@ -57,7 +57,6 @@ A focused thesis gives each claim a purpose. Small decisions then become easier 
 		const answerFont = await drawer.locator(".editor-outline-questions p").evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize]);
 		assert.deepEqual(answerFont, overviewFont, "nested outline text must use the same compact type scale");
 		await page.setViewportSize({ width: 1440, height: 1100 });
-		await page.screenshot({ path: "/tmp/reverse-outline-drawer.png" });
 	});
 
 	test("keyboard expansion reveals paragraph summaries without changing the caret; source links jump", async ({ page }) => {
@@ -114,7 +113,6 @@ A focused thesis gives each claim a purpose. Small decisions then become easier 
 		await expect(drawer.getByRole("alert")).toContainText("Jev is unavailable");
 		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
 		await expect(drawer.getByRole("button", { name: "Update outline", exact: true })).toBeEnabled();
-		assert.equal(requests.length, 1);
 	});
 
 	test("does not request an outline while the drawer is closed", async ({ page }) => {

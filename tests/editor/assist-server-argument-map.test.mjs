@@ -43,7 +43,7 @@ test("generates a checked reverse outline without sentence-role classification a
  await s.run(); assert.equal(s.generated.length, 1);
 });
 test("repairs invented references and missing prose once before checking", async () => {
- const bad = outline(); bad.moves[0].sourceIds = ["invented"]; bad.moves[0].paragraphs = [];
+ const bad = outline(); bad.summary.sourceIds = ["invented"];
  const s = setup({ candidates: [bad, outline()] }); const result = await s.run();
  assert.deepEqual(result.errors, []); assert.equal(s.generated.length, 2);
  assert.equal(result.annotations[0].data.map.moves[0].paragraphs[1].blockId, "p2");
@@ -51,6 +51,7 @@ test("repairs invented references and missing prose once before checking", async
 test("never publishes omitted, reordered or duplicated prose after failed repair", async () => {
  for (const ids of [["p1"], ["p2", "p1"], ["p1", "p1", "p2"]]) {
   const bad = outline(); bad.moves[0].sourceIds = ids;
+  bad.moves[0].paragraphs = ids.map(blockId => ({ blockId, summary: "Revision develops ideas." }));
   const s = setup({ candidates: [bad] }); const result = await s.run();
   assert.equal(result.annotations.length, 0); assert.equal(result.errors.length, 1); assert.equal(s.generated.length, 2);
  }
