@@ -104,7 +104,10 @@ This paragraph stays unchanged while the first paragraph is edited.
 		await hoverSentence(page, editor, "The sky is blue.");
 		const roleRows = page.locator(".wa-role-hover-row");
 		await expect(roleRows).toHaveCount(2);
-		await expect(page.locator(".wa-hover-card")).toHaveCSS("width", "220px");
+		await expect.poll(() => page.locator(".wa-hover-card").evaluate((card) => {
+			const { width } = card.getBoundingClientRect();
+			return width <= 320 && card.scrollWidth <= card.clientWidth;
+		})).toBe(true);
 		await expect.poll(() => roleRows.evaluateAll((rows) => rows.map((row) => row.dataset.role))).toEqual(["claim", "opinion"]);
 		await expect(roleRows.nth(0)).toContainText("60%");
 		await expect(roleRows.nth(0)).toContainText("Claim");

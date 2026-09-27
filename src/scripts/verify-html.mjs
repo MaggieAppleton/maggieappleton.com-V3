@@ -62,7 +62,7 @@ export const ROUTES = Object.freeze([
       "https://maggieappleton.com/topics/web-development",
     ],
   },
-  { path: "/drafts", kind: "html", pageMetadata: false, description: "Maggie's digital garden filled with visual essays on programming, design, and anthropology", bodyIncludes: "Draft Posts" },
+  { path: "/drafts", kind: "absent" },
 ]);
 
 export function parsePort(value) {

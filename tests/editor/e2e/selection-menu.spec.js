@@ -29,8 +29,7 @@ test.describe("article selection menu", () => {
 	});
 
 	async function openEditor(page, index) {
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: `Selection menu test ${index}` }).click();
+		await page.goto(`${server.origin}/${slugs[index - 1]}`, { waitUntil: "domcontentloaded" });
 		const editUrl = await page.getByRole("link", { name: "Edit" }).getAttribute("href");
 		const destination = new URL(editUrl, server.origin).href;
 		try {
@@ -224,8 +223,7 @@ test.describe("article selection menu", () => {
 
 	test("excludes metadata and protected content, and reopens after dismissal", async ({ page }) => {
 		test.setTimeout(120_000);
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: "Selection menu test 4" }).click();
+		await page.goto(`${server.origin}/${slugs[3]}`, { waitUntil: "domcontentloaded" });
 		await page.evaluate(() => {
 			const node = document.querySelector("article p").firstChild;
 			const range = document.createRange();

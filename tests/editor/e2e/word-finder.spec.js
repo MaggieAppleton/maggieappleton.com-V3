@@ -127,7 +127,7 @@ test.describe.serial("Writing Assist word finder", () => {
 		const saved = await readFile(fixture.resolve(`src/content/notes/${slugs[2]}.mdx`), "utf8");
 		assert.ok(saved.includes("The still path feels quiet beneath the old trees."));
 		assert.ok(!saved.includes("The quiet path feels quiet beneath the old trees."));
-		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	});
 
 	test("phrase selections receive phrase candidates", async ({ page }) => {

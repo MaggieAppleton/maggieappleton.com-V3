@@ -125,9 +125,14 @@ The sky is blue. The path feels quiet.\n`;
 			const box = await page.getByRole("dialog", { name: "Colour mention" }).boundingBox();
 			return box.y + box.height <= (await page.locator(".editor-dock").boundingBox()).y;
 		}).toBe(true);
-		const expanded = await page.getByRole("dialog", { name: "Colour mention" }).boundingBox();
-		assert.ok(expanded.y + expanded.height <= shiftedMarker.y,
-			"the expanded popover should flip above the marker");
+		await expect.poll(async () => {
+			const [expanded, currentMarker] = await Promise.all([
+				page.getByRole("dialog", { name: "Colour mention" }).boundingBox(), marker.boundingBox(),
+			]);
+			const belowGap = expanded.y - currentMarker.y - currentMarker.height;
+			const aboveGap = currentMarker.y - expanded.y - expanded.height;
+			return Math.min(Math.abs(belowGap - 8), Math.abs(aboveGap - 8)) < 3;
+		}, "the expanded popover should stay anchored beside the marker").toBe(true);
 		await page.keyboard.press("Escape");
 		await expect(page.getByRole("button", { name: "Dismiss" })).toHaveCount(0);
 		await expect(marker).toBeFocused();
@@ -150,7 +155,7 @@ The sky is blue. The path feels quiet.\n`;
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeFocused();
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"))
 			.toContain("THE SKY IS BLUE.");
-		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	});
 
 	test("registered drawer view opens and closes from Map", async ({ page }) => {

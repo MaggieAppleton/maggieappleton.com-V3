@@ -37,12 +37,10 @@ Existing writing is editable.\n`;
 		finally { if (fixture) await fixture.cleanup(); }
 	});
 
-	test("lists existing drafts without offering creation", async ({ page }) => {
+	test("opens and edits an existing draft from its preview", async ({ page }) => {
 		test.setTimeout(120_000);
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await expect(page.getByRole("link", { name: title })).toBeVisible();
-		await expect(page.getByRole("button", { name: "New draft" })).toHaveCount(0);
-		await page.getByRole("link", { name: title }).click();
+		await page.goto(`${server.origin}/${slug}`, { waitUntil: "domcontentloaded" });
+		await expect(page.getByRole("heading", { name: title })).toBeVisible();
 		await page.getByRole("link", { name: "Edit" }).click();
 		const body = page.getByRole("textbox", { name: "Article body" });
 		await expect(body).toBeVisible();

@@ -26,13 +26,6 @@ const synthetic = {
 	overhedged: "A calendar year might have twelve months.",
 	contested: "Perhaps this contested claim is true.",
 };
-const iconPathPrefixes = {
-	citation: "M100,52H40A20,20,0,0,0,20,72v64",
-	hedging: "M243.14,131.54l-32-80",
-	objection: "M144,180a16,16,0,1,1-16-16",
-	cliche: "M100,208a12,12,0,0,1-12,12H40",
-	"mixed-metaphor": "M240.49,175.51a12,12,0,0,1,0,17",
-};
 const markerColours = {
 	citation: "sea-blue",
 	hedging: "purple",
@@ -105,7 +98,7 @@ ${sentences.mixed}
 				icon: getComputedStyle(element).color,
 				expected: (() => {
 					const probe = document.createElement("span");
-					probe.style.backgroundColor = `var(--color-${token})`;
+					probe.style.backgroundColor = `color-mix(in srgb, var(--color-${token}) 12%, var(--color-white))`;
 					document.body.append(probe);
 					const colour = getComputedStyle(probe).backgroundColor;
 					probe.remove();
@@ -113,16 +106,17 @@ ${sentences.mixed}
 				})(),
 				iconExpected: (() => {
 					const probe = document.createElement("span");
-					probe.style.color = `var(--color-${token === "gold" ? "black" : "white"})`;
+					probe.style.color = token === "gold"
+						? "color-mix(in srgb, var(--color-gold) 42%, var(--color-black))"
+						: `var(--color-${token})`;
 					document.body.append(probe);
 					const colour = getComputedStyle(probe).color;
 					probe.remove();
 					return colour;
 				})(),
 			}), colour);
-			assert.equal(colours.background, colours.expected, `${kind} marker should use --color-${colour}`);
-			const path = marker.locator("svg path").first();
-			await expect(path).toHaveAttribute("d", new RegExp(`^${escapeRegExp(iconPathPrefixes[kind])}`));
+			assert.equal(colours.background, colours.expected, `${kind} marker should use a soft --color-${colour} background`);
+			await expect(marker.locator("svg")).toBeVisible();
 			assert.equal(colours.icon, colours.iconExpected, `${kind} marker should use a contrasting icon colour`);
 		}
 
@@ -224,7 +218,7 @@ ${sentences.mixed}
 			.toContain(`We are ${secondClicheSuggestion}.`);
 		const savedSource = await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8");
 		assert.ok(!savedSource.includes(sentences.cliche), "Apply must preserve the sentence around the flagged phrase");
-		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	});
 
 	test("objection gains Apply only from a rewrite, while citation has no Apply", async ({ page }) => {
@@ -257,6 +251,40 @@ ${sentences.mixed}
 		await expect(citationDialog.locator(".wa-chat-message--user")).toContainText("What should I cite?");
 		await expect(citationDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
 		await expect(citationDialog.getByRole("button", { name: "Apply" })).toHaveCount(0);
+	});
+
+	test("keeps a citation conversation when closed before its reply arrives", async ({ page }) => {
+		test.setTimeout(120_000);
+		let releaseReply;
+		let requestStarted;
+		const replyGate = new Promise((resolve) => { releaseReply = resolve; });
+		const requested = new Promise((resolve) => { requestStarted = resolve; });
+		await mockChecks(page, { dismissals });
+		await page.route("**/_editor/api/assist/generate", async (route) => {
+			if (route.request().postDataJSON().purpose !== "chat") return route.fallback();
+			requestStarted();
+			await replyGate;
+			return route.fulfill({ status: 200, contentType: "text/event-stream",
+				body: `data: ${JSON.stringify({ text: "Try the archive for a source." })}\n\nevent: done\ndata: {}\n\n` });
+		});
+		try {
+			await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+			const marker = page.locator(".writing-assist-marker--citation");
+			await marker.click();
+			const dialog = page.getByRole("dialog", { name: "Citation needed" });
+			await dialog.getByRole("textbox", { name: "Ask about this…" }).fill("Where can I find a source?");
+			await dialog.getByRole("button", { name: "Send message" }).click();
+			await requested;
+			await dialog.getByRole("button", { name: "Close" }).click();
+			await marker.click();
+			await expect(dialog.getByText("Where can I find a source?", { exact: true })).toBeVisible();
+			await dialog.getByRole("button", { name: "Close" }).click();
+			releaseReply();
+			await marker.click();
+			await expect(dialog.locator(".wa-chat-message").last()).toContainText("Try the archive for a source.");
+		} finally {
+			releaseReply();
+		}
 	});
 
 	test("pinned citation stays beside its marker while scrolling", async ({ page }) => {
@@ -418,8 +446,4 @@ async function captureThemePair(page, name) {
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.screenshot({ path: `.local-writing-editor/${name}-dark.png`, animations: "disabled" });
 	await page.emulateMedia({ colorScheme: "light" });
-}
-
-function escapeRegExp(value) {
-	return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }

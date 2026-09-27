@@ -92,7 +92,7 @@ ${sentenceText}\n`;
 		const saved = await readFile(fixture.resolve(`src/content/notes/${slugs[0]}.mdx`), "utf8");
 		assert.ok(saved.includes(sentenceText.replace(phrase, `[${phrase}](${target.pathname})`)),
 			"Link must preserve the selected phrase and surrounding sentence text");
-		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 		assert.ok(judgeRequests.some((request) => request.tools.includes("links")),
 			"enabling link suggestions should trigger a mocked judge request");
 	});
@@ -132,6 +132,8 @@ ${sentenceText}\n`;
 		await page.setViewportSize({ width: 360, height: 720 });
 		await mockAssist(page, server.origin, { linkTarget: longTarget });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slugs[2]}`);
+		// The Astro dev toolbar overlaps the dock at 360px; exclude that test-only overlay.
+		await page.addStyleTag({ content: "astro-dev-toolbar { display: none !important; }" });
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await expect(editor).toBeVisible();
 		await page.getByRole("button", { name: "Assist", exact: true }).click();
