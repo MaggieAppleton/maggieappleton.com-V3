@@ -15,6 +15,17 @@ export function isMixedRole(annotation, minShown = 0.10) {
 	return displayedRoleWeights(annotation, minShown).length > 1;
 }
 
+/** Keep the first letter of an intro paragraph outside role tint ranges. */
+export function withoutIntroDropCap(range) {
+	if (!range) return null;
+	const start = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+	const dropCap = start?.closest?.('[data-writing-component="IntroParagraph"] .drop-cap');
+	if (!dropCap) return range;
+	const remaining = range.cloneRange();
+	remaining.setStartAfter(dropCap);
+	return remaining.collapsed ? null : remaining;
+}
+
 /** Soft transitions straddle each probability boundary; the area of each colour stays proportional. */
 export function roleGradient(annotation, minShown = 0.10) {
 	const roles = displayedRoleWeights(annotation, minShown);

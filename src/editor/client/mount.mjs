@@ -19,6 +19,7 @@ import { Drawer, getDrawerViews } from "../assist/client/Drawer.mjs";
 import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
 import { PinnedPopover } from "../assist/client/popover/PinnedPopover.mjs";
+import { createChatSessionStore } from "../assist/client/popover/chat-session.mjs";
 import { RepetitionHover, RepetitionPopover, repetitionMembers } from "../assist/client/popover/RepetitionPopover.mjs";
 import { LinksHover, LinksPopover } from "../assist/client/popover/LinksPopover.mjs";
 import { WordFinder } from "../assist/client/word-finder.mjs";
@@ -44,7 +45,7 @@ function savedTools(config) {
 	} catch { return defaults; }
 }
 
-function DebugPopover({ pinned, controller, transport, title, fallbackFocus, onClose }) {
+function DebugPopover({ pinned, controller, transport, title, chatSessions, fallbackFocus, onClose }) {
 	const { annotation, anchorRect, trigger } = pinned;
 	const match = controller.getSentence(annotation.target.sentenceId);
 	if (!match) return null;
@@ -57,14 +58,14 @@ function DebugPopover({ pinned, controller, transport, title, fallbackFocus, onC
 		onDismiss: () => controller.dismiss(annotation),
 		applyValue: controller.canApply(annotation) ? sentence.toUpperCase() : null,
 		onApply: (value) => controller.apply(annotation, value),
-		chat: { streamReply: (messages, { signal }) => transport.stream({
+		chat: { session: chatSessions.forAnnotation(annotation), streamReply: (messages, { signal }) => transport.stream({
 			tool: "debug", purpose: "chat", messages,
 			system: `Post title: ${title}\nTarget sentence: ${sentence}\nParagraph: ${paragraph}\nReason: The sentence may mention a colour.`,
 		}, { signal }) },
 	}, React.createElement("p", null, sentence));
 }
 
-function RepetitionPinnedPopover({ pinned, controller, transport, title, fallbackFocus, onClose }) {
+function RepetitionPinnedPopover({ pinned, controller, transport, title, chatSessions, fallbackFocus, onClose }) {
 	const { annotation } = pinned;
 	const members = repetitionMembers(annotation, controller.model.getSnapshot());
 	const context = members.map(({ sentence, block }) => `¶${block.index + 1}: ${sentence.text}`).join("\n");
@@ -76,7 +77,7 @@ function RepetitionPinnedPopover({ pinned, controller, transport, title, fallbac
 		onJumpTo: (sentenceId) => controller.jumpTo(sentenceId),
 		canApply: controller.canApply(annotation),
 		onApply: (value) => controller.apply(annotation, value),
-		chat: { streamReply: (messages, { signal }) => transport.stream({
+		chat: { session: chatSessions.forAnnotation(annotation), streamReply: (messages, { signal }) => transport.stream({
 			tool: "repetition", purpose: "chat", messages,
 			system: `Post title: ${title}\nOpened sentence (the only sentence a <rewrite> may replace): ${openedContext}\nRepeated sentences:\n${context}\nIf you include <rewrite>, rewrite only the opened sentence.`,
 		}, { signal }), placeholder: "Ask about these sentences…" },
@@ -127,6 +128,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [mapBlocks, setMapBlocks] = useState([]);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
+	const chatSessions = useMemo(() => createChatSessionStore(), []);
+	useEffect(() => () => chatSessions.dispose(), [chatSessions]);
 	const openWordFinder = useCallback((selection) => { setHover(null); setPinned({ tool: "word-finder", selection }); }, []);
 	const closeWordFinder = useCallback(() => setPinned(null), []);
 	const [checkGenerated, setCheckGenerated] = useState({});
@@ -508,12 +511,12 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 							} })
 				: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
 		pinned?.annotation?.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
-			pinned, controller: assistController, transport: assistTransport, title,
+			pinned, controller: assistController, transport: assistTransport, title, chatSessions,
 			fallbackFocus: lexicalEditor?.getRootElement(),
 			onClose: () => setPinned(null),
 		}), document.body),
 		pinned?.annotation?.tool === "repetition" && assistController && createPortal(React.createElement(RepetitionPinnedPopover, {
-			pinned, controller: assistController, transport: assistTransport, title,
+			pinned, controller: assistController, transport: assistTransport, title, chatSessions,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 		}), document.body),
 		pinned?.annotation?.tool === "links" && assistController && createPortal(React.createElement(LinksPopover, {
@@ -530,7 +533,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			onApply: (value) => pinned.annotation.kind === "mixed-metaphor"
 				? assistController.applyBlock?.(pinned.annotation, value) : assistController.apply(pinned.annotation, value),
 			canApply: assistController.canApply(pinned.annotation), canApplyBlock: assistController.canApplyBlock?.(pinned.annotation),
-			chat: { placeholder: pinned.annotation.kind === "objection" ? "Ask about this sentence…" : "Ask about this…",
+			chat: { session: chatSessions.forAnnotation(pinned.annotation),
+				placeholder: pinned.annotation.kind === "objection" ? "Ask about this sentence…" : "Ask about this…",
 				streamReply: (messages, { signal }) => assistTransport.stream({ tool: "checks", purpose: "chat",
 					messages, system: checkChatSystem({ annotation: pinned.annotation, title,
 						generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`], ...checkContext(assistController, pinned.annotation) }) }, { signal }) },

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PinnedPopover } from "./PinnedPopover.mjs";
+import { useChatSnapshot } from "./chat-session.mjs";
 import { checkDetails } from "../tools/checks.mjs";
 export { validateClichePhrase } from "../check-phrase.mjs";
 
@@ -73,8 +74,10 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 	const annotation = pinned.annotation;
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const suggestions = annotation.kind === "hedging" ? generated?.rewrites ?? [] : generated?.suggestions ?? [];
-	const [selected, setSelected] = useState(pinned.selectedIndex ?? 0);
-	const [chatRewrite, setChatRewrite] = useState(null);
+	const [selection, setSelection] = useState({ index: pinned.selectedIndex ?? 0, rewrite: null });
+	const chatRewrite = useChatSnapshot(chat?.session).rewrite;
+	const selected = chatRewrite && chatRewrite !== selection.rewrite ? -1 : selection.index;
+	const setSelected = (index) => setSelection({ index, rewrite: chatRewrite });
 	const selectedValue = selected === -1 ? chatRewrite : suggestions[selected];
 	const applyAllowed = annotation.kind === "mixed-metaphor" ? canApplyBlock : canApply;
 	const canApplySuggestion = (annotation.kind === "cliche" || annotation.kind === "hedging")
@@ -85,7 +88,7 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 		title: detail.title, icon: React.createElement(CheckIcon, { annotation }), triggerRef: pinned.trigger,
 		fallbackFocus, anchorRect: pinned.anchorRect, onClose, onDismiss,
 		applyValue: canApplySuggestion ? selectedValue : null, onApply: canApplySuggestion || chatCanApply ? onApply : undefined, chat,
-		useChatRewrite: !canApplySuggestion && chatCanApply, onRewrite: (rewrite) => { if (!chatCanApply) { setChatRewrite(rewrite); setSelected(-1); } } },
+		useChatRewrite: !canApplySuggestion && chatCanApply },
 		!generated && annotation.kind !== "citation" && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
 		annotation.kind !== "citation" && annotation.kind !== "cliche" && reason(annotation, generated)

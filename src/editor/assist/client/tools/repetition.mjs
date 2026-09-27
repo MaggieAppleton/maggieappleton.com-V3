@@ -12,7 +12,7 @@ export const repetitionTool = {
 	markerPresenter(annotation) {
 		const members = count(annotation);
 		return {
-			placement: "end",
+			placement: "margin",
 			label: `Same point, ${members} times`,
 			className: "writing-assist-marker--repetition",
 			content: React.createElement(ArrowsClockwiseIcon, { size: 15, weight: "bold", "aria-hidden": "true" }),

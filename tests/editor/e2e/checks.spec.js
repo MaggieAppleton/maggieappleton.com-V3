@@ -241,11 +241,42 @@ ${sentences.mixed}
 		await expect(objectionDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
 		await expect(objectionDialog.getByRole("button", { name: "Apply" })).toBeVisible();
 		await objectionDialog.getByRole("button", { name: "Close" }).click();
+		await page.locator(".writing-assist-marker--objection").click();
+		await expect(objectionDialog.locator(".wa-chat-message--user")).toContainText("Can you address that concern?");
+		await expect(objectionDialog.getByRole("button", { name: "Apply" })).toBeVisible();
+		await objectionDialog.getByRole("button", { name: "Close" }).click();
 
 		await page.locator(".writing-assist-marker--citation").click();
 		const citationDialog = page.getByRole("dialog", { name: "Citation needed" });
-		await expect(citationDialog.getByText("This reads as a factual claim without a source.")).toBeVisible();
+		const citationChat = citationDialog.getByRole("textbox", { name: "Ask about this…" });
+		await citationChat.fill("What should I cite?");
+		await citationDialog.getByRole("button", { name: "Send message" }).click();
+		await expect(citationDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
+		await citationDialog.getByRole("button", { name: "Close" }).click();
+		await page.locator(".writing-assist-marker--citation").click();
+		await expect(citationDialog.locator(".wa-chat-message--user")).toContainText("What should I cite?");
+		await expect(citationDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
 		await expect(citationDialog.getByRole("button", { name: "Apply" })).toHaveCount(0);
+	});
+
+	test("pinned citation stays beside its marker while scrolling", async ({ page }) => {
+		await mockChecks(page, { dismissals });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		const marker = page.locator(".writing-assist-marker--citation");
+		await marker.click();
+		const dialog = page.getByRole("dialog", { name: "Citation needed" });
+		await expect(dialog).toBeVisible();
+		const [beforeMarker, beforeDialog] = await Promise.all([marker.boundingBox(), dialog.boundingBox()]);
+		const initialGap = beforeDialog.y - beforeMarker.y - beforeMarker.height;
+		await page.evaluate(() => {
+			document.body.style.minHeight = "2200px";
+			document.documentElement.style.scrollBehavior = "auto";
+			window.scrollTo(0, 220);
+		});
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(220);
+		const [afterMarker, afterDialog] = await Promise.all([marker.boundingBox(), dialog.boundingBox()]);
+		assert.ok(Math.abs(afterDialog.y - afterMarker.y - afterMarker.height - initialGap) < 2,
+			"the citation popover must scroll with its marker");
 	});
 
 	test("keeps a dismissed check hidden after reload", async ({ page }) => {
