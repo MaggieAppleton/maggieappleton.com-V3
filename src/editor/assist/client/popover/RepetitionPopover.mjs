@@ -2,6 +2,25 @@ import React from "react";
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { PinnedPopover } from "./PinnedPopover.mjs";
 
+const REPETITION_POPOVER_WIDTH = 520;
+const ANCHOR_GAP = 8;
+
+function repetitionAnchorRect(anchorRect) {
+	if (!anchorRect || typeof window === "undefined") return anchorRect;
+	const leftSpace = anchorRect.left - 12;
+	const rightSpace = window.innerWidth - anchorRect.right - 12;
+	if (leftSpace <= rightSpace || leftSpace < REPETITION_POPOVER_WIDTH + ANCHOR_GAP) return anchorRect;
+	const offset = REPETITION_POPOVER_WIDTH + ANCHOR_GAP;
+	return {
+		left: anchorRect.left - offset,
+		right: anchorRect.right - offset,
+		top: anchorRect.top,
+		bottom: anchorRect.bottom,
+		width: anchorRect.width,
+		height: anchorRect.height,
+	};
+}
+
 export function repetitionTitle(annotation) {
 	return `Same point, ${annotation.data?.members?.length ?? 0} times`;
 }
@@ -30,11 +49,12 @@ export function RepetitionPopover({ pinned, members = [], fallbackFocus, onClose
 	onDismiss = () => {}, onJumpTo = () => {}, onApply, canApply = false, chat }) {
 	const annotation = pinned.annotation;
 	const current = annotation.target?.sentenceId;
+	const anchorRect = repetitionAnchorRect(pinned.anchorRect);
 	return React.createElement(PinnedPopover, {
-		key: annotation.id, open: true, className: "wa-repetition-popover", popoverWidth: 520,
+		key: annotation.id, open: true, className: "wa-repetition-popover", popoverWidth: REPETITION_POPOVER_WIDTH,
 		title: repetitionTitle(annotation),
 		icon: React.createElement(ArrowsClockwiseIcon, { size: 14, weight: "bold", "aria-hidden": "true" }),
-		triggerRef: pinned.trigger, fallbackFocus, anchorRect: pinned.anchorRect, onClose, onDismiss,
+		triggerRef: pinned.trigger, fallbackFocus, anchorRect, onClose, onDismiss,
 		applyValue: canApply ? null : undefined, onApply: repetitionApplyHandler(canApply, onApply),
 		chat: chat && { ...chat, placeholder: "Ask about these sentences…" },
 	}, React.createElement("div", { className: "wa-repetition-rows" },

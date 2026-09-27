@@ -102,6 +102,24 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		await settleAnimations(page);
 		await page.screenshot({ path: ".local-writing-editor/repetition-dark.png" });
 		await page.emulateMedia({ colorScheme: "light" });
+		const horizontalPlacement = await screenshotMarker.evaluate((marker) => {
+			const anchor = marker.getBoundingClientRect();
+			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
+			const leftSpace = anchor.left - 12;
+			const rightSpace = innerWidth - anchor.right - 12;
+			return { anchorLeft: anchor.left,
+				anchorTop: anchor.top, anchorBottom: anchor.bottom,
+				popoverTop: popover.top, popoverBottom: popover.bottom,
+				popoverRight: popover.right, popoverWidth: popover.width, preferLeft: leftSpace > rightSpace,
+				leftSpace };
+		});
+		assert.ok(horizontalPlacement.popoverBottom <= horizontalPlacement.anchorTop
+			|| horizontalPlacement.popoverTop >= horizontalPlacement.anchorBottom,
+		"the panel should remain vertically positioned relative to its real end-mark rectangle");
+		if (horizontalPlacement.preferLeft && horizontalPlacement.leftSpace >= horizontalPlacement.popoverWidth + 20) {
+			assert.ok(horizontalPlacement.popoverRight <= horizontalPlacement.anchorLeft - 8,
+				"the repetition panel should use the roomier left side of its end mark");
+		}
 		const screenshotGeometry = await page.evaluate(() => {
 			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
 			return [...document.querySelectorAll(".writing-assist-marker--repetition")].map((marker) => {
