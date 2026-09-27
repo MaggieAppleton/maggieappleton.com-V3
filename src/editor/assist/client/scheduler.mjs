@@ -7,7 +7,7 @@ const defaultClock = {
 
 /** Judge requests are scoped by block IDs; results are accepted only for the same hashes. */
 export function createAssistScheduler({ documentId, pathname, title, tools, judge, onAnnotations,
-	onClear = () => {}, timing = {}, clock = defaultClock }) {
+	onClear = () => {}, onStart = () => {}, onInvalidate = () => {}, timing = {}, clock = defaultClock }) {
 	const configured = new Map(tools.map((tool) => [tool.id, { ...tool }]));
 	const delay = { blocks: timing.sentenceIdleMs ?? 1500, document: timing.documentIdleMs ?? 8000 };
 	const timers = { blocks: null, document: null, roles: null };
@@ -19,7 +19,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 
 	function enabled(level, only) {
 		return [...configured.values()].filter((tool) => tool.enabled && tool.level === level
-			&& (!only || tool.id === only)).map((tool) => tool.id);
+			&& (!tool.onDemand || only === tool.id) && (!only || tool.id === only)).map((tool) => tool.id);
 	}
 	function hashMap(snapshot) {
 		return new Map(snapshot.blocks.map((block) => [block.id, blockSignature(block)]));
@@ -47,6 +47,8 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 		if (scope === "blocks" && !toolId) dirty.clear();
 		const hashes = hashMap(model);
 		const covered = scope === "blocks" ? new Map(blockIds.map((id) => [id, hashes.get(id)])) : hashes;
+		if (toolId && [...inFlight].some((flight) => !flight.controller.signal.aborted
+			&& flight.tools.includes(toolId) && sameHashes(flight))) return;
 		const controller = new AbortController();
 		const request = { documentId, pathname, title, tools: names, blocks: model.blocks,
 			linkedPathnames: model.linkedPathnames ?? [], scope };
@@ -54,6 +56,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 		const flight = { scope, tools: names, hashes: covered,
 			order: model.blocks.map((block) => block.id), controller };
 		inFlight.add(flight);
+		onStart({ tools: names, scope });
 		let response;
 		try { response = judge(request, { signal: controller.signal }); }
 		catch (error) { response = Promise.reject(error); }
@@ -76,7 +79,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 				}
 			})
 			.catch((error) => {
-				if (!controller.signal.aborted && !destroyed) onAnnotations([], {
+				if (!controller.signal.aborted && !destroyed && sameHashes(flight)) onAnnotations([], {
 					tools: names, scope, blockIds, errors: [{ message: error.message }],
 				});
 			})
@@ -106,6 +109,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 		for (const flight of inFlight) {
 			if (flight.scope === "document" || [...edited].some((id) => flight.hashes.has(id))) {
 				flight.controller.abort();
+				onInvalidate({ tools: flight.tools, scope: flight.scope });
 				if (flight.scope === "blocks") {
 					for (const id of flight.hashes.keys()) if (after.has(id)) dirty.add(id);
 				}

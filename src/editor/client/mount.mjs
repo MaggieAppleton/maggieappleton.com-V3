@@ -14,6 +14,7 @@ import { EditorDock, MountFailureDock } from "./editor-dock.mjs";
 import { createAssistPlugin } from "../assist/client/assist-plugin.mjs";
 import { createAssistTransport } from "../assist/client/assist-transport.mjs";
 import { createAssistController } from "../assist/client/assist-controller.mjs";
+import { outlineRevision } from "../assist/shared/outline-revision.mjs";
 import { Drawer, getDrawerViews } from "../assist/client/Drawer.mjs";
 import { HoverCard } from "../assist/client/popover/HoverCard.mjs";
 import { RoleHover, roleHoverRows } from "../assist/client/popover/RoleHover.mjs";
@@ -122,6 +123,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [mapOpen, setMapOpen] = useState(false);
 	const [mapAnnotation, setMapAnnotation] = useState(null);
 	const [mapError, setMapError] = useState(null);
+	const [mapLoading, setMapLoading] = useState(false);
+	const [mapBlocks, setMapBlocks] = useState([]);
 	const [hover, setHover] = useState(null);
 	const [pinned, setPinned] = useState(null);
 	const openWordFinder = useCallback((selection) => { setHover(null); setPinned({ tool: "word-finder", selection }); }, []);
@@ -192,8 +195,12 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 						? enabledChecks(enabled, assistStatus.tools.checks?.available)
 						: Boolean(enabled && assistStatus.tools[id]?.available),
 				])), dismissals,
+				onSnapshot: (snapshot) => setMapBlocks(snapshot.blocks),
+				onToolStart({ tools }) { if (tools.includes("argument-map")) { setMapLoading(true); setMapError(null); } },
+				onToolInvalidate({ tools }) { if (tools.includes("argument-map")) setMapLoading(false); },
 				onToolResult({ annotations, meta, mapFailed }) {
 					if (!meta.tools.includes("argument-map")) return;
+					setMapLoading(false);
 					const map = annotations.some((annotation) => annotation.tool === "argument-map" && annotation.kind === "map");
 					if (map) setMapError(null);
 					else if (mapFailed) setMapError(meta.errors.find((error) => !error.tool || error.tool === "argument-map")?.message ?? "Argument map is unavailable.");
@@ -267,6 +274,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	useEffect(() => {
 		if (!assistController) return;
 		if (mapOpen) setMapError(null);
+		else setMapLoading(false);
 		assistController.setToolEnabled("argument-map", Boolean(mapOpen && assistStatus?.tools?.["argument-map"]?.available));
 	}, [assistController, assistStatus, mapOpen]);
 	useEffect(() => {
@@ -469,7 +477,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			role: "status", "aria-atomic": "true" }, roleAnnouncement),
 		createPortal(React.createElement(Drawer, { open: mapOpen, onClose: () => setMapOpen(false),
 			jumpTo: (sentenceId) => assistController?.jumpTo(sentenceId),
-			map: mapAnnotation?.data?.map, loading: mapOpen && !mapAnnotation && !mapError, error: mapError }), document.body),
+			map: mapAnnotation?.data?.map, loading: mapLoading, error: mapError,
+			stale: Boolean(mapAnnotation && mapAnnotation.data.map.revision !== outlineRevision(mapBlocks)),
+			currentBlocks: mapBlocks, onRefresh: () => assistController?.refreshMap() }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
 			interactive: hover.annotation.tool === "links" || hover.annotation.tool === "checks"

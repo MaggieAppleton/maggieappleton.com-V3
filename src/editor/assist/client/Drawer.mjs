@@ -28,7 +28,7 @@ function savedViewId(views) {
 }
 
 /** Shared right-hand drawer. Registered views receive the editor's jumpTo callback and current map. */
-export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () => {}, map, loading = false, error = null }) {
+export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () => {}, map, loading = false, error = null, stale = false, currentBlocks, onRefresh = () => {} }) {
 	const [selectedId, setSelectedId] = useState(() => savedViewId(views));
 	const closeButton = useRef(null);
 	useEffect(() => {
@@ -55,7 +55,7 @@ export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () =>
 	},
 		React.createElement("header", { className: "editor-assist-drawer-header" },
 			React.createElement("h2", null, "Argument"),
-			views.length > 0 && React.createElement("div", { className: "editor-assist-drawer-views", role: "group", "aria-label": "Argument map view" },
+			views.length > 1 && React.createElement("div", { className: "editor-assist-drawer-views", role: "group", "aria-label": "Argument map view" },
 				views.map((view) => React.createElement("button", {
 					key: view.id,
 					type: "button",
@@ -69,6 +69,6 @@ export function Drawer({ open, onClose, views = getDrawerViews(), jumpTo = () =>
 				React.createElement(XIcon, { size: 18, "aria-hidden": "true" })),
 		),
 		activeView && React.createElement("div", { className: "editor-assist-drawer-body", key: activeView.id },
-			activeView.render({ jumpTo, map, loading, error })),
+			activeView.render({ jumpTo, map, loading, error, stale, currentBlocks, onRefresh })),
 	);
 }

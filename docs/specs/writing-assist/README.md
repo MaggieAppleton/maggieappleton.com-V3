@@ -22,12 +22,12 @@ Each spec is one vertical slice and one PR. Build them in this order:
 | 00 | [Foundation](00-foundation.md) | — | Sentence model, assist routes, provider adapters, sidecar store, overlay rendering, popover system, Assist panel, drawer shell |
 | 01 | [Sentence roles](01-sentence-roles.md) | 00 | Colour tint behind each sentence by role; hover shows the role split |
 | 02 | [Repetition finder](02-repetition.md) | 00, 01 | End-of-sentence mark on repeated points; popover lists every instance |
-| 03 | [Argument map](03-argument-map.md) | 00, 01 | Drawer with Structure and Flow views; click to jump |
+| 03 / 07 | [Reverse outline](07-reverse-outline.md) | 00 | Whole-piece summary, core questions, expandable outline; OpenAI generates and Jev checks; click sources to jump |
 | 04 | [Margin checks](04-margin-checks.md) | 00 | Citation needed, hedging mismatch, likely objections, clichés, mixed metaphors |
 | 05 | [Word finder](05-word-finder.md) | 00 | Select a word or phrase and get ranked alternatives |
 | 06 | [Link suggestions](06-link-suggestions.md) | 00 | Dotted underline on phrases that could link to other site content |
 
-Once 00 lands, slices 04, 05 and 06 are independent and can run in parallel. Slices 02 and 03 read the roles from 01.
+Once 00 lands, slices 04, 05 and 06 are independent and can run in parallel. Slice 02 reads the roles from 01. The reverse outline is independent of sentence roles.
 
 ## Decisions every spec shares
 
@@ -35,7 +35,7 @@ These are settled. Don't reopen them in individual specs.
 
 - **Dev only.** All routes are injected only when `command === "dev"` and are guarded like the existing `/_editor/api/document` route (origin and token).
 - **Nothing is written into the document.** Annotations are an overlay. They are never Lexical nodes or marks and never reach the MDX. Only an explicit **Apply** changes text, and it does so as a normal Lexical update, so undo and autosave work unchanged.
-- **Analysis runs at two speeds.** Sentence-level tools run on a changed paragraph about 1.5 s after typing stops. Document-level tools (repetition, argument map, link suggestions) run after about 8 s idle, or when their UI opens.
+- **Analysis runs at two speeds.** Sentence-level tools run on a changed paragraph about 1.5 s after typing stops. Document-level tools (repetition and link suggestions) run after about 8 s idle. The reverse outline generates on drawer open or explicit Update outline; edits mark it out of date.
 - **What gets analysed.**
   - Analysed: paragraphs, list items, headings, and the editable writing components `IntroParagraph`, `Footnote` and `AssumedAudience`.
   - Not analysed: code, frontmatter, other JSX components.

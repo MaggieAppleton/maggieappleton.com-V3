@@ -1,5 +1,13 @@
 # Writing Assist decisions
 
+## 2026-09-27 · 07 reverse outline · Inspection-first redesign
+
+Maggie approved replacing Structure and Flow with a reverse outline: a whole-piece summary, core questions showing what the draft answers or leaves open, compact main moves, and expandable paragraph summaries linked to their original passages. OpenAI generates; Jev checks faithfulness and relevance before display. The feature no longer depends on sentence-role classification and never rearranges text.
+
+Generation runs on opening the drawer or explicit Update outline, rather than the old document idle refresh. Edits mark the accepted snapshot out of date; missing source IDs disable navigation. Block IDs are content-derived, so expansion persists only for unchanged source ranges. Rejected required summaries remain source-linked placeholders; rejected optional questions/observations are omitted. Grouping failure retains the previous accepted snapshot with an error.
+
+Noul judgments have no separate confidence field; code thresholds their finite 0–1 probabilities. Initial thresholds are faithful 0.8, relevant 0.65, grouping 0.75, and observations 0.85. These are configurable starting points, not calibrated quality claims. Complete generation input is limited to 24,000 serialised characters so whole-draft checking fits Jev budgets without truncation; oversized drafts get an explicit error. At most one schema repair and one semantic repair are allowed.
+
 ## 2026-09-27 · Shared popovers · Final jig widths
 
 Hover cards are capped at 320px so they cannot exceed the default 340px pinned cards. The link hover is 270px beside its 290px pinned chooser; the repetition pinned card remains 520px. At the jig's single-column breakpoint, paired examples fill the same column width.

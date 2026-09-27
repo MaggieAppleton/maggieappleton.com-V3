@@ -577,3 +577,46 @@ test("annotation store never exposes an annotation on quoted evidence", () => {
 	assert.deepEqual(store.getAnnotations(), []);
 	assert.equal(store.getRole(sentence.id), null);
 });
+
+test("on-demand outlines run only on open or explicit refresh, never after idle edits", async () => {
+	const clock = fakeClock(); const requests = []; const cleared = [];
+	const scheduler = createAssistScheduler({ documentId: "notes:test", clock,
+		tools: [{ id: "argument-map", level: "document", enabled: true, onDemand: true }],
+		judge: async request => { requests.push(request); return { annotations: [] }; },
+		onAnnotations() {}, onClear: tool => cleared.push(tool),
+	});
+	scheduler.start(snapshot("An opening."));
+	assert.equal(requests.length, 0);
+	scheduler.runNow("argument-map");
+	assert.equal(requests.length, 1);
+	await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+	scheduler.update(snapshot("A revised opening.")); clock.tick(8000);
+	assert.equal(requests.length, 1);
+	scheduler.runNow("argument-map"); assert.equal(requests.length, 2);
+	scheduler.setToolEnabled("argument-map", false);
+	scheduler.update(snapshot("Another revision.")); clock.tick(8000);
+	assert.equal(requests.length, 2);
+	scheduler.setToolEnabled("argument-map", true); assert.equal(requests.length, 3);
+	scheduler.destroy();
+});
+
+test("on-demand stale responses and errors are discarded, close aborts work, duplicate refreshes share a flight", async () => {
+	const pending = []; const results = []; const starts = []; const invalidated = [];
+	const scheduler = createAssistScheduler({ documentId: "notes:test",
+		tools: [{ id: "argument-map", level: "document", enabled: true, onDemand: true }],
+		judge(request, { signal }) { return new Promise((resolve, reject) => pending.push({ signal, resolve, reject })); },
+		onAnnotations: result => results.push(result), onStart: meta => starts.push(meta), onInvalidate: meta => invalidated.push(meta),
+	});
+	scheduler.start(snapshot("Original.")); scheduler.runNow("argument-map"); scheduler.runNow("argument-map");
+	assert.equal(pending.length, 1);
+	scheduler.update(snapshot("Edited."));
+	assert.equal(pending[0].signal.aborted, true);
+	assert.equal(invalidated.length, 1);
+	pending[0].reject(new Error("Obsolete error"));
+	await Promise.resolve(); await Promise.resolve(); assert.deepEqual(results, []);
+	scheduler.runNow("argument-map"); assert.equal(starts.length, 2);
+	scheduler.setToolEnabled("argument-map", false); assert.equal(pending[1].signal.aborted, true);
+	pending[1].resolve({ annotations: [{ tool: "argument-map", id: "late" }] });
+	await Promise.resolve(); assert.deepEqual(results, []);
+	scheduler.destroy();
+});

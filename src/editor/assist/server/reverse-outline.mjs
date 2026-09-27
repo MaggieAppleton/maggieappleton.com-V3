@@ -64,7 +64,21 @@ function failures(outline, answers, thresholds) {
 }
 
 function preserveAccepted(previous, repaired, failed) {
-	if (failed.includes("grouping")) return repaired;
+	if (failed.includes("grouping")) {
+		const acceptedParagraphs = new Map();
+		let number = 0;
+		for (const move of previous.moves) for (const paragraph of move.paragraphs) {
+			if (!failed.includes(`paragraph_${number}`)) acceptedParagraphs.set(paragraph.blockId, paragraph);
+			number += 1;
+		}
+		return { ...repaired,
+			summary: failed.includes("summary") ? repaired.summary : previous.summary,
+			questions: previous.questions.map((item, i) => failed.includes(`question_${i}`) ? repaired.questions[i] ?? item : item),
+			observations: previous.observations.map((item, i) => failed.includes(`observation_${i}`) ? repaired.observations[i] ?? item : item),
+			moves: repaired.moves.map((move) => ({ ...move, paragraphs: move.paragraphs.map((paragraph) =>
+				acceptedParagraphs.get(paragraph.blockId) ?? paragraph) })),
+		};
+	}
 	const rejected = new Set(failed);
 	// Stable references keep an accepted interpretation attached to the same passage.
 	const merged = structuredClone(previous);
@@ -79,8 +93,9 @@ function preserveAccepted(previous, repaired, failed) {
 		...(rejected.has(`move_${i}`) && repaired.moves[i] ? { title: repaired.moves[i].title, summary: repaired.moves[i].summary } : {}),
 		paragraphs: move.paragraphs.map((paragraph, j) => {
 			const rejectedParagraph = rejected.has(`paragraph_${index++}`);
-			return rejectedParagraph && repaired.moves[i]?.paragraphs[j]
-				? { ...paragraph, summary: repaired.moves[i].paragraphs[j].summary } : paragraph;
+			const replacement = repaired.moves.flatMap((item) => item.paragraphs).find((item) => item.blockId === paragraph.blockId);
+			return rejectedParagraph && replacement
+				? { ...paragraph, summary: replacement.summary } : paragraph;
 		}),
 	}));
 	return merged;
@@ -122,10 +137,15 @@ export function createReverseOutline({ generator, sidecars, config }) {
 				const response = await generator.run({ tool: "argument-map", purpose: "outline", json: true, snapshot, ...(repair ? { repair } : {}) }, { signal });
 				signal?.throwIfAborted(); return response.json;
 			};
-			let candidate = cached?.outline ?? await generate();
+			let candidate;
 			let outline;
-			try { outline = validateOutline(candidate, snapshot); }
+			let received = false;
+			try {
+				candidate = cached?.outline ?? await generate(); received = true;
+				outline = validateOutline(candidate, snapshot);
+			}
 			catch (error) {
+				if (!received && error.code !== "invalid_generation_response") throw error;
 				candidate = await generate({ previous: candidate, failed: ["schema"], criteria: error.message });
 				outline = validateOutline(candidate, snapshot);
 			}
@@ -137,7 +157,7 @@ export function createReverseOutline({ generator, sidecars, config }) {
 			};
 			let failed = await check(outline);
 			if (failed.length) {
-				const repaired = await generate({ previous: outline, failed, criteria: "Make each failed interpretation faithful to the linked source, preserve uncertainty and attribution, and capture its main point. For grouping, regroup the draft into meaningful consecutive main moves." });
+				const repaired = await generate({ previous: outline, failed, items: itemsFor(outline).filter((item) => failed.includes(item.key)), criteria: "Make each failed interpretation faithful to the linked source, preserve uncertainty and attribution, and capture its main point. For grouping, regroup the draft into meaningful consecutive main moves." });
 				try { outline = validateOutline(preserveAccepted(outline, validateOutline(repaired, snapshot), failed), snapshot); }
 				catch { /* Keep the valid original; failed items will remain unavailable. */ }
 				failed = await check(outline);

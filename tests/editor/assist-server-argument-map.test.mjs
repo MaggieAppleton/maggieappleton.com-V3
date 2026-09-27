@@ -16,12 +16,12 @@ const outline = () => ({
   paragraphs: [{ blockId: "p1", summary: "Revision helps ideas develop." }, { blockId: "p2", summary: "Reader engagement remains an open question." }] }],
  observations: [],
 });
-function setup({ candidates = [outline()], scores = () => .98, entries = new Map(), thresholds = {} } = {}) {
+function setup({ candidates = [outline()], scores = () => .98, entries = new Map(), thresholds = {}, failFirst = false } = {}) {
  const generated = [];
  const calls = [];
  const config = { judge: { model: "jev-test" }, tools: { "argument-map": { generator: { provider: "openai", model: "gpt-test" }, thresholds } } };
  const judge = createJudge({ config,
-  generator: { async run(request) { generated.push(request); return { json: structuredClone(candidates[Math.min(generated.length - 1, candidates.length - 1)]) }; } },
+  generator: { async run(request) { generated.push(request); if (failFirst && generated.length === 1) throw Object.assign(new Error("Invalid JSON"), { code: "invalid_generation_response" }); return { json: structuredClone(candidates[Math.min(generated.length - 1, candidates.length - 1)]) }; } },
   jev: { async systemOne(request) { calls.push(request); return { answers: Object.fromEntries(Object.keys(request.questions).map(key => [key,
    scores(key, request) === undefined ? undefined : { type: "noul", noul: scores(key, request) }])) }; } },
   sidecars: { async getCache(doc, key) { return entries.get(doc + key); }, async setCache(doc, key, value) { entries.set(doc + key, value); } },
@@ -107,4 +107,26 @@ test("argument availability requires both the generator and Jev", () => {
  const status = assistStatus(assistConfig, { TYPESAFE_API_KEY: "key" });
  assert.equal(status.tools["argument-map"].available, false);
  assert.match(status.tools["argument-map"].reason, /OPENAI/);
+});
+
+test("regrouping preserves accepted whole-piece and paragraph interpretations", async () => {
+	const repaired = outline();
+	repaired.summary.text = "Changed whole-piece summary.";
+	repaired.moves = [
+		{ title: "Revision", summary: "Revision develops ideas.", sourceIds: ["p1"], paragraphs: [{ blockId: "p1", summary: "Changed accepted paragraph." }] },
+		{ title: "Engagement", summary: "Engagement is unresolved.", sourceIds: ["p2"], paragraphs: [{ blockId: "p2", summary: "Changed second accepted paragraph." }] },
+	];
+	const s = setup({ candidates: [outline(), repaired], scores: (key, request) => key === "grouping"
+		&& JSON.stringify(request.state).includes("Revision and its limits") ? .1 : .98 });
+	const result = await s.run(); assert.deepEqual(result.errors, []);
+	const map = result.annotations[0].data.map;
+	assert.equal(map.moves.length, 2);
+	assert.equal(map.summary.text, outline().summary.text);
+	assert.equal(map.moves[0].paragraphs[0].summary, "Revision helps ideas develop.");
+});
+
+test("invalid generation JSON receives a single schema repair", async () => {
+ const s = setup({ failFirst: true });
+ const result = await s.run(); assert.deepEqual(result.errors, []);
+ assert.equal(result.annotations[0].data.map.moves.length, 1); assert.equal(s.generated.length, 2);
 });
