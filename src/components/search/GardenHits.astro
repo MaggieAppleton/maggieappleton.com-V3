@@ -96,7 +96,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 						data-draft={post.data.draft === true ? "true" : undefined}
 						data-has-cover={post.data.cover ? "true" : undefined}
 					>
-						{post.data.draft === true && <span class="draft-pill">draft</span>}
+						{post.data.draft === true && <span class="draft-pill">Draft</span>}
 						{isPodcast && (
 							<PodcastCard
 								{...commonProps}
