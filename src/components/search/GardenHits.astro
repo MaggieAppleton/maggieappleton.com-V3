@@ -9,6 +9,7 @@ import SmidgeonCard from "../cards/SmidgeonCard.astro";
 import NowCard from "../cards/NowCard.astro";
 import { extractPreview } from "../../utils/extractPreview";
 import { extractBaseSlug } from "../../utils/versionUtils";
+import { getDraftPreviewSlug } from "../../utils/publicationRoutes.mjs";
 
 interface Post {
 	id: string;
@@ -23,6 +24,7 @@ interface Post {
 		title?: string;
 		description?: string;
 		growthStage?: string;
+		draft?: boolean;
 		topics?: string[];
 		cover?: string;
 		podcastName?: string;
@@ -77,7 +79,11 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 				const commonProps = {
 					key: i,
 					id: post.id,
-					slug: post.data.type === "now" ? `now-${post.id}` : extractBaseSlug(post.id),
+					slug: post.data.type === "now"
+						? `now-${post.id}`
+						: post.data.draft === true
+							? getDraftPreviewSlug(post)
+							: extractBaseSlug(post.id),
 					date: dateField,
 				};
 
@@ -87,7 +93,10 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 						data-type={post.data.type}
 						data-growth-stage={post.data.growthStage}
 						data-topics={post.data.topics?.join(",")}
+						data-draft={post.data.draft === true ? "true" : undefined}
+						data-has-cover={post.data.cover ? "true" : undefined}
 					>
+						{post.data.draft === true && <span class="draft-pill">draft</span>}
 						{isPodcast && (
 							<PodcastCard
 								{...commonProps}
@@ -164,6 +173,32 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		will-change: opacity, transform;
 		break-inside: avoid;
 		page-break-inside: avoid;
+		position: relative;
+	}
+
+	.draft-pill {
+		position: absolute;
+		top: var(--space-2xs);
+		right: var(--space-xs);
+		z-index: 1;
+		padding: 0.1rem 0.5rem;
+		border: 1px solid var(--color-gray-300);
+		border-radius: 2rem;
+		background: var(--color-cream);
+		color: var(--color-gray-700);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		line-height: 1.3;
+		pointer-events: none;
+	}
+
+	.grid-item[data-draft="true"] :global(.note-card),
+	.grid-item[data-draft="true"] :global(.pattern-card),
+	.grid-item[data-draft="true"] :global(.now-card),
+	.grid-item[data-draft="true"] :global(.smidgeon-card),
+	.grid-item[data-draft="true"]:not([data-has-cover="true"]) :global(.essay-card),
+	.grid-item[data-draft="true"]:not([data-has-cover="true"]) :global(.talk-card) {
+		padding-top: var(--space-l);
 	}
 
 	.grid-item.filtered-out {
@@ -193,6 +228,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		topic: string,
 		growthStage: string,
 		types: string[],
+		draftsOnly: boolean,
 	): boolean {
 		const itemTopics = item.dataset.topics?.split(",") || [];
 		// Podcast items don't set data.type — treat empty as "podcast".
@@ -202,8 +238,9 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		const matchesTopic = !topic || itemTopics.includes(topic);
 		const matchesGrowthStage = !growthStage || itemGrowthStage === growthStage;
 		const matchesType = types.length === 0 || types.includes(itemType);
+		const matchesDraft = !draftsOnly || item.dataset.draft === "true";
 
-		return matchesTopic && matchesGrowthStage && matchesType;
+		return matchesTopic && matchesGrowthStage && matchesType && matchesDraft;
 	}
 
 	// Called before every pass so rapid filter clicks don't stack animations.
@@ -220,17 +257,17 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		item.style.opacity = "";
 	}
 
-	function filterGridItemsInstant(topic: string, growthStage: string, types: string[]) {
+	function filterGridItemsInstant(topic: string, growthStage: string, types: string[], draftsOnly: boolean) {
 		document.querySelectorAll<HTMLElement>(".grid-item").forEach((item) => {
 			clearItemMotionStyles(item);
-			item.classList.toggle("filtered-out", !computeVisible(item, topic, growthStage, types));
+			item.classList.toggle("filtered-out", !computeVisible(item, topic, growthStage, types, draftsOnly));
 		});
 	}
 
 	// FLIP: measure current (First) positions, apply the new filter (Last),
 	// then animate the delta. Exiting cards are pinned at their old
 	// on-screen position while their neighbours reflow around them.
-	function filterGridItemsAnimated(topic: string, growthStage: string, types: string[]) {
+	function filterGridItemsAnimated(topic: string, growthStage: string, types: string[], draftsOnly: boolean) {
 		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item"));
 
 		items.forEach(clearItemMotionStyles);
@@ -245,7 +282,7 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 
 		const willBeVisible = new Map<HTMLElement, boolean>();
 		items.forEach((item) =>
-			willBeVisible.set(item, computeVisible(item, topic, growthStage, types)),
+			willBeVisible.set(item, computeVisible(item, topic, growthStage, types, draftsOnly)),
 		);
 
 		const exiting: HTMLElement[] = [];
@@ -328,14 +365,14 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 	}
 
 	// Function to filter grid items
-	function filterGridItems(topic: string, growthStage: string, types: string[]) {
+	function filterGridItems(topic: string, growthStage: string, types: string[], draftsOnly: boolean) {
 		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		const supportsAnimate = typeof HTMLElement.prototype.animate === "function";
 
 		if (prefersReducedMotion || !supportsAnimate) {
-			filterGridItemsInstant(topic, growthStage, types);
+			filterGridItemsInstant(topic, growthStage, types, draftsOnly);
 		} else {
-			filterGridItemsAnimated(topic, growthStage, types);
+			filterGridItemsAnimated(topic, growthStage, types, draftsOnly);
 		}
 	}
 
@@ -346,12 +383,13 @@ const sortedPosts = processedPosts.sort((a: Post, b: Post) => {
 		const customEvent = event as CustomEvent;
 		clearTimeout(filterTimeout);
 		filterTimeout = setTimeout(() => {
-			const { topic, growthStage, types } = customEvent.detail as {
+			const { topic, growthStage, types, draftsOnly } = customEvent.detail as {
 				topic: string;
 				growthStage: string;
 				types: string[];
+				draftsOnly: boolean;
 			};
-			filterGridItems(topic || "", growthStage || "", Array.isArray(types) ? types : []);
+			filterGridItems(topic || "", growthStage || "", Array.isArray(types) ? types : [], draftsOnly === true);
 		}, 50) as unknown as number;
 	}
 
