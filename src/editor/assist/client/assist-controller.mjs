@@ -61,7 +61,7 @@ export function plainParagraphSelection(block, model) {
 
 /** Keep the analysis, sidecar and visual overlays outside Lexical's document. */
 export function createAssistController({ editor, wrapper, transport, documentId, pathname, title, config,
-	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {}, onToolResult = () => {} }) {
+	enabledTools = {}, dismissals = [], onHover = () => {}, onPin = () => {}, onToolResult = () => {}, onSnapshot = () => {}, onToolStart = () => {}, onToolInvalidate = () => {} }) {
 	const model = createSentenceModel(editor);
 	let enabledChecks = activeChecks(enabledTools.checks);
 	let jumpTimer;
@@ -132,8 +132,8 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			.concat(annotations.filter((item) => item.tool !== "debug" && item.tool !== "links")));
 	});
 	const scheduler = createAssistScheduler({ documentId, pathname, title, timing: config.timing,
-		tools: getClientTools().filter(({ id }) => config.tools[id]).map(({ id, level }) => ({
-			id, level, enabled: id === "checks" ? enabledChecks.length > 0
+		tools: getClientTools().filter(({ id }) => config.tools[id]).map(({ id, level, onDemand }) => ({
+			id, level, onDemand, enabled: id === "argument-map" ? false : id === "checks" ? enabledChecks.length > 0
 				: Boolean(config.tools[id].enabled && enabledTools[id]),
 		})),
 		judge: (request, options) => transport.judge(request.tools.includes("checks")
@@ -146,7 +146,8 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			if (tools.length) store.applyResult(annotations, { ...meta, tools });
 			onToolResult({ annotations, meta, mapFailed });
 		},
-		onClear: (toolId) => store.clearTool(toolId),
+		onClear: (toolId) => { if (toolId !== "argument-map") store.clearTool(toolId); },
+		onStart: onToolStart, onInvalidate: onToolInvalidate,
 	});
 	const unsubscribeModel = model.subscribe((snapshot) => {
 		store.setModel(snapshot);
@@ -154,10 +155,12 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		highlights.update(store.getAnnotations());
 		roleGradients.refresh();
 		scheduler.update(snapshot);
+		onSnapshot(snapshot);
 	});
 	const initial = model.getSnapshot();
 	store.setModel(initial);
 	scheduler.start(initial);
+	onSnapshot(initial);
 	function textSelectionPoints(target) {
 		const startId = target.startSentenceId ?? target.sentenceId;
 		const endId = target.endSentenceId ?? startId;
@@ -182,6 +185,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 
 	return {
 		model, store,
+		refreshMap: () => scheduler.runNow("argument-map", { refresh: true }),
 		getRoleAtSelection() {
 			const selection = root.ownerDocument.getSelection();
 			if (!selection?.anchorNode || !selection.focusNode

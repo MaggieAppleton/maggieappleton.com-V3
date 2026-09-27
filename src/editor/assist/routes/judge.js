@@ -19,6 +19,6 @@ export async function ALL({ request }) {
 		const status = assistStatus(assistConfig);
 		if (!status.judge.available) return editorJson({ annotations: [],
 			errors: input.tools.map((tool) => ({ tool, message: status.judge.reason })) });
-		return editorJson(await judge.judge(input));
+		return editorJson(await judge.judge(input, { signal: request.signal }));
 	} catch (error) { return editorError(error); }
 }

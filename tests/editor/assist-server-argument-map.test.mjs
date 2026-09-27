@@ -1,229 +1,179 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
-import { argumentMapTool, assembleArgumentMap } from "../../src/editor/assist/server/tools/argument-map.mjs";
-import { getTool } from "../../src/editor/assist/server/tools/index.mjs";
 import { createJudge } from "../../src/editor/assist/server/judge.mjs";
+import { assistStatus } from "../../src/editor/assist/server/status.mjs";
+import { assistConfig } from "../../src/editor/assist/config.mjs";
 
-const sentence = (id, text) => ({ id, hash: id, text });
 const blocks = [
-	{ id: "intro", kind: "paragraph", sentences: [sentence("i1", "A question opens the essay.")] },
-	{ id: "heading", kind: "heading", sentences: [sentence("h1", "The case for gardens")] },
-	{ id: "thesis", kind: "paragraph", sentences: [sentence("t1", "A digital garden helps ideas grow."), sentence("t2", "A survey found sustained engagement.")] },
-	{ id: "quote", kind: "quote", quoted: true, sentences: [sentence("q1", "Readers returned to the garden.")] },
-	{ id: "claim", kind: "paragraph", sentences: [sentence("c1", "Gardens encourage revision."), sentence("c2", "A public changelog illustrates this.")] },
-	{ id: "unsupported", kind: "paragraph", sentences: [sentence("u1", "Gardens also improve memory.")] },
-	{ id: "framing", kind: "paragraph", sentences: [sentence("f1", "A closing thought follows.")] },
-	{ id: "tangent", kind: "paragraph", sentences: [sentence("o1", "My desk has a green lamp.")] },
+ { id: "p1", kind: "paragraph", hash: "a", sentences: [{ id: "s1", text: "Gardens let ideas grow through revision." }] },
+ { id: "h1", kind: "heading", sentences: [{ id: "sh", text: "An open question" }] },
+ { id: "p2", kind: "paragraph", hash: "b", sentences: [{ id: "s2", text: "We do not know whether readers return more often." }] },
 ];
-const roleAnnotations = [
-	{ target: { sentenceId: "t1" }, kind: "claim" },
-	{ target: { sentenceId: "t2" }, kind: "evidence" },
-	{ target: { sentenceId: "c1" }, kind: "claim" },
-	{ target: { sentenceId: "c2" }, kind: "example" },
-];
-const context = { blocks, roleAnnotations, title: "Gardens", config: {
-	tools: { "argument-map": { thresholds: { parent: 0.4, advances: 0.35 } } },
-} };
-const choice = (winner, probability = 0.8) => ({ type: "choice", choice: winner, probabilities: { [winner]: probability } });
-const answers = {
-	thesis_paragraph: choice("P2"),
-	job_P1: choice("framing"), job_P2: choice("thesis"), job_P3: choice("claim"),
-	job_P4: choice("claim"), job_P5: choice("framing"), job_P6: choice("claim"),
-	parent_P2: choice("P1"), parent_P3: choice("P2", 0.3), parent_P4: choice("P3"),
-	parent_P5: choice("P4"), parent_P6: choice("P4"),
-	advances_P1: { type: "noul", noul: 0.1 }, advances_P2: { type: "noul", noul: 0.9 },
-	advances_P3: { type: "noul", noul: 0.8 }, advances_P4: { type: "noul", noul: 0.8 },
-	advances_P5: { type: "noul", noul: 0.1 }, advances_P6: { type: "noul", noul: 0.2 },
-	main_P1: choice("P1.S1"), main_P2: choice("P2.S1"), main_P3: choice("P3.S1"),
-	main_P4: choice("P4.S1"), main_P5: choice("P5.S1"), main_P6: choice("P6.S1"),
-};
-
-test("argument map builds two Jev requests with prose tags, quote context and bounded choices", () => {
-	const requests = argumentMapTool.buildRequests(context);
-	assert.equal(requests.length, 2);
-	const [jobs, mains] = requests;
-	assert.equal(jobs.key, "jobs");
-	assert.equal(mains.key, "mains");
-	assert.match(jobs.state.paragraphs, /P2\| A digital garden helps ideas grow/);
-	assert.match(jobs.state.paragraphs, /\[quote\] Readers returned to the garden/);
-	assert.doesNotMatch(jobs.state.paragraphs, /The case for gardens/);
-	assert.match(mains.state.paragraphs, /P3\.S2\| A public changelog illustrates this/);
-	assert.deepEqual(Object.keys(jobs.questions.parent_P3.criteria), ["none", "P1", "P2"]);
-	assert.deepEqual(Object.keys(mains.questions.main_P3.criteria), ["P3.S1", "P3.S2"]);
-	assert.equal(jobs.questions.advances_P3.type, "noul");
-	assert.equal(getTool("argument-map"), argumentMapTool);
+const outline = () => ({
+ summary: { text: "The draft explores revisable writing and leaves reader engagement unresolved.", sourceIds: ["p1", "p2"] },
+ questions: [{ question: "Do readers return more often?", answer: "The draft leaves this unresolved.", status: "open", sourceIds: ["p2"] }],
+ moves: [{ title: "Revision and its limits", summary: "Revision helps ideas grow, while its effect on engagement is unknown.", sourceIds: ["p1", "p2"],
+  paragraphs: [{ blockId: "p1", summary: "Revision helps ideas develop." }, { blockId: "p2", summary: "Reader engagement remains an open question." }] }],
+ observations: [],
+});
+function setup({ candidates = [outline()], scores = () => .98, entries = new Map(), thresholds = {}, failFirst = false, failRepair = false, repairFailure = null } = {}) {
+ const generated = [];
+ const calls = [];
+ const config = { judge: { model: "jev-test" }, tools: { "argument-map": { generator: { provider: "openai", model: "gpt-test" }, thresholds } } };
+ const judge = createJudge({ config,
+  generator: { async run(request) { generated.push(request); if (repairFailure && generated.length === 2) throw repairFailure; if ((failFirst && generated.length === 1) || (failRepair && generated.length === 2)) throw Object.assign(new Error("Invalid JSON"), { code: "invalid_generation_response" }); return { json: structuredClone(candidates[Math.min(generated.length - 1, candidates.length - 1)]) }; } },
+  jev: { async systemOne(request) { calls.push(request); return { answers: Object.fromEntries(Object.keys(request.questions).map(key => [key,
+   scores(key, request) === undefined ? undefined : { type: "noul", noul: scores(key, request) }])) }; } },
+  sidecars: { async getCache(doc, key) { return entries.get(doc + key); }, async setCache(doc, key, value) { entries.set(doc + key, value); } },
+ });
+ const run = (more = {}) => judge.judge({ documentId: "notes:garden", scope: "document", tools: ["argument-map"], title: "Garden", blocks, ...more });
+ return { run, generated, calls, entries };
+}
+test("generates a checked reverse outline without sentence-role classification and reuses it", async () => {
+ const s = setup(); const first = await s.run();
+ assert.deepEqual(first.errors, []);
+ const map = first.annotations[0].data.map;
+ assert.equal(map.summary.text, "The draft explores revisable writing and leaves reader engagement unresolved.");
+ assert.equal(map.questions[0].status, "open");
+ assert.equal(map.moves.length, 1);
+ assert.equal(map.moves[0].paragraphs.length, 2);
+ assert.equal(map.sources[0].sentenceId, "s1");
+ assert.ok(s.calls.every(call => Object.values(call.questions).every(q => q.type === "noul")));
+ assert.ok(s.calls.some(call => JSON.stringify(call.state).includes("We do not know whether readers return more often.")));
+ await s.run(); assert.equal(s.generated.length, 1);
+});
+test("repairs invented references and missing prose once before checking", async () => {
+ const bad = outline(); bad.summary.sourceIds = ["invented"];
+ const s = setup({ candidates: [bad, outline()] }); const result = await s.run();
+ assert.deepEqual(result.errors, []); assert.equal(s.generated.length, 2);
+ assert.equal(result.annotations[0].data.map.moves[0].paragraphs[1].blockId, "p2");
+});
+test("never publishes omitted, reordered or duplicated prose after failed repair", async () => {
+ for (const ids of [["p1"], ["p2", "p1"], ["p1", "p1", "p2"]]) {
+  const bad = outline(); bad.moves[0].sourceIds = ids;
+  bad.moves[0].paragraphs = ids.map(blockId => ({ blockId, summary: "Revision develops ideas." }));
+  const s = setup({ candidates: [bad] }); const result = await s.run();
+  assert.equal(result.annotations.length, 0); assert.equal(result.errors.length, 1); assert.equal(s.generated.length, 2);
+ }
+});
+test("missing or nonfinite Jev scores cannot approve a summary", async () => {
+ for (const score of [undefined, NaN, Infinity, -1, 2]) {
+  const s = setup({ scores: key => key === "summary_faithful" ? score : .98 }); const result = await s.run();
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.annotations[0].data.map.summary.text, null);
+  assert.equal(result.annotations[0].data.map.summary.unavailable, true);
+ }
+});
+test("rechecks a targeted repair and preserves already accepted summaries", async () => {
+ const repaired = outline(); repaired.summary.text = "Incorrectly changed accepted summary.";
+ repaired.moves[0].paragraphs[1].summary = "The writer does not yet know how often readers return.";
+ const s = setup({ candidates: [outline(), repaired], scores: (key, request) => key === "paragraph_1_faithful"
+  && JSON.stringify(request.state).includes("Reader engagement remains an open question.") ? .1 : .98 });
+ const result = await s.run(); assert.deepEqual(result.errors, []);
+ assert.equal(s.generated.length, 2);
+ assert.equal(result.annotations[0].data.map.summary.text, outline().summary.text);
+ assert.equal(result.annotations[0].data.map.moves[0].paragraphs[1].summary, repaired.moves[0].paragraphs[1].summary);
+});
+test("rejected question statuses are omitted and rejected moves keep source placeholders", async () => {
+ const s = setup({ scores: key => key.startsWith("question_0") || key.startsWith("move_0") ? .1 : .98 });
+ const result = await s.run(); const map = result.annotations[0].data.map;
+ assert.equal(map.questions.length, 0); assert.equal(map.moves[0].summary, null);
+ assert.deepEqual(map.moves[0].sourceIds, ["p1", "p2"]);
+ assert.equal(map.moves[0].paragraphs.length, 2);
+});
+test("failed collective grouping returns an error instead of a convincing incomplete map", async () => {
+ const s = setup({ scores: key => key === "grouping" ? .1 : .98 }); const result = await s.run();
+ assert.equal(result.annotations.length, 0); assert.match(result.errors[0].message, /group/i); assert.equal(s.generated.length, 2);
+});
+test("changed thresholds reevaluate cached judgments without regenerating accepted prose", async () => {
+ const entries = new Map(); const loose = setup({ entries, scores: () => .85, thresholds: { faithful: .8 } });
+ assert.equal((await loose.run()).annotations[0].data.map.summary.unavailable, false);
+ const strict = setup({ entries, scores: () => .85, thresholds: { faithful: .9 } });
+ const map = (await strict.run()).annotations[0].data.map;
+ assert.equal(map.summary.unavailable, true);
+ assert.equal(strict.generated.length, 1, "only one semantic repair is needed; initial generation is cached");
+});
+test("large drafts fail explicitly without dropping source text", async () => {
+ const s = setup(); const result = await s.run({ blocks: [{ ...blocks[0], sentences: [{ id: "s", text: "x".repeat(40000) }] }] });
+ assert.equal(result.annotations.length, 0); assert.match(result.errors[0].message, /too large|limit/i); assert.equal(s.generated.length, 0);
+});
+test("empty drafts do not request either model, and one-paragraph drafts are usable", async () => {
+ const s = setup(); const empty = await s.run({ blocks: [] });
+ assert.equal(empty.annotations[0].data.map.moves.length, 0); assert.equal(s.generated.length, 0);
+ const one = outline(); one.summary.sourceIds = ["p1"]; one.questions = [];
+ one.moves[0].sourceIds = ["p1"]; one.moves[0].paragraphs = [one.moves[0].paragraphs[0]];
+ const short = setup({ candidates: [one] }); assert.equal((await short.run({ blocks: [blocks[0]] })).annotations[0].data.map.moves.length, 1);
+});
+test("argument availability requires both the generator and Jev", () => {
+ const status = assistStatus(assistConfig, { TYPESAFE_API_KEY: "key" });
+ assert.equal(status.tools["argument-map"].available, false);
+ assert.match(status.tools["argument-map"].reason, /OPENAI/);
 });
 
-test("assembly chooses thesis, attaches low-confidence parent to it, and makes evidence leaves", () => {
-	const map = assembleArgumentMap(context, answers);
-	assert.equal(map.thesisId, "thesis");
-	assert.deepEqual(map.headings, [{ text: "The case for gardens", beforeNumber: 2 }]);
-	assert.deepEqual(map.paragraphs.map(({ id, number, mainSentenceId }) => [id, number, mainSentenceId]), [
-		["intro", 1, "i1"], ["thesis", 2, "t1"], ["claim", 3, "c1"],
-		["unsupported", 4, "u1"], ["framing", 5, "f1"], ["tangent", 6, "o1"],
-	]);
-	assert.equal(map.paragraphs[2].parentId, "thesis");
-	assert.deepEqual(map.paragraphs[1].leaves, [{ sentenceId: "t2", text: "A survey found sustained engagement.", role: "evidence" }]);
-	assert.deepEqual(map.paragraphs[2].leaves, [{ sentenceId: "c2", text: "A public changelog illustrates this.", role: "example" }]);
-	assert.deepEqual(map.paragraphs[2].sentenceRoles, [
-		{ sentenceId: "c1", role: "claim" }, { sentenceId: "c2", role: "example" },
-	]);
+test("regrouping preserves accepted whole-piece and paragraph interpretations", async () => {
+	const repaired = outline();
+	repaired.summary.text = "Changed whole-piece summary.";
+	repaired.moves = [
+		{ title: "Revision", summary: "Revision develops ideas.", sourceIds: ["p1"], paragraphs: [{ blockId: "p1", summary: "Changed accepted paragraph." }] },
+		{ title: "Engagement", summary: "Engagement is unresolved.", sourceIds: ["p2"], paragraphs: [{ blockId: "p2", summary: "Changed second accepted paragraph." }] },
+	];
+	const s = setup({ candidates: [outline(), repaired], scores: (key, request) => key === "grouping"
+		&& JSON.stringify(request.state).includes("Revision and its limits") ? .1 : .98 });
+	const result = await s.run(); assert.deepEqual(result.errors, []);
+	const map = result.annotations[0].data.map;
+	assert.equal(map.moves.length, 2);
+	assert.equal(map.summary.text, outline().summary.text);
+	assert.equal(map.moves[0].paragraphs[0].summary, "Revision helps ideas develop.");
 });
 
-test("assembly leaves framing and off-thread unattached and flags only unsupported claims", () => {
-	const map = assembleArgumentMap(context, answers);
-	assert.equal(map.paragraphs[0].parentId, null);
-	assert.equal(map.paragraphs[4].parentId, null);
-	assert.equal(map.paragraphs[5].parentId, null);
-	assert.equal(map.paragraphs[5].offThread, true);
-	assert.equal(map.paragraphs[4].offThread, false);
-	assert.equal(map.paragraphs[3].unsupported, true);
-	assert.equal(map.paragraphs[2].unsupported, false);
-	assert.equal(map.paragraphs[4].unsupported, false);
-	assert.equal(map.paragraphs[5].unsupported, false);
+test("invalid generation JSON receives a single schema repair", async () => {
+ const s = setup({ failFirst: true });
+ const result = await s.run(); assert.deepEqual(result.errors, []);
+ assert.equal(result.annotations[0].data.map.moves.length, 1); assert.equal(s.generated.length, 2);
 });
 
-test("a following quote counts as evidence for an otherwise unsupported claim", () => {
-	const changed = { ...answers, job_P2: choice("claim"), job_P3: choice("framing") };
-	const map = assembleArgumentMap(context, changed);
-	assert.equal(map.paragraphs[1].unsupported, false);
-});
-
-test("an evidence-role main sentence is still an evidence leaf", () => {
-	const changed = { ...answers, main_P3: choice("P3.S2") };
-	const map = assembleArgumentMap(context, changed);
-	assert.deepEqual(map.paragraphs[2].leaves, [{ sentenceId: "c2",
-		text: "A public changelog illustrates this.", role: "example" }]);
-});
-
-test("tool emits one document-scoped map annotation", () => {
-	const annotations = argumentMapTool.mapAnswers(context, null, answers);
-	assert.equal(annotations.length, 1);
-	assert.equal(annotations[0].tool, "argument-map");
-	assert.equal(annotations[0].kind, "map");
-	assert.deepEqual(annotations[0].target, { type: "document" });
-	assert.equal(annotations[0].data.map.thesisId, "thesis");
-});
-
-test("chosen thesis is labelled thesis even if the job answer disagrees", () => {
-	const map = assembleArgumentMap(context, { ...answers, job_P2: choice("claim") });
-	assert.equal(map.paragraphs[1].job, "thesis");
-});
-
-test("a claim whose parent is framing falls back to the thesis", () => {
-	const changed = { ...answers, parent_P4: choice("P1") };
-	const map = assembleArgumentMap(context, changed);
-	assert.equal(map.paragraphs[3].parentId, "thesis");
-});
-
-test("judge reuses cached sentence roles when their UI switch is off", async () => {
-	const entries = new Map();
-	const calls = [];
-	const judge = createJudge({
-		jev: { async systemOne(request) {
-			calls.push(request);
-			if (request.questions.role_S1) return { answers: Object.fromEntries(
-				Object.keys(request.questions).map((key) => [key, choice("claim")])) };
-			return { answers: Object.fromEntries(Object.keys(request.questions).map((key) => [key,
-				key === "thesis_paragraph" ? choice("P2") : key.startsWith("main_")
-					? choice(`${key.slice(5)}.S1`) : key.startsWith("job_") ? choice("claim")
-						: key.startsWith("parent_") ? choice("none") : { type: "noul", noul: 0.9 },
-			])) };
-		} },
-		sidecars: {
-			async getCache(documentId, key) { return entries.get(`${documentId}:${key}`); },
-			async setCache(documentId, key, value) { entries.set(`${documentId}:${key}`, value); },
-		},
-		config: { judge: { model: "jev-test" }, tools: {
-			roles: { enabled: false }, "argument-map": { thresholds: { parent: 0.4, advances: 0.35 } },
-		} },
-	});
-	const request = { documentId: "essay:garden", tools: ["argument-map"], blocks,
-		title: "Gardens", scope: "document" };
-	const first = await judge.judge(request);
-	assert.deepEqual(first.errors, []);
-	assert.equal(first.annotations[0].data.map.paragraphs[1].role, "claim");
-	assert.equal(calls.filter((call) => call.questions.thesis_paragraph).length, 1);
-	assert.equal(calls.filter((call) => call.questions.main_P1).length, 1);
-	const afterFirst = calls.length;
-	await judge.judge(request);
-	assert.equal(calls.length, afterFirst);
-});
-
-test("Jev choices stay within the 255-option limit on long documents", () => {
-	const many = Array.from({ length: 300 }, (_, index) => ({ id: `b${index}`, kind: "paragraph",
-		sentences: [sentence(`s${index}`, `Point ${index}.`)] }));
-	const requests = argumentMapTool.buildRequests({ blocks: many });
-	const thesis = requests.find((request) => request.questions.thesis_paragraph)?.questions.thesis_paragraph;
-	const parent = requests.find((request) => request.questions.parent_P300)?.questions.parent_P300;
-	assert.equal(Object.keys(thesis.criteria).length, 255);
-	assert.equal(Object.keys(parent.criteria).length, 255);
-});
-
-test("large Request B states fit the budget and contain every main-choice candidate", () => {
-	const many = Array.from({ length: 40 }, (_, paragraph) => ({ id: `b${paragraph}`, kind: "paragraph",
-		sentences: Array.from({ length: 800 }, (_, index) => sentence(`s${paragraph}-${index}`,
-			`Sentence ${paragraph}-${index} contains a long explanation about this paragraph's main point.`)) }));
-	const requests = argumentMapTool.buildRequests({ blocks: many });
-	assert.ok(requests.length > 2);
-	assert.ok(requests.every((request) => request.state.paragraphs.length <= 64000));
-	const mainRequests = requests.filter((request) => request.key.startsWith("mains"));
-	for (const request of mainRequests) {
-		for (const question of Object.values(request.questions)) {
-			for (const candidate of Object.keys(question.criteria)) {
-				assert.ok(request.state.paragraphs.includes(`${candidate}|`), `missing ${candidate} in ${request.key}`);
-			}
-		}
+test("a 1000+ word draft produces a compact outline and full-source checks within Jev budgets", async () => {
+	const longBlocks = Array.from({ length: 40 }, (_, i) => ({ id: `b${i}`, kind: "paragraph", hash: `h${i}`,
+		sentences: [{ id: `s${i}`, text: `Passage ${i}: writing a draft helps me find what I am trying to say, and revising that draft helps me connect the ideas with examples and questions that remain open. End marker ${i}.` }] }));
+	const candidate = { summary: { text: "The draft explores writing and revision.", sourceIds: ["b0", "b39"] }, questions: [], observations: [],
+		moves: Array.from({ length: 4 }, (_, i) => ({ title: `Explore revision ${i + 1}`, summary: "The writer connects revision with examples and unresolved questions.",
+			sourceIds: longBlocks.slice(i * 10, i * 10 + 10).map(b => b.id),
+			paragraphs: longBlocks.slice(i * 10, i * 10 + 10).map(b => ({ blockId: b.id, summary: "Writing and revision develop the writer's ideas." })) })),
+	};
+	const s = setup({ candidates: [candidate] }); const result = await s.run({ blocks: longBlocks });
+	assert.deepEqual(result.errors, []);
+	assert.equal(result.annotations[0].data.map.moves.length, 4);
+	assert.equal(result.annotations[0].data.map.sources.length, 40);
+	for (const call of s.calls) {
+		assert.ok(JSON.stringify(call.state).length <= 32000);
+		assert.ok(JSON.stringify({ state: call.state, questions: call.questions }).length <= 64000);
 	}
+	assert.ok(s.calls.some(call => JSON.stringify(call.state).includes("End marker 39.")));
+	assert.equal(s.generated[0].snapshot.blocks.at(-1).text, longBlocks.at(-1).sentences[0].text);
 });
 
-test("Request A includes its title within the 64k character state budget", () => {
-	const veryLong = "A".repeat(100000);
-	const [jobs] = argumentMapTool.buildRequests({ blocks: [
-		{ id: "one", kind: "paragraph", sentences: [sentence("s1", veryLong)] },
-	], title: veryLong });
-	assert.ok(jobs.state.title.length + jobs.state.paragraphs.length <= 64000);
+test("cached partial outlines reuse a completed repair until an explicit retry", async () => {
+ const s = setup({ scores: key => key === "summary_faithful" ? .1 : .98 });
+ const first = await s.run(); await s.run(); await s.run();
+ assert.equal(s.generated.length, 2);
+ assert.equal(first.annotations[0].data.map.summary.unavailable, true);
+ await s.run({ refresh: true }); assert.equal(s.generated.length, 3);
+});
+test("malformed semantic repair JSON preserves accepted detail and unavailable source placeholders", async () => {
+ const s = setup({ failRepair: true, scores: key => key === "summary_faithful" ? .1 : .98 });
+ const result = await s.run(); assert.deepEqual(result.errors, []);
+ assert.equal(result.annotations[0].data.map.summary.unavailable, true);
+ assert.equal(result.annotations[0].data.map.moves[0].paragraphs[0].summary, "Revision helps ideas develop.");
+});
+test("accepted heading references retain a navigable source and readable label", async () => {
+ const candidate = outline(); candidate.questions[0].sourceIds = ["h1"];
+ const s = setup({ candidates: [candidate] }); const result = await s.run();
+ const source = result.annotations[0].data.map.sources.find(item => item.blockId === "h1");
+ assert.equal(source.sentenceId, "sh"); assert.equal(source.label, "Heading: An open question");
 });
 
-test("all Jev requests stay within total budget while retaining every question", () => {
-	const many = Array.from({ length: 300 }, (_, index) => ({ id: `b${index}`, kind: "paragraph",
-		sentences: index === 4 ? Array.from({ length: 255 }, (_, sentenceIndex) =>
-			sentence(`s${index}-${sentenceIndex}`, `Long argument ${index}-${sentenceIndex}. `.repeat(20)))
-			: [sentence(`s${index}`, `Point ${index}.`)] }));
-	const requests = argumentMapTool.buildRequests({ blocks: many });
-	assert.ok(requests.length > 2);
-	for (const request of requests) assert.ok(JSON.stringify({ state: request.state, questions: request.questions }).length <= 64000,
-		`${request.key} exceeds total budget`);
-	const questionNames = requests.flatMap((request) => Object.keys(request.questions));
-	assert.equal(new Set(questionNames).size, questionNames.length);
-	assert.equal(questionNames.length, 1 + 300 + 299 + 300 + 300);
-	assert.ok(questionNames.includes("main_P5"));
-	const answers = Object.fromEntries(questionNames.map((name) => [name,
-		name === "thesis_paragraph" ? choice("P1") : name.startsWith("main_")
-			? choice(`${name.slice(5)}.S1`) : name.startsWith("job_") ? choice("claim")
-				: name.startsWith("parent_") ? choice("none") : { type: "noul", noul: 0.9 }]));
-	assert.equal(assembleArgumentMap({ blocks: many, config: context.config }, answers).paragraphs.length, 300);
-});
-
-test("batched main requests retain trailing quote and readable candidate excerpts", () => {
-	const many = Array.from({ length: 13 }, (_, paragraph) => ({ id: `p${paragraph}`, kind: "paragraph",
-		sentences: Array.from({ length: 255 }, (_, index) => sentence(`p${paragraph}s${index}`,
-			`Sentence ${paragraph}-${index} gives a substantial explanation for the argument.`)) }));
-	many.push({ id: "last-quote", kind: "quote", quoted: true,
-		sentences: [sentence("q", "Trailing quoted evidence supports the final paragraph's claim.")] });
-	const requests = argumentMapTool.buildRequests({ blocks: many });
-	const mains = requests.filter((request) => request.key.startsWith("mains"));
-	assert.ok(mains.length > 1);
-	assert.ok(mains.some((request) => request.state.paragraphs.includes("[quote] Trailing quoted evidence")));
-	for (const request of mains) {
-		assert.ok(request.state.paragraphs.length <= 32000);
-		assert.ok(JSON.stringify({ state: request.state, questions: request.questions }).length <= 64000);
-		for (const line of request.state.paragraphs.split("\n")) {
-			if (/^P\d+\.S\d+\| /u.test(line)) assert.ok(line.split("| ")[1].length >= 32, line);
-		}
-	}
-	const mainNames = mains.flatMap((request) => Object.keys(request.questions));
-	assert.equal(mainNames.length, 13);
-	assert.equal(new Set(mainNames).size, 13);
+test("provider failure during semantic repair remains an update error", async () => {
+ const s = setup({ repairFailure: new Error("Provider connection failed"), scores: key => key === "summary_faithful" ? .1 : .98 });
+ const result = await s.run();
+ assert.equal(result.annotations.length, 0); assert.match(result.errors[0].message, /Provider connection failed/);
 });

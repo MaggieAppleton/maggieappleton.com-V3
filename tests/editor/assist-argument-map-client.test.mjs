@@ -2,85 +2,50 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-
-import { ArgumentMapView, argumentMapTool } from "../../src/editor/assist/client/tools/argument-map.mjs";
-import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
+import { ArgumentMapView } from "../../src/editor/assist/client/tools/argument-map.mjs";
 
 const map = {
-	thesisId: "p1",
-	paragraphs: [
-		{ id: "p1", number: 1, mainSentenceId: "s1", mainText: "The central thesis.", job: "thesis", parentId: null,
-			role: "claim", sentenceRoles: [{ sentenceId: "s1", role: "claim" }], leaves: [] },
-		{ id: "p2", number: 2, mainSentenceId: "s2", mainText: "A supported claim.", job: "claim", parentId: "p1",
-			role: "claim", sentenceRoles: [{ sentenceId: "s2", role: "claim" }, { sentenceId: "s3", role: "evidence" }],
-			leaves: [{ sentenceId: "s3", text: "Study evidence.", role: "evidence" }] },
-		{ id: "p3", number: 3, mainSentenceId: "s4", mainText: "An unsupported claim.", job: "claim", parentId: "p1",
-			unsupported: true, role: "claim", sentenceRoles: [{ sentenceId: "s4", role: "claim" }], leaves: [] },
-		{ id: "p4", number: 4, mainSentenceId: "s5", mainText: "A tangent.", job: "off_thread", parentId: null,
-			offThread: true, role: "framing", sentenceRoles: [{ sentenceId: "s5", role: "framing" }], leaves: [] },
-	],
-	headings: [{ text: "The case", beforeNumber: 2 }, { text: "A second section", beforeNumber: 2 }, { text: "Closing notes", beforeNumber: 5 }],
+ revision: "fixture", summary: { text: "The piece explores revision and an unresolved question.", sourceIds: ["p1", "p2"] },
+ questions: [{ question: "Do readers return?", answer: "The draft does not establish this.", status: "open", sourceIds: ["p2"] }],
+ moves: [{ title: "Revision and engagement", summary: "Revision helps ideas grow, but reader engagement is unresolved.", sourceIds: ["p1", "p2"],
+  paragraphs: [{ blockId: "p1", summary: "Ideas develop through revision." }, { blockId: "p2", summary: "Engagement is still unknown." }] }],
+ observations: [{ text: "The engagement question is introduced but not developed.", reason: "The ending leaves it unresolved.", sourceIds: ["p2"] }],
+ sources: [{ blockId: "p1", number: 1, sentenceId: "s1" }, { blockId: "p2", number: 2, sentenceId: "s2" }],
 };
-
-test("argument map tool registers document metadata", () => {
-	assert.deepEqual({ id: argumentMapTool.id, label: argumentMapTool.label, group: argumentMapTool.group, level: argumentMapTool.level }, {
-		id: "argument-map", label: "Argument map", group: "Structure", level: "document",
-	});
+const render = props => renderToStaticMarkup(React.createElement(ArgumentMapView, { map, ...props }));
+test("outline exposes a whole-piece interpretation, questions and expandable moves without role inventory", () => {
+ const html = render();
+ assert.match(html, /The piece explores revision/); assert.match(html, /Do readers return/); assert.match(html, /Left open/);
+ assert.match(html, /<details/); assert.match(html, /<summary/); assert.match(html, /Revision and engagement/);
+ assert.match(html, /¶1–2/); assert.match(html, /Ideas develop through revision/);
+ assert.doesNotMatch(html, /role-strip|No supporting evidence|Off-thread:/);
+});
+test("source controls follow current block identities and disable removed passages", () => {
+ const html = render({ currentBlocks: [{ id: "p1", kind: "paragraph", sentences: [{ id: "new-s1" }] }] });
+ assert.match(html, /data-sentence-id="new-s1"/); assert.doesNotMatch(html, /data-sentence-id="s1"/);
+ assert.match(html, /disabled=""[^>]*>¶2/);
+});
+test("rejected summaries remain navigable placeholders, not accepted prose", () => {
+ const changed = structuredClone(map); changed.summary.text = null; changed.summary.unavailable = true;
+ changed.moves[0].title = "Summary unavailable"; changed.moves[0].summary = null; changed.moves[0].unavailable = true;
+ changed.moves[0].paragraphs[1].summary = null; changed.moves[0].paragraphs[1].unavailable = true;
+ const html = render({ map: changed }); assert.match(html, /Summary unavailable/); assert.match(html, /¶2/);
+ assert.doesNotMatch(html, /Engagement is still unknown/);
+});
+test("refresh and stale states retain the outline alongside update errors", () => {
+ const html = render({ stale: true, loading: true, error: "Could not update" });
+ assert.match(html, /Out of date/); assert.match(html, /Updating/); assert.match(html, /Could not update/);
+ assert.match(html, /Revision and engagement/);
+ const retry = render({ map: null, error: "Needs a provider" }); assert.match(retry, /Retry/);
+});
+test("empty drafts have an empty state and initial generation has a skeleton", () => {
+ assert.match(render({ map: { ...map, moves: [] } }), /Nothing to outline yet/);
+ assert.match(render({ map: null, loading: true }), /Loading reverse outline/);
 });
 
-test("Structure renders a thesis tree, support leaves, warning and off-thread links", () => {
-	const html = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", map, jumpTo() {} }));
-	assert.match(html, /data-testid="argument-map-structure"/);
-	assert.match(html, /The central thesis/);
-	assert.match(html, /Study evidence/);
-	assert.match(html, /Study evidence.*¶2/);
-	assert.match(html, /⚠ No supporting evidence/);
-	assert.match(html, /Off-thread:.*¶4/);
-	assert.match(html, /data-sentence-id="s3"/);
-});
-
-test("Flow renders headings, job relation, unsupported flag and role strip", () => {
-	const html = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "flow", map, jumpTo() {} }));
-	assert.match(html, /data-testid="argument-map-flow"/);
-	assert.match(html, /The case/);
-	assert.match(html, /A second section/);
-	assert.match(html, /Closing notes/);
-	assert.match(html, /→ supports ¶1/);
-	assert.match(html, /· unsupported/);
-	assert.match(html, /editor-argument-map-role-strip/);
-	assert.match(html, /aria-label="Sentence roles: Claim, Evidence"/);
-});
-
-test("Flow makes a low-advances raw claim visibly off-thread", () => {
-	const offThreadMap = { ...map, paragraphs: map.paragraphs.filter((paragraph) => paragraph.id !== "p4").map((paragraph) =>
-		paragraph.id === "p2" ? { ...paragraph, offThread: true } : paragraph) };
-	const html = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "flow", map: offThreadMap, jumpTo() {} }));
-	assert.match(html, /editor-argument-map-job--off_thread/);
-	assert.match(html, />Off-thread</);
-});
-
-test("map errors replace the initial skeleton and remain alongside an existing map", () => {
-	const initial = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", loading: true,
-		error: "Needs TYPESAFE_API_KEY", jumpTo() {} }));
-	const refresh = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", map,
-		error: "Argument map is unavailable", jumpTo() {} }));
-	assert.match(initial, /Needs TYPESAFE_API_KEY/);
-	assert.doesNotMatch(initial, /Loading argument map/);
-	assert.match(refresh, /Argument map is unavailable/);
-	assert.match(refresh, /The central thesis/);
-});
-
-test("map view shows the short empty state and a quiet loading skeleton", () => {
-	const empty = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", map: { ...map, paragraphs: map.paragraphs.slice(0, 2) }, jumpTo() {} }));
-	const loading = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", loading: true, jumpTo() {} }));
-	assert.match(empty, /Not enough to map yet\./);
-	assert.match(loading, /aria-label="Loading argument map"/);
-});
-
-test("document map annotations remain visible across a sentence-model refresh", () => {
-	const store = createAnnotationStore();
-	store.setModel({ blocks: [{ id: "p1", hash: "old", sentences: [{ id: "s1", hash: "old" }] }] });
-	store.replaceTool("argument-map", [{ tool: "argument-map", kind: "map", target: { type: "document" }, data: { map } }]);
-	store.setModel({ blocks: [{ id: "p1", hash: "new", sentences: [{ id: "s1", hash: "new" }] }] });
-	assert.equal(store.getAnnotations()[0].data.map, map);
+test("heading references remain clickable without a prose paragraph number", () => {
+ const changed = structuredClone(map); changed.questions[0].sourceIds = ["h"];
+ changed.sources.push({ blockId: "h", sentenceId: "hs", label: "Heading: An open question" });
+ const html = render({ map: changed, currentBlocks: [{ id: "h", kind: "heading", sentences: [{ id: "new-hs" }] }] });
+ assert.match(html, /data-sentence-id="new-hs"/); assert.match(html, /Heading: An open question/);
 });

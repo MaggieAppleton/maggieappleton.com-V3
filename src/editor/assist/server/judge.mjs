@@ -2,6 +2,7 @@ import { assistConfig } from "../config.mjs";
 import { hash } from "../shared/hash.mjs";
 import { toolRegistry } from "./tools/index.mjs";
 import { rolesTool } from "./tools/roles.mjs";
+import { createReverseOutline } from "./reverse-outline.mjs";
 import { rankWordFinder } from "./word-finder.mjs";
 
 function cacheKey(tool, model, request) {
@@ -13,23 +14,26 @@ function errorMessage(error) {
 }
 
 /** Run independent tool requests through Jev, caching raw answers per document. */
-export function createJudge({ jev, tools = toolRegistry, config = assistConfig, sidecars } = {}) {
+export function createJudge({ jev, tools = toolRegistry, config = assistConfig, sidecars, generator } = {}) {
 	if (!jev || typeof jev.systemOne !== "function") throw new TypeError("Judge needs a Jev client");
 	if (!tools || typeof tools.get !== "function") throw new TypeError("Judge needs a tool registry");
 	if (!sidecars || typeof sidecars.getCache !== "function" || typeof sidecars.setCache !== "function") {
 		throw new TypeError("Judge needs a sidecar store");
 	}
 	const pending = new Map();
+	const reverseOutline = createReverseOutline({ generator, sidecars, config });
 
-	function answersFor(tool, documentId, builtRequest) {
+	function answersFor(tool, documentId, builtRequest, signal) {
 		const key = cacheKey(tool, config.judge.model, builtRequest);
 		const flightKey = `${documentId}:${key}`;
-		if (pending.has(flightKey)) return pending.get(flightKey);
+		if (!signal && pending.has(flightKey)) return pending.get(flightKey);
+		signal?.throwIfAborted();
 		const result = (async () => {
 			const cached = await sidecars.getCache(documentId, key);
 			if (cached?.answers) return cached.answers;
 			const response = await jev.systemOne({ model: config.judge.model,
-				state: builtRequest.state, questions: builtRequest.questions });
+				state: builtRequest.state, questions: builtRequest.questions }, signal ? { signal } : undefined);
+			signal?.throwIfAborted();
 			const answers = response?.answers;
 			if (!answers || typeof answers !== "object") throw new Error("Jev returned no answers");
 			await sidecars.setCache(documentId, key,
@@ -47,16 +51,17 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 		return built.flatMap((request, index) => rolesTool.mapAnswers(context, request.key, answers[index]));
 	}
 
-	async function runTool(tool, request) {
+	async function runTool(tool, request, signal) {
 		const context = {
+			documentId: request.documentId, reverseOutline, signal, refresh: request.refresh === true,
 			blocks: request.blocks, targetBlockIds: request.blockIds,
 			allBlocks: request.blocks, linkedPathnames: request.linkedPathnames,
 			pathname: request.pathname, title: request.title, config, enabledChecks: request.enabledChecks,
 		};
 		if (typeof tool.run === "function") {
-			return tool.run(context, (builtRequest) => answersFor(tool, request.documentId, builtRequest));
+			return tool.run(context, (builtRequest) => answersFor(tool, request.documentId, builtRequest, signal));
 		}
-		if (tool.id === "repetition" || tool.id === "argument-map") {
+		if (tool.id === "repetition") {
 			context.roleAnnotations = await rolesFor(context, request.documentId);
 		}
 		const built = await tool.buildRequests(context);
@@ -69,7 +74,7 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 	}
 
 	return {
-		async judge(request) {
+		async judge(request, { signal } = {}) {
 			if (!request || typeof request.documentId !== "string" || !Array.isArray(request.tools) || !Array.isArray(request.blocks)) {
 				throw new TypeError("Invalid judge request");
 			}
@@ -81,7 +86,7 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 				if (!tool) return { annotations: [], error: { tool: id, message: "Unknown assist tool" } };
 				if ((request.scope === "blocks" && tool.level !== "sentence")
 					|| (request.scope === "document" && tool.level !== "document")) return { annotations: [] };
-				try { return { annotations: await runTool(tool, request) }; }
+				try { return { annotations: await runTool(tool, request, signal) }; }
 				catch (error) { return { annotations: [], error: { tool: id, message: errorMessage(error) } }; }
 			}));
 			return {

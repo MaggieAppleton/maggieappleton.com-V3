@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
+import { outlineRevision } from "../../../src/editor/assist/shared/outline-revision.mjs";
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
 
 test.describe.serial("Writing Assist argument map", () => {
@@ -39,73 +40,94 @@ A focused thesis gives each claim a purpose. Small decisions then become easier 
 		finally { if (fixture) await fixture.cleanup(); }
 	});
 
-	test("Map opens Structure, switches to Flow, and remembers the view after reload", async ({ page }) => {
-		const mapRequests = await mockArgumentMap(page);
+	test("Map opens a compact reverse outline and ignores an old Flow preference", async ({ page }) => {
+		const requests = await mockArgumentMap(page);
+		await page.addInitScript(() => localStorage.setItem("writing-assist:map-view", "flow"));
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
-		await expect(page.getByRole("button", { name: "Map", exact: true })).toBeVisible();
 		await page.getByRole("button", { name: "Map", exact: true }).click();
-
 		const drawer = page.getByRole("dialog", { name: "Argument map" });
-		await expect(drawer).toBeVisible();
-		await expect(drawer.getByRole("button", { name: "Structure", exact: true })).toHaveAttribute("aria-pressed", "true");
-		const structure = page.getByTestId("argument-map-structure");
-		await expect(structure).toContainText("A clear structure makes complex ideas easier to follow.");
-		await expect(structure).toContainText("A focused thesis gives each claim a purpose.");
-		await expect(structure).toContainText("Evidence makes each claim more convincing.");
-		assert.equal(mapRequests.length, 1);
-		assert.deepEqual(mapRequests[0].tools, ["argument-map"]);
-		assert.equal(mapRequests[0].scope, "document");
-
-		await drawer.getByRole("button", { name: "Flow", exact: true }).click();
-		await expect(drawer.getByRole("button", { name: "Flow", exact: true })).toHaveAttribute("aria-pressed", "true");
-		await expect(page.getByTestId("argument-map-flow")).toContainText("Evidence makes each claim more convincing.");
-		await page.reload();
-		await page.getByRole("button", { name: "Map", exact: true }).click();
-		await expect(page.getByRole("dialog", { name: "Argument map" }).getByRole("button", { name: "Flow", exact: true }))
-			.toHaveAttribute("aria-pressed", "true");
-		await expect(page.getByTestId("argument-map-flow")).toBeVisible();
+		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
+		await expect(drawer).toContainText("How does evidence strengthen an argument?");
+		await expect(drawer).toContainText("Answered");
+		await expect(drawer.getByRole("button", { name: "Flow", exact: true })).toHaveCount(0);
+		await expect(drawer.locator("details[open]")).toHaveCount(0);
+		assert.equal(requests.length, 1);
+		assert.deepEqual(requests[0].tools, ["argument-map"]);
+		const overviewFont = await drawer.locator(".editor-outline-overview p").evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize]);
+		const answerFont = await drawer.locator(".editor-outline-questions p").evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize]);
+		assert.deepEqual(answerFont, overviewFont, "nested outline text must use the same compact type scale");
+		await page.setViewportSize({ width: 1440, height: 1100 });
 	});
 
-	test("clicking a map row places the caret at that sentence", async ({ page }) => {
+	test("keyboard expansion reveals paragraph summaries without changing the caret; source links jump", async ({ page }) => {
 		await mockArgumentMap(page);
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
 		await page.getByRole("button", { name: "Map", exact: true }).click();
-		const sentence = "A focused thesis gives each claim a purpose.";
-		const row = page.getByTestId("argument-map-structure").getByRole("button", { name: new RegExp(sentence) });
-		await row.click();
-		await expect.poll(() => page.getByRole("textbox", { name: "Article body" }).evaluate((root) => {
-			const selection = root.ownerDocument.getSelection();
-			return selection?.anchorNode?.textContent?.includes("A focused thesis gives each claim a purpose.") ?? false;
-		})).toBe(true);
-		await expect(page.getByRole("dialog", { name: "Argument map" })).toBeVisible();
-	});
-
-	test("editing with the drawer open refreshes its rows after the document idle delay", async ({ page }) => {
-		const mapRequests = await mockArgumentMap(page);
-		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
-		await page.getByRole("button", { name: "Map", exact: true }).click();
 		const drawer = page.getByRole("dialog", { name: "Argument map" });
-		await expect(drawer).toContainText("A focused thesis gives each claim a purpose.");
-		await replaceSentence(page, "A focused thesis gives each claim a purpose.", "A focused thesis guides every claim.");
-		await expect.poll(() => mapRequests.length).toBe(2);
-		await expect(drawer).toContainText("A focused thesis guides every claim.");
+		await expect(drawer.locator("details")).toHaveCount(2);
+		const caret = () => page.evaluate(() => {
+			const s = window.getSelection(); return [s?.anchorNode?.textContent, s?.anchorOffset];
+		});
+		const before = await caret();
+		await drawer.locator("summary").first().focus();
+		await page.keyboard.press("Enter");
+		await expect(drawer.locator("details[open]")).toHaveCount(1);
+		assert.deepEqual(await caret(), before);
+		await drawer.locator(".editor-outline-paragraphs").getByRole("button", { name: "¶2", exact: true }).click();
+		await expect.poll(() => page.getByRole("textbox", { name: "Article body" }).evaluate(root =>
+			root.ownerDocument.getSelection()?.anchorNode?.textContent?.includes("A focused thesis") ?? false)).toBe(true);
 		await expect(drawer).toBeVisible();
 	});
 
-	test("does not request a map while its drawer is closed", async ({ page }) => {
-		const mapRequests = await mockArgumentMap(page);
+	test("editing marks the outline stale and waits for an explicit update", async ({ page }) => {
+		const requests = await mockArgumentMap(page);
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
-		await page.waitForTimeout(120);
-		assert.equal(mapRequests.length, 0, "the map should not analyse the document on editor load");
-
 		await page.getByRole("button", { name: "Map", exact: true }).click();
-		await expect(page.getByRole("dialog", { name: "Argument map" })).toBeVisible();
-		await expect.poll(() => mapRequests.length).toBe(1);
-		await page.getByRole("dialog", { name: "Argument map" }).getByRole("button", { name: "Close" }).click();
-		await expect(page.getByRole("dialog", { name: "Argument map" })).toHaveCount(0);
-		await replaceSentence(page, "Evidence makes each claim more convincing.", "Evidence strengthens each claim.");
+		const drawer = page.getByRole("dialog", { name: "Argument map" });
+		await expect(drawer.locator("details")).toHaveCount(2);
+		await drawer.locator("summary").first().click();
+		await drawer.locator("summary").last().click();
+		await replaceSentence(page, "A focused thesis gives each claim a purpose.", "A focused thesis guides every claim.");
+		await expect(drawer).toContainText("Out of date");
+		await expect(drawer.locator(".editor-outline-paragraphs").getByRole("button", { name: "¶2", exact: true })).toBeDisabled();
 		await page.waitForTimeout(180);
-		assert.equal(mapRequests.length, 1, "editing while closed must not schedule another map request");
+		assert.equal(requests.length, 1);
+		await drawer.getByRole("button", { name: "Update outline", exact: true }).click();
+		await expect.poll(() => requests.length).toBe(2);
+		await expect(drawer).not.toContainText("Out of date");
+		await expect(drawer.locator("details[open]")).toHaveCount(1);
+		await drawer.locator("summary").first().click();
+		await expect(drawer).toContainText("A focused thesis guides every claim.");
+	});
+
+	test("retains accepted summaries after update failure and offers retry", async ({ page }) => {
+		const requests = await mockArgumentMap(page);
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		await page.getByRole("button", { name: "Map", exact: true }).click();
+		const drawer = page.getByRole("dialog", { name: "Argument map" });
+		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
+		await page.route("**/_editor/api/assist/judge", route => route.fulfill({ json: {
+			annotations: [], errors: [{ tool: "argument-map", message: "Jev is unavailable" }],
+		} }));
+		await drawer.getByRole("button", { name: "Update outline", exact: true }).click();
+		await expect(drawer.getByRole("alert")).toContainText("Jev is unavailable");
+		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
+		await expect(drawer.getByRole("button", { name: "Update outline", exact: true })).toBeEnabled();
+	});
+
+	test("does not request an outline while the drawer is closed", async ({ page }) => {
+		const requests = await mockArgumentMap(page);
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		await page.waitForTimeout(120); assert.equal(requests.length, 0);
+		await page.getByRole("button", { name: "Map", exact: true }).click();
+		const drawer = page.getByRole("dialog", { name: "Argument map" });
+		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
+		await drawer.getByRole("button", { name: "Close", exact: true }).click();
+		await replaceSentence(page, "Evidence makes each claim more convincing.", "Evidence strengthens each claim.");
+		await page.waitForTimeout(180); assert.equal(requests.length, 1);
+		await page.getByRole("button", { name: "Map", exact: true }).click();
+		await expect(drawer).toContainText("The draft connects a clear thesis with evidence.");
+		await expect.poll(() => requests.length).toBe(2);
 	});
 });
 
@@ -133,38 +155,18 @@ async function mockArgumentMap(page) {
 }
 
 function mapAnnotation(request) {
-	const blocks = request.blocks.filter((block) => block.kind !== "heading" && !block.quoted);
-	const jobs = ["thesis", "claim", "support"];
-	const paragraphs = blocks.map((block, index) => {
-		const main = block.sentences[0];
-		const parent = index === 2 ? blocks[1]?.id : index === 1 ? blocks[0]?.id : null;
-		const job = jobs[index] ?? "support";
-		return {
-			id: block.id,
-			number: index + 1,
-			mainSentenceId: main?.id,
-			mainText: main?.text,
-			job,
-			parentId: parent,
-			offThread: false,
-			unsupported: false,
-			role: job === "support" ? "evidence" : "claim",
-			sentenceRoles: block.sentences.map((sentence, sentenceIndex) => ({
-				sentenceId: sentence.id,
-				role: sentenceIndex === 0 ? (job === "support" ? "evidence" : "claim") : "example",
-			})),
-			leaves: block.sentences.slice(1).map((sentence) => ({ sentenceId: sentence.id, text: sentence.text, role: "example" })),
-		};
-		});
-	return {
-		id: "argument-map:document:map",
-		tool: "argument-map",
-		kind: "map",
-		target: { type: "document" },
-		unitHash: "fixture-document",
-		confidence: 1,
-		data: { map: { thesisId: blocks[0]?.id, paragraphs, headings: [] } },
-	};
+	const blocks = request.blocks.filter(block => block.kind !== "heading" && !block.quoted);
+	const sources = blocks.map((block, i) => ({ blockId: block.id, number: i + 1, sentenceId: block.sentences[0].id }));
+	const move = (selected, title, summary) => ({ title, summary, sourceIds: selected.map(b => b.id),
+		paragraphs: selected.map(block => ({ blockId: block.id, summary: block.sentences[0].text })) });
+	return { id: "argument-map:document:map", tool: "argument-map", kind: "map", target: { type: "document" },
+		unitHash: "fixture", confidence: 1, data: { map: {
+			revision: outlineRevision(request.blocks), sources,
+			summary: { text: "The draft connects a clear thesis with evidence.", sourceIds: blocks.map(b => b.id) },
+			questions: [{ question: "How does evidence strengthen an argument?", answer: "It helps readers assess a claim.", status: "answered", sourceIds: [blocks.at(-1).id] }],
+			moves: [move(blocks.slice(0, 2), "Give the argument a focus", "A clear thesis connects the ideas in a piece."),
+				move(blocks.slice(2), "Ground claims in evidence", "Evidence helps readers assess the argument.")], observations: [],
+		} } };
 }
 
 async function replaceSentence(page, current, replacement) {
