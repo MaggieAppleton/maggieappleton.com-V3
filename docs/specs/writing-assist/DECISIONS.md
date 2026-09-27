@@ -1,5 +1,9 @@
 # Writing Assist decisions
 
+## 2026-09-27 · Sentence roles · Mixed classification tint
+
+Maggie asked for the sentence tint to show the probability split when several roles are substantial. This supersedes spec 01's exactly one solid colour. Roles at or above the existing 10% hover threshold form a soft gradient with lengths proportional to their probabilities; effectively single-role sentences keep their solid tint. A separate, non-interactive overlay paints wrapped text lines because CSS Custom Highlights cannot paint a background image. The role annotation and hover card remain unchanged, and no tint enters Lexical or MDX.
+
 ## 2026-09-26 · 00 foundation · Default text generator
 
 Maggie asked for OpenAI `gpt-6-sol` as Writing Assist's default text generator. The debug tool therefore uses OpenAI `gpt-6-sol` instead of the Anthropic Haiku model shown in the approved foundation config. `OPENAI_MODEL` can override the model, and the OpenAI provider is available when its API key is set. The Anthropic adapter remains available for tools that select it. This changes the default provider and model; the interface and tool behaviour stay as specified.

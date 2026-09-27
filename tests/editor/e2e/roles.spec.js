@@ -91,9 +91,10 @@ This paragraph stays unchanged while the first paragraph is edited.
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await expect(editor).toBeVisible();
 		await expect.poll(() => roleRangeCounts(page)).toEqual({
-			claim: 1, opinion: 1, evidence: 1, example: 0, qualification: 0,
-			speculation: 0, concession: 0, framing: 1,
+			claim: 0, opinion: 1, evidence: 1, example: 0, qualification: 0,
+			speculation: 0, concession: 0, framing: 1, gradient: 1,
 		});
+		await expect(page.locator(".writing-assist-role-gradient-line")).toHaveCount(1);
 		assert.equal(judgeRequests.length, 1);
 		assert.equal(judgeRequests[0].blockIds.length, 2, "initial analysis should include both paragraphs");
 
@@ -171,8 +172,8 @@ This paragraph stays unchanged while the first paragraph is edited.
 		assert.ok(judgeRequests[1].blocks.find((block) => block.id === judgeRequests[1].blockIds[0])
 			.sentences.some((sentence) => sentence.text === "The sky is green."));
 		await expect.poll(() => roleRangeCounts(page)).toEqual({
-			claim: 1, opinion: 1, evidence: 1, example: 0, qualification: 0,
-			speculation: 0, concession: 0, framing: 1,
+			claim: 0, opinion: 1, evidence: 1, example: 0, qualification: 0,
+			speculation: 0, concession: 0, framing: 1, gradient: 1,
 		});
 
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"))
@@ -186,6 +187,7 @@ This paragraph stays unchanged while the first paragraph is edited.
 		await expect(page.locator(".wa-hover-card")).toHaveCount(0);
 		await expect.poll(async () => Object.values(await roleRangeCounts(page)).every((count) => count === 0))
 			.toBe(true);
+		await expect(page.locator(".writing-assist-role-gradient-line")).toHaveCount(0);
 		await expect(page.locator("#wa-role-status")).toHaveText("");
 		await expect(editor).not.toHaveAttribute("aria-describedby", /\bwa-role-status\b/);
 		assert.equal(await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"), editedSource,
@@ -195,7 +197,7 @@ This paragraph stays unchanged while the first paragraph is edited.
 
 async function roleRangeCounts(page) {
 	return page.evaluate(() => Object.fromEntries([
-		"claim", "opinion", "evidence", "example", "qualification", "speculation", "concession", "framing",
+		"claim", "opinion", "evidence", "example", "qualification", "speculation", "concession", "framing", "gradient",
 	].map((role) => {
 		const highlight = CSS.highlights.get(`wa-role-${role}`);
 		return [role, highlight ? [...highlight].length : 0];
