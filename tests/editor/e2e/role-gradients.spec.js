@@ -15,7 +15,7 @@ test("mixed role gradients follow wrapped editor text in both themes", async ({ 
 	let server;
 	try {
 		const slug = `assist-gradients-${randomUUID().slice(0, 8)}`;
-		await fixture.write(`src/content/notes/${slug}.mdx`, `---\ntitle: Assist role gradients\nstartDate: 2026-09-27\nupdated: 2026-09-27\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\n${FIRST} ${SECOND} ${THIRD}\n`);
+		await fixture.write(`src/content/notes/${slug}.mdx`, `---\ntitle: Assist role gradients\nstartDate: 2026-09-27\nupdated: 2026-09-27\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\n<IntroParagraph>${FIRST}</IntroParagraph>\n\n${SECOND} ${THIRD}\n`);
 		const configPath = fixture.resolve("src/editor/assist/config.mjs");
 		await fixture.write("src/editor/assist/config.mjs",
 			`${await readFile(configPath, "utf8")}\nassistConfig.tools.roles = { ...(assistConfig.tools.roles ?? {}), enabled: true };\n`);
@@ -50,6 +50,12 @@ test("mixed role gradients follow wrapped editor text in both themes", async ({ 
 		await expect.poll(() => page.locator(".writing-assist-role-gradient-line").count()).toBeGreaterThan(2);
 		await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get("wa-role-gradient") ?? [])].length)).toBe(2);
 		await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get("wa-role-evidence") ?? [])].length)).toBe(1);
+		const dropCap = page.locator('.editor-body [data-writing-component="IntroParagraph"] .drop-cap');
+		await expect(dropCap).toHaveText("I");
+		assert.equal(await page.evaluate(() => {
+			const cap = document.querySelector('.editor-body [data-writing-component="IntroParagraph"] .drop-cap');
+			return [...CSS.highlights.get("wa-role-gradient")].some((range) => range.intersectsNode(cap.firstChild));
+		}), false, "role gradients must exclude the intro drop cap");
 		await checkGeometry(page);
 		const backgrounds = await page.locator(".writing-assist-role-gradient-line")
 			.evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).backgroundImage));
