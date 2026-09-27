@@ -68,6 +68,21 @@ test("each hover purpose tells the model what to judge and which JSON fields to 
 	}
 });
 
+test("hedging rewrites address the flagged direction while preserving personal facts", async () => {
+	const output = service(JSON.stringify({ reason: "Unnecessary qualifier.",
+		rewrites: ["A calendar year has twelve months.", "Every calendar year has twelve months.", "Calendar years have twelve months."] }));
+	await output.generate.run({ ...request("hedging"), messages: [
+		{ role: "user", content: "Sentence: A calendar year might have twelve months.\nDirection: over-hedging." },
+	] });
+	const prompt = output.calls[0].system;
+	assert.match(prompt, /over-hedging.*remove needless qualifiers/iu);
+	assert.match(prompt, /overclaiming.*sweeping or speculative claims/iu);
+	assert.match(prompt, /names.*facts.*meaning.*voice/iu);
+	assert.match(prompt, /(?:do not|never) add (?:I think|maybe)/iu);
+	assert.match(prompt, /feelings.*preferences.*opinions/iu);
+	assert.match(prompt, /external claim.*personal/iu);
+});
+
 test("checks rejects malformed hover JSON and unsupported generation purposes", async () => {
 	const malformed = [
 		["cliche", { phrase: "phrase", reason: "Reason", suggestions: ["only one"] }],

@@ -4,7 +4,14 @@ import { validateWordFinderCandidates, wordFinderPrompt } from "./word-finder.mj
 
 const checkInstructions = {
 	cliche: " Find the cliché, stock phrase, or dead metaphor in the supplied sentence. Return only JSON with phrase, reason, suggestions. The phrase must be an exact substring of the sentence. Give one short reason and three replacements for the phrase only, not the whole sentence.",
-	hedging: " Judge whether the supplied sentence's wording overclaims or over-hedges its idea. Return only JSON with reason and rewrites. Give one short reason and three whole-sentence rewrites that adjust certainty while keeping the same meaning and voice.",
+	hedging: [
+		" Follow the supplied direction. For over-hedging, remove needless qualifiers only when the point is supportable; preserve deliberate uncertainty.",
+		"For overclaiming, soften only sweeping or speculative claims with precise limits or conditions.",
+		"Never add I think or maybe to ordinary first-person actions, observations, memories, feelings, preferences, or opinions.",
+		"If an external claim appears alongside a personal account, adjust only that external claim and preserve the personal account.",
+		"Preserve names, facts, meaning, and voice; keep concrete details intact.",
+		"Return only JSON with reason and rewrites. Give one specific reason and three whole-sentence rewrites that adjust certainty while keeping the same meaning and voice.",
+	].join(" "),
 	objection: " Give the strongest objection a sceptical expert would raise to the supplied sentence. Return only JSON with objection, in one or two sentences.",
 	"mixed-metaphor": " Identify the incompatible metaphors in the supplied paragraph. Return only JSON with metaphors and reason. Name at least two clashing metaphors and give one short reason.",
 };
