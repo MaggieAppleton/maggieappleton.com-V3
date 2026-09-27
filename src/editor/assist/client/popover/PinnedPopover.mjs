@@ -4,11 +4,20 @@ import { ChatThread } from "./ChatThread.mjs";
 
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function position(anchorRect, height = 240, width = 340) {
+function position(anchorRect, height = 240, width = 340, preferRoomierSide = false) {
 	if (!anchorRect) return {};
 	const viewportWidth = typeof window === "undefined" ? Infinity : window.innerWidth;
 	const viewportHeight = typeof window === "undefined" ? Infinity : window.innerHeight;
-	const left = Math.max(12, Math.min(anchorRect.left, viewportWidth - width - 24));
+	let preferredLeft = anchorRect.left;
+	if (preferRoomierSide) {
+		const leftSpace = anchorRect.left - 12;
+		const rightSpace = viewportWidth - anchorRect.right - 12;
+		const leftFits = leftSpace >= width + 8;
+		const rightFits = rightSpace >= width + 8;
+		if (leftFits && (!rightFits || leftSpace >= rightSpace)) preferredLeft = anchorRect.left - width - 8;
+		else if (rightFits) preferredLeft = anchorRect.right + 8;
+	}
+	const left = Math.max(12, Math.min(preferredLeft, viewportWidth - width - 24));
 	const dock = typeof document === "undefined" ? null : document.querySelector(".editor-dock")?.getBoundingClientRect();
 	const overlapsDock = dock && left < dock.right && left + width > dock.left;
 	const bottomEdge = overlapsDock ? Math.min(viewportHeight, dock.top - 8) : viewportHeight;
@@ -26,7 +35,8 @@ function position(anchorRect, height = 240, width = 340) {
 
 /** Tool-neutral pinned popover. The parent applies text and persists dismissals. */
 export function PinnedPopover({ open = false, title, icon, children, triggerRef, fallbackFocus, anchorRect,
-	onClose = () => {}, onDismiss, applyValue, onApply, chat, onRewrite, useChatRewrite = true, className = "", popoverWidth = 340 }) {
+	onClose = () => {}, onDismiss, applyValue, onApply, chat, onRewrite, useChatRewrite = true, className = "", popoverWidth = 340,
+	preferRoomierSide = false }) {
 	const titleId = useId();
 	const panel = useRef(null);
 	const applied = useRef(false);
@@ -37,7 +47,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		const element = panel.current;
 		const content = element.firstElementChild;
 		const update = () => {
-			const next = position(anchorRect, element.scrollHeight, popoverWidth);
+			const next = position(anchorRect, element.scrollHeight, popoverWidth, preferRoomierSide);
 			setPlacement((previous) => previous && Object.keys(next).every((key) => previous[key] === next[key])
 				? previous : next);
 		};
@@ -46,7 +56,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		observer.observe(content);
 		window.addEventListener("resize", update);
 		return () => { observer.disconnect(); window.removeEventListener("resize", update); };
-	}, [open, anchorRect, popoverWidth]);
+	}, [open, anchorRect, popoverWidth, preferRoomierSide]);
 	useEffect(() => {
 		if (!open) return undefined;
 		const trigger = triggerRef?.current ?? triggerRef;
@@ -63,7 +73,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		ref: panel,
 		className: `wa-pinned-popover ${className}`.trim(),
 		role: "dialog", "aria-modal": "false", "aria-labelledby": titleId,
-		style: { ...(placement ?? position(anchorRect, 240, popoverWidth)), "--wa-popover-width": `${popoverWidth}px` },
+		style: { ...(placement ?? position(anchorRect, 240, popoverWidth, preferRoomierSide)), "--wa-popover-width": `${popoverWidth}px` },
 		onKeyDown: (event) => {
 			if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
 		},

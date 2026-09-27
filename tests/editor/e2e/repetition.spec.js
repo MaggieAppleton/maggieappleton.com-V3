@@ -107,7 +107,7 @@ test.describe.serial("Writing Assist repetition finder", () => {
 			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
 			const leftSpace = anchor.left - 12;
 			const rightSpace = innerWidth - anchor.right - 12;
-			return { anchorLeft: anchor.left,
+			return { anchorLeft: anchor.left, anchorRight: anchor.right,
 				anchorTop: anchor.top, anchorBottom: anchor.bottom,
 				popoverTop: popover.top, popoverBottom: popover.bottom,
 				popoverRight: popover.right, popoverWidth: popover.width, preferLeft: leftSpace > rightSpace,
@@ -159,7 +159,27 @@ test.describe.serial("Writing Assist repetition finder", () => {
 			return rect.left >= 0 && rect.right <= innerWidth
 				&& element.scrollWidth <= element.clientWidth;
 		})).toBe(true);
+		const narrowMarkerGeometry = await page.evaluate(() => {
+			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
+			return [...document.querySelectorAll(".writing-assist-marker--repetition")].map((marker) => {
+				const rect = marker.getBoundingClientRect();
+				return { visible: rect.top >= 0 && rect.bottom <= innerHeight,
+					overlaps: rect.left < popover.right && rect.right > popover.left
+						&& rect.top < popover.bottom && rect.bottom > popover.top };
+			});
+		});
+		const visibleNarrowMarkers = narrowMarkerGeometry.filter((marker) => marker.visible);
+		assert.ok(visibleNarrowMarkers.length > 0 && visibleNarrowMarkers.some((marker) => !marker.overlaps),
+			`at least one visible end mark should stay clear at narrow widths: ${JSON.stringify(narrowMarkerGeometry)}`);
+		await rows.first().click();
+		await expect.poll(() => page.evaluate(() => window.getSelection()?.anchorNode?.textContent ?? ""))
+			.toContain(repeatedSentences[0]);
+		await page.setViewportSize({ width: 2600, height: 1400 });
+		await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().left))
+			.toBeGreaterThanOrEqual(horizontalPlacement.anchorRight + 8);
 		await page.setViewportSize({ width: 1600, height: 1400 });
+		await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().right))
+			.toBeLessThanOrEqual(horizontalPlacement.anchorLeft - 8);
 		for (const [index, paragraph] of [2, 5, 9].entries()) {
 			await expect(rows.nth(index)).toContainText(`¶${paragraph}`);
 			await expect(rows.nth(index)).toContainText(repeatedSentences[index]);
