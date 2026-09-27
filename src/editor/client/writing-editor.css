@@ -107,6 +107,7 @@
 .editor-dock-actions button:hover,
 .editor-dock-section > button:hover { background: rgb(255 255 255 / 12%); }
 .editor-dock-pill button:disabled { cursor: not-allowed; opacity: 0.42; }
+.editor-dock-pill .editor-dock-save-button { padding-inline-start: calc(0.68rem - 6px); }
 .editor-dock-pill > button:not(.editor-dock-icon) {
 	display: inline-flex;
 	align-items: center;

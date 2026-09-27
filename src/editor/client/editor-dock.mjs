@@ -208,7 +208,7 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 			React.createElement("a", { className: "editor-dock-icon editor-dock-exit", href: previewUrl, "aria-label": "Exit editor" },
 				React.createElement(XIcon, { size: 20, "aria-hidden": "true" })),
 			React.createElement("span", { className: "editor-dock-tooltip", "aria-hidden": "true" }, "Exit editor"),
-			React.createElement("button", { type: "button", ref: saveButtonRef, onClick: onRetry,
+			React.createElement("button", { type: "button", className: "editor-dock-save-button", ref: saveButtonRef, onClick: onRetry,
 				disabled: Boolean(state.conflict || state.conversionError) },
 				React.createElement(SaveStatusIcon, { state }), "Save"),
 			React.createElement(SaveLiveStatus, { state }),
