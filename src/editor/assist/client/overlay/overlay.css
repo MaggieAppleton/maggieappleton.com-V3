@@ -1,13 +1,35 @@
-#local-writing-editor .prose-wrapper { position: relative; }
+#local-writing-editor .prose-wrapper {
+	position: relative;
+	--wa-role-tint-claim: color-mix(in srgb, var(--color-salmon) 20%, transparent);
+	--wa-role-tint-opinion: color-mix(in srgb, var(--color-gold) 44%, transparent);
+	--wa-role-tint-evidence: color-mix(in srgb, var(--color-status-success) 20%, transparent);
+	--wa-role-tint-example: color-mix(in srgb, var(--color-sea-blue) 20%, transparent);
+	--wa-role-tint-qualification: color-mix(in srgb, var(--color-purple) 20%, transparent);
+	--wa-role-tint-speculation: color-mix(in srgb, var(--color-bright-crimson) 20%, transparent);
+	--wa-role-tint-concession: color-mix(in srgb, var(--color-dark-sea-blue) 16%, color-mix(in srgb, var(--color-status-success) 10%, transparent));
+	--wa-role-tint-framing: color-mix(in srgb, var(--color-gray-400) 20%, transparent);
+}
+#local-writing-editor .editor-body { position: relative; z-index: 1; }
+.writing-assist-role-gradient-layer {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+}
+.writing-assist-role-gradient-line {
+	position: absolute;
+	border-radius: 2px;
+	pointer-events: none;
+}
 ::highlight(wa-jump) { background-color: color-mix(in srgb, var(--color-sea-blue) 22%, transparent); }
-::highlight(wa-role-claim) { background-color: color-mix(in srgb, var(--color-salmon) 20%, transparent); }
-::highlight(wa-role-opinion) { background-color: color-mix(in srgb, var(--color-gold) 44%, transparent); }
-::highlight(wa-role-evidence) { background-color: color-mix(in srgb, var(--color-status-success) 20%, transparent); }
-::highlight(wa-role-example) { background-color: color-mix(in srgb, var(--color-sea-blue) 20%, transparent); }
-::highlight(wa-role-qualification) { background-color: color-mix(in srgb, var(--color-purple) 20%, transparent); }
-::highlight(wa-role-speculation) { background-color: color-mix(in srgb, var(--color-bright-crimson) 20%, transparent); }
-::highlight(wa-role-concession) { background-color: color-mix(in srgb, var(--color-dark-sea-blue) 16%, color-mix(in srgb, var(--color-status-success) 10%, transparent)); }
-::highlight(wa-role-framing) { background-color: color-mix(in srgb, var(--color-gray-400) 20%, transparent); }
+::highlight(wa-role-claim) { background-color: var(--wa-role-tint-claim); }
+::highlight(wa-role-opinion) { background-color: var(--wa-role-tint-opinion); }
+::highlight(wa-role-evidence) { background-color: var(--wa-role-tint-evidence); }
+::highlight(wa-role-example) { background-color: var(--wa-role-tint-example); }
+::highlight(wa-role-qualification) { background-color: var(--wa-role-tint-qualification); }
+::highlight(wa-role-speculation) { background-color: var(--wa-role-tint-speculation); }
+::highlight(wa-role-concession) { background-color: var(--wa-role-tint-concession); }
+::highlight(wa-role-framing) { background-color: var(--wa-role-tint-framing); }
 ::highlight(wa-checks-cliche) { text-decoration: underline 1px var(--color-dark-sea-blue); text-underline-offset: 2px; }
 ::highlight(wa-link) { text-decoration: underline dotted var(--color-purple); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 

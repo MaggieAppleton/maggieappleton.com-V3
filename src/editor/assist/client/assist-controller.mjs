@@ -5,6 +5,7 @@ import { validateClichePhrase } from "./check-phrase.mjs";
 import { createSentenceModel } from "./sentence-model.mjs";
 import { createAssistScheduler } from "./scheduler.mjs";
 import { createHighlightOverlay } from "./overlay/highlights.mjs";
+import { createRoleGradientOverlay, isMixedRole } from "./overlay/role-gradients.mjs";
 import { createMarkerOverlay } from "./overlay/markers.mjs";
 import { annotationAtPoint, createHighlightHitTest } from "./overlay/hit-test.mjs";
 import { getClientTool, getClientTools } from "./tools/index.mjs";
@@ -77,12 +78,14 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		}
 		return null;
 	};
+	const roleMinShown = config.tools.roles?.thresholds?.minShown ?? 0.10;
 	const highlights = createHighlightOverlay({ rangeForAnnotation,
 		classNameFor: (annotation) => annotation.tool === "debug" ? null
-			: annotation.tool === "roles" ? `wa-role-${annotation.kind}`
+			: annotation.tool === "roles" ? isMixedRole(annotation, roleMinShown) ? "wa-role-gradient" : `wa-role-${annotation.kind}`
 				: annotation.tool === "links" ? "wa-link"
 				: `wa-${annotation.tool}-${annotation.kind}` });
 	const root = editor.getRootElement();
+	const roleGradients = createRoleGradientOverlay({ wrapper, root, rangeForAnnotation, minShown: roleMinShown });
 	const markers = createMarkerOverlay({ wrapper,
 		rangeForAnnotation: (annotation) => annotation.tool === "checks" && annotation.kind === "cliche"
 			&& annotation.target?.type === "span" ? model.rangeFor(annotation.target.sentenceId) : rangeForAnnotation(annotation),
@@ -121,6 +124,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 	root.addEventListener("click", highlightClick);
 	const unsubscribeStore = store.subscribe((annotations) => {
 		highlights.update(annotations);
+		roleGradients.update(annotations);
 		markers.update(annotations);
 		hitTest.update(annotations.filter((item) => item.tool === "links")
 			.concat(annotations.filter((item) => item.tool !== "debug" && item.tool !== "links")));
@@ -146,6 +150,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		store.setModel(snapshot);
 		markers.refresh();
 		highlights.update(store.getAnnotations());
+		roleGradients.refresh();
 		scheduler.update(snapshot);
 	});
 	const initial = model.getSnapshot();
@@ -342,6 +347,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 			markers.element.removeEventListener("pointerout", markerOut);
 			hitTest.destroy();
 			markers.destroy();
+			roleGradients.destroy();
 			highlights.destroy();
 			model.destroy();
 		},
