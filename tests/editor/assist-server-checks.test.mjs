@@ -32,7 +32,7 @@ test("checks asks only enabled questions for a dirty prose block", () => {
 		paragraph: "S1| A linked fact.\nS2| A bare fact.", links_in_paragraph: ["S1"],
 	});
 	assert.deepEqual(Object.keys(requests[0].questions), [
-		"cite_S1", "cliche_S1", "cite_S2", "cliche_S2", "mixed_metaphor",
+		"personal_S1", "cite_S1", "cliche_S1", "personal_S2", "cite_S2", "cliche_S2", "mixed_metaphor",
 	]);
 	assert.equal(requests[0].questions.cite_S1.type, "noul");
 	assert.equal(getTool("checks"), checksTool);
@@ -43,13 +43,17 @@ test("checks defaults to configured switches and skips headings and quotes", () 
 	const requests = checksTool.buildRequests({ ...context, targetBlockIds: null });
 	assert.deepEqual(requests.map((request) => request.key), ["first", "second"]);
 	assert.deepEqual(Object.keys(requests[1].questions), [
-		"cite_S1", "certainty_S1", "contested_S1", "objection_S1", "cliche_S1",
-		"cite_S2", "certainty_S2", "contested_S2", "objection_S2", "cliche_S2", "mixed_metaphor",
+		"personal_S1", "cite_S1", "certainty_S1", "contested_S1", "objection_S1", "cliche_S1",
+		"personal_S2", "cite_S2", "certainty_S2", "contested_S2", "objection_S2", "cliche_S2", "mixed_metaphor",
 	]);
 	assert.deepEqual(requests[1].questions.certainty_S1.criteria, [
 		"Very tentative (might, perhaps, possibly)", "Hedged", "Neutral", "Confident",
 		"Absolute (always, never, clearly, everyone)",
 	]);
+	assert.match(requests[1].questions.contested_S1.instructions, /first-person (?:actions|accounts|reports)/iu);
+	assert.match(requests[1].questions.personal_S1.instructions, /feeling.*preference.*opinion/iu);
+	assert.match(requests[1].questions.personal_S1.instructions, /separable external factual claim/iu);
+	assert.match(requests[1].questions.cite_S1.instructions, /external factual.*(?:company|research|tool)/iu);
 });
 
 test("citation skips linked sentences and applies its threshold inclusively", () => {
@@ -72,20 +76,47 @@ test("an inline footnote still suppresses a citation prompt", () => {
 	assert.deepEqual(checksTool.mapAnswers(footnoteContext, footnoted.id, { cite_S1: noul(0.9) }), []);
 });
 
-test("hedging uses weighted score gap in both directions and requires confidence", () => {
-	const result = checksTool.mapAnswers(context, "second", {
-		certainty_S1: score(4, 0.5), contested_S1: score(1.5, 0.8),
-		certainty_S2: score(0, 0.9), contested_S2: score(2, 0.5),
-	});
-	assert.deepEqual(result.map(({ kind, target, confidence, data }) => ({ kind, target, confidence, data })), [
-		{ kind: "hedging", target: { type: "sentence", sentenceId: "b" }, confidence: 0.5,
-			data: { direction: "overclaiming" } },
-		{ kind: "hedging", target: { type: "sentence", sentenceId: "c" }, confidence: 0.5,
-			data: { direction: "over-hedging" } },
-	]);
+test("hedging compares wording with uncertainty without flagging a plain personal memory", () => {
+	const examples = [
+		{ text: "Last Thursday I visited the Lantern Theatre in Bristol.", certainty: 2.93, uncertain: 0.1,
+			direction: null },
+		{ text: "Every artist always knows the only right way to work.", certainty: 4, uncertain: 3.5,
+			direction: "overclaiming" },
+		{ text: "A calendar year might have twelve months.", certainty: 1, uncertain: 0,
+			direction: "over-hedging" },
+		{ text: "Perhaps the unopened archive contains another copy.", certainty: 1, uncertain: 3,
+			direction: null },
+		{ text: "The door is blue.", certainty: 2, uncertain: 0, direction: null },
+	];
+	for (const [index, example] of examples.entries()) {
+		const block = { id: `case-${index}`, kind: "paragraph", sentences: [sentence(`case-s${index}`, example.text)] };
+		const result = checksTool.mapAnswers({ ...context, blocks: [block], enabledChecks: ["hedging"] }, block.id, {
+			certainty_S1: score(example.certainty, 0.9), contested_S1: score(example.uncertain, 0.9),
+		});
+		assert.deepEqual(result.map(({ data }) => data.direction), example.direction ? [example.direction] : [], example.text);
+	}
 	assert.equal(checksTool.mapAnswers(context, "second", {
-		certainty_S1: score(4, 0.49), contested_S1: score(0, 1),
+		certainty_S1: score(4, 0.49), contested_S1: score(4, 1),
 	}).length, 0);
+});
+
+test("personal-only accounts and opinions are not citation or hedging targets; mixed external claims remain eligible", () => {
+	const cases = [
+		{ text: "I felt restless after the Lantern show.", personal: 0.96, citation: 0.95,
+			certainty: 4, uncertain: 4, kinds: [] },
+		{ text: "I think the Lantern show was moving.", personal: 0.92, citation: 0.9,
+			certainty: 1, uncertain: 0, kinds: [] },
+		{ text: "I liked the Lantern show, and it sold ten million tickets.", personal: 0.08,
+			citation: 0.9, certainty: 4, uncertain: 3.5, kinds: ["citation", "hedging"] },
+	];
+	for (const [index, example] of cases.entries()) {
+		const block = { id: `personal-${index}`, kind: "paragraph", sentences: [sentence(`personal-s${index}`, example.text)] };
+		const result = checksTool.mapAnswers({ ...context, blocks: [block], enabledChecks: ["citation", "hedging"] }, block.id, {
+			personal_S1: noul(example.personal), cite_S1: noul(example.citation),
+			certainty_S1: score(example.certainty, 0.9), contested_S1: score(example.uncertain, 0.9),
+		});
+		assert.deepEqual(result.map(({ kind }) => kind), example.kinds, example.text);
+	}
 });
 
 test("objection, cliché and mixed metaphor use independent thresholds and targets", () => {

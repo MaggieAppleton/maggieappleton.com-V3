@@ -27,13 +27,15 @@ function questionsFor(block, checks) {
 	const questions = {};
 	for (let index = 0; index < block.sentences.length; index += 1) {
 		const tag = `S${index + 1}`;
+		if (checks.includes("citation") || checks.includes("hedging")) questions[`personal_${tag}`] = { type: "noul",
+			instructions: `Does ${tag} consist solely of the author's firsthand action, observation, memory, feeling, preference, or opinion, without a separable external factual claim? A named place or work within a personal account does not by itself need outside evidence. Answer no when the sentence also asserts an independent fact about research, a company, a tool, or a third party.` };
 		if (checks.includes("citation")) questions[`cite_${tag}`] = { type: "noul",
-			instructions: `Does ${tag} state a specific factual or empirical claim that a careful reader would expect to be backed by a source?` };
+			instructions: `Does ${tag} state a specific external factual or empirical claim about research, a company, a tool, or a third party that a careful reader would expect to be backed by a source? The author's own actions, observations, memories, feelings, preferences, and opinions need no citation by themselves, but a separable external claim in the same sentence can still need one.` };
 		if (checks.includes("hedging")) {
 			questions[`certainty_${tag}`] = { type: "score",
 				instructions: `How certain is the wording of ${tag}?`, criteria: levels };
 			questions[`contested_${tag}`] = { type: "score",
-				instructions: `How contested or uncertain is the idea in ${tag} among informed people?`,
+				instructions: `How uncertain or contestable is the underlying claim in ${tag}? Treat ordinary first-person actions, observations, memories, feelings, preferences, and opinions as supportable personal reports. If the sentence adds a separable external claim, assess that claim. Do not infer uncertainty merely because an outsider cannot verify the experience.`,
 				criteria: ["Settled fact", "Widely accepted", "Debated", "Contested", "Highly speculative"] };
 		}
 		if (checks.includes("objection")) questions[`objection_${tag}`] = { type: "noul",
@@ -90,20 +92,25 @@ export const checksTool = {
 			const sentence = block.sentences[index];
 			const tag = `S${index + 1}`;
 			const target = { type: "sentence", sentenceId: sentence.id };
+			const personal = probability(answers[`personal_${tag}`]);
+			const personalOnly = personal !== null && personal >= 0.8;
 			const cite = probability(answers[`cite_${tag}`]);
-			if (checks.includes("citation") && !sentence.hasLink && !sentence.hasFootnote && cite !== null
+			if (checks.includes("citation") && !personalOnly && !sentence.hasLink && !sentence.hasFootnote && cite !== null
 				&& cite >= (thresholds.citation ?? 0.7)) {
 				results.push(annotation("citation", target, sentence.hash, cite,
 					{ reason: "This reads as a factual claim without a source." }));
 			}
 			const certainty = answers[`certainty_${tag}`];
 			const contested = answers[`contested_${tag}`];
-			if (checks.includes("hedging") && validScore(certainty) && validScore(contested)
+			if (checks.includes("hedging") && !personalOnly && validScore(certainty) && validScore(contested)
 				&& Math.min(certainty.confidence, contested.confidence) >= (thresholds.hedgingConfidence ?? 0.5)) {
-				const gap = certainty.score - contested.score;
-				if (gap >= 2 || gap <= -2) results.push(annotation("hedging", target, sentence.hash,
-					Math.min(certainty.confidence, contested.confidence),
-					{ direction: gap >= 2 ? "overclaiming" : "over-hedging" }));
+				// Both higher certainty and higher uncertainty increase overclaiming risk.
+				// The old subtraction marked confident, settled memories as overclaims.
+				const mismatch = certainty.score + contested.score;
+				const direction = certainty.score >= 3 && mismatch >= 7 ? "overclaiming"
+					: certainty.score <= 1.5 && mismatch <= 2 ? "over-hedging" : null;
+				if (direction) results.push(annotation("hedging", target, sentence.hash,
+					Math.min(certainty.confidence, contested.confidence), { direction }));
 			}
 			const objection = probability(answers[`objection_${tag}`]);
 			if (checks.includes("objection") && objection !== null

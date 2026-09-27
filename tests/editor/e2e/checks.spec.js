@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
+import { checksTool } from "../../../src/editor/assist/server/tools/checks.mjs";
+import { assistConfig } from "../../../src/editor/assist/config.mjs";
 
 const sentences = {
 	citation: "Water boils at 100°C.",
@@ -15,6 +17,13 @@ const clichePhrase = "in the same boat";
 const secondClicheSuggestion = "in a similar position";
 const objection = "A policy cannot protect every member in every circumstance.";
 const rewrittenObjection = "The policy offers protection to most members.";
+const synthetic = {
+	personal: "Last Thursday I visited the Lantern Theatre in Bristol.",
+	opinion: "I think the Lantern show was moving.",
+	external: "I liked the Lantern show, and it sold ten million tickets.",
+	sweeping: "Every artist always knows the only right way to work.",
+	overhedged: "A calendar year might have twelve months.",
+};
 const iconPathPrefixes = {
 	citation: "M100,52H40A20,20,0,0,0,20,72v64",
 	hedging: "M243.14,131.54l-32-80",
@@ -41,6 +50,7 @@ test.describe.serial("Writing Assist margin checks", () => {
 	let fixture;
 	let server;
 	let slug;
+	let syntheticSlug;
 	let source;
 	const dismissals = [];
 
@@ -48,6 +58,7 @@ test.describe.serial("Writing Assist margin checks", () => {
 		test.setTimeout(240_000);
 		fixture = await createFixtureProject({ name: "writing-assist-margin-checks" });
 		slug = `assist-checks-${randomUUID().slice(0, 8)}`;
+		syntheticSlug = `assist-calibration-${randomUUID().slice(0, 8)}`;
 		source = `---
 title: Assist margin checks
 startDate: 2026-09-26
@@ -66,6 +77,7 @@ ${sentences.objection}
 ${sentences.mixed}
 `;
 		await fixture.write(`src/content/notes/${slug}.mdx`, source);
+		await fixture.write(`src/content/notes/${syntheticSlug}.mdx`, `---\ntitle: Invented calibration examples\nstartDate: 2026-09-26\nupdated: 2026-09-26\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\n${Object.values(synthetic).join("\n\n")}\n`);
 		server = await startFixtureServer(fixture.root, { timeout: 120_000 });
 	});
 
@@ -193,6 +205,48 @@ ${sentences.mixed}
 		await page.reload();
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 		await expect(marker).toHaveCount(0);
+	});
+
+	test("shows only external, sweeping and needlessly hedged synthetic checks", async ({ page }) => {
+		await mockChecks(page, { dismissals: [] });
+		await page.route("**/_editor/api/assist/judge", (route) => {
+			const request = route.request().postDataJSON();
+			const scores = {
+				[synthetic.personal]: [0.95, 0.95, 3, 0.1],
+				[synthetic.opinion]: [0.95, 0.95, 1, 0],
+				[synthetic.external]: [0.05, 0.95, 2.9, 2.8],
+				[synthetic.sweeping]: [0.05, 0.2, 4, 3.5],
+				[synthetic.overhedged]: [0.05, 0.2, 1, 0],
+			};
+			const annotations = request.blocks.flatMap((block) => {
+				const answers = Object.fromEntries(block.sentences.flatMap((sentence, index) => {
+					const values = scores[sentence.text];
+					if (!values) return [];
+					const tag = `S${index + 1}`;
+					return [[`personal_${tag}`, { type: "noul", noul: values[0] }],
+						[`cite_${tag}`, { type: "noul", noul: values[1] }],
+						[`certainty_${tag}`, { type: "score", score: values[2], confidence: 0.9 }],
+						[`contested_${tag}`, { type: "score", score: values[3], confidence: 0.9 }]];
+				}));
+				return checksTool.mapAnswers({ blocks: request.blocks, config: assistConfig,
+					enabledChecks: ["citation", "hedging"] }, block.id, answers);
+			});
+			return route.fulfill({ json: { annotations, errors: [] } });
+		});
+		await page.goto(`${server.origin}/_editor?documentId=notes:${syntheticSlug}`);
+		await expect(page.locator(".writing-assist-marker--check")).toHaveCount(3);
+		await expect(page.locator(".writing-assist-marker--citation")).toHaveCount(1);
+		await expect(page.locator(".writing-assist-marker--hedging")).toHaveCount(2);
+		const labels = await page.locator(".writing-assist-marker--check")
+			.evaluateAll((markers) => markers.map((marker) => marker.getAttribute("aria-label")));
+		assert.ok(labels.every((label) => !label.includes(synthetic.personal) && !label.includes(synthetic.opinion)));
+		for (const text of [synthetic.external, synthetic.sweeping, synthetic.overhedged]) {
+			assert.ok(labels.some((label) => label.includes(text)), `Expected a marker for ${text}`);
+		}
+		await page.setViewportSize({ width: 1280, height: 1100 });
+		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-light.png", fullPage: true });
+		await page.emulateMedia({ colorScheme: "dark" });
+		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-dark.png", fullPage: true });
 	});
 });
 

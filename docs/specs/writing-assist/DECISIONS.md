@@ -26,6 +26,14 @@ Maggie's OpenAI `gpt-6-sol` default also applies to margin check hover suggestio
 
 The spec's 0.7 objection threshold produced 34 markers across 53 sentences in a real essay, obscuring the writing. At 0.85, three sentences qualify. The configured threshold is 0.85; the other margin-check thresholds remain at their specified starting values. This follows the spec's preference for fewer unnecessary flags.
 
+## 2026-09-27 · 04 margin checks · Hedging calibration
+
+Spec 04 subtracts underlying uncertainty from wording certainty. Both scales run from 0 to 4, but a larger value on either scale increases the risk of overclaiming. Subtraction therefore flagged a confident account of a settled personal event: the local cached Jev scores were 2.93 for wording and 0.10 for uncertainty, producing a 2.83 gap. It also misses tentative wording around supportable claims.
+
+The check now adds the two scores. It marks overclaiming only at a sum of at least 7 with wording certainty at least 3, and over-hedging only at a sum of at most 2 with wording certainty at most 1.5. The existing confidence gate remains. Jev is explicitly told that ordinary first-person actions, observations, and memories are supportable personal reports. Generation follows the flagged direction, preserves names and concrete facts, and avoids adding uncertainty to ordinary personal experience. The changed question text changes the cache key, so old answers are not reused.
+
+Maggie clarified that this is a personal blog: firsthand experiences, feelings, preferences, and opinions are the author's own evidence. When citation or hedging is enabled, Jev now answers a per-sentence `personal` question. A high personal-only probability (at least 0.8) suppresses citation and hedging; the question explicitly excludes sentences with a separable external factual claim. The citation prompt still asks for sources for unsupported research, company, tool, and third-party facts, even when the author mentions herself in the same sentence. This departs from spec 04's citation and hedging questions and mapping; it does not grant a blanket exemption to sentences containing “I”.
+
 ## 2026-09-26 · 05 word finder · Default text generator
 
 Maggie's OpenAI `gpt-6-sol` default applies to word finder candidate generation. This replaces the Anthropic Sonnet model shown in spec 05; `OPENAI_MODEL` can override it. Ranking still uses Jev, and the Anthropic provider remains available and is checked live.
