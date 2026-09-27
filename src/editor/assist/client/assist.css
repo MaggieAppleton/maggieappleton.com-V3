@@ -3,17 +3,23 @@
 @import "./popover/popover.css";
 @import "./argument-map.css";
 
-.writing-assist-marker--check { color: var(--color-white); box-shadow: 0 1px 4px rgb(0 0 0 / 20%); }
-.writing-assist-marker--citation { background: var(--color-sea-blue); }
-.writing-assist-marker--hedging { background: var(--color-purple); }
-.writing-assist-marker--objection { background: var(--color-bright-crimson); }
-.writing-assist-marker--cliche { background: var(--color-dark-sea-blue); }
-.writing-assist-marker--mixed-metaphor { background: var(--color-gold); color: var(--color-black); }
+.writing-assist-marker--check,
+.writing-assist-marker--debug {
+	background: color-mix(in srgb, var(--wa-marker-accent) 12%, var(--color-white));
+	border: 1px solid color-mix(in srgb, var(--wa-marker-accent) 5%, transparent);
+	color: var(--wa-marker-accent);
+}
+.writing-assist-marker--citation { --wa-marker-accent: var(--color-sea-blue); }
+.writing-assist-marker--hedging { --wa-marker-accent: var(--color-purple); }
+.writing-assist-marker--objection { --wa-marker-accent: var(--color-bright-crimson); }
+.writing-assist-marker--cliche { --wa-marker-accent: var(--color-dark-sea-blue); }
+.writing-assist-marker--mixed-metaphor {
+	--wa-marker-accent: var(--color-gold);
+	color: color-mix(in srgb, var(--color-gold) 42%, var(--color-black));
+}
 
 .writing-assist-marker--debug {
-	background: var(--color-sea-blue);
-	color: var(--color-white);
-	box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+	--wa-marker-accent: var(--color-sea-blue);
 }
 
 .writing-assist-marker--debug:hover {

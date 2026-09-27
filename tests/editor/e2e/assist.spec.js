@@ -90,6 +90,38 @@ The sky is blue. The path feels quiet.\n`;
 		await page.getByRole("button", { name: "Assist", exact: true }).click();
 		const marker = page.getByRole("button", { name: /Colour mention/i });
 		await expect(marker).toBeVisible();
+		const markerStyles = async () => marker.evaluate((element) => {
+			const text = [...document.querySelectorAll("[contenteditable] *")].find((node) =>
+				node.firstChild?.nodeType === Node.TEXT_NODE && node.textContent.includes("The sky is blue."));
+			const range = document.createRange();
+			range.selectNodeContents(text);
+			const markerRect = element.getBoundingClientRect();
+			const lineRect = range.getClientRects()[0];
+			const style = getComputedStyle(element);
+			const probe = document.createElement("span");
+			document.body.append(probe);
+			probe.style.backgroundColor = "color-mix(in srgb, var(--color-sea-blue) 12%, var(--color-white))";
+			const backgroundExpected = getComputedStyle(probe).backgroundColor;
+			probe.style.backgroundColor = "color-mix(in srgb, var(--color-sea-blue) 5%, transparent)";
+			const borderExpected = getComputedStyle(probe).backgroundColor;
+			probe.style.backgroundColor = "transparent";
+			probe.style.color = "var(--color-sea-blue)";
+			const iconExpected = getComputedStyle(probe).color;
+			probe.remove();
+			return { width: markerRect.width, height: markerRect.height,
+				gap: lineRect.left - markerRect.right, background: style.backgroundColor,
+				border: style.borderTopColor, icon: style.color,
+				iconSize: element.querySelector("svg")?.getAttribute("width"),
+				backgroundExpected, borderExpected, iconExpected };
+		});
+		const markerGeometry = await markerStyles();
+		assert.equal(markerGeometry.width, 28);
+		assert.equal(markerGeometry.height, 28);
+		assert.equal(markerGeometry.gap, 10);
+		assert.equal(Number(markerGeometry.iconSize), 16);
+		assert.equal(markerGeometry.background, markerGeometry.backgroundExpected);
+		assert.equal(markerGeometry.border, markerGeometry.borderExpected);
+		assert.equal(markerGeometry.icon, markerGeometry.iconExpected);
 		await marker.hover();
 		await expect(page.getByText("90%", { exact: true })).toBeVisible();
 		await marker.click();
@@ -109,6 +141,12 @@ The sky is blue. The path feels quiet.\n`;
 		await page.screenshot({ path: ".local-writing-editor/visuals/foundation-debug-light.png" });
 		await page.emulateMedia({ colorScheme: "dark" });
 		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+		const darkMarkerGeometry = await markerStyles();
+		assert.notEqual(darkMarkerGeometry.background, markerGeometry.background);
+		assert.notEqual(darkMarkerGeometry.border, markerGeometry.border);
+		assert.equal(darkMarkerGeometry.background, darkMarkerGeometry.backgroundExpected);
+		assert.equal(darkMarkerGeometry.border, darkMarkerGeometry.borderExpected);
+		assert.equal(darkMarkerGeometry.icon, darkMarkerGeometry.iconExpected);
 		await page.screenshot({ path: ".local-writing-editor/visuals/foundation-debug-dark.png" });
 		await page.emulateMedia({ colorScheme: "light" });
 		await page.getByRole("button", { name: "Close" }).click();

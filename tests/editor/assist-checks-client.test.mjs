@@ -17,6 +17,7 @@ test("checks tool provides ordered coloured margin markers", () => {
 	assert.equal(marker.placement, "margin");
 	assert.equal(marker.order, 4);
 	assert.equal(marker.label, "Mixed metaphor");
+	assert.equal(marker.content.props.size, 15);
 	assert.equal(checksTool.markerPresenter(cliche, { targetText: "tip of the iceberg" }).label,
 		"Cliché: tip of the iceberg");
 });

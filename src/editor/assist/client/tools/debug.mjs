@@ -12,7 +12,7 @@ export const debugTool = {
 			placement: "margin",
 			label: "Colour mention",
 			className: "writing-assist-marker--debug",
-			content: React.createElement(BugIcon, { size: 14, weight: "bold", "aria-hidden": "true" }),
+			content: React.createElement(BugIcon, { size: 16, weight: "bold", "aria-hidden": "true" }),
 		};
 	},
 };

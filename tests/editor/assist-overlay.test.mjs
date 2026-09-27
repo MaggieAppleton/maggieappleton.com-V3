@@ -26,7 +26,7 @@ test("highlight overlay groups live ranges by visual class and clears stale clas
 	assert.deepEqual(highlights.get("wa-link"), [{ id: "two" }]);
 });
 
-test("marker overlay positions margin markers in a 22px stack and end marks after the final line", () => {
+test("marker overlay positions 28px margin markers with a 10px text gap and leaves end marks unchanged", () => {
 	const document = fakeDocument();
 	const wrapper = fakeElement(document, { left: 10, top: 20 });
 	const ranges = new Map([
@@ -46,8 +46,8 @@ test("marker overlay positions margin markers in a 22px stack and end marks afte
 	const [end, margin] = overlay.element.children;
 	assert.equal(end.style.left, "80px");
 	assert.equal(end.style.top, "50.5px");
-	assert.equal(margin.style.left, "-8px", "a sentence starting midline still has a marker in the gutter");
-	assert.equal(margin.style.top, "28px");
+	assert.equal(margin.style.left, "-18px", "a sentence starting midline still has a marker in the gutter");
+	assert.equal(margin.style.top, "25px");
 	assert.equal(margin.getAttribute("aria-label"), "Second marker");
 	assert.match(margin.className, /wa-marker-debug/);
 	assert.equal(overlay.element.parentNode, wrapper);

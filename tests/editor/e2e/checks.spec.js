@@ -75,42 +75,99 @@ ${sentences.mixed}
 		finally { if (fixture) await fixture.cleanup(); }
 	});
 
-	test("shows each marker icon and colour, stacks markers in order, and previews generated checks", async ({ page }) => {
+	test("shows each marker style and geometry in both themes, stacks in order, and previews checks", async ({ page }, testInfo) => {
 		const generateRequests = [];
 		await mockChecks(page, { generateRequests, dismissals });
+		await page.emulateMedia({ colorScheme: "light" });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
 		const markers = page.locator(".writing-assist-marker--check");
 		await expect(markers).toHaveCount(5);
 
-		for (const [kind, colour] of Object.entries(markerColours)) {
-			const marker = page.locator(`.writing-assist-marker--${kind}`);
-			await expect(marker).toBeVisible();
-			await expect(marker).toHaveAccessibleName(markerNames[kind]);
-			const colours = await marker.evaluate((element, token) => ({
-				background: getComputedStyle(element).backgroundColor,
-				icon: getComputedStyle(element).color,
-				expected: (() => {
+		const stylesInTheme = async () => {
+			for (const [kind, colour] of Object.entries(markerColours)) {
+				const marker = page.locator(`.writing-assist-marker--${kind}`);
+				await expect(marker).toBeVisible();
+				await expect(marker).toHaveAccessibleName(markerNames[kind]);
+				const styles = await marker.evaluate((element, token) => {
 					const probe = document.createElement("span");
-					probe.style.backgroundColor = `var(--color-${token})`;
 					document.body.append(probe);
-					const colour = getComputedStyle(probe).backgroundColor;
+					probe.style.backgroundColor = `color-mix(in srgb, var(--color-${token}) 12%, var(--color-white))`;
+					const background = getComputedStyle(probe).backgroundColor;
+					probe.style.backgroundColor = `color-mix(in srgb, var(--color-${token}) 5%, transparent)`;
+					const border = getComputedStyle(probe).backgroundColor;
+					probe.style.backgroundColor = "transparent";
+					probe.style.color = token === "gold"
+						? "color-mix(in srgb, var(--color-gold) 42%, var(--color-black))"
+						: `var(--color-${token})`;
+					const icon = getComputedStyle(probe).color;
 					probe.remove();
-					return colour;
-				})(),
-				iconExpected: (() => {
-					const probe = document.createElement("span");
-					probe.style.color = `var(--color-${token === "gold" ? "black" : "white"})`;
-					document.body.append(probe);
-					const colour = getComputedStyle(probe).color;
-					probe.remove();
-					return colour;
-				})(),
-			}), colour);
-			assert.equal(colours.background, colours.expected, `${kind} marker should use --color-${colour}`);
-			const path = marker.locator("svg path").first();
-			await expect(path).toHaveAttribute("d", new RegExp(`^${escapeRegExp(iconPathPrefixes[kind])}`));
-			assert.equal(colours.icon, colours.iconExpected, `${kind} marker should use a contrasting icon colour`);
-		}
+					const style = getComputedStyle(element);
+					const channels = (value) => {
+						const srgb = value.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+						return srgb ? srgb.slice(1).map((channel) => Number(channel) * 255)
+							: value.match(/[\d.]+/g).slice(0, 3).map(Number);
+					};
+					const backgroundChannels = channels(style.backgroundColor);
+					const [r, g, b] = backgroundChannels;
+					const [ir, ig, ib] = channels(style.color);
+					const borderChannels = channels(style.borderTopColor);
+					const borderAlpha = Number(style.borderTopColor.match(/(?:\/|,)\s*([\d.]+)\s*\)$/)?.[1] ?? 1);
+					const linear = (value) => {
+						const channel = value / 255;
+						return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+					};
+					const luminance = (red, green, blue) =>
+						0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+					const iconLuminance = luminance(ir, ig, ib);
+					const backgroundLuminance = luminance(r, g, b);
+					return {
+						background: style.backgroundColor,
+						border: style.borderTopColor,
+						icon: style.color,
+						borderSeparation: backgroundChannels.reduce((difference, value, index) => difference
+							+ Math.abs(borderChannels[index] * borderAlpha + value * (1 - borderAlpha) - value), 0),
+						borderAlpha,
+						iconContrast: (Math.max(iconLuminance, backgroundLuminance) + 0.05)
+							/ (Math.min(iconLuminance, backgroundLuminance) + 0.05),
+						iconSize: element.querySelector("svg")?.getAttribute("width"),
+						width: element.getBoundingClientRect().width,
+						height: element.getBoundingClientRect().height,
+						backgroundExpected: background,
+						borderExpected: border,
+						iconExpected: icon,
+					};
+				}, colour);
+				assert.equal(styles.background, styles.backgroundExpected, `${kind} should use a 12% accent tint`);
+				assert.equal(styles.border, styles.borderExpected, `${kind} should use a 5% accent stroke`);
+				assert.equal(styles.icon, styles.iconExpected, `${kind} icon should use its accent shade`);
+				assert.ok(styles.borderSeparation > 0, `${kind} border should remain visible against its tint`);
+				assert.ok(Math.abs(styles.borderAlpha - 0.05) < 0.01, `${kind} border should use 5% accent opacity`);
+				if (kind === "mixed-metaphor") assert.ok(styles.iconContrast >= 3, "gold icon should remain legible");
+				assert.equal(styles.width, 28, `${kind} margin marker should be 28px wide`);
+				assert.equal(styles.height, 28, `${kind} margin marker should be 28px high`);
+				assert.equal(Number(styles.iconSize), 15, `${kind} icon should grow to 15px`);
+				const path = marker.locator("svg path").first();
+				await expect(path).toHaveAttribute("d", new RegExp(`^${escapeRegExp(iconPathPrefixes[kind])}`));
+			}
+		};
+		await stylesInTheme();
+		const geometry = await page.evaluate(() => {
+			const marker = document.querySelector(".writing-assist-marker--citation");
+			const text = [...document.querySelectorAll("[contenteditable] *")].find((node) =>
+				node.firstChild?.nodeType === Node.TEXT_NODE && node.textContent.includes("Water boils at 100°C."));
+			const range = document.createRange();
+			range.selectNodeContents(text);
+			const markerRect = marker.getBoundingClientRect();
+			const lineRect = range.getClientRects()[0];
+			return { gap: lineRect.left - markerRect.right, citationTop: markerRect.top,
+				hedgingTop: document.querySelector(".writing-assist-marker--hedging").getBoundingClientRect().top };
+		});
+		assert.equal(geometry.gap, 10, "margin marker should sit 10px left of the sentence");
+		assert.equal(geometry.hedgingTop - geometry.citationTop, 32, "stack spacing stays 4px after increasing marker size");
+		await page.screenshot({ path: testInfo.outputPath("issue-297-margin-markers-light.png"), fullPage: true });
+		await page.emulateMedia({ colorScheme: "dark" });
+		await stylesInTheme();
+		await page.screenshot({ path: testInfo.outputPath("issue-297-margin-markers-dark.png"), fullPage: true });
 
 		const [citationTop, hedgingTop] = await Promise.all([
 			page.locator(".writing-assist-marker--citation").evaluate((element) => element.getBoundingClientRect().top),

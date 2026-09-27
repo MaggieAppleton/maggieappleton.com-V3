@@ -1,5 +1,9 @@
 # Writing Assist decisions
 
+## 2026-09-27 · 04 margin checks · Margin marker styling
+
+Left-margin citation, hedging, objection, cliché, mixed-metaphor, and debug markers use 28px circles with a 10px text gap, a 12% accent tint, and a 1px border with 5% accent opacity. Check icons grow from 13px to 15px, and the debug icon grows from 14px to 16px. Mixed-metaphor icons use a darker gold derived from the gold and text tokens to stay legible in both themes. Sentence-end repetition markers keep their existing size and styling.
+
 ## 2026-09-26 · 00 foundation · Default text generator
 
 Maggie asked for OpenAI `gpt-6-sol` as Writing Assist's default text generator. The debug tool therefore uses OpenAI `gpt-6-sol` instead of the Anthropic Haiku model shown in the approved foundation config. `OPENAI_MODEL` can override the model, and the OpenAI provider is available when its API key is set. The Anthropic adapter remains available for tools that select it. This changes the default provider and model; the interface and tool behaviour stay as specified.

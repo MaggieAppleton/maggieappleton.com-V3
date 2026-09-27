@@ -57,6 +57,7 @@ test("client registry exposes Debug metadata and its marker presenter", () => {
 	assert.equal(marker.placement, "margin");
 	assert.equal(marker.label, "Colour mention");
 	assert.equal(marker.className, "writing-assist-marker--debug");
+	assert.equal(marker.content.props.size, 16);
 	assert.ok(marker.content);
 });
 
