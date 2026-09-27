@@ -28,12 +28,12 @@ function LinkTargetList({ targets, selectedPathname, onSelect, interactive = fal
 	));
 }
 
-export function LinksHover({ annotation }) {
+export function LinksHover({ annotation, onSelect }) {
 	const targets = linkTargets(annotation);
 	if (!targets.length) return null;
 	return React.createElement("div", { className: "wa-links-hover" },
 		React.createElement("strong", { className: "wa-links-title" }, "Link to"),
-		React.createElement(LinkTargetList, { targets }),
+		React.createElement(LinkTargetList, { targets, onSelect, interactive: Boolean(onSelect) }),
 	);
 }
 
@@ -41,8 +41,8 @@ export function LinksHover({ annotation }) {
 export function LinksPopover({ pinned, fallbackFocus, onClose = () => {}, onDismiss = () => {}, onLink = () => {} }) {
 	const annotation = pinned?.annotation;
 	const targets = linkTargets(annotation);
-	const [selectedPathname, setSelectedPathname] = useState(targets[0]?.pathname);
-	useEffect(() => { setSelectedPathname(targets[0]?.pathname); }, [annotation?.id]);
+	const [selectedPathname, setSelectedPathname] = useState(pinned.selectedPathname ?? targets[0]?.pathname);
+	useEffect(() => { setSelectedPathname(pinned.selectedPathname ?? targets[0]?.pathname); }, [annotation?.id]);
 	if (!annotation || !targets.length) return null;
 	const selected = targets.find((target) => target.pathname === selectedPathname) ?? targets[0];
 	return React.createElement(PinnedPopover, {

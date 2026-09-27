@@ -4,6 +4,8 @@ import { mkdir, readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
+import { checksTool } from "../../../src/editor/assist/server/tools/checks.mjs";
+import { assistConfig } from "../../../src/editor/assist/config.mjs";
 
 const sentences = {
 	citation: "Water boils at 100°C.",
@@ -15,6 +17,15 @@ const clichePhrase = "in the very same boat as everyone else";
 const secondClicheSuggestion = "in a similar position";
 const objection = "A policy cannot protect every member in every circumstance.";
 const rewrittenObjection = "The policy offers protection to most members.";
+const synthetic = {
+	personal: "Last Thursday I visited the Lantern Theatre in Bristol.",
+	opinion: "I think the Lantern show was moving.",
+	museum: "I visited the museum, which opened in 1840.",
+	external: "I liked the Lantern show, and it sold ten million tickets.",
+	sweeping: "Every artist always knows the only right way to work.",
+	overhedged: "A calendar year might have twelve months.",
+	contested: "Perhaps this contested claim is true.",
+};
 const iconPathPrefixes = {
 	citation: "M100,52H40A20,20,0,0,0,20,72v64",
 	hedging: "M243.14,131.54l-32-80",
@@ -41,6 +52,7 @@ test.describe.serial("Writing Assist margin checks", () => {
 	let fixture;
 	let server;
 	let slug;
+	let syntheticSlug;
 	let source;
 	const dismissals = [];
 
@@ -48,6 +60,7 @@ test.describe.serial("Writing Assist margin checks", () => {
 		test.setTimeout(240_000);
 		fixture = await createFixtureProject({ name: "writing-assist-margin-checks" });
 		slug = `assist-checks-${randomUUID().slice(0, 8)}`;
+		syntheticSlug = `assist-calibration-${randomUUID().slice(0, 8)}`;
 		source = `---
 title: Assist margin checks
 startDate: 2026-09-26
@@ -66,6 +79,7 @@ ${sentences.objection}
 ${sentences.mixed}
 `;
 		await fixture.write(`src/content/notes/${slug}.mdx`, source);
+		await fixture.write(`src/content/notes/${syntheticSlug}.mdx`, `---\ntitle: Invented calibration examples\nstartDate: 2026-09-26\nupdated: 2026-09-26\ntype: note\ngrowthStage: seedling\ndraft: true\n---\n\n${Object.values(synthetic).join("\n\n")}\n`);
 		server = await startFixtureServer(fixture.root, { timeout: 120_000 });
 	});
 
@@ -119,7 +133,7 @@ ${sentences.mixed}
 		assert.ok(hedgingTop > citationTop, "citation should stack before hedging on the shared sentence");
 
 		await page.locator(".writing-assist-marker--cliche").hover();
-		const tooltip = page.getByRole("tooltip");
+		const tooltip = page.locator(".wa-hover-card");
 		await expect(tooltip.getByText(`Flagged phrase: “${clichePhrase}”`, { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a difficult situation", { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a similar position", { exact: true })).toBeVisible();
@@ -135,12 +149,51 @@ ${sentences.mixed}
 			"hedging direction must be included in the model-visible messages");
 	});
 
+	test("keeps a cliché hover card open across the pointer gap and pins a clicked suggestion", async ({ page }) => {
+		await mockChecks(page, { dismissals });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		const marker = page.locator(".writing-assist-marker--cliche");
+		await marker.hover();
+		const hover = page.locator(".wa-hover-card");
+		const suggestion = hover.getByText(secondClicheSuggestion, { exact: true });
+		await expect(suggestion).toBeVisible();
+		const start = await marker.boundingBox();
+		const end = await suggestion.boundingBox();
+		const cardBox = await hover.boundingBox();
+		await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+		const below = cardBox.y >= start.y + start.height;
+		const gapY = below ? (start.y + start.height + cardBox.y) / 2
+			: (cardBox.y + cardBox.height + start.y) / 2;
+		await page.mouse.move(cardBox.x + 20, gapY);
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 });
+		await expect(hover).toBeVisible();
+		await expect(hover).toHaveAttribute("role", "group");
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await captureThemePair(page, "checks-cliche-hover-handoff");
+		await suggestion.focus();
+		await page.mouse.move(1, 1);
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await suggestion.click();
+		const dialog = page.getByRole("dialog", { name: "Cliché" });
+		await expect(dialog.getByRole("button", { name: secondClicheSuggestion, exact: true }))
+			.toHaveAttribute("aria-pressed", "true");
+		await dialog.getByRole("button", { name: "Close" }).click();
+		await marker.hover();
+		await expect(hover).toBeVisible();
+		await page.mouse.move(1, 1);
+		await expect(hover).toHaveCount(0);
+	});
+
 	test("reuses a generated cliché span after toggling and applies only its selected replacement", async ({ page }) => {
 		await mockChecks(page, { dismissals });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
 		const clicheMarker = page.locator(".writing-assist-marker--cliche");
 		await clicheMarker.hover();
-		await expect(page.getByRole("tooltip").getByText("in a similar position", { exact: true })).toBeVisible();
+		await expect(page.locator(".wa-hover-card").getByText("in a similar position", { exact: true })).toBeVisible();
 
 		await page.getByRole("button", { name: "Assist", exact: true }).click();
 		const clicheSwitch = page.getByRole("switch", { name: "Clichés & metaphors" });
@@ -207,6 +260,51 @@ ${sentences.mixed}
 		await page.reload();
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 		await expect(marker).toHaveCount(0);
+	});
+
+	test("shows only external, sweeping and needlessly hedged synthetic checks", async ({ page }) => {
+		await mockChecks(page, { dismissals: [] });
+		await page.route("**/_editor/api/assist/judge", (route) => {
+			const request = route.request().postDataJSON();
+			const scores = {
+				[synthetic.personal]: [0.95, 0.95, 3, 0.1],
+				[synthetic.opinion]: [0.95, 0.95, 1, 0],
+				[synthetic.museum]: [0.81, 0.95, 3, 0],
+				[synthetic.external]: [0.05, 0.95, 2.9, 2.8],
+				[synthetic.sweeping]: [0.05, 0.2, 4, 3.5],
+				[synthetic.overhedged]: [0.05, 0.2, 1, 0],
+				[synthetic.contested]: [0.05, 0.2, 0, 2],
+			};
+			const annotations = request.blocks.flatMap((block) => {
+				const answers = Object.fromEntries(block.sentences.flatMap((sentence, index) => {
+					const values = scores[sentence.text];
+					if (!values) return [];
+					const tag = `S${index + 1}`;
+					return [[`personal_${tag}`, { type: "noul", noul: values[0] }],
+						[`cite_${tag}`, { type: "noul", noul: values[1] }],
+						[`certainty_${tag}`, { type: "score", score: values[2], confidence: 0.9 }],
+						[`contested_${tag}`, { type: "score", score: values[3], confidence: 0.9 }]];
+				}));
+				return checksTool.mapAnswers({ blocks: request.blocks, config: assistConfig,
+					enabledChecks: ["citation", "hedging"] }, block.id, answers);
+			});
+			return route.fulfill({ json: { annotations, errors: [] } });
+		});
+		await page.goto(`${server.origin}/_editor?documentId=notes:${syntheticSlug}`);
+		await expect(page.locator(".writing-assist-marker--check")).toHaveCount(4);
+		await expect(page.locator(".writing-assist-marker--citation")).toHaveCount(2);
+		await expect(page.locator(".writing-assist-marker--hedging")).toHaveCount(2);
+		const labels = await page.locator(".writing-assist-marker--check")
+			.evaluateAll((markers) => markers.map((marker) => marker.getAttribute("aria-label")));
+		assert.ok(labels.every((label) => ![synthetic.personal, synthetic.opinion, synthetic.contested]
+			.some((text) => label.includes(text))));
+		for (const text of [synthetic.museum, synthetic.external, synthetic.sweeping, synthetic.overhedged]) {
+			assert.ok(labels.some((label) => label.includes(text)), `Expected a marker for ${text}`);
+		}
+		await page.setViewportSize({ width: 1280, height: 1100 });
+		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-light.png", fullPage: true });
+		await page.emulateMedia({ colorScheme: "dark" });
+		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-dark.png", fullPage: true });
 	});
 });
 

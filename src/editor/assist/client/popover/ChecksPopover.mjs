@@ -48,7 +48,7 @@ function SuggestionRows({ suggestions, selected, onSelect }) {
 			"aria-pressed": selected === index, onClick: () => onSelect(index) }, value)));
 }
 
-export function ChecksHover({ annotation, generated }) {
+export function ChecksHover({ annotation, generated, onSelect }) {
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const pending = !generated && annotation.kind !== "citation";
 	const suggestions = generated?.suggestions ?? generated?.rewrites ?? [];
@@ -59,8 +59,11 @@ export function ChecksHover({ annotation, generated }) {
 		annotation.kind !== "citation" && annotation.kind !== "cliche" && reason(annotation, generated)
 			&& React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
 		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
-		(annotation.kind === "cliche" || annotation.kind === "hedging") && suggestions.map((suggestion) =>
-			React.createElement("div", { className: "wa-check-preview", key: suggestion }, suggestion)),
+		(annotation.kind === "cliche" || annotation.kind === "hedging") && suggestions.map((suggestion, index) => React.createElement(
+			onSelect ? "button" : "div", {
+				className: `wa-check-preview${onSelect ? " wa-check-suggestion" : ""}`, key: suggestion,
+				...(onSelect ? { type: "button", onClick: () => onSelect(index) } : {}),
+			}, suggestion)),
 		annotation.kind === "mixed-metaphor" && generated?.metaphors?.map((metaphor) => React.createElement("p", { key: metaphor }, metaphor)),
 	);
 }
@@ -70,7 +73,7 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 	const annotation = pinned.annotation;
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const suggestions = annotation.kind === "hedging" ? generated?.rewrites ?? [] : generated?.suggestions ?? [];
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = useState(pinned.selectedIndex ?? 0);
 	const [chatRewrite, setChatRewrite] = useState(null);
 	const selectedValue = selected === -1 ? chatRewrite : suggestions[selected];
 	const applyAllowed = annotation.kind === "mixed-metaphor" ? canApplyBlock : canApply;

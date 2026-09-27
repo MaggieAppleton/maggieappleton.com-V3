@@ -10,6 +10,7 @@ export function createHoverController({ onVisible, openDelay = 250, leaveDelay =
 	clock = defaultClock }) {
 	let target = false;
 	let card = false;
+	let focused = false;
 	let visible = false;
 	let timer = null;
 	function cancel() { if (timer != null) clock.clearTimer(timer); timer = null; }
@@ -18,7 +19,7 @@ export function createHoverController({ onVisible, openDelay = 250, leaveDelay =
 		if (visible) return;
 		timer = clock.setTimer(() => {
 			timer = null;
-			if (target || card) { visible = true; onVisible(true); }
+			if (target || card || focused) { visible = true; onVisible(true); }
 		}, openDelay);
 	}
 	function hide() {
@@ -26,14 +27,16 @@ export function createHoverController({ onVisible, openDelay = 250, leaveDelay =
 		if (!visible) return;
 		timer = clock.setTimer(() => {
 			timer = null;
-			if (!target && !card) { visible = false; onVisible(false); }
+			if (!target && !card && !focused) { visible = false; onVisible(false); }
 		}, leaveDelay);
 	}
 	return {
 		enterTarget() { target = true; show(); },
-		leaveTarget() { target = false; if (!card) hide(); },
+		leaveTarget() { target = false; if (!card && !focused) hide(); },
 		enterCard() { card = true; if (visible) cancel(); else show(); },
-		leaveCard() { card = false; if (!target) hide(); },
+		leaveCard() { card = false; if (!target && !focused) hide(); },
+		enterFocus() { focused = true; cancel(); },
+		leaveFocus() { focused = false; if (!target && !card) hide(); },
 		dispose() { cancel(); },
 	};
 }
@@ -50,7 +53,7 @@ function position(anchorRect) {
 }
 
 /** `active` means the target is hovered; the card owns its open/grace timing. */
-export function HoverCard({ active = false, visible: forcedVisible, anchorRect, children,
+export function HoverCard({ active = false, visible: forcedVisible, anchorRect, children, interactive = false,
 	onClose = () => {}, openDelay = 250, leaveDelay = 150 }) {
 	const [visible, setVisible] = useState(false);
 	const onCloseRef = useRef(onClose);
@@ -70,9 +73,14 @@ export function HoverCard({ active = false, visible: forcedVisible, anchorRect, 
 	if (!(forcedVisible ?? visible)) return null;
 	return React.createElement("div", {
 		className: "wa-hover-card",
-		role: "tooltip",
+		role: interactive ? "group" : "tooltip",
+		...(interactive ? { "aria-label": "Writing Assist suggestions" } : {}),
 		style: position(anchorRect),
 		onPointerEnter: () => controller.current?.enterCard(),
 		onPointerLeave: () => controller.current?.leaveCard(),
+		onFocus: () => controller.current?.enterFocus(),
+		onBlur: (event) => {
+			if (!event.currentTarget.contains(event.relatedTarget)) controller.current?.leaveFocus();
+		},
 	}, children);
 }

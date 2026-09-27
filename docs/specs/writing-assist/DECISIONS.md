@@ -118,6 +118,14 @@ Maggie's OpenAI `gpt-6-sol` default also applies to margin check hover suggestio
 
 The spec's 0.7 objection threshold produced 34 markers across 53 sentences in a real essay, obscuring the writing. At 0.85, three sentences qualify. The configured threshold is 0.85; the other margin-check thresholds remain at their specified starting values. This follows the spec's preference for fewer unnecessary flags.
 
+## 2026-09-27 · 04 margin checks · Hedging calibration
+
+Spec 04 subtracts underlying uncertainty from wording certainty. Both scales run from 0 to 4, but a larger value on either scale increases the risk of overclaiming. Subtraction therefore flagged a confident account of a settled personal event: the local cached Jev scores were 2.93 for wording and 0.10 for uncertainty, producing a 2.83 gap. It also misses tentative wording around supportable claims.
+
+The check now adds the two scores. It marks overclaiming only at a sum of at least 7 with wording certainty at least 3, and over-hedging only at a sum of at most 2 with wording certainty at most 1.5 **and** underlying uncertainty at most 1 (settled or widely accepted). The supportability guard prevents a tentative debated claim from being misread as needless hedging. The existing confidence gate remains. Jev is explicitly told that ordinary first-person actions, observations, and memories are supportable personal reports. Generation follows the flagged direction, preserves names and concrete facts, and avoids adding uncertainty to ordinary personal experience. The changed question text changes the cache key, so old answers are not reused.
+
+Maggie clarified that this is a personal blog: firsthand experiences, feelings, preferences, and opinions are the author's own evidence. When citation or hedging is enabled, Jev now answers a per-sentence `personal` question. A high personal-only probability (at least 0.8) suppresses citation and hedging when it is at least as high as the citation probability, if one is available. When the two answers conflict, stronger evidence for a sourced external claim keeps the sentence eligible. The questions explicitly distinguish personal details from separable historical, geographical, research, company, tool, and third-party facts. This departs from spec 04's citation and hedging questions and mapping; it does not grant a blanket exemption to sentences containing “I”.
+
 ## 2026-09-26 · 05 word finder · Default text generator
 
 Maggie's OpenAI `gpt-6-sol` default applies to word finder candidate generation. This replaces the Anthropic Sonnet model shown in spec 05; `OPENAI_MODEL` can override it. Ranking still uses Jev, and the Anthropic provider remains available and is checked live.
@@ -133,3 +141,7 @@ Spec 06 asks to analyse only blocks changed since the last run. The document sch
 ## 2026-09-27 · 04 margin checks · Show the validated cliché phrase
 
 The spec 04 popover body now identifies the exact cliché phrase in hover and pinned popovers after the editor validates and marks its source span, before the replacement suggestions. Unaccepted or stale generated phrases stay hidden from the UI and chat context; replacement suggestions and the existing Apply safety gate remain unchanged.
+
+## 2026-09-27 · Hover cards · Select from the preview
+
+Maggie asked to move from a Writing Assist trigger into its hover card and click a suggestion. Cliché and hedging preview rows, and link target previews, therefore open the pinned popover with the clicked option selected. Applying a rewrite or link still requires the explicit Apply or Link action in that popover. This adds a click path to the previously read-only hover previews in specs 04 and 06; clicking a marker to pin and the existing keyboard and touch path remain available.

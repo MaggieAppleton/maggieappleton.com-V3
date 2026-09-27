@@ -472,6 +472,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			map: mapAnnotation?.data?.map, loading: mapOpen && !mapAnnotation && !mapError, error: mapError }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
+			interactive: hover.annotation.tool === "links" || hover.annotation.tool === "checks"
+				&& ["cliche", "hedging"].includes(hover.annotation.kind),
 			onClose: () => setHover(null),
 		}, hover.annotation.tool === "roles"
 			? React.createElement(RoleHover, {
@@ -482,10 +484,18 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				? React.createElement(RepetitionHover, { annotation: hover.annotation,
 					members: repetitionMembers(hover.annotation, assistController?.model.getSnapshot()) })
 				: hover.annotation.tool === "links"
-					? React.createElement(LinksHover, { annotation: hover.annotation })
-				: hover.annotation.tool === "checks"
-					? React.createElement(ChecksHover, { annotation: hover.annotation,
-						generated: checkGenerated[`${hover.annotation.id}:${hover.annotation.unitHash}`] })
+					? React.createElement(LinksHover, { annotation: hover.annotation,
+						onSelect: (selectedPathname) => {
+							setPinned({ annotation: hover.annotation, anchorRect: hover.anchorRect, selectedPathname });
+							setHover(null);
+						} })
+					: hover.annotation.tool === "checks"
+						? React.createElement(ChecksHover, { annotation: hover.annotation,
+							generated: checkGenerated[`${hover.annotation.id}:${hover.annotation.unitHash}`],
+							onSelect: (selectedIndex) => {
+								setPinned({ annotation: hover.annotation, anchorRect: hover.anchorRect, selectedIndex });
+								setHover(null);
+							} })
 				: `${Math.round(hover.annotation.confidence * 100)}%`), document.body),
 		pinned?.annotation?.tool === "debug" && assistController && createPortal(React.createElement(DebugPopover, {
 			pinned, controller: assistController, transport: assistTransport, title,
