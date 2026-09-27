@@ -48,7 +48,7 @@ function SuggestionRows({ suggestions, selected, onSelect }) {
 			"aria-pressed": selected === index, onClick: () => onSelect(index) }, value)));
 }
 
-export function ChecksHover({ annotation, generated }) {
+export function ChecksHover({ annotation, generated, onSelect }) {
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const pending = !generated && annotation.kind !== "citation";
 	const suggestions = generated?.suggestions ?? generated?.rewrites ?? [];
@@ -58,8 +58,15 @@ export function ChecksHover({ annotation, generated }) {
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
 		reason(annotation, generated) && React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
 		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
-		annotation.kind === "cliche" && suggestions.slice(0, 2).map((suggestion) => React.createElement("div", { className: "wa-check-preview", key: suggestion }, suggestion)),
-		annotation.kind === "hedging" && suggestions[0] && React.createElement("div", { className: "wa-check-preview" }, suggestions[0]),
+		annotation.kind === "cliche" && suggestions.slice(0, 2).map((suggestion, index) => React.createElement(
+			onSelect ? "button" : "div", {
+				className: `wa-check-preview${onSelect ? " wa-check-suggestion" : ""}`, key: suggestion,
+				...(onSelect ? { type: "button", onClick: () => onSelect(index) } : {}),
+			}, suggestion)),
+		annotation.kind === "hedging" && suggestions[0] && React.createElement(onSelect ? "button" : "div", {
+			className: `wa-check-preview${onSelect ? " wa-check-suggestion" : ""}`,
+			...(onSelect ? { type: "button", onClick: () => onSelect(0) } : {}),
+		}, suggestions[0]),
 		annotation.kind === "mixed-metaphor" && generated?.metaphors?.map((metaphor) => React.createElement("div", { className: "wa-check-preview", key: metaphor }, metaphor)),
 	);
 }
@@ -69,7 +76,7 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 	const annotation = pinned.annotation;
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const suggestions = annotation.kind === "hedging" ? generated?.rewrites ?? [] : generated?.suggestions ?? [];
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = useState(pinned.selectedIndex ?? 0);
 	const [chatRewrite, setChatRewrite] = useState(null);
 	const selectedValue = selected === -1 ? chatRewrite : suggestions[selected];
 	const applyAllowed = annotation.kind === "mixed-metaphor" ? canApplyBlock : canApply;

@@ -74,7 +74,13 @@ ${sentenceText}\n`;
 		await expect(hover).toContainText(target.description);
 		await expect(hover.locator(".wa-link-stage")).toHaveText("EVERGREEN");
 
-		await page.mouse.click(point.x, point.y);
+		const hoverTarget = hover.locator(".wa-link-target").first();
+		const targetBox = await hoverTarget.boundingBox();
+		await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2,
+			{ steps: 12 });
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await hoverTarget.click();
 		const popover = page.getByRole("dialog", { name: "Link to" });
 		await expect(popover).toBeVisible();
 		await expect(popover.locator(".wa-link-target.is-selected")).toContainText(target.title);

@@ -119,7 +119,7 @@ ${sentences.mixed}
 		assert.ok(hedgingTop > citationTop, "citation should stack before hedging on the shared sentence");
 
 		await page.locator(".writing-assist-marker--cliche").hover();
-		const tooltip = page.getByRole("tooltip");
+		const tooltip = page.locator(".wa-hover-card");
 		await expect(tooltip.getByText(`Flagged phrase: “${clichePhrase}”`, { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a difficult situation", { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a similar position", { exact: true })).toBeVisible();
@@ -135,12 +135,51 @@ ${sentences.mixed}
 			"hedging direction must be included in the model-visible messages");
 	});
 
+	test("keeps a cliché hover card open across the pointer gap and pins a clicked suggestion", async ({ page }) => {
+		await mockChecks(page, { dismissals });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		const marker = page.locator(".writing-assist-marker--cliche");
+		await marker.hover();
+		const hover = page.locator(".wa-hover-card");
+		const suggestion = hover.getByText(secondClicheSuggestion, { exact: true });
+		await expect(suggestion).toBeVisible();
+		const start = await marker.boundingBox();
+		const end = await suggestion.boundingBox();
+		const cardBox = await hover.boundingBox();
+		await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+		const below = cardBox.y >= start.y + start.height;
+		const gapY = below ? (start.y + start.height + cardBox.y) / 2
+			: (cardBox.y + cardBox.height + start.y) / 2;
+		await page.mouse.move(cardBox.x + 20, gapY);
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 });
+		await expect(hover).toBeVisible();
+		await expect(hover).toHaveAttribute("role", "group");
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await captureThemePair(page, "checks-cliche-hover-handoff");
+		await suggestion.focus();
+		await page.mouse.move(1, 1);
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
+		await suggestion.click();
+		const dialog = page.getByRole("dialog", { name: "Cliché" });
+		await expect(dialog.getByRole("button", { name: secondClicheSuggestion, exact: true }))
+			.toHaveAttribute("aria-pressed", "true");
+		await dialog.getByRole("button", { name: "Close" }).click();
+		await marker.hover();
+		await expect(hover).toBeVisible();
+		await page.mouse.move(1, 1);
+		await expect(hover).toHaveCount(0);
+	});
+
 	test("reuses a generated cliché span after toggling and applies only its selected replacement", async ({ page }) => {
 		await mockChecks(page, { dismissals });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
 		const clicheMarker = page.locator(".writing-assist-marker--cliche");
 		await clicheMarker.hover();
-		await expect(page.getByRole("tooltip").getByText("in a similar position", { exact: true })).toBeVisible();
+		await expect(page.locator(".wa-hover-card").getByText("in a similar position", { exact: true })).toBeVisible();
 
 		await page.getByRole("button", { name: "Assist", exact: true }).click();
 		const clicheSwitch = page.getByRole("switch", { name: "Clichés & metaphors" });
