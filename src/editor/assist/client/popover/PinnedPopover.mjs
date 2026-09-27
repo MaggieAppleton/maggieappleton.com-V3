@@ -4,6 +4,12 @@ import { ChatThread } from "./ChatThread.mjs";
 
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+function liveAnchorRect(triggerRef, fallbackRect) {
+	const trigger = triggerRef?.current ?? triggerRef;
+	return trigger?.isConnected && typeof trigger.getBoundingClientRect === "function"
+		? trigger.getBoundingClientRect() : fallbackRect;
+}
+
 function position(anchorRect, height = 240, width = 340, preferRoomierSide = false) {
 	if (!anchorRect) return {};
 	const viewportWidth = typeof window === "undefined" ? Infinity : window.innerWidth;
@@ -43,20 +49,35 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 	const [pendingRewrite, setPendingRewrite] = useState(null);
 	const [placement, setPlacement] = useState(null);
 	useBrowserLayoutEffect(() => {
-		if (!open || !anchorRect || !panel.current) return undefined;
+		if (!open || !panel.current) return undefined;
 		const element = panel.current;
 		const content = element.firstElementChild;
 		const update = () => {
-			const next = position(anchorRect, element.scrollHeight, popoverWidth, preferRoomierSide);
+			const next = position(liveAnchorRect(triggerRef, anchorRect), element.scrollHeight, popoverWidth, preferRoomierSide);
 			setPlacement((previous) => previous && Object.keys(next).every((key) => previous[key] === next[key])
 				? previous : next);
+		};
+		let resizeFrame = null;
+		const updateAfterResize = () => {
+			if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+			// Let the editor's marker overlay finish its own resize-observer layout first.
+			resizeFrame = requestAnimationFrame(() => {
+				resizeFrame = requestAnimationFrame(() => {
+					resizeFrame = null;
+					update();
+				});
+			});
 		};
 		update();
 		const observer = new ResizeObserver(update);
 		observer.observe(content);
-		window.addEventListener("resize", update);
-		return () => { observer.disconnect(); window.removeEventListener("resize", update); };
-	}, [open, anchorRect, popoverWidth, preferRoomierSide]);
+		window.addEventListener("resize", updateAfterResize);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener("resize", updateAfterResize);
+			if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+		};
+	}, [open, anchorRect, triggerRef, popoverWidth, preferRoomierSide]);
 	useEffect(() => {
 		if (!open) return undefined;
 		const trigger = triggerRef?.current ?? triggerRef;
@@ -73,7 +94,8 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		ref: panel,
 		className: `wa-pinned-popover ${className}`.trim(),
 		role: "dialog", "aria-modal": "false", "aria-labelledby": titleId,
-		style: { ...(placement ?? position(anchorRect, 240, popoverWidth, preferRoomierSide)), "--wa-popover-width": `${popoverWidth}px` },
+		style: { ...(placement ?? position(liveAnchorRect(triggerRef, anchorRect), 240, popoverWidth, preferRoomierSide)),
+			"--wa-popover-width": `${popoverWidth}px` },
 		onKeyDown: (event) => {
 			if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
 		},

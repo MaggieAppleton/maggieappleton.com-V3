@@ -102,24 +102,7 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		await settleAnimations(page);
 		await page.screenshot({ path: ".local-writing-editor/repetition-dark.png" });
 		await page.emulateMedia({ colorScheme: "light" });
-		const horizontalPlacement = await screenshotMarker.evaluate((marker) => {
-			const anchor = marker.getBoundingClientRect();
-			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
-			const leftSpace = anchor.left - 12;
-			const rightSpace = innerWidth - anchor.right - 12;
-			return { anchorLeft: anchor.left, anchorRight: anchor.right,
-				anchorTop: anchor.top, anchorBottom: anchor.bottom,
-				popoverTop: popover.top, popoverBottom: popover.bottom,
-				popoverRight: popover.right, popoverWidth: popover.width, preferLeft: leftSpace > rightSpace,
-				leftSpace };
-		});
-		assert.ok(horizontalPlacement.popoverBottom <= horizontalPlacement.anchorTop
-			|| horizontalPlacement.popoverTop >= horizontalPlacement.anchorBottom,
-		"the panel should remain vertically positioned relative to its real end-mark rectangle");
-		if (horizontalPlacement.preferLeft && horizontalPlacement.leftSpace >= horizontalPlacement.popoverWidth + 20) {
-			assert.ok(horizontalPlacement.popoverRight <= horizontalPlacement.anchorLeft - 8,
-				"the repetition panel should use the roomier left side of its end mark");
-		}
+		await expectPopoverToFollowMarker(screenshotMarker);
 		const screenshotGeometry = await page.evaluate(() => {
 			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
 			return [...document.querySelectorAll(".writing-assist-marker--repetition")].map((marker) => {
@@ -159,6 +142,7 @@ test.describe.serial("Writing Assist repetition finder", () => {
 			return rect.left >= 0 && rect.right <= innerWidth
 				&& element.scrollWidth <= element.clientWidth;
 		})).toBe(true);
+		await expectPopoverToFollowMarker(screenshotMarker);
 		const narrowMarkerGeometry = await page.evaluate(() => {
 			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
 			return [...document.querySelectorAll(".writing-assist-marker--repetition")].map((marker) => {
@@ -171,15 +155,15 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		const visibleNarrowMarkers = narrowMarkerGeometry.filter((marker) => marker.visible);
 		assert.ok(visibleNarrowMarkers.length > 0 && visibleNarrowMarkers.some((marker) => !marker.overlaps),
 			`at least one visible end mark should stay clear at narrow widths: ${JSON.stringify(narrowMarkerGeometry)}`);
+		await page.setViewportSize({ width: 2600, height: 1400 });
+		await expectPopoverToFollowMarker(screenshotMarker);
+		await page.setViewportSize({ width: 1600, height: 1400 });
+		await expectPopoverToFollowMarker(screenshotMarker);
+		await page.setViewportSize({ width: 390, height: 950 });
+		await expectPopoverToFollowMarker(screenshotMarker);
 		await rows.first().click();
 		await expect.poll(() => page.evaluate(() => window.getSelection()?.anchorNode?.textContent ?? ""))
 			.toContain(repeatedSentences[0]);
-		await page.setViewportSize({ width: 2600, height: 1400 });
-		await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().left))
-			.toBeGreaterThanOrEqual(horizontalPlacement.anchorRight + 8);
-		await page.setViewportSize({ width: 1600, height: 1400 });
-		await expect.poll(() => dialog.evaluate((element) => element.getBoundingClientRect().right))
-			.toBeLessThanOrEqual(horizontalPlacement.anchorLeft - 8);
 		for (const [index, paragraph] of [2, 5, 9].entries()) {
 			await expect(rows.nth(index)).toContainText(`¶${paragraph}`);
 			await expect(rows.nth(index)).toContainText(repeatedSentences[index]);
@@ -266,6 +250,34 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
 	});
 });
+
+async function expectPopoverToFollowMarker(marker) {
+	const placement = () => marker.evaluate((element) => {
+		const anchor = element.getBoundingClientRect();
+		const popover = document.querySelector(".wa-pinned-popover");
+		const panel = popover.getBoundingClientRect();
+		const width = Number.parseFloat(popover.style.getPropertyValue("--wa-popover-width")) || panel.width;
+		const leftSpace = anchor.left - 12;
+		const rightSpace = innerWidth - anchor.right - 12;
+		const leftFits = leftSpace >= width + 8;
+		const rightFits = rightSpace >= width + 8;
+		const horizontalPlacement = leftFits && (!rightFits || leftSpace >= rightSpace)
+			? panel.right <= anchor.left - 7
+			: rightFits ? panel.left >= anchor.right + 7 : true;
+		const aboveGap = anchor.top - panel.bottom;
+		const belowGap = panel.top - anchor.bottom;
+		return { valid: horizontalPlacement && (Math.abs(aboveGap - 8) < 1 || Math.abs(belowGap - 8) < 1),
+			anchor: { left: anchor.left, right: anchor.right, top: anchor.top, bottom: anchor.bottom },
+			panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom },
+			leftSpace, rightSpace, aboveGap, belowGap };
+	});
+	try {
+		await expect.poll(placement).toMatchObject({ valid: true });
+	} catch {
+		const latest = await placement();
+		assert.ok(latest.valid, `pinned panel should follow the live marker rectangle: ${JSON.stringify(latest)}`);
+	}
+}
 
 async function mockAssist(page, documentId, { judgeRequests, generateRequests = [], dismissalsByDocument }) {
 	await page.addInitScript(() => {
