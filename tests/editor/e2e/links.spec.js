@@ -13,6 +13,12 @@ const target = {
 	description: "Making useful software without needing to become a professional programmer.",
 	stage: "evergreen",
 };
+const longTarget = {
+	pathname: "/a-deliberately-long-link-target",
+	title: "AUnbrokenLinkSuggestionTargetThatMustWrapWithinTheSuggestionCard",
+	description: "AContinuousDescriptionThatMustBeEllipsizedWithinTheAvailableCardWidth",
+	stage: "budding",
+};
 
 test.describe.serial("Writing Assist link suggestions", () => {
 	let fixture;
@@ -23,7 +29,7 @@ test.describe.serial("Writing Assist link suggestions", () => {
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
 		fixture = await createFixtureProject({ name: "writing-assist-links" });
-		slugs = [randomUUID().slice(0, 8), randomUUID().slice(0, 8)]
+		slugs = [randomUUID().slice(0, 8), randomUUID().slice(0, 8), randomUUID().slice(0, 8)]
 			.map((id) => `assist-links-${id}`);
 		source = `---
 title: Link suggestions fixture
@@ -115,9 +121,36 @@ ${sentenceText}\n`;
 		assert.equal([...dismissalsByDocument.values()].flat().length, 1,
 			"the sidecar dismissal should remain present after the page reload");
 	});
+
+	test("keeps long targets inside hover and pinned cards on a narrow viewport", async ({ page }) => {
+		await page.setViewportSize({ width: 360, height: 720 });
+		await mockAssist(page, server.origin, { linkTarget: longTarget });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slugs[2]}`);
+		const editor = page.getByRole("textbox", { name: "Article body" });
+		await expect(editor).toBeVisible();
+		await page.getByRole("button", { name: "Assist", exact: true }).click();
+		await page.getByRole("switch", { name: "Link suggestions" }).click();
+		await expect.poll(() => linkHighlightText(page)).toBe(phrase);
+		await page.getByRole("button", { name: "Assist", exact: true }).click();
+
+		const point = await pointForPhrase(editor, phrase);
+		await page.mouse.move(point.x, point.y);
+		const hover = page.locator(".wa-hover-card");
+		await expect(hover).toBeVisible();
+		await expect(hover.locator(".wa-link-target")).toContainText(longTarget.title);
+		assertTargetBounds(await linkTargetBounds(hover));
+		await expect(linkDescriptionIsTruncated(hover)).resolves.toBe(true);
+
+		await page.mouse.click(point.x, point.y);
+		const popover = page.getByRole("dialog", { name: "Link to" });
+		await expect(popover).toBeVisible();
+		await expect(popover.locator(".wa-link-target")).toContainText(longTarget.description);
+		assertTargetBounds(await linkTargetBounds(popover));
+		await expect(linkDescriptionIsTruncated(popover)).resolves.toBe(true);
+	});
 });
 
-async function mockAssist(page, origin, { judgeRequests = [], dismissalsByDocument = new Map() } = {}) {
+async function mockAssist(page, origin, { judgeRequests = [], dismissalsByDocument = new Map(), linkTarget = target } = {}) {
 	await page.addInitScript(() => {
 		// Keep the existing sentence tools quiet while leaving `links` unset so the
 		// configured default controls its initial off state.
@@ -139,11 +172,11 @@ async function mockAssist(page, origin, { judgeRequests = [], dismissalsByDocume
 		if (!sentence) return route.fulfill({ json: { errors: [], annotations: [] } });
 		const start = sentence.text.indexOf(phrase);
 		return route.fulfill({ json: { errors: [], annotations: [{
-			id: `links:${sentence.id}:${target.pathname}`,
-			tool: "links", kind: `link:${target.pathname}`,
+			id: `links:${sentence.id}:${linkTarget.pathname}`,
+			tool: "links", kind: `link:${linkTarget.pathname}`,
 			target: { type: "span", sentenceId: sentence.id, start, end: start + phrase.length },
 			unitHash: sentence.hash, confidence: 0.95,
-			data: { targets: [target] },
+			data: { targets: [linkTarget] },
 		}] } });
 	});
 	await page.route(`${origin}/_editor/api/assist/sidecar**`, async (route) => {
@@ -166,6 +199,31 @@ async function mockAssist(page, origin, { judgeRequests = [], dismissalsByDocume
 		}
 		return route.fulfill({ json: { dismissals } });
 	});
+}
+
+async function linkTargetBounds(popover) {
+	return popover.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		return [...element.querySelectorAll(".wa-link-target")].map((target) => {
+			const card = target.getBoundingClientRect();
+			return { card: { left: card.left, right: card.right, top: card.top, bottom: card.bottom },
+				popover: { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom } };
+		});
+	});
+}
+
+function assertTargetBounds(bounds) {
+	for (const { card, popover } of bounds) {
+		assert.ok(card.left >= popover.left && card.right <= popover.right
+			&& card.top >= popover.top && card.bottom <= popover.bottom,
+			`Link target escaped its popover: ${JSON.stringify({ card, popover })}`);
+	}
+}
+
+async function linkDescriptionIsTruncated(popover) {
+	return popover.locator(".wa-link-description").evaluate((description) =>
+		description.scrollWidth > description.clientWidth
+			&& getComputedStyle(description).whiteSpace === "nowrap");
 }
 
 async function linkHighlightText(page) {

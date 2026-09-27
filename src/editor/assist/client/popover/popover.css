@@ -123,14 +123,25 @@
 .wa-repetition-hover-preview { overflow: hidden; margin: 3px 0; text-overflow: ellipsis; white-space: nowrap; }
 
 .wa-links-popover { --wa-accent: var(--color-purple); }
-.wa-links-title { display: block; margin-bottom: 6px; color: var(--color-black); }
-.wa-link-targets { display: grid; gap: 5px; }
+.wa-links-hover {
+	inline-size: min(18rem, calc(100vw - var(--space-xl)));
+	max-inline-size: 100%;
+}
+.wa-links-title { display: block; margin-bottom: var(--space-3xs); color: var(--color-black); }
+.wa-link-targets {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	min-width: 0;
+	gap: var(--space-3xs);
+}
 .wa-link-target {
 	display: block;
+	min-width: 0;
+	max-width: 100%;
 	width: 100%;
 	border: 1px solid var(--color-gray-200);
-	border-radius: 8px;
-	padding: 7px 9px;
+	border-radius: var(--border-radius-base);
+	padding: var(--space-2xs) var(--space-xs);
 	background: var(--color-white);
 	color: var(--color-black);
 	font: inherit;
@@ -140,9 +151,28 @@ button.wa-link-target { cursor: pointer; }
 button.wa-link-target:hover { background: color-mix(in srgb, var(--color-cream) 55%, transparent); }
 button.wa-link-target:focus-visible { outline: 2px solid var(--color-purple); outline-offset: 2px; }
 .wa-link-target.is-selected { border-color: var(--color-purple); box-shadow: inset 0 0 0 1px var(--color-purple); }
-.wa-link-target strong { display: block; font: 600 13px / 1.25 var(--font-serif); }
-.wa-link-description { display: block; overflow: hidden; margin-top: 2px; color: var(--color-gray-600); text-overflow: ellipsis; white-space: nowrap; }
-.wa-link-stage { display: block; margin-bottom: 2px; color: var(--color-status-success); font: 600 9.5px / 1.2 var(--font-sans); letter-spacing: .05em; text-transform: uppercase; }
+.wa-link-target strong {
+	display: block;
+	overflow-wrap: anywhere;
+	font: 600 var(--font-size-xs) / var(--leading-tight) var(--font-serif);
+}
+.wa-link-description {
+	display: block;
+	min-width: 0;
+	margin-top: var(--space-3xs);
+	overflow: hidden;
+	color: var(--color-gray-600);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.wa-link-stage {
+	display: block;
+	margin-bottom: var(--space-3xs);
+	color: var(--color-status-success);
+	font: 600 var(--font-size-xs) / var(--leading-tight) var(--font-sans);
+	letter-spacing: .05em;
+	text-transform: uppercase;
+}
 .wa-link-stage--budding { color: var(--color-gold); }
 .wa-link-stage--seedling { color: var(--color-sea-blue); }
 
