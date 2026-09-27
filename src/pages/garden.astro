@@ -27,6 +27,11 @@ const manifest = createPublicEntryManifest({
 	smidgeons,
 });
 const { canonicalByCollection } = manifest;
+const draftPosts = import.meta.env.DEV
+	? [...essays, ...notes, ...patterns, ...talks, ...nowPosts, ...smidgeons].filter(
+			(post) => post.data.draft === true,
+		)
+	: [];
 
 const canonicalEssays = canonicalByCollection.essays;
 const canonicalNotes = canonicalByCollection.notes;
@@ -38,7 +43,7 @@ const canonicalSmidgeons = canonicalByCollection.smidgeons;
 
 // Pre-process Now posts to extract body content for preview
 const processedNowPosts = await Promise.all(
-	canonicalNowPosts.map(async (post) => {
+	[...canonicalNowPosts, ...draftPosts.filter((post) => post.collection === "now")].map(async (post) => {
 		try {
 			// Use the post.body property directly, which contains the raw markdown
 			const preview = extractPreview(post.body || "");
@@ -52,7 +57,7 @@ const processedNowPosts = await Promise.all(
 
 // Pre-process Smidgeons to extract preview content
 const processedSmidgeons = await Promise.all(
-	canonicalSmidgeons.map(async (post) => {
+	[...canonicalSmidgeons, ...draftPosts.filter((post) => post.collection === "smidgeons")].map(async (post) => {
 		try {
 			// For all smidgeons, extract preview from body content
 			const preview = extractPreview(post.body || "");
@@ -73,6 +78,7 @@ const allPosts = [
 	...canonicalPodcasts,
 	...processedNowPosts,
 	...processedSmidgeons,
+	...draftPosts.filter((post) => post.collection !== "now" && post.collection !== "smidgeons"),
 ];
 ---
 
