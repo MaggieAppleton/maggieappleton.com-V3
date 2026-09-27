@@ -20,9 +20,11 @@ const rewrittenObjection = "The policy offers protection to most members.";
 const synthetic = {
 	personal: "Last Thursday I visited the Lantern Theatre in Bristol.",
 	opinion: "I think the Lantern show was moving.",
+	museum: "I visited the museum, which opened in 1840.",
 	external: "I liked the Lantern show, and it sold ten million tickets.",
 	sweeping: "Every artist always knows the only right way to work.",
 	overhedged: "A calendar year might have twelve months.",
+	contested: "Perhaps this contested claim is true.",
 };
 const iconPathPrefixes = {
 	citation: "M100,52H40A20,20,0,0,0,20,72v64",
@@ -214,9 +216,11 @@ ${sentences.mixed}
 			const scores = {
 				[synthetic.personal]: [0.95, 0.95, 3, 0.1],
 				[synthetic.opinion]: [0.95, 0.95, 1, 0],
+				[synthetic.museum]: [0.81, 0.95, 3, 0],
 				[synthetic.external]: [0.05, 0.95, 2.9, 2.8],
 				[synthetic.sweeping]: [0.05, 0.2, 4, 3.5],
 				[synthetic.overhedged]: [0.05, 0.2, 1, 0],
+				[synthetic.contested]: [0.05, 0.2, 0, 2],
 			};
 			const annotations = request.blocks.flatMap((block) => {
 				const answers = Object.fromEntries(block.sentences.flatMap((sentence, index) => {
@@ -234,13 +238,14 @@ ${sentences.mixed}
 			return route.fulfill({ json: { annotations, errors: [] } });
 		});
 		await page.goto(`${server.origin}/_editor?documentId=notes:${syntheticSlug}`);
-		await expect(page.locator(".writing-assist-marker--check")).toHaveCount(3);
-		await expect(page.locator(".writing-assist-marker--citation")).toHaveCount(1);
+		await expect(page.locator(".writing-assist-marker--check")).toHaveCount(4);
+		await expect(page.locator(".writing-assist-marker--citation")).toHaveCount(2);
 		await expect(page.locator(".writing-assist-marker--hedging")).toHaveCount(2);
 		const labels = await page.locator(".writing-assist-marker--check")
 			.evaluateAll((markers) => markers.map((marker) => marker.getAttribute("aria-label")));
-		assert.ok(labels.every((label) => !label.includes(synthetic.personal) && !label.includes(synthetic.opinion)));
-		for (const text of [synthetic.external, synthetic.sweeping, synthetic.overhedged]) {
+		assert.ok(labels.every((label) => ![synthetic.personal, synthetic.opinion, synthetic.contested]
+			.some((text) => label.includes(text))));
+		for (const text of [synthetic.museum, synthetic.external, synthetic.sweeping, synthetic.overhedged]) {
 			assert.ok(labels.some((label) => label.includes(text)), `Expected a marker for ${text}`);
 		}
 		await page.setViewportSize({ width: 1280, height: 1100 });

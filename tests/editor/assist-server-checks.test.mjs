@@ -54,6 +54,7 @@ test("checks defaults to configured switches and skips headings and quotes", () 
 	assert.match(requests[1].questions.personal_S1.instructions, /feeling.*preference.*opinion/iu);
 	assert.match(requests[1].questions.personal_S1.instructions, /separable external factual claim/iu);
 	assert.match(requests[1].questions.cite_S1.instructions, /external factual.*(?:company|research|tool)/iu);
+	assert.match(requests[1].questions.cite_S1.instructions, /historical.*geographical/iu);
 });
 
 test("citation skips linked sentences and applies its threshold inclusively", () => {
@@ -86,6 +87,8 @@ test("hedging compares wording with uncertainty without flagging a plain persona
 			direction: "over-hedging" },
 		{ text: "Perhaps the unopened archive contains another copy.", certainty: 1, uncertain: 3,
 			direction: null },
+		{ text: "Perhaps this contested claim is true.", certainty: 0, uncertain: 2,
+			direction: null },
 		{ text: "The door is blue.", certainty: 2, uncertain: 0, direction: null },
 	];
 	for (const [index, example] of examples.entries()) {
@@ -104,10 +107,14 @@ test("personal-only accounts and opinions are not citation or hedging targets; m
 	const cases = [
 		{ text: "I felt restless after the Lantern show.", personal: 0.96, citation: 0.95,
 			certainty: 4, uncertain: 4, kinds: [] },
+		{ text: "Last Thursday I visited the Lantern Theatre in Bristol.", personal: 0.95, citation: 0.95,
+			certainty: 3, uncertain: 0, kinds: [] },
 		{ text: "I think the Lantern show was moving.", personal: 0.92, citation: 0.9,
 			certainty: 1, uncertain: 0, kinds: [] },
 		{ text: "I liked the Lantern show, and it sold ten million tickets.", personal: 0.08,
 			citation: 0.9, certainty: 4, uncertain: 3.5, kinds: ["citation", "hedging"] },
+		{ text: "I visited the museum, which opened in 1840.", personal: 0.81,
+			citation: 0.95, certainty: 3, uncertain: 0, kinds: ["citation"] },
 	];
 	for (const [index, example] of cases.entries()) {
 		const block = { id: `personal-${index}`, kind: "paragraph", sentences: [sentence(`personal-s${index}`, example.text)] };

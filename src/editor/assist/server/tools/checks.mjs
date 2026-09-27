@@ -28,9 +28,9 @@ function questionsFor(block, checks) {
 	for (let index = 0; index < block.sentences.length; index += 1) {
 		const tag = `S${index + 1}`;
 		if (checks.includes("citation") || checks.includes("hedging")) questions[`personal_${tag}`] = { type: "noul",
-			instructions: `Does ${tag} consist solely of the author's firsthand action, observation, memory, feeling, preference, or opinion, without a separable external factual claim? A named place or work within a personal account does not by itself need outside evidence. Answer no when the sentence also asserts an independent fact about research, a company, a tool, or a third party.` };
+			instructions: `Does ${tag} consist solely of the author's firsthand action, observation, memory, feeling, preference, or opinion, without a separable external factual claim? A named place or work within a personal account does not by itself need outside evidence. Answer no when the sentence also asserts an independent historical or geographical fact, research finding, statistic, or fact about a company, tool, or third party.` };
 		if (checks.includes("citation")) questions[`cite_${tag}`] = { type: "noul",
-			instructions: `Does ${tag} state a specific external factual or empirical claim about research, a company, a tool, or a third party that a careful reader would expect to be backed by a source? The author's own actions, observations, memories, feelings, preferences, and opinions need no citation by themselves, but a separable external claim in the same sentence can still need one.` };
+			instructions: `Does ${tag} state a specific external factual or empirical claim, such as a historical date, geographical fact, research finding, statistic, or fact about a company, tool, or third party, that a careful reader would expect to be backed by a source? The author's own actions, observations, memories, feelings, preferences, and opinions need no citation by themselves, but a separable external claim in the same sentence can still need one.` };
 		if (checks.includes("hedging")) {
 			questions[`certainty_${tag}`] = { type: "score",
 				instructions: `How certain is the wording of ${tag}?`, criteria: levels };
@@ -92,9 +92,10 @@ export const checksTool = {
 			const sentence = block.sentences[index];
 			const tag = `S${index + 1}`;
 			const target = { type: "sentence", sentenceId: sentence.id };
-			const personal = probability(answers[`personal_${tag}`]);
-			const personalOnly = personal !== null && personal >= 0.8;
 			const cite = probability(answers[`cite_${tag}`]);
+			const personal = probability(answers[`personal_${tag}`]);
+			// A stronger external-claim answer wins when Jev gives conflicting labels.
+			const personalOnly = personal !== null && personal >= 0.8 && (cite === null || personal >= cite);
 			if (checks.includes("citation") && !personalOnly && !sentence.hasLink && !sentence.hasFootnote && cite !== null
 				&& cite >= (thresholds.citation ?? 0.7)) {
 				results.push(annotation("citation", target, sentence.hash, cite,
@@ -108,7 +109,7 @@ export const checksTool = {
 				// The old subtraction marked confident, settled memories as overclaims.
 				const mismatch = certainty.score + contested.score;
 				const direction = certainty.score >= 3 && mismatch >= 7 ? "overclaiming"
-					: certainty.score <= 1.5 && mismatch <= 2 ? "over-hedging" : null;
+					: certainty.score <= 1.5 && contested.score <= 1 && mismatch <= 2 ? "over-hedging" : null;
 				if (direction) results.push(annotation("hedging", target, sentence.hash,
 					Math.min(certainty.confidence, contested.confidence), { direction }));
 			}
