@@ -21,7 +21,7 @@
 	inset: -8px 0;
 	z-index: -1;
 }
-.wa-pinned-popover { width: var(--wa-popover-width, 340px); padding: var(--space-2xs); overflow-y: auto; }
+.wa-pinned-popover { position: absolute; width: var(--wa-popover-width, 340px); padding: var(--space-2xs); overflow-y: auto; }
 :is(.wa-hover-card, .wa-pinned-popover) p { font: inherit; }
 
 .wa-role-hover { width: 196px; max-width: 100%; }

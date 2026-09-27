@@ -1,11 +1,12 @@
-import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
 import { ChatThread } from "./ChatThread.mjs";
 
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function position(anchorRect, height = 240, width = 340) {
-	if (!anchorRect) return {};
+function position(anchor, height = 240, width = 340) {
+	if (!anchor) return {};
+	const { rect: anchorRect, scrollX, scrollY } = anchor;
 	const viewportWidth = typeof window === "undefined" ? Infinity : window.innerWidth;
 	const viewportHeight = typeof window === "undefined" ? Infinity : window.innerHeight;
 	const left = Math.max(12, Math.min(anchorRect.left, viewportWidth - width - 24));
@@ -17,8 +18,8 @@ function position(anchorRect, height = 240, width = 340) {
 	const above = height > belowSpace && aboveSpace > belowSpace;
 	const maxHeight = Math.floor(above ? aboveSpace : belowSpace);
 	return {
-		left,
-		top: above ? Math.max(12, anchorRect.top - 8) : anchorRect.bottom + 8,
+		left: left + scrollX,
+		top: (above ? Math.max(12, anchorRect.top - 8) : anchorRect.bottom + 8) + scrollY,
 		transform: above ? "translateY(-100%)" : undefined,
 		...(Number.isFinite(maxHeight) ? { maxHeight } : {}),
 	};
@@ -32,12 +33,17 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 	const applied = useRef(false);
 	const [pendingRewrite, setPendingRewrite] = useState(null);
 	const [placement, setPlacement] = useState(null);
+	const anchor = useMemo(() => anchorRect ? {
+		rect: anchorRect,
+		scrollX: typeof window === "undefined" ? 0 : window.scrollX,
+		scrollY: typeof window === "undefined" ? 0 : window.scrollY,
+	} : null, [anchorRect]);
 	useBrowserLayoutEffect(() => {
-		if (!open || !anchorRect || !panel.current) return undefined;
+		if (!open || !anchor || !panel.current) return undefined;
 		const element = panel.current;
 		const content = element.firstElementChild;
 		const update = () => {
-			const next = position(anchorRect, element.scrollHeight, popoverWidth);
+			const next = position(anchor, element.scrollHeight, popoverWidth);
 			setPlacement((previous) => previous && Object.keys(next).every((key) => previous[key] === next[key])
 				? previous : next);
 		};
@@ -46,7 +52,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		observer.observe(content);
 		window.addEventListener("resize", update);
 		return () => { observer.disconnect(); window.removeEventListener("resize", update); };
-	}, [open, anchorRect, popoverWidth]);
+	}, [open, anchor, popoverWidth]);
 	useEffect(() => {
 		if (!open) return undefined;
 		const trigger = triggerRef?.current ?? triggerRef;
@@ -63,7 +69,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		ref: panel,
 		className: `wa-pinned-popover ${className}`.trim(),
 		role: "dialog", "aria-modal": "false", "aria-labelledby": titleId,
-		style: { ...(placement ?? position(anchorRect, 240, popoverWidth)), "--wa-popover-width": `${popoverWidth}px` },
+		style: { ...(placement ?? position(anchor, 240, popoverWidth)), "--wa-popover-width": `${popoverWidth}px` },
 		onKeyDown: (event) => {
 			if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
 		},

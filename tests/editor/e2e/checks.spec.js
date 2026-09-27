@@ -248,6 +248,26 @@ ${sentences.mixed}
 		await expect(citationDialog.getByRole("button", { name: "Apply" })).toHaveCount(0);
 	});
 
+	test("pinned citation stays beside its marker while scrolling", async ({ page }) => {
+		await mockChecks(page, { dismissals });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		const marker = page.locator(".writing-assist-marker--citation");
+		await marker.click();
+		const dialog = page.getByRole("dialog", { name: "Citation needed" });
+		await expect(dialog).toBeVisible();
+		const [beforeMarker, beforeDialog] = await Promise.all([marker.boundingBox(), dialog.boundingBox()]);
+		const initialGap = beforeDialog.y - beforeMarker.y - beforeMarker.height;
+		await page.evaluate(() => {
+			document.body.style.minHeight = "2200px";
+			document.documentElement.style.scrollBehavior = "auto";
+			window.scrollTo(0, 220);
+		});
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(220);
+		const [afterMarker, afterDialog] = await Promise.all([marker.boundingBox(), dialog.boundingBox()]);
+		assert.ok(Math.abs(afterDialog.y - afterMarker.y - afterMarker.height - initialGap) < 2,
+			"the citation popover must scroll with its marker");
+	});
+
 	test("keeps a dismissed check hidden after reload", async ({ page }) => {
 		await mockChecks(page, { dismissals });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
