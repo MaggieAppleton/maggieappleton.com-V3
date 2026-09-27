@@ -1,7 +1,7 @@
 .editor-dock-divider {
 	flex: 0 0 1px;
-	height: 18px;
-	margin: 0 4px;
+	align-self: stretch;
+	margin: -6px 4px;
 	background: rgb(255 255 255 / 20%);
 }
 
