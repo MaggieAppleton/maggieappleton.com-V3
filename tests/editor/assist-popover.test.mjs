@@ -7,6 +7,7 @@ import { PinnedPopover } from "../../src/editor/assist/client/popover/PinnedPopo
 import { RoleHover, roleHoverRows } from "../../src/editor/assist/client/popover/RoleHover.mjs";
 import { ChecksHover, ChecksPopover, checkChatSystem } from "../../src/editor/assist/client/popover/ChecksPopover.mjs";
 import { extractRewrite, consumeChatStream } from "../../src/editor/assist/client/popover/ChatThread.mjs";
+import { createChatSessionStore } from "../../src/editor/assist/client/popover/chat-session.mjs";
 
 function clock() {
 	let now = 0;
@@ -134,4 +135,26 @@ test("chat consumes streamed chunks and extracts a rewrite for Apply", async () 
 	assert.equal(chunks.at(-1), reply);
 	assert.equal(extractRewrite(reply), "New sentence.");
 	assert.equal(extractRewrite("No rewrite here."), null);
+});
+
+test("annotation chat keeps its reply while the popover has no subscriber", async () => {
+	const store = createChatSessionStore();
+	const annotation = { id: "citation-1", unitHash: "first-version" };
+	const session = store.forAnnotation(annotation);
+	let releaseReply;
+	const replyGate = new Promise((resolve) => { releaseReply = resolve; });
+	session.setDraft("Where can I find a source?");
+	const pending = session.submit(async function* (messages) {
+		assert.equal(messages[0].content, "Where can I find a source?");
+		await replyGate;
+		yield "Try the archive.";
+	});
+	assert.equal(session.getSnapshot().busy, true);
+	assert.equal(session.getSnapshot().messages[0].content, "Where can I find a source?");
+	releaseReply();
+	await pending;
+	assert.equal(store.forAnnotation(annotation).getSnapshot().messages[1].content, "Try the archive.");
+	assert.equal(store.forAnnotation(annotation).getSnapshot().busy, false);
+	assert.equal(store.forAnnotation({ ...annotation, unitHash: "edited-version" }).getSnapshot().messages.length, 0);
+	store.dispose();
 });

@@ -241,10 +241,21 @@ ${sentences.mixed}
 		await expect(objectionDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
 		await expect(objectionDialog.getByRole("button", { name: "Apply" })).toBeVisible();
 		await objectionDialog.getByRole("button", { name: "Close" }).click();
+		await page.locator(".writing-assist-marker--objection").click();
+		await expect(objectionDialog.locator(".wa-chat-message--user")).toContainText("Can you address that concern?");
+		await expect(objectionDialog.getByRole("button", { name: "Apply" })).toBeVisible();
+		await objectionDialog.getByRole("button", { name: "Close" }).click();
 
 		await page.locator(".writing-assist-marker--citation").click();
 		const citationDialog = page.getByRole("dialog", { name: "Citation needed" });
-		await expect(citationDialog.getByText("This reads as a factual claim without a source.")).toBeVisible();
+		const citationChat = citationDialog.getByRole("textbox", { name: "Ask about this…" });
+		await citationChat.fill("What should I cite?");
+		await citationDialog.getByRole("button", { name: "Send message" }).click();
+		await expect(citationDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
+		await citationDialog.getByRole("button", { name: "Close" }).click();
+		await page.locator(".writing-assist-marker--citation").click();
+		await expect(citationDialog.locator(".wa-chat-message--user")).toContainText("What should I cite?");
+		await expect(citationDialog.locator(".wa-chat-message").last()).toContainText("A more careful version");
 		await expect(citationDialog.getByRole("button", { name: "Apply" })).toHaveCount(0);
 	});
 

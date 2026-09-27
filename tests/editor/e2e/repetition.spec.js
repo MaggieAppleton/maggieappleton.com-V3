@@ -84,7 +84,13 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		await expect(markers).toHaveCount(3);
 		await expect(markers.first()).toHaveAccessibleName("Same point, 3 times");
 		assert.ok((await markers.evaluateAll((items) => items.every((item) =>
-			item.classList.contains("writing-assist-marker--end")))), "repetition markers should sit at sentence ends");
+			item.classList.contains("writing-assist-marker--margin")))), "repetition markers should sit in the margin");
+		for (const sentence of repeatedSentences) {
+			const marker = markers.nth(await markerIndexForSentence(editor, sentence));
+			const markerRight = await marker.evaluate((element) => element.getBoundingClientRect().right);
+			const sentenceLeft = await sentenceFirstRect(editor, sentence).then((rect) => rect.left);
+			assert.ok(markerRight < sentenceLeft, "the marker must stay clear of its sentence text");
+		}
 		assert.ok(judgeRequests.some((request) => request.tools.includes("roles")),
 			"the role annotations must be mocked before the repetition tool runs");
 		assert.ok(judgeRequests.some((request) => request.tools.includes("repetition")),
@@ -113,7 +119,7 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		});
 		assert.equal(screenshotGeometry.length, 3);
 		assert.ok(screenshotGeometry.every((marker) => marker.visible && !marker.overlaps),
-			"the natural popover position should leave all three end marks visible in screenshots");
+			"the natural popover position should leave all three margin markers visible in screenshots");
 		const rows = dialog.locator(".wa-repetition-row");
 		await expect(rows).toHaveCount(3);
 		for (const [index, paragraph] of [2, 5, 9].entries()) {
@@ -124,10 +130,10 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		await expect(currentRow).toHaveCount(1);
 		const currentSentence = (await currentRow.innerText()).trim();
 		assert.ok(repeatedSentences.some((sentence) => currentSentence.includes(sentence)),
-			"the sentence opened from its end mark must be the current row");
+			"the sentence opened from its margin marker must be the current row");
 		const currentWeight = await currentRow.locator(".wa-repetition-sentence")
 			.evaluate((element) => Number.parseInt(getComputedStyle(element).fontWeight, 10));
-		assert.ok(currentWeight >= 600, "the sentence opened from its end mark should be bold");
+		assert.ok(currentWeight >= 600, "the sentence opened from its margin marker should be bold");
 
 		const destinationRow = rows.nth(currentSentence.includes(repeatedSentences[2]) ? 0 : 2);
 		const destinationSentence = repeatedSentences[currentSentence.includes(repeatedSentences[2]) ? 0 : 2];
@@ -159,7 +165,10 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		const judgeRequests = [];
 		const generateRequests = [];
 		const dismissalsByDocument = new Map();
-		await mockAssist(page, documentId, { judgeRequests, generateRequests, dismissalsByDocument });
+		let releaseReply;
+		const replyGate = new Promise((resolve) => { releaseReply = resolve; });
+		await mockAssist(page, documentId, { judgeRequests, generateRequests, dismissalsByDocument, replyGate });
+		await page.setViewportSize({ width: 1600, height: 1400 });
 		await page.goto(`${server.origin}/_editor?documentId=${encodeURIComponent(documentId)}`);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await expect(editor).toBeVisible();
@@ -176,6 +185,12 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		const chatInput = dialog.getByRole("textbox", { name: "Ask about these sentences…" });
 		await chatInput.fill("Can you make this sentence more concise?");
 		await dialog.getByRole("button", { name: "Send message" }).click();
+		await expect.poll(() => generateRequests.length).toBe(1);
+		await dialog.getByRole("button", { name: "Close" }).click();
+		await expect(dialog).toHaveCount(0);
+		releaseReply();
+		await marker.click();
+		await expect(dialog.locator(".wa-chat-message--user")).toContainText("Can you make this sentence more concise?");
 		await expect(dialog.locator(".wa-chat-message").last()).toContainText("A more concise version");
 		await expect(dialog.getByRole("button", { name: "Apply" })).toBeVisible();
 		assert.equal(generateRequests.length, 1);
@@ -199,11 +214,11 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		assert.ok(savedSource.includes(repeatedSentences[0]) && savedSource.includes(repeatedSentences[2]),
 			"Apply must leave the other repeated sentences unchanged");
 		assert.ok(!savedSource.includes(repeatedSentences[1]), "Apply must replace the opened sentence");
-		await expect(page.getByRole("status", { name: "Saved" })).toBeVisible();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	});
 });
 
-async function mockAssist(page, documentId, { judgeRequests, generateRequests = [], dismissalsByDocument }) {
+async function mockAssist(page, documentId, { judgeRequests, generateRequests = [], dismissalsByDocument, replyGate }) {
 	await page.addInitScript(() => {
 		localStorage.setItem("writing-assist:tools", JSON.stringify({ roles: true, repetition: true }));
 	});
@@ -267,6 +282,7 @@ async function mockAssist(page, documentId, { judgeRequests, generateRequests = 
 	});
 	await page.route("**/_editor/api/assist/generate", async (route) => {
 		generateRequests.push(route.request().postDataJSON());
+		if (replyGate) await replyGate;
 		const reply = "A more concise version keeps the focus on schedule control. "
 			+ `<rewrite>${rewrittenSentence}</rewrite>`;
 		return route.fulfill({
@@ -286,13 +302,30 @@ async function markerIndexForSentence(editor, sentence) {
 			const range = document.createRange();
 			range.setStart(node, start);
 			range.setEnd(node, start + text.length);
-			const rect = range.getBoundingClientRect();
+			const rect = range.getClientRects()[0];
 			const markers = [...document.querySelectorAll(".writing-assist-marker--repetition")];
 			return markers.map((marker, index) => {
 				const markerRect = marker.getBoundingClientRect();
-				return { index, distance: Math.abs(markerRect.left - rect.right)
+				return { index, distance: Math.abs(markerRect.right - rect.left)
 					+ Math.abs((markerRect.top + markerRect.height / 2) - (rect.top + rect.height / 2)) };
 			}).sort((left, right) => left.distance - right.distance)[0]?.index ?? -1;
+		}
+		throw new Error(`Could not locate sentence: ${text}`);
+	}, sentence);
+}
+
+async function sentenceFirstRect(editor, sentence) {
+	return editor.evaluate((root, text) => {
+		const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+		let node;
+		while ((node = walker.nextNode())) {
+			const start = node.textContent.indexOf(text);
+			if (start < 0) continue;
+			const range = document.createRange();
+			range.setStart(node, start);
+			range.setEnd(node, start + text.length);
+			const rect = range.getClientRects()[0];
+			return { left: rect.left, top: rect.top };
 		}
 		throw new Error(`Could not locate sentence: ${text}`);
 	}, sentence);
