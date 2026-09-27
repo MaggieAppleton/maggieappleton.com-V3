@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 
-const MARKER_SIZE = { margin: 22, end: 17 };
+const MARKER_SIZE = { margin: 28, end: 28 };
 const STACK_GAP = 4;
 const TOOL_ORDER = ["citation", "hedging", "objection", "cliche", "mixed-metaphor"];
 
@@ -19,7 +19,7 @@ function lastRect(range) {
 function position(rect, wrapperRect, placement, stack = 0, marginLeft = rect.left) {
 	const size = MARKER_SIZE[placement];
 	return {
-		left: placement === "margin" ? marginLeft - wrapperRect.left - size - 6 : rect.right - wrapperRect.left,
+		left: placement === "margin" ? marginLeft - wrapperRect.left - size - 10 : rect.right - wrapperRect.left,
 		top: rect.top - wrapperRect.top + ((rect.bottom - rect.top - size) / 2) + stack * (size + STACK_GAP),
 	};
 }

@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createHoverController, HoverCard } from "../../src/editor/assist/client/popover/HoverCard.mjs";
 import { PinnedPopover } from "../../src/editor/assist/client/popover/PinnedPopover.mjs";
 import { RoleHover, roleHoverRows } from "../../src/editor/assist/client/popover/RoleHover.mjs";
+import { ChecksHover, ChecksPopover, checkChatSystem } from "../../src/editor/assist/client/popover/ChecksPopover.mjs";
 import { extractRewrite, consumeChatStream } from "../../src/editor/assist/client/popover/ChatThread.mjs";
 
 function clock() {
@@ -99,6 +100,26 @@ test("role hover filters low confidence rows and orders the rest by probability"
 	assert.match(html, /data-role="opinion"/);
 	assert.match(html, /60%/);
 	assert.doesNotMatch(html, /Framing/);
+});
+
+test("citation cards omit the redundant reason while keeping it in chat context", () => {
+	const citation = { id: "citation-1", kind: "citation", data: { reason: "This claim needs a source." } };
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: citation }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, {
+		pinned: { annotation: citation }, chat: { streamReply: async function* () {} },
+	}));
+	assert.match(hover, /Citation needed/);
+	assert.match(pinned, /Citation needed/);
+	assert.match(pinned, /Ask about this sentence/);
+	assert.doesNotMatch(hover, /This claim needs a source\./);
+	assert.doesNotMatch(pinned, /This claim needs a source\./);
+	assert.doesNotMatch(pinned, /wa-popover-body/);
+	assert.match(checkChatSystem({ annotation: citation, sentence: "A fact.", paragraph: "A fact." }),
+		/Reason: This claim needs a source\./);
+	const hedging = renderToStaticMarkup(React.createElement(ChecksHover, {
+		annotation: { kind: "hedging", data: { reason: "The certainty is too strong." } },
+	}));
+	assert.match(hedging, /The certainty is too strong\./);
 });
 
 test("chat consumes streamed chunks and extracts a rewrite for Apply", async () => {

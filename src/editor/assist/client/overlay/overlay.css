@@ -58,6 +58,5 @@
 	pointer-events: auto;
 	cursor: pointer;
 }
-.writing-assist-marker--margin { width: 22px; height: 22px; }
-.writing-assist-marker--end { width: 17px; height: 17px; }
+.writing-assist-marker--margin, .writing-assist-marker--end { width: 28px; height: 28px; }
 .writing-assist-marker:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }

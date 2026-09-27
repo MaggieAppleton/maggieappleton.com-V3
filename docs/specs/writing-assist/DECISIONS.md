@@ -1,5 +1,93 @@
 # Writing Assist decisions
 
+## 2026-09-27 · Shared popovers · Final jig widths
+
+Hover cards are capped at 320px so they cannot exceed the default 340px pinned cards. The link hover is 270px beside its 290px pinned chooser; the repetition pinned card remains 520px. At the jig's single-column breakpoint, paired examples fill the same column width.
+
+## 2026-09-27 · 04 margin checks · Mixed metaphor hover text
+
+The identified metaphors in hover are plain, non-interactive text, matching the pinned card rather than appearing as selectable suggestions.
+
+## 2026-09-27 · 04 margin checks · Pinned loading placeholder
+
+Maggie asked the pinned suggestion skeleton to occupy the suggestion area more fully. It now spans the body width and uses three times the fluid `--space-s` token for height, with the suggestion-card radius. The compact hover loading bar remains as before.
+
+## 2026-09-27 · 05 word finder · Type scale
+
+Maggie asked for consistent sans-serif typography in the word finder, at the margin-check scale. The popover header, input, replacement words, meanings, loading and error states, and Apply button use the design system's smallest `--font-size-xs` token; replacement words remain bold and meanings are grey. The compact selection trigger uses that token too. The popover is 340px wide, and each taller, narrower fit bar sits beside the word so the meaning takes the full row below.
+
+## 2026-09-27 · 06 link suggestions · Unified target typography
+
+Maggie removed growth-stage labels from both hover and pinned target cards, replacing spec 06's small coloured stage label. The label, target title, and description share the same design-system sans-serif size; the target title remains darker and heavier, while the label and description use `--color-gray-600`. The selected target has a single thin sea-blue border. Growth stage data may still be used for suggestion ranking but is not displayed.
+
+## 2026-09-27 · 02 repetition · Hover card bottom spacing
+
+Maggie removed the bottom margin after the final repetition preview sentence in the hover card. Spacing between preview sentences remains.
+
+## 2026-09-27 · 02 repetition · Footer boundary
+
+Maggie asked for the divider above chat to reach both edges of the card and for equal space between the header, each sentence, and that divider. The list uses shared row padding and gap tokens with matching top and bottom padding; the chat's top margin is removed and its full-width divider uses the same inset pattern as the margin-check cards.
+
+## 2026-09-27 · 02 repetition · Open sentence list
+
+Maggie removed the line between the repetition header and sentence list, and the dividers between sentence rows. The separate divider above the chat footer remains.
+
+## 2026-09-27 · 02 repetition · Marker style
+
+Maggie asked the repetition marker to match the margin checks. It now uses a 28px pale salmon circle, a 15px salmon icon, and a 5% salmon border instead of the small solid circle. The live margin checks also now match the jig's previously approved 28px pale-marker treatment, with the additional 4px of text-to-marker spacing; marker positioning uses the new dimensions.
+
+## 2026-09-27 · 04 margin checks · Objection hover inset
+
+Maggie asked for about 4px of left inset on the likely objection explanation in the hover card. It uses 20% of the fluid `--space-s` token; the pinned explanation is unaffected.
+
+## 2026-09-27 · 04 margin checks · Hedging hover spacing
+
+Maggie asked for about 4px more space below the hedging explanation in the hover card. Its bottom margin now derives from 20% of the fluid `--space-s` token. The pinned explanation is unaffected.
+
+## 2026-09-27 · 01 sentence roles · Distribution bars
+
+Maggie asked for the role distribution bars to be at least 4px taller and to show their full scale. The bars are 10px tall, up from 6px, over a full-width, very light grey track made from the existing grey token. The percentage and role labels remain unchanged.
+
+## 2026-09-27 · 01 sentence roles · Hover card padding
+
+Maggie specified roughly 4px vertical, 12px left, and 20px right padding for the sentence-role tooltip. This replaces the shared hover-card padding for that tooltip only. The padding derives from the fluid `--space-s` token at 20%, 60%, and 100%, preserving those proportions across viewport widths.
+
+## 2026-09-27 · 04 margin checks · Mixed metaphor hover inset
+
+Maggie asked for about 20px of right inset on the mixed metaphor explanation in the hover card. It uses the existing fluid `--space-s` token, matching the cliché hover phrase inset across viewport widths. The pinned explanation keeps its current width.
+
+## 2026-09-27 · Shared popovers · Bare header icons
+
+Maggie asked to remove the coloured circle around icons inside hover and pinned popover headers. Header symbols now appear bare at 18px with at least 8px before the title; the margin markers retain their pale circles. This supersedes the earlier decision to match the check popover icon circles to their margin markers. The pinned Dismiss and Close buttons retain their 2px separation.
+
+## 2026-09-27 · 04 margin checks · Hedging direction label
+
+Hedging has two dynamic directions, `overclaiming` and `over-hedging`. Maggie asked their hover and pinned titles to use a colon instead of the dot separator. This replaces the title punctuation in spec 04. The jig's example uses the real `overclaiming` direction rather than its earlier placeholder `soften`.
+
+## 2026-09-27 · Shared popovers · Chat field
+
+Maggie asked the shared pinned-popover chat field to fill the available width, with the send button nestled inside its right edge. The button remains a separate, accessible submit control in the form and is visually positioned over the input's reserved right padding.
+
+## 2026-09-27 · 04 margin checks · Actionable objections
+
+Maggie asked each likely objection to explain the sentence-specific challenge and how the writer could address it. The objection is already generated on demand from that sentence; its prompt now requests a concrete response path in the same short objection text and forbids generic remarks or invented evidence. This extends spec 04's request for the strongest objection alone. The jig labels its fixed text as an example, not a repeated live message.
+
+## 2026-09-27 · 04 margin checks · Cliché popover copy
+
+Maggie removed the cliché reason paragraph from hover and pinned popovers. The validated flagged phrase and replacement suggestions carry the useful information, while the reason remains in chat context. This supersedes spec 04's instruction to show that reason in both states.
+
+## 2026-09-27 · 04 margin checks · Full hover suggestions
+
+Maggie asked the hover card to show every available rewrite or replacement suggestion. This supersedes spec 04's limit of one hedging rewrite and two cliché replacements in hover. Hover and pinned states now present the same suggestion list; the pinned state retains chat and the existing explicit Apply control.
+
+## 2026-09-27 · 04 margin checks · Matching popover icons
+
+Maggie asked every margin check's hover and pinned header icon to match its margin marker. These icons now use the marker's 28px circle, 15px symbol, pale check colour, dark symbol, and 5% accent border. This replaces the small solid circles shown in the approved mockup; repetition, links, and other non-check popovers keep their existing icons.
+
+## 2026-09-27 · 04 margin checks · Citation popover copy
+
+Maggie removed the redundant citation reason from both the hover card and pinned popover. This supersedes spec 04's instruction to display the fixed reason in those two places. The “Citation needed” title and pinned chat remain; the reason stays in the chat system context but is not shown in the UI. Empty pinned bodies are omitted so the chat sits directly below the header.
+
 ## 2026-09-27 · Sentence roles · Mixed classification tint
 
 Maggie asked for the sentence tint to show the probability split when several roles are substantial. This supersedes spec 01's exactly one solid colour. Roles at or above the existing 10% hover threshold form a soft gradient with lengths proportional to their probabilities; effectively single-role sentences keep their solid tint. A separate, non-interactive overlay paints wrapped text lines because CSS Custom Highlights cannot paint a background image. The role annotation and hover card remain unchanged, and no tint enters Lexical or MDX.

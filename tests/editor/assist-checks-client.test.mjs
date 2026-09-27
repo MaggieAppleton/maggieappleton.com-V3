@@ -3,7 +3,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { checksTool, enabledChecks } from "../../src/editor/assist/client/tools/checks.mjs";
+import { checkDetails, checksTool, enabledChecks } from "../../src/editor/assist/client/tools/checks.mjs";
 import { ChecksHover, ChecksPopover, checkChatSystem, validateClichePhrase } from "../../src/editor/assist/client/popover/ChecksPopover.mjs";
 import { AssistPanel } from "../../src/editor/assist/client/AssistPanel.mjs";
 import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
@@ -19,6 +19,8 @@ test("checks tool provides ordered coloured margin markers", () => {
 	assert.equal(marker.label, "Mixed metaphor");
 	assert.equal(checksTool.markerPresenter(cliche, { targetText: "tip of the iceberg" }).label,
 		"Cliché: tip of the iceberg");
+	assert.equal(checkDetails("hedging", "overclaiming").title, "Hedging: overclaiming");
+	assert.equal(checkDetails("hedging", "over-hedging").title, "Hedging: over-hedging");
 });
 
 test("checks panel renders four independently controlled switches", () => {
@@ -43,7 +45,7 @@ test("check activation preserves each nested toggle instead of coercing the map 
 	});
 });
 
-test("cliché hover previews two suggestions and the pinned popover selects a replacement", () => {
+test("cliché hover shows every suggestion and the pinned popover selects a replacement", () => {
 	const generated = { phrase: "tip of the iceberg", phraseAccepted: true, reason: "A worn phrase.", suggestions: ["a first glimpse", "the visible edge", "an early sign"] };
 	const spanCliche = { ...cliche, target: { type: "span", sentenceId: "s1", start: 4, end: 22 } };
 	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: spanCliche, generated }));
@@ -55,9 +57,22 @@ test("cliché hover previews two suggestions and the pinned popover selects a re
 	assert.ok(pinned.indexOf("wa-check-phrase") < pinned.indexOf("wa-check-suggestion"), "pinned popover names the phrase before alternatives");
 	assert.match(hover, /a first glimpse/);
 	assert.match(hover, /the visible edge/);
-	assert.doesNotMatch(hover, /an early sign/);
+	assert.match(hover, /an early sign/);
+	assert.doesNotMatch(hover, /A worn phrase\./);
+	assert.doesNotMatch(pinned, /A worn phrase\./);
 	assert.match(pinned, /aria-pressed="true"/);
 	assert.match(pinned, /Apply/);
+});
+
+test("hedging hover shows the same rewrites as the pinned popover", () => {
+	const annotation = { ...cliche, kind: "hedging", data: { direction: "soften", reason: "Too certain." } };
+	const generated = { rewrites: ["One rewrite.", "Another rewrite.", "A third rewrite."] };
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation, generated }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation }, generated }));
+	for (const rewrite of generated.rewrites) {
+		assert.match(hover, new RegExp(rewrite.replaceAll(".", "\\.")));
+		assert.match(pinned, new RegExp(rewrite.replaceAll(".", "\\.")));
+	}
 });
 
 test("pending check previews retain their header and objection text appears once", () => {
@@ -110,6 +125,7 @@ test("checks chat gets the live context, reason and exact rewrite scope", () => 
 	const clicheSystem = checkChatSystem({ annotation: cliche, title: "The garden", sentence: "The tip of the iceberg remains.",
 		paragraph: "The tip of the iceberg remains. Another sentence.", generated: { reason: "A worn phrase." } });
 	assert.match(clicheSystem, /Post title: The garden/);
+	assert.match(clicheSystem, /Reason: A worn phrase\./);
 	assert.match(clicheSystem, /Sentence: The tip of the iceberg remains\./);
 	assert.match(clicheSystem, /Paragraph: The tip of the iceberg remains\. Another sentence\./);
 	assert.match(clicheSystem, /only the flagged cliché phrase/);

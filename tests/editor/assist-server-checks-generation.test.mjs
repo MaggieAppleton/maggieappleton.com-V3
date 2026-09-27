@@ -56,8 +56,9 @@ test("each hover purpose tells the model what to judge and which JSON fields to 
 			[/cliché, stock phrase, or dead metaphor/u, /exact substring/u, /phrase.*reason.*suggestions/u, /three replacements for the phrase/u]],
 		["hedging", { reason: "Too certain.", rewrites: ["Might work.", "Could work.", "May work."] },
 			[/certainty/u, /same meaning and voice/u, /reason.*rewrites/u, /three whole-sentence rewrites/u]],
-		["objection", { objection: "The evidence is thin." },
-			[/strongest objection/u, /sceptical expert/u, /objection/u]],
+		["objection", { objection: "The evidence is thin. Name a source for the claim." },
+			[/strongest specific objection/u, /sceptical expert/u, /concrete way the writer could address it/u,
+				/Refer to the actual claim/u, /do not invent evidence/u, /objection/u]],
 		["mixed-metaphor", { metaphors: ["journey", "building"], reason: "The images clash." },
 			[/incompatible metaphors/u, /metaphors.*reason/u, /at least two/u]],
 	];

@@ -28,11 +28,11 @@ test("link targets keep at most two usable targets in result order", () => {
 	] } }).map(({ pathname }) => pathname), ["/end-user-programming", "/home-cooked-software"]);
 });
 
-test("links hover previews stage, title and a one-line description", () => {
+test("links hover previews titles and descriptions without growth stages", () => {
 	const html = renderToStaticMarkup(React.createElement(LinksHover, { annotation }));
 	assert.match(html, /class="wa-links-hover"/);
 	assert.match(html, />Link to</);
-	assert.match(html, /EVERGREEN/);
+	assert.doesNotMatch(html, /EVERGREEN|BUDDING|wa-link-stage/);
 	assert.match(html, /End-User Programming/);
 	assert.match(html, /Home-Cooked Software/);
 });
@@ -43,6 +43,7 @@ test("links popover starts with the first target selected and offers dismiss, cl
 		onClose() {}, onDismiss() {}, onLink() {},
 	}));
 	assert.match(html, /class="wa-pinned-popover wa-links-popover"/);
+	assert.doesNotMatch(html, /EVERGREEN|BUDDING|wa-link-stage/);
 	assert.match(html, /class="wa-link-target is-selected"/);
 	assert.match(html, /aria-pressed="true"/);
 	assert.match(html, /aria-label="Dismiss"/);

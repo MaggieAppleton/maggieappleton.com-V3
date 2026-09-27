@@ -18,7 +18,7 @@ const matches = [
 	{ sentence: { id: "three", hash: "three", text: "We need to picture unfamiliar people." }, block: { index: 8 } },
 ];
 
-test("repetition marker is a salmon 17px end mark with a group label", () => {
+test("repetition marker is a salmon 28px end mark with a group label", () => {
 	const marker = repetitionTool.markerPresenter(annotation);
 	assert.equal(marker.placement, "end");
 	assert.equal(marker.className, "writing-assist-marker--repetition");

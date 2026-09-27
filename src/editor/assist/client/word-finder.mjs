@@ -192,8 +192,9 @@ function WordFinderPopover({ selection, finder, controller, onClose, fallbackFoc
 					key: `${row.text}:${index}`, id: `wa-word-option-${index}`, type: "button", role: "option", tabIndex: -1,
 					"aria-selected": index === selected,
 					className: index === selected ? "is-selected" : "", onClick: () => { setSelected(index); list.current?.focus(); }, onDoubleClick: () => apply(index),
-				}, React.createElement("span", null, React.createElement("b", null, row.text), row.gloss && React.createElement("small", null, row.gloss)),
-					React.createElement("i", { className: "wa-word-finder-meter" }, React.createElement("i", { style: { width: `${row.meter * 100}%` } }))))),
+				}, React.createElement("b", null, row.text),
+					React.createElement("i", { className: "wa-word-finder-meter" }, React.createElement("i", { style: { width: `${row.meter * 100}%` } })),
+					row.gloss && React.createElement("small", null, row.gloss)))),
 		React.createElement("span", { className: "visually-hidden", role: "status", "aria-live": "polite" },
 			rows[selected] && !loading ? `${rows[selected].text}, ${rows[selected].gloss}, option ${selected + 1} of ${rows.length}` : ""),
 		React.createElement("footer", null, React.createElement("button", { type: "button", className: "wa-word-finder-apply", disabled: !rows.length || loading, onClick: () => apply() }, "Apply")));

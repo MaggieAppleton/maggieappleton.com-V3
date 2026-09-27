@@ -72,7 +72,7 @@ ${sentenceText}\n`;
 		await expect(hover).toContainText("Link to");
 		await expect(hover).toContainText(target.title);
 		await expect(hover).toContainText(target.description);
-		await expect(hover.locator(".wa-link-stage")).toHaveText("EVERGREEN");
+		await expect(hover.locator(".wa-link-stage")).toHaveCount(0);
 
 		await page.mouse.click(point.x, point.y);
 		const popover = page.getByRole("dialog", { name: "Link to" });

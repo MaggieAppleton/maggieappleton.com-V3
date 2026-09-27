@@ -82,7 +82,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 				onClick: onClose,
 			}, React.createElement(XIcon, { size: 16, "aria-hidden": "true" })),
 		),
-		children && React.createElement("div", { className: "wa-popover-body" }, children),
+		React.Children.toArray(children).length > 0 && React.createElement("div", { className: "wa-popover-body" }, children),
 		chat?.streamReply && React.createElement(ChatThread, {
 			streamReply: chat.streamReply,
 			placeholder: chat.placeholder,

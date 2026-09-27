@@ -31,7 +31,7 @@ const markerColours = {
 };
 const markerNames = {
 	citation: `Citation needed: ${sentences.citation}`,
-	hedging: `Hedging · overclaiming: ${sentences.citation}`,
+	hedging: `Hedging: overclaiming: ${sentences.citation}`,
 	objection: `Likely objection: ${sentences.objection}`,
 	cliche: `Cliché: ${sentences.cliche}`,
 	"mixed-metaphor": `Mixed metaphor: ${sentences.mixed}`,

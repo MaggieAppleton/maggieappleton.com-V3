@@ -28,7 +28,7 @@ export function checkChatSystem({ annotation, title = "", sentence = "", paragra
 function CheckIcon({ annotation }) {
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const Icon = detail.icon;
-	return React.createElement(Icon, { size: 14, weight: "bold", "aria-hidden": "true" });
+	return React.createElement(Icon, { size: 18, weight: "bold", "aria-hidden": "true" });
 }
 
 function reason(annotation, generated) {
@@ -56,11 +56,12 @@ export function ChecksHover({ annotation, generated }) {
 		React.createElement("header", { className: "wa-check-header" }, React.createElement("span", { className: "wa-check-icon", "aria-hidden": "true" }, React.createElement(CheckIcon, { annotation })), detail.title),
 		pending && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
-		reason(annotation, generated) && React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
+		annotation.kind !== "citation" && annotation.kind !== "cliche" && reason(annotation, generated)
+			&& React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
 		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
-		annotation.kind === "cliche" && suggestions.slice(0, 2).map((suggestion) => React.createElement("div", { className: "wa-check-preview", key: suggestion }, suggestion)),
-		annotation.kind === "hedging" && suggestions[0] && React.createElement("div", { className: "wa-check-preview" }, suggestions[0]),
-		annotation.kind === "mixed-metaphor" && generated?.metaphors?.map((metaphor) => React.createElement("div", { className: "wa-check-preview", key: metaphor }, metaphor)),
+		(annotation.kind === "cliche" || annotation.kind === "hedging") && suggestions.map((suggestion) =>
+			React.createElement("div", { className: "wa-check-preview", key: suggestion }, suggestion)),
+		annotation.kind === "mixed-metaphor" && generated?.metaphors?.map((metaphor) => React.createElement("p", { key: metaphor }, metaphor)),
 	);
 }
 
@@ -84,7 +85,8 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 		useChatRewrite: !canApplySuggestion && chatCanApply, onRewrite: (rewrite) => { if (!chatCanApply) { setChatRewrite(rewrite); setSelected(-1); } } },
 		!generated && annotation.kind !== "citation" && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
-		reason(annotation, generated) && React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
+		annotation.kind !== "citation" && annotation.kind !== "cliche" && reason(annotation, generated)
+			&& React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
 		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
 		(annotation.kind === "cliche" || annotation.kind === "hedging") && React.createElement(React.Fragment, null,
 			chatRewrite && React.createElement("button", { type: "button", className: "wa-check-suggestion", "aria-pressed": selected === -1,

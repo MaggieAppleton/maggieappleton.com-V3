@@ -15,7 +15,7 @@ export const repetitionTool = {
 			placement: "end",
 			label: `Same point, ${members} times`,
 			className: "writing-assist-marker--repetition",
-			content: React.createElement(ArrowsClockwiseIcon, { size: 12, weight: "bold", "aria-hidden": "true" }),
+			content: React.createElement(ArrowsClockwiseIcon, { size: 15, weight: "bold", "aria-hidden": "true" }),
 		};
 	},
 };

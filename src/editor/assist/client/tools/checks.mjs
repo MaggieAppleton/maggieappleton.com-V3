@@ -12,7 +12,7 @@ const checks = {
 
 export function checkDetails(kind, direction) {
 	const detail = checks[kind] ?? checks.citation;
-	return { ...detail, title: kind === "hedging" && direction ? `Hedging · ${direction}` : detail.label };
+	return { ...detail, title: kind === "hedging" && direction ? `Hedging: ${direction}` : detail.label };
 }
 
 export function enabledChecks(enabled = {}, available = false) {
@@ -32,7 +32,7 @@ export const checksTool = {
 		return { placement: "margin", order: detail.order,
 			label: excerpt ? `${detail.title}: ${excerpt}` : detail.title,
 			className: `writing-assist-marker--check writing-assist-marker--${annotation.kind}`,
-			content: React.createElement(Icon, { size: 13, weight: "bold", "aria-hidden": "true" }) };
+			content: React.createElement(Icon, { size: 15, weight: "bold", "aria-hidden": "true" }) };
 	},
 };
 
