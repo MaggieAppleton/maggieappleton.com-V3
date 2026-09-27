@@ -51,6 +51,9 @@ const TYPES = [
 	</div>
 
 	<div class="right-menus">
+		{import.meta.env.DEV && (
+			<button class="draft-filter" type="button" aria-pressed="false">Draft</button>
+		)}
 		<div class="mobile-topics filter-popover" data-filter-group="topic" data-select-mode="single">
 			<button
 				class="filter-trigger"
@@ -207,7 +210,33 @@ const TYPES = [
 	.right-menus {
 		display: flex;
 		flex-direction: row;
+		flex-wrap: wrap;
 		gap: var(--space-3xs);
+	}
+	.draft-filter {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 32px;
+		padding: 0 var(--space-xs);
+		border: 1px solid var(--color-gray-300);
+		border-radius: var(--border-radius-base);
+		background: var(--color-cream);
+		color: var(--color-gray-700);
+		font: inherit;
+		cursor: pointer;
+	}
+	.draft-filter:hover {
+		background: white;
+	}
+	.draft-filter:focus-visible {
+		outline: 2px solid var(--color-sea-blue);
+		outline-offset: 4px;
+	}
+	.draft-filter[aria-pressed="true"] {
+		background: var(--color-sea-blue);
+		border-color: var(--color-sea-blue);
+		color: white;
 	}
 	@media (max-width: 768px) {
 		.right-menus {
@@ -566,6 +595,7 @@ const TYPES = [
 		topic: string;
 		growthStage: string;
 		types: string[];
+		draftsOnly: boolean;
 	}
 
 	const TYPE_LABELS: Record<string, string> = {
@@ -588,6 +618,7 @@ const TYPES = [
 		topic: "",
 		growthStage: "",
 		types: [],
+		draftsOnly: false,
 	};
 
 	function normalizeItemType(el: HTMLElement): string {
@@ -672,7 +703,9 @@ const TYPES = [
 	}
 
 	function updateCounts() {
-		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item"));
+		const items = Array.from(document.querySelectorAll<HTMLElement>(".grid-item")).filter(
+			(item) => !filterState.draftsOnly || item.dataset.draft === "true",
+		);
 
 		const matchesTopic = (el: HTMLElement) => {
 			if (!filterState.topic) return true;
@@ -749,6 +782,10 @@ const TYPES = [
 	}
 
 	function syncUI() {
+		document.querySelector<HTMLButtonElement>(".draft-filter")?.setAttribute(
+			"aria-pressed",
+			String(filterState.draftsOnly),
+		);
 		updateTriggerLabels();
 		updateOptionSelectedStates();
 		updateCounts();
@@ -877,6 +914,12 @@ const TYPES = [
 
 	function handlePopoverClick(e: Event) {
 		const target = e.target as HTMLElement;
+		if (target.closest(".draft-filter")) {
+			filterState.draftsOnly = !filterState.draftsOnly;
+			syncUI();
+			dispatchFilterChange();
+			return;
+		}
 		const pop = target.closest<HTMLElement>(".filter-popover");
 		if (!pop) return;
 
@@ -905,6 +948,7 @@ const TYPES = [
 		filterState.topic = "";
 		filterState.growthStage = "";
 		filterState.types = [];
+		filterState.draftsOnly = false;
 
 		const topicsList = document.querySelector<HTMLElement>(".topics-list");
 		const filterPopovers = document.querySelector<HTMLElement>(".right-menus");
