@@ -3,6 +3,15 @@ import { PinnedPopover } from "./PinnedPopover.mjs";
 import { checkDetails } from "../tools/checks.mjs";
 export { validateClichePhrase } from "../check-phrase.mjs";
 
+function acceptedClichePhrase(annotation, generated) {
+	const { start, end } = annotation.target ?? {};
+	const phrase = generated?.phrase;
+	return annotation.kind === "cliche" && generated?.phraseAccepted === true
+		&& annotation.target?.type === "span" && typeof phrase === "string" && phrase.length > 0
+		&& Number.isInteger(start) && Number.isInteger(end) && end > start && end - start === phrase.length
+		? phrase : null;
+}
+
 export function checkChatSystem({ annotation, title = "", sentence = "", paragraph = "", generated = {} }) {
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const checkReason = reason(annotation, generated) || "No additional reason was supplied.";
@@ -11,8 +20,9 @@ export function checkChatSystem({ annotation, title = "", sentence = "", paragra
 			: "the whole sentence";
 	const context = annotation.kind === "mixed-metaphor"
 		? `Paragraph: ${paragraph}` : `Sentence: ${sentence}\nParagraph: ${paragraph}`;
-	const phrase = annotation.kind === "cliche" && generated.phrase ? ` Flagged phrase: ${generated.phrase}.` : "";
-	return `Post title: ${title}. Check: ${detail.title}. Reason: ${checkReason}.${phrase} ${context}\nWrite in British English. Keep the author's plain, conversational voice; do not add claims. If you use <rewrite>, it must replace ${scope}.${annotation.kind === "citation" ? " Never invent specific citations, titles, URLs, or statistics." : ""}`;
+	const phrase = acceptedClichePhrase(annotation, generated);
+	const phraseContext = phrase ? ` Flagged phrase: ${phrase}.` : "";
+	return `Post title: ${title}. Check: ${detail.title}. Reason: ${checkReason}.${phraseContext} ${context}\nWrite in British English. Keep the author's plain, conversational voice; do not add claims. If you use <rewrite>, it must replace ${scope}.${annotation.kind === "citation" ? " Never invent specific citations, titles, URLs, or statistics." : ""}`;
 }
 
 function CheckIcon({ annotation }) {
@@ -24,6 +34,12 @@ function CheckIcon({ annotation }) {
 function reason(annotation, generated) {
 	if (annotation.kind === "objection") return generated?.objection ?? annotation.data?.reason ?? "";
 	return generated?.reason ?? annotation.data?.reason ?? generated?.objection ?? "";
+}
+
+function ClichePhrase({ annotation, generated }) {
+	const phrase = acceptedClichePhrase(annotation, generated);
+	return phrase && React.createElement("p", { className: "wa-check-phrase" },
+		"Flagged phrase: ", React.createElement("strong", null, `“${phrase}”`));
 }
 
 function SuggestionRows({ suggestions, selected, onSelect }) {
@@ -41,6 +57,7 @@ export function ChecksHover({ annotation, generated }) {
 		pending && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
 		reason(annotation, generated) && React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
+		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
 		annotation.kind === "cliche" && suggestions.slice(0, 2).map((suggestion) => React.createElement("div", { className: "wa-check-preview", key: suggestion }, suggestion)),
 		annotation.kind === "hedging" && suggestions[0] && React.createElement("div", { className: "wa-check-preview" }, suggestions[0]),
 		annotation.kind === "mixed-metaphor" && generated?.metaphors?.map((metaphor) => React.createElement("div", { className: "wa-check-preview", key: metaphor }, metaphor)),
@@ -68,6 +85,7 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 		!generated && annotation.kind !== "citation" && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
 		reason(annotation, generated) && React.createElement("p", { className: "wa-check-reason" }, reason(annotation, generated)),
+		annotation.kind === "cliche" && React.createElement(ClichePhrase, { annotation, generated }),
 		(annotation.kind === "cliche" || annotation.kind === "hedging") && React.createElement(React.Fragment, null,
 			chatRewrite && React.createElement("button", { type: "button", className: "wa-check-suggestion", "aria-pressed": selected === -1,
 				onClick: () => setSelected(-1) }, React.createElement("b", null, "From chat"), ": ", chatRewrite),
