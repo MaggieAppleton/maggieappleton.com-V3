@@ -116,6 +116,32 @@ test.describe.serial("Writing Assist repetition finder", () => {
 			"the natural popover position should leave all three end marks visible in screenshots");
 		const rows = dialog.locator(".wa-repetition-row");
 		await expect(rows).toHaveCount(3);
+		const rowStyle = await rows.first().evaluate((row) => {
+			const location = row.querySelector(".wa-repetition-location");
+			const sentence = row.querySelector(".wa-repetition-sentence");
+			const rowStyles = getComputedStyle(row);
+			return {
+				locationFontSize: Number.parseFloat(getComputedStyle(location).fontSize),
+				sentenceFontSize: Number.parseFloat(getComputedStyle(sentence).fontSize),
+				sentenceLineHeight: Number.parseFloat(getComputedStyle(sentence).lineHeight),
+				locationWidth: location.getBoundingClientRect().width,
+				firstColumnWidth: Number.parseFloat(rowStyles.gridTemplateColumns),
+			};
+		});
+		assert.ok(rowStyle.locationFontSize >= 14, "paragraph locations should use a readable design-system size");
+		assert.ok(rowStyle.sentenceFontSize >= 14, "repeated sentences should use a readable design-system size");
+		assert.ok(rowStyle.sentenceLineHeight > rowStyle.sentenceFontSize,
+			"sentence line-height should remain open at the larger type size");
+		assert.ok(rowStyle.firstColumnWidth <= rowStyle.locationWidth + 1,
+			"paragraph labels should size their column to their content instead of a fixed width");
+
+		await page.setViewportSize({ width: 390, height: 950 });
+		await expect.poll(() => dialog.evaluate((element) => {
+			const rect = element.getBoundingClientRect();
+			return rect.left >= 0 && rect.right <= innerWidth
+				&& element.scrollWidth <= element.clientWidth;
+		})).toBe(true);
+		await page.setViewportSize({ width: 1600, height: 1400 });
 		for (const [index, paragraph] of [2, 5, 9].entries()) {
 			await expect(rows.nth(index)).toContainText(`¶${paragraph}`);
 			await expect(rows.nth(index)).toContainText(repeatedSentences[index]);
