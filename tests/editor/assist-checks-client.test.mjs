@@ -45,11 +45,14 @@ test("check activation preserves each nested toggle instead of coercing the map 
 
 test("cliché hover previews two suggestions and the pinned popover selects a replacement", () => {
 	const generated = { phrase: "tip of the iceberg", phraseAccepted: true, reason: "A worn phrase.", suggestions: ["a first glimpse", "the visible edge", "an early sign"] };
-	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: cliche, generated }));
-	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: {
-		...cliche, target: { type: "span", sentenceId: "s1", start: 4, end: 22 },
-	} }, generated,
+	const spanCliche = { ...cliche, target: { type: "span", sentenceId: "s1", start: 4, end: 22 } };
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: spanCliche, generated }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: spanCliche }, generated,
 		fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {}, canApply: true }));
+	assert.match(hover, /Flagged phrase: <strong>“tip of the iceberg”<\/strong>/);
+	assert.match(pinned, /Flagged phrase: <strong>“tip of the iceberg”<\/strong>/);
+	assert.ok(hover.indexOf("wa-check-phrase") < hover.indexOf("a first glimpse"), "hover names the phrase before alternatives");
+	assert.ok(pinned.indexOf("wa-check-phrase") < pinned.indexOf("wa-check-suggestion"), "pinned popover names the phrase before alternatives");
 	assert.match(hover, /a first glimpse/);
 	assert.match(hover, /the visible edge/);
 	assert.doesNotMatch(hover, /an early sign/);
@@ -88,7 +91,19 @@ test("cliché Apply stays hidden until the controller accepts its exact phrase s
 	const generated = { phrase: "not in this sentence", phraseAccepted: false, reason: "A worn phrase.", suggestions: ["one", "two", "three"] };
 	const html = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: cliche }, generated,
 		fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {}, canApply: true }));
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: cliche, generated }));
 	assert.doesNotMatch(html, />Apply</);
+	assert.doesNotMatch(html, /Flagged phrase:/, "unvalidated model phrases must not be shown as source text");
+	assert.doesNotMatch(hover, /Flagged phrase:/, "hover must also hide an unvalidated model phrase");
+	const stale = { ...cliche, target: { type: "span", sentenceId: "s1", start: 0, end: 3 } };
+	const staleHtml = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: stale },
+		generated: { ...generated, phraseAccepted: true }, fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {} }));
+	assert.doesNotMatch(staleHtml, /Flagged phrase:/, "a phrase must still match the live span length");
+	const longPhrase = "in the very same boat as everyone else";
+	const longAnnotation = { ...cliche, target: { type: "span", sentenceId: "s1", start: 0, end: longPhrase.length } };
+	const longHtml = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: longAnnotation,
+		generated: { phrase: longPhrase, phraseAccepted: true, suggestions: [] } }));
+	assert.match(longHtml, new RegExp(`Flagged phrase: <strong>“${longPhrase}”<\\/strong>`));
 });
 
 test("checks chat gets the live context, reason and exact rewrite scope", () => {
@@ -98,6 +113,13 @@ test("checks chat gets the live context, reason and exact rewrite scope", () => 
 	assert.match(clicheSystem, /Sentence: The tip of the iceberg remains\./);
 	assert.match(clicheSystem, /Paragraph: The tip of the iceberg remains\. Another sentence\./);
 	assert.match(clicheSystem, /only the flagged cliché phrase/);
+	const acceptedClicheSystem = checkChatSystem({ annotation: { ...cliche,
+		target: { type: "span", sentenceId: "s1", start: 4, end: 22 } }, sentence: "The tip of the iceberg remains.",
+		generated: { phrase: "tip of the iceberg", phraseAccepted: true, reason: "A worn phrase." } });
+	assert.match(acceptedClicheSystem, /Flagged phrase: tip of the iceberg\./);
+	const rejectedClicheSystem = checkChatSystem({ annotation: cliche, sentence: "The tip of the iceberg remains.",
+		generated: { phrase: "a different phrase", phraseAccepted: false, reason: "A worn phrase." } });
+	assert.doesNotMatch(rejectedClicheSystem, /Flagged phrase:/);
 	const mixed = checkChatSystem({ annotation: { ...cliche, kind: "mixed-metaphor", target: { type: "block", blockId: "p1" } },
 		paragraph: "The argument is a ship on shaky foundations.", generated: { reason: "Images clash." } });
 	assert.match(mixed, /the whole paragraph/);

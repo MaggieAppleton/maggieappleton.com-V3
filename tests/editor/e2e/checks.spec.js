@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
 
 const sentences = {
 	citation: "Water boils at 100°C.",
-	cliche: "We are in the same boat.",
+	cliche: "We are in the very same boat as everyone else.",
 	objection: "The policy protects every member.",
 	mixed: "The plan is a compass with roots.",
 };
-const clichePhrase = "in the same boat";
+const clichePhrase = "in the very same boat as everyone else";
 const secondClicheSuggestion = "in a similar position";
 const objection = "A policy cannot protect every member in every circumstance.";
 const rewrittenObjection = "The policy offers protection to most members.";
@@ -120,10 +120,12 @@ ${sentences.mixed}
 
 		await page.locator(".writing-assist-marker--cliche").hover();
 		const tooltip = page.getByRole("tooltip");
+		await expect(tooltip.getByText(`Flagged phrase: “${clichePhrase}”`, { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a difficult situation", { exact: true })).toBeVisible();
 		await expect(tooltip.getByText("in a similar position", { exact: true })).toBeVisible();
 		await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get("wa-checks-cliche") ?? [])]
 			.map((range) => range.toString()))).toContain(clichePhrase);
+		await captureThemePair(page, "checks-cliche-hover");
 
 		await page.locator(".writing-assist-marker--hedging").hover();
 		await expect.poll(() => generateRequests.some((request) => request.purpose === "hedging"))
@@ -149,8 +151,20 @@ ${sentences.mixed}
 		await page.getByRole("button", { name: "Assist", exact: true }).click();
 		await clicheMarker.click();
 		const dialog = page.getByRole("dialog", { name: "Cliché" });
+		await expect(dialog.locator(".wa-check-phrase")).toHaveText(`Flagged phrase: “${clichePhrase}”`);
 		const secondSuggestion = dialog.getByRole("button", { name: secondClicheSuggestion, exact: true });
-		await secondSuggestion.click();
+		await page.setViewportSize({ width: 390, height: 900 });
+		await expect.poll(() => dialog.evaluate((element) => {
+			const rect = element.getBoundingClientRect();
+			const phrase = element.querySelector(".wa-check-phrase");
+			return rect.left >= 0 && rect.right <= innerWidth
+				&& phrase.scrollWidth <= phrase.clientWidth;
+		})).toBe(true);
+		await page.setViewportSize({ width: 1280, height: 720 });
+		await captureThemePair(page, "checks-cliche-pinned");
+		for (let index = 0; index < 3; index++) await page.keyboard.press("Tab");
+		await expect(secondSuggestion).toBeFocused();
+		await page.keyboard.press("Enter");
 		await expect(secondSuggestion).toHaveAttribute("aria-pressed", "true");
 		await dialog.getByRole("button", { name: "Apply" }).click();
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8"))
@@ -266,6 +280,15 @@ async function mockChecks(page, { generateRequests = [], dismissals = [] } = {})
 		} : { objection };
 		return route.fulfill({ json: { json: generated } });
 	});
+}
+
+async function captureThemePair(page, name) {
+	await mkdir(".local-writing-editor", { recursive: true });
+	await page.emulateMedia({ colorScheme: "light" });
+	await page.screenshot({ path: `.local-writing-editor/${name}-light.png`, animations: "disabled" });
+	await page.emulateMedia({ colorScheme: "dark" });
+	await page.screenshot({ path: `.local-writing-editor/${name}-dark.png`, animations: "disabled" });
+	await page.emulateMedia({ colorScheme: "light" });
 }
 
 function escapeRegExp(value) {
