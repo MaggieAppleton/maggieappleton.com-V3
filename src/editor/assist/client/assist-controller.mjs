@@ -183,7 +183,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 
 	return {
 		model, store,
-		refreshMap: () => scheduler.runNow("argument-map"),
+		refreshMap: () => scheduler.runNow("argument-map", { refresh: true }),
 		getRoleAtSelection() {
 			const selection = root.ownerDocument.getSelection();
 			if (!selection?.anchorNode || !selection.focusNode

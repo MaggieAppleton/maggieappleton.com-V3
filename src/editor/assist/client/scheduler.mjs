@@ -36,7 +36,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 			|| request.order.some((id, index) => id !== model.blocks[index].id))) return false;
 		return [...request.hashes].every(([id, value]) => current.get(id) === value);
 	}
-	function send(scope, toolId = null, excluded = []) {
+	function send(scope, toolId = null, excluded = [], refresh = false) {
 		if (destroyed) return;
 		const names = enabled(scope === "blocks" ? "sentence" : "document", toolId)
 			.filter((name) => !excluded.includes(name));
@@ -51,7 +51,7 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 			&& flight.tools.includes(toolId) && sameHashes(flight))) return;
 		const controller = new AbortController();
 		const request = { documentId, pathname, title, tools: names, blocks: model.blocks,
-			linkedPathnames: model.linkedPathnames ?? [], scope };
+			linkedPathnames: model.linkedPathnames ?? [], scope, ...(refresh ? { refresh: true } : {}) };
 		if (scope === "blocks") request.blockIds = blockIds;
 		const flight = { scope, tools: names, hashes: covered,
 			order: model.blocks.map((block) => block.id), controller };
@@ -133,9 +133,9 @@ export function createAssistScheduler({ documentId, pathname, title, tools, judg
 			awaitingInitialRoles = Boolean(configured.get("roles")?.enabled && configured.get("repetition")?.enabled);
 			update(next, { immediate: true });
 		},
-		runNow(toolId) {
+		runNow(toolId, { refresh = false } = {}) {
 			const tool = configured.get(toolId);
-			if (tool?.enabled) send(tool.level === "sentence" ? "blocks" : "document", toolId);
+			if (tool?.enabled) send(tool.level === "sentence" ? "blocks" : "document", toolId, [], refresh);
 		},
 		setToolEnabled(toolId, active) {
 			const tool = configured.get(toolId);

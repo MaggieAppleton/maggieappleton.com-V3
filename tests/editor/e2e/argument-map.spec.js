@@ -53,6 +53,9 @@ A focused thesis gives each claim a purpose. Small decisions then become easier 
 		await expect(drawer.locator("details[open]")).toHaveCount(0);
 		assert.equal(requests.length, 1);
 		assert.deepEqual(requests[0].tools, ["argument-map"]);
+		const overviewFont = await drawer.locator(".editor-outline-overview p").evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize]);
+		const answerFont = await drawer.locator(".editor-outline-questions p").evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize]);
+		assert.deepEqual(answerFont, overviewFont, "nested outline text must use the same compact type scale");
 		await page.setViewportSize({ width: 1440, height: 1100 });
 		await page.screenshot({ path: "/tmp/reverse-outline-drawer.png" });
 	});

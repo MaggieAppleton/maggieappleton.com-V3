@@ -49,3 +49,10 @@ test("the drawer offers only the reverse outline and does not restore a Flow vie
  assert.match(html, /Revision and engagement/); assert.doesNotMatch(html, />Flow<|>Structure</);
  assert.equal(getDrawerViews().filter(v => v.id === "flow").length, 0);
 });
+
+test("heading references remain clickable without a prose paragraph number", () => {
+ const changed = structuredClone(map); changed.questions[0].sourceIds = ["h"];
+ changed.sources.push({ blockId: "h", sentenceId: "hs", label: "Heading: An open question" });
+ const html = render({ map: changed, currentBlocks: [{ id: "h", kind: "heading", sentences: [{ id: "new-hs" }] }] });
+ assert.match(html, /data-sentence-id="new-hs"/); assert.match(html, /Heading: An open question/);
+});

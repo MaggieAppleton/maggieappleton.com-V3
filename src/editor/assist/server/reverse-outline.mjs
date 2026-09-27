@@ -117,7 +117,15 @@ function publish(outline, snapshot, failed) {
 			}),
 		})),
 		observations: outline.observations.filter((_, i) => !rejected.has(`observation_${i}`)),
-		sources: snapshot.blocks.filter((block) => block.number).map(({ id, number, sentenceId }) => ({ blockId: id, number, sentenceId })),
+		sources: snapshot.blocks.map((block, index) => {
+			if (block.number) return { blockId: block.id, number: block.number, sentenceId: block.sentenceId };
+			if (!block.quoted) return { blockId: block.id, sentenceId: block.sentenceId, label: `Heading: ${block.text}` };
+			const previous = snapshot.blocks.slice(0, index).findLast((source) => source.number);
+			const next = snapshot.blocks.slice(index + 1).find((source) => source.number);
+			const neighbour = previous ?? next;
+			return { blockId: block.id, navigationBlockId: neighbour?.id, sentenceId: neighbour?.sentenceId,
+				label: neighbour ? `Quote near ¶${neighbour.number}` : "Quoted passage" };
+		}),
 	};
 }
 
@@ -130,6 +138,7 @@ export function createReverseOutline({ generator, sidecars, config }) {
 			if (!generator) throw new Error("Reverse outline generation is unavailable.");
 			const toolConfig = config.tools["argument-map"];
 			const thresholds = { ...defaults, ...toolConfig.thresholds };
+			const evaluationKey = hash(version, thresholds);
 			const key = hash("reverse-outline", version, snapshot, toolConfig.generator, config.judge.model);
 			const cached = await sidecars.getCache(documentId, key);
 			const generate = async (repair) => {
@@ -156,15 +165,19 @@ export function createReverseOutline({ generator, sidecars, config }) {
 				return failures(value, Object.assign({}, ...responses), thresholds);
 			};
 			let failed = await check(outline);
-			if (failed.length) {
-				const repaired = await generate({ previous: outline, failed, items: itemsFor(outline).filter((item) => failed.includes(item.key)), criteria: "Make each failed interpretation faithful to the linked source, preserve uncertainty and attribution, and capture its main point. For grouping, regroup the draft into meaningful consecutive main moves." });
-				try { outline = validateOutline(preserveAccepted(outline, validateOutline(repaired, snapshot), failed), snapshot); }
-				catch { /* Keep the valid original; failed items will remain unavailable. */ }
+			if (failed.length && (context.refresh || cached?.evaluationKey !== evaluationKey)) {
+				try {
+					const repaired = await generate({ previous: outline, failed, items: itemsFor(outline).filter((item) => failed.includes(item.key)), criteria: "Make each failed interpretation faithful to the linked source, preserve uncertainty and attribution, and capture its main point. For grouping, regroup the draft into meaningful consecutive main moves." });
+					outline = validateOutline(preserveAccepted(outline, validateOutline(repaired, snapshot), failed), snapshot);
+				} catch (error) {
+					// An unusable repair must not discard interpretations already checked.
+					if (!["invalid_outline", "invalid_generation_response"].includes(error.code)) throw error;
+				}
 				failed = await check(outline);
 			}
 			if (failed.includes("grouping")) throw new Error("The outline grouping could not be checked. Try updating the outline again.");
 			signal?.throwIfAborted();
-			await sidecars.setCache(documentId, key, { outline, createdAt: new Date().toISOString() });
+			await sidecars.setCache(documentId, key, { outline, evaluationKey, createdAt: new Date().toISOString() });
 			return publish(outline, snapshot, failed);
 		},
 	};

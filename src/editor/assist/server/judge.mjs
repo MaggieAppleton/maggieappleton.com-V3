@@ -53,7 +53,7 @@ export function createJudge({ jev, tools = toolRegistry, config = assistConfig, 
 
 	async function runTool(tool, request, signal) {
 		const context = {
-			documentId: request.documentId, reverseOutline, signal,
+			documentId: request.documentId, reverseOutline, signal, refresh: request.refresh === true,
 			blocks: request.blocks, targetBlockIds: request.blockIds,
 			allBlocks: request.blocks, linkedPathnames: request.linkedPathnames,
 			pathname: request.pathname, title: request.title, config, enabledChecks: request.enabledChecks,

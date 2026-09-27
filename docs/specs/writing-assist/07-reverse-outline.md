@@ -29,7 +29,7 @@ Use compact typography and existing colour/spacing tokens. Summaries should be r
 
 Every move, paragraph summary, question answer, and observation carries validated source block IDs. Show readable paragraph references alongside them. Questions spanning separate passages can have several source links.
 
-Clicking a source link uses the existing jump-to-sentence capability with the first editable sentence of the relevant block. Highlight or reveal that source passage using the editor's existing navigation behaviour. Keep the drawer open. Expansion alone does not move the editor caret. No control changes document content.
+Clicking a source link uses the existing jump-to-sentence capability with the first editable sentence of the relevant block. Heading references have readable heading labels and jump to the heading; protected quote references jump to nearby editable prose, labelled Quote near ¶n. Highlight or reveal that source passage using the editor's existing navigation behaviour. Keep the drawer open. Expansion alone does not move the editor caret. No control changes document content.
 
 Preserve draft order in the outline. Preserve headings as context, not mandatory grouping boundaries. Include quoted material as attributed source context; never present another person's quoted claim as the author's conclusion. Protected quotes need not become direct jump targets.
 
@@ -81,7 +81,7 @@ Opening the drawer explicitly requests an outline for the current snapshot, unle
 
 During refresh, retain the previous result and expansion state where source ranges still match. Mark it as updating or out of date so it is not mistaken for an analysis of new text. Disable stale navigation where source IDs no longer exist. Commit a complete result atomically and discard late responses for obsolete document revisions.
 
-Cache generated results and Jev checks in the existing gitignored sidecar system. Keys include document content/revision, tool version, prompt/schema version, generator provider/model, and judge model/check version. Changes to acceptance thresholds must re-evaluate cached scores. Closing the drawer cancels outstanding work where possible and prevents new requests.
+Cache completed partial results as well as fully accepted results; reopening an unchanged partial result does not trigger another paid repair. An explicit Update outline may retry rejected items. Cache generated results and Jev checks in the existing gitignored sidecar system. Keys include document content/revision, tool version, prompt/schema version, generator provider/model, and judge model/check version. Changes to acceptance thresholds must re-evaluate cached scores. Closing the drawer cancels outstanding work where possible and prevents new requests.
 
 Both OpenAI and Jev must be available for this feature. Report missing providers through the existing availability/error UI. First-load skeletons, errors, retry controls, and empty drafts use the existing drawer patterns. Short drafts may have one or two moves; remove the old minimum-three-paragraph requirement.
 

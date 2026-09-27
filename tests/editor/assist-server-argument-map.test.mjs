@@ -16,12 +16,12 @@ const outline = () => ({
   paragraphs: [{ blockId: "p1", summary: "Revision helps ideas develop." }, { blockId: "p2", summary: "Reader engagement remains an open question." }] }],
  observations: [],
 });
-function setup({ candidates = [outline()], scores = () => .98, entries = new Map(), thresholds = {}, failFirst = false } = {}) {
+function setup({ candidates = [outline()], scores = () => .98, entries = new Map(), thresholds = {}, failFirst = false, failRepair = false, repairFailure = null } = {}) {
  const generated = [];
  const calls = [];
  const config = { judge: { model: "jev-test" }, tools: { "argument-map": { generator: { provider: "openai", model: "gpt-test" }, thresholds } } };
  const judge = createJudge({ config,
-  generator: { async run(request) { generated.push(request); if (failFirst && generated.length === 1) throw Object.assign(new Error("Invalid JSON"), { code: "invalid_generation_response" }); return { json: structuredClone(candidates[Math.min(generated.length - 1, candidates.length - 1)]) }; } },
+  generator: { async run(request) { generated.push(request); if (repairFailure && generated.length === 2) throw repairFailure; if ((failFirst && generated.length === 1) || (failRepair && generated.length === 2)) throw Object.assign(new Error("Invalid JSON"), { code: "invalid_generation_response" }); return { json: structuredClone(candidates[Math.min(generated.length - 1, candidates.length - 1)]) }; } },
   jev: { async systemOne(request) { calls.push(request); return { answers: Object.fromEntries(Object.keys(request.questions).map(key => [key,
    scores(key, request) === undefined ? undefined : { type: "noul", noul: scores(key, request) }])) }; } },
   sidecars: { async getCache(doc, key) { return entries.get(doc + key); }, async setCache(doc, key, value) { entries.set(doc + key, value); } },
@@ -129,4 +129,50 @@ test("invalid generation JSON receives a single schema repair", async () => {
  const s = setup({ failFirst: true });
  const result = await s.run(); assert.deepEqual(result.errors, []);
  assert.equal(result.annotations[0].data.map.moves.length, 1); assert.equal(s.generated.length, 2);
+});
+
+test("a 1000+ word draft produces a compact outline and full-source checks within Jev budgets", async () => {
+	const longBlocks = Array.from({ length: 40 }, (_, i) => ({ id: `b${i}`, kind: "paragraph", hash: `h${i}`,
+		sentences: [{ id: `s${i}`, text: `Passage ${i}: writing a draft helps me find what I am trying to say, and revising that draft helps me connect the ideas with examples and questions that remain open. End marker ${i}.` }] }));
+	const candidate = { summary: { text: "The draft explores writing and revision.", sourceIds: ["b0", "b39"] }, questions: [], observations: [],
+		moves: Array.from({ length: 4 }, (_, i) => ({ title: `Explore revision ${i + 1}`, summary: "The writer connects revision with examples and unresolved questions.",
+			sourceIds: longBlocks.slice(i * 10, i * 10 + 10).map(b => b.id),
+			paragraphs: longBlocks.slice(i * 10, i * 10 + 10).map(b => ({ blockId: b.id, summary: "Writing and revision develop the writer's ideas." })) })),
+	};
+	const s = setup({ candidates: [candidate] }); const result = await s.run({ blocks: longBlocks });
+	assert.deepEqual(result.errors, []);
+	assert.equal(result.annotations[0].data.map.moves.length, 4);
+	assert.equal(result.annotations[0].data.map.sources.length, 40);
+	for (const call of s.calls) {
+		assert.ok(JSON.stringify(call.state).length <= 32000);
+		assert.ok(JSON.stringify({ state: call.state, questions: call.questions }).length <= 64000);
+	}
+	assert.ok(s.calls.some(call => JSON.stringify(call.state).includes("End marker 39.")));
+	assert.equal(s.generated[0].snapshot.blocks.at(-1).text, longBlocks.at(-1).sentences[0].text);
+});
+
+test("cached partial outlines reuse a completed repair until an explicit retry", async () => {
+ const s = setup({ scores: key => key === "summary_faithful" ? .1 : .98 });
+ const first = await s.run(); await s.run(); await s.run();
+ assert.equal(s.generated.length, 2);
+ assert.equal(first.annotations[0].data.map.summary.unavailable, true);
+ await s.run({ refresh: true }); assert.equal(s.generated.length, 3);
+});
+test("malformed semantic repair JSON preserves accepted detail and unavailable source placeholders", async () => {
+ const s = setup({ failRepair: true, scores: key => key === "summary_faithful" ? .1 : .98 });
+ const result = await s.run(); assert.deepEqual(result.errors, []);
+ assert.equal(result.annotations[0].data.map.summary.unavailable, true);
+ assert.equal(result.annotations[0].data.map.moves[0].paragraphs[0].summary, "Revision helps ideas develop.");
+});
+test("accepted heading references retain a navigable source and readable label", async () => {
+ const candidate = outline(); candidate.questions[0].sourceIds = ["h1"];
+ const s = setup({ candidates: [candidate] }); const result = await s.run();
+ const source = result.annotations[0].data.map.sources.find(item => item.blockId === "h1");
+ assert.equal(source.sentenceId, "sh"); assert.equal(source.label, "Heading: An open question");
+});
+
+test("provider failure during semantic repair remains an update error", async () => {
+ const s = setup({ repairFailure: new Error("Provider connection failed"), scores: key => key === "summary_faithful" ? .1 : .98 });
+ const result = await s.run();
+ assert.equal(result.annotations.length, 0); assert.match(result.errors[0].message, /Provider connection failed/);
 });

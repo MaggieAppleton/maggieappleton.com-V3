@@ -1,5 +1,5 @@
 .editor-reverse-outline { color: var(--color-black); font: var(--font-size-xs)/1.55 var(--font-sans); }
-.editor-reverse-outline :is(p, li, summary) { font: inherit; }
+.editor-reverse-outline :is(p, li, summary, ul, ol) { font: inherit; }
 .editor-reverse-outline section + section { margin-top: var(--space-m); }
 .editor-reverse-outline h3 { margin: 0 0 10px; color: var(--color-gray-600); font: 600 var(--font-size-xs)/1.4 var(--font-sans); }
 .editor-reverse-outline h4 { margin: 0 0 5px; font: 600 var(--font-size-xs)/1.5 var(--font-sans); }

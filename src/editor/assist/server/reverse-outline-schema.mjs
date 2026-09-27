@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { outlineRevision } from "../shared/outline-revision.mjs";
 
+class OutlineValidationError extends Error {
+	constructor(message) { super(message); this.code = "invalid_outline"; }
+}
+
 const text = (max) => z.string().trim().min(1).max(max);
 const refs = z.array(text(256)).min(1).max(512);
 export const outlineSchema = z.object({
@@ -20,8 +24,8 @@ export function outlineSnapshot({ blocks = [], title = "" }) {
 		if (typeof block.id !== "string" || !block.id || seen.has(block.id)) throw new Error("Invalid outline source identity");
 		seen.add(block.id);
 		const prose = !block.quoted && block.kind !== "heading";
-		return { id: block.id, kind: block.kind, quoted: Boolean(block.quoted),
-			...(prose ? { number: ++number, sentenceId: block.sentences[0].id } : {}),
+		return { id: block.id, kind: block.kind, quoted: Boolean(block.quoted), sentenceId: block.sentences[0].id,
+			...(prose ? { number: ++number } : {}),
 			text: block.sentences.map((sentence) => sentence.text).join(" ") };
 	});
 	const snapshot = { title, blocks: sources, revision: outlineRevision(blocks) };
@@ -31,20 +35,20 @@ export function outlineSnapshot({ blocks = [], title = "" }) {
 
 export function validateOutline(value, snapshot) {
 	const result = outlineSchema.safeParse(value);
-	if (!result.success) throw new Error("Incomplete outline response: " + result.error.issues.map((issue) => issue.path.join(".") + ": " + issue.message).slice(0, 5).join("; "));
+	if (!result.success) throw new OutlineValidationError("Incomplete outline response: " + result.error.issues.map((issue) => issue.path.join(".") + ": " + issue.message).slice(0, 5).join("; "));
 	const outline = result.data;
 	const known = new Set(snapshot.blocks.map((block) => block.id));
 	for (const item of [outline.summary, ...outline.questions, ...outline.moves, ...outline.observations]) {
 		if (new Set(item.sourceIds).size !== item.sourceIds.length || item.sourceIds.some((id) => !known.has(id))) {
-			throw new Error("Outline contains an invented or duplicate source reference");
+			throw new OutlineValidationError("Outline contains an invented or duplicate source reference");
 		}
 	}
 	const proseIds = snapshot.blocks.filter((block) => block.number).map((block) => block.id);
 	const covered = outline.moves.flatMap((move) => move.sourceIds);
-	if (JSON.stringify(covered) !== JSON.stringify(proseIds)) throw new Error("Outline moves must cover every prose block exactly once in draft order");
+	if (JSON.stringify(covered) !== JSON.stringify(proseIds)) throw new OutlineValidationError("Outline moves must cover every prose block exactly once in draft order");
 	for (const move of outline.moves) {
 		if (JSON.stringify(move.paragraphs.map((paragraph) => paragraph.blockId)) !== JSON.stringify(move.sourceIds)) {
-			throw new Error("Paragraph summaries must cover their move's source blocks in order");
+			throw new OutlineValidationError("Paragraph summaries must cover their move's source blocks in order");
 		}
 	}
 	return outline;

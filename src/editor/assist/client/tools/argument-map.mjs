@@ -7,16 +7,16 @@ const statuses = { answered: "Answered", partial: "Partly answered", open: "Left
 
 function SourceLinks({ ids, map, currentBlocks, jumpTo, range = false }) {
 	const sources = new Map((map.sources ?? []).map((source) => [source.blockId, source]));
-	const current = currentBlocks ? new Map(currentBlocks.filter((block) => !block.quoted && block.kind !== "heading")
+	const current = currentBlocks ? new Map(currentBlocks.filter((block) => !block.quoted)
 		.map((block) => [block.id, block.sentences?.[0]?.id])) : null;
 	const references = ids.map((id) => sources.get(id)).filter(Boolean);
 	const links = range && references.length > 1 ? [references[0]] : references;
 	return h("span", { className: "editor-outline-sources" }, links.map((source) => {
-		const sentenceId = current ? current.get(source.blockId) : source.sentenceId;
-		const label = range && references.length > 1 ? `¶${source.number}–${references.at(-1).number}` : `¶${source.number}`;
+		const sentenceId = current ? current.get(source.navigationBlockId ?? source.blockId) : source.sentenceId;
+		const label = range && references.length > 1 ? `¶${source.number}–${references.at(-1).number}` : source.label ?? `¶${source.number}`;
 		return h("button", { key: source.blockId, type: "button", className: "editor-outline-source",
 			"data-sentence-id": sentenceId, disabled: !sentenceId,
-			title: sentenceId ? `Go to paragraph ${source.number}` : "This passage is no longer in the draft",
+			title: sentenceId ? source.label ? `Go to ${source.label}` : `Go to paragraph ${source.number}` : "This passage is no longer in the draft",
 			onClick: () => sentenceId && jumpTo(sentenceId) }, label);
 	}));
 }
