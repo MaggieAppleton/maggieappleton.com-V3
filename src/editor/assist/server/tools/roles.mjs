@@ -1,4 +1,5 @@
 import { createAnnotation } from "../../shared/annotation.mjs";
+import { isProse, paragraph, previousProse } from "./prose.mjs";
 
 const criteria = {
 	claim: "Asserts that something is true about the world",
@@ -12,14 +13,6 @@ const criteria = {
 };
 
 const roleOrder = Object.keys(criteria);
-
-function isProse(block) {
-	return !block.quoted && block.kind !== "heading" && block.sentences?.length;
-}
-
-function paragraph(block) {
-	return block.sentences.map((sentence) => sentence.text).join(" ");
-}
 
 function requestFor(block, previous, title) {
 	const tags = new Map();
@@ -52,7 +45,7 @@ export const rolesTool = {
 		const selected = targetBlockIds ? new Set(targetBlockIds) : null;
 		return blocks.flatMap((block, index) => {
 			if (!isProse(block) || (selected && !selected.has(block.id))) return [];
-			const previous = blocks.slice(0, index).reverse().find(isProse);
+			const previous = previousProse(blocks, index);
 			return [requestFor(block, previous, title)];
 		});
 	},

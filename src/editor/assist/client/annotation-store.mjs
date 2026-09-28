@@ -25,6 +25,11 @@ export function createAnnotationStore({ dismissals = [], onDismiss = () => {} } 
 		const target = annotation.target ?? {};
 		return blockIds.has(target.blockId ?? sentenceBlocks.get(target.sentenceId));
 	}
+	function updateBlocks(toolId, blockIds, annotations) {
+		const targets = new Set(blockIds);
+		const retained = (byTool.get(toolId) ?? []).filter((item) => !belongsTo(item, targets));
+		byTool.set(toolId, [...retained, ...annotations]);
+	}
 	return {
 		setModel(model) {
 			sentenceHashes = new Map();
@@ -43,17 +48,16 @@ export function createAnnotationStore({ dismissals = [], onDismiss = () => {} } 
 		},
 		replaceTool(toolId, annotations) { byTool.set(toolId, annotations); notify(); },
 		replaceBlocks(toolId, blockIds, annotations) {
-			const targets = new Set(blockIds);
-			const retained = (byTool.get(toolId) ?? []).filter((item) => !belongsTo(item, targets));
-			byTool.set(toolId, [...retained, ...annotations]);
+			updateBlocks(toolId, blockIds, annotations);
 			notify();
 		},
 		applyResult(annotations, { tools, scope, blockIds }) {
 			for (const tool of tools) {
 				const own = annotations.filter((item) => item.tool === tool);
-				if (scope === "blocks") this.replaceBlocks(tool, blockIds, own);
-				else this.replaceTool(tool, own);
+				if (scope === "blocks") updateBlocks(tool, blockIds, own);
+				else byTool.set(tool, own);
 			}
+			if (tools.length) notify();
 		},
 		clearTool(toolId) { byTool.delete(toolId); notify(); },
 		updateTarget(id, target) {

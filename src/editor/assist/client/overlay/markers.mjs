@@ -109,6 +109,7 @@ export function createMarkerOverlay({
 	}
 	return {
 		element: layer,
+		getButton(id) { return buttons.get(id)?.button ?? null; },
 		update(annotations = []) { entries = [...annotations]; refresh(); },
 		refresh,
 		destroy() { resize?.disconnect(); clear(); layer.remove(); },

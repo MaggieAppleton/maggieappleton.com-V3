@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
 import { ChatThread } from "./ChatThread.mjs";
 import { createChatSession, useChatSnapshot } from "./chat-session.mjs";
@@ -27,7 +27,7 @@ function position(anchor, height = 240, width = 340) {
 }
 
 /** Tool-neutral pinned popover. The parent applies text and persists dismissals. */
-export function PinnedPopover({ open = false, title, icon, children, triggerRef, fallbackFocus, anchorRect,
+export function PinnedPopover({ open = false, title, icon, children, triggerRef, fallbackFocus, anchorRect, anchorRectFor,
 	onClose = () => {}, onDismiss, applyValue, onApply, chat, useChatRewrite = true, className = "", popoverWidth = 340 }) {
 	const titleId = useId();
 	const panel = useRef(null);
@@ -38,26 +38,45 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 	const { rewrite } = useChatSnapshot(chatSession);
 	useEffect(() => () => localChatSession.current?.dispose(), []);
 	const [placement, setPlacement] = useState(null);
-	const anchor = useMemo(() => anchorRect ? {
+	const initialAnchor = anchorRect ? {
 		rect: anchorRect,
 		scrollX: typeof window === "undefined" ? 0 : window.scrollX,
 		scrollY: typeof window === "undefined" ? 0 : window.scrollY,
-	} : null, [anchorRect]);
+	} : null;
 	useBrowserLayoutEffect(() => {
-		if (!open || !anchor || !panel.current) return undefined;
+		if (!open || !panel.current || (!anchorRect && !anchorRectFor)) return undefined;
 		const element = panel.current;
 		const content = element.firstElementChild;
+		const root = fallbackFocus?.current ?? fallbackFocus;
+		const trigger = triggerRef?.current ?? triggerRef;
+		let frame;
 		const update = () => {
+			const rect = anchorRectFor?.() ?? anchorRect;
+			if (!rect) return;
+			const anchor = { rect, scrollX: window.scrollX, scrollY: window.scrollY };
 			const next = position(anchor, element.scrollHeight, popoverWidth);
-			setPlacement((previous) => previous && Object.keys(next).every((key) => previous[key] === next[key])
+			setPlacement((previous) => previous && Object.keys(previous).length === Object.keys(next).length
+				&& Object.keys(next).every((key) => previous[key] === next[key])
 				? previous : next);
 		};
+		const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update); };
 		update();
-		const observer = new ResizeObserver(update);
-		observer.observe(content);
-		window.addEventListener("resize", update);
-		return () => { observer.disconnect(); window.removeEventListener("resize", update); };
-	}, [open, anchor, popoverWidth]);
+		const resize = new ResizeObserver(schedule);
+		resize.observe(content);
+		if (root) resize.observe(root);
+		const mutation = new MutationObserver(schedule);
+		if (root) mutation.observe(root, { childList: true, subtree: true, characterData: true });
+		const markerLayer = trigger?.closest?.(".writing-assist-marker-layer");
+		if (markerLayer) mutation.observe(markerLayer, { childList: true, subtree: true,
+			attributes: true, attributeFilter: ["style"] });
+		window.addEventListener("resize", schedule);
+		return () => {
+			cancelAnimationFrame(frame);
+			resize.disconnect();
+			mutation.disconnect();
+			window.removeEventListener("resize", schedule);
+		};
+	}, [open, anchorRect, anchorRectFor, fallbackFocus, triggerRef, popoverWidth]);
 	useEffect(() => {
 		if (!open) return undefined;
 		const trigger = triggerRef?.current ?? triggerRef;
@@ -74,7 +93,7 @@ export function PinnedPopover({ open = false, title, icon, children, triggerRef,
 		ref: panel,
 		className: `wa-pinned-popover ${className}`.trim(),
 		role: "dialog", "aria-modal": "false", "aria-labelledby": titleId,
-		style: { ...(placement ?? position(anchor, 240, popoverWidth)), "--wa-popover-width": `${popoverWidth}px` },
+		style: { ...(placement ?? position(initialAnchor, 240, popoverWidth)), "--wa-popover-width": `${popoverWidth}px` },
 		onKeyDown: (event) => {
 			if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
 		},

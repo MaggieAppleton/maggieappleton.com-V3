@@ -87,7 +87,7 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 	const chatCanApply = (annotation.kind === "objection" || annotation.kind === "mixed-metaphor") && applyAllowed;
 	return React.createElement(PinnedPopover, { key: annotation.id, open: true, className: `wa-check-popover wa-check--${annotation.kind}`,
 		title: detail.title, icon: React.createElement(CheckIcon, { annotation }), triggerRef: pinned.trigger,
-		fallbackFocus, anchorRect: pinned.anchorRect, onClose, onDismiss,
+		fallbackFocus, anchorRect: pinned.anchorRect, anchorRectFor: pinned.anchorRectFor, onClose, onDismiss,
 		applyValue: canApplySuggestion ? selectedValue : null, onApply: canApplySuggestion || chatCanApply ? onApply : undefined, chat,
 		popoverWidth: annotation.kind === "citation" && citation ? 440 : 340,
 		useChatRewrite: !canApplySuggestion && chatCanApply },

@@ -129,8 +129,15 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		markerFor: (annotation) => markerFor(annotation, model.getSnapshot()),
 		onActivate(annotation, button) {
 			onHover(null);
-			onPin({ annotation, trigger: button, anchorRect: button.getBoundingClientRect() });
+			onPin({ annotation, trigger: button, anchorRect: button.getBoundingClientRect(),
+				anchorRectFor: () => currentAnchorRect(annotation.id) });
 		} });
+	function currentAnchorRect(id) {
+		const marker = markers.getButton(id);
+		if (marker?.isConnected) return marker.getBoundingClientRect();
+		const annotation = store.getAnnotations().find((item) => item.id === id);
+		return annotation ? rangeForAnnotation(annotation)?.getBoundingClientRect() ?? null : null;
+	}
 	const hitTest = createHighlightHitTest({ root, rangeForAnnotation,
 		onChange(annotation) {
 			onHover(annotation ? { annotation, anchorRect: rangeForAnnotation(annotation)?.getBoundingClientRect(), active: true } : null);
@@ -149,7 +156,8 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		const annotation = hitTest.hitTest(event);
 		if (!annotation || annotation.tool === "roles") return;
 		onHover(null);
-		onPin({ annotation, trigger: event.target, anchorRect: rangeForAnnotation(annotation)?.getBoundingClientRect() });
+		onPin({ annotation, trigger: event.target, anchorRect: rangeForAnnotation(annotation)?.getBoundingClientRect(),
+			anchorRectFor: () => currentAnchorRect(annotation.id) });
 	};
 	markers.element.addEventListener("pointerover", markerOver);
 	markers.element.addEventListener("pointerout", markerOut);
@@ -225,6 +233,7 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 
 	return {
 		model, store,
+		anchorRectFor: currentAnchorRect,
 		getRoleAtSelection() {
 			const selection = root.ownerDocument.getSelection();
 			if (!selection?.anchorNode || !selection.focusNode

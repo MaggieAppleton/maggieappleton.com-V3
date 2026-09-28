@@ -1,18 +1,11 @@
 import { createAnnotation } from "../../shared/annotation.mjs";
+import { isProse, paragraph, previousProse } from "./prose.mjs";
 
 const checkNames = ["citation", "hedging", "objection", "cliche"];
 const levels = [
 	"Very tentative (might, perhaps, possibly)", "Hedged", "Neutral", "Confident",
 	"Absolute (always, never, clearly, everyone)",
 ];
-
-function isProse(block) {
-	return !block.quoted && block.kind !== "heading" && block.sentences?.length;
-}
-
-function paragraph(block) {
-	return block.sentences.map((sentence) => sentence.text).join(" ");
-}
 
 function enabled(context) {
 	if (Array.isArray(context.enabledChecks)) {
@@ -72,7 +65,7 @@ export const checksTool = {
 		if (!checks.length) return [];
 		return (context.blocks ?? []).flatMap((block, index, blocks) => {
 			if (!isProse(block) || (selected && !selected.has(block.id))) return [];
-			const previous = blocks.slice(0, index).reverse().find(isProse);
+			const previous = previousProse(blocks, index);
 			return [{ key: block.id, state: {
 				title: context.title ?? "", previous_paragraph: previous ? paragraph(previous) : "",
 				paragraph: block.sentences.map((sentence, sentenceIndex) =>

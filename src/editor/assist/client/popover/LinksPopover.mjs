@@ -48,6 +48,7 @@ export function LinksPopover({ pinned, fallbackFocus, onClose = () => {}, onDism
 	return React.createElement(PinnedPopover, {
 		key: annotation.id, open: true, className: "wa-links-popover", popoverWidth: 290,
 		title: "Link to", triggerRef: pinned.trigger, fallbackFocus, anchorRect: pinned.anchorRect,
+		anchorRectFor: pinned.anchorRectFor,
 		onClose, onDismiss,
 	},
 		React.createElement(LinkTargetList, {

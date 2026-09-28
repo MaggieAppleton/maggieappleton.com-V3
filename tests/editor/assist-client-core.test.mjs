@@ -565,6 +565,19 @@ test("annotation store filters dismissals and stale hashes, and exposes a senten
 	assert.equal(store.getRole(first.id), null);
 });
 
+test("one judge result publishes all tools together", () => {
+	const model = snapshot("A strong claim.");
+	const sentence = model.blocks[0].sentences[0];
+	const store = createAnnotationStore();
+	store.setModel(model);
+	const updates = [];
+	store.subscribe((annotations) => updates.push(annotations.map((item) => item.tool)));
+	store.applyResult(["roles", "checks"].map((tool) => ({ id: `${tool}:one`, tool, kind: "claim",
+		target: { type: "sentence", sentenceId: sentence.id }, unitHash: sentence.hash })),
+	{ tools: ["roles", "checks"], scope: "document" });
+	assert.deepEqual(updates, [["roles", "checks"]]);
+});
+
 test("annotation store never exposes an annotation on quoted evidence", () => {
 	const model = buildSentenceSnapshot(node("root", "", [node("quote", "", [
 		node("text", "Quoted evidence.", [], { key: "quoted" }),

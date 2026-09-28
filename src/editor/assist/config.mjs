@@ -4,36 +4,38 @@ export function openAIReasoningEffort(env = process.env) {
 	return env.OPENAI_REASONING_EFFORT?.trim() || "low";
 }
 
+const openAIModel = process.env.OPENAI_MODEL ?? "gpt-6-sol";
+
 export const assistConfig = {
 	judge: { model: "jev-latest" },
 	providers: {
 		anthropic: { defaultModel: "claude-sonnet-5" },
 		openai: {
-			defaultModel: process.env.OPENAI_MODEL ?? "gpt-6-sol",
+			defaultModel: openAIModel,
 			reasoningEffort: openAIReasoningEffort(),
 		},
 		"openai-compatible": { defaultModel: "llama3.1" },
 	},
 	tools: {
 		"word-finder": { maxShown: 6,
-			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
+			generator: { provider: "openai", model: openAIModel } },
 		roles: { enabled: true, thresholds: { minShown: 0.10 } },
 		links: { enabled: false, shortlistSize: 30,
 			thresholds: { target: 0.4, phrase: 0.35, natural: 0.5 } },
 		repetition: { enabled: true, thresholds: { pair: 0.5, minGroup: 3 },
-			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" } },
+			generator: { provider: "openai", model: openAIModel } },
 		checks: {
 			enabled: { citation: true, hedging: true, objection: true, cliche: true },
 			thresholds: { citation: 0.7, hedgingConfidence: 0.5, objection: 0.85,
 				cliche: 0.75, mixedMetaphor: 0.75 },
-			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
-			chatGenerator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+			generator: { provider: "openai", model: openAIModel },
+			chatGenerator: { provider: "openai", model: openAIModel },
 		},
 		"argument-map": { enabled: false, thresholds: { parent: 0.4, advances: 0.35 } },
 		debug: {
 			enabled: false,
 			thresholds: { minShown: 0.5 },
-			generator: { provider: "openai", model: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+			generator: { provider: "openai", model: openAIModel },
 		},
 	},
 	timing: { sentenceIdleMs: 1500, documentIdleMs: 8000 },

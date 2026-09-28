@@ -305,6 +305,35 @@ ${sentences.mixed}
 			"the citation popover must scroll with its marker");
 	});
 
+	test("a pinned note follows its marker when earlier text grows", async ({ page }) => {
+		await mockChecks(page, { dismissals });
+		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
+		const marker = page.locator(".writing-assist-marker--objection");
+		await marker.click();
+		const dialog = page.getByRole("dialog", { name: "Likely objection" });
+		await expect(dialog).toBeVisible();
+		const before = await marker.boundingBox();
+		await page.locator(".editor-body p").first().evaluate((paragraph) => {
+			const text = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT).nextNode();
+			const range = document.createRange();
+			range.setStart(text, 0);
+			range.collapse(true);
+			const selection = document.getSelection();
+			selection.removeAllRanges();
+			selection.addRange(range);
+			paragraph.closest("[contenteditable]").focus();
+		});
+		await page.keyboard.insertText("An introductory line that moves the later notes down the page. ".repeat(8));
+		await expect(dialog).toBeVisible();
+		await expect.poll(async () => {
+			const [note, popover] = await Promise.all([marker.boundingBox(), dialog.boundingBox()]);
+			if (!note || !popover || note.y < before.y + 20) return false;
+			const below = popover.y - note.y - note.height;
+			const above = note.y - popover.y - popover.height;
+			return Math.min(Math.abs(below - 8), Math.abs(above - 8)) < 3;
+		}).toBe(true);
+	});
+
 	test("keeps a dismissed check hidden after reload", async ({ page }) => {
 		await mockChecks(page, { dismissals });
 		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
