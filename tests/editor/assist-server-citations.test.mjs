@@ -3,7 +3,7 @@ import test from "node:test";
 import { EventEmitter } from "node:events";
 
 import { createCitationService, fetchCitationPage, publicCitationUrl } from "../../src/editor/assist/server/citations.mjs";
-import { ALL, citationGenerationRequest, discoveryUrls } from "../../src/editor/assist/routes/citations.js";
+import { ALL, citationGenerationRequest, citationSearchRequest, discoveryUrls } from "../../src/editor/assist/routes/citations.js";
 
 const sentence = "In 2020, the town had 4,000 residents, and its river flooded twice.";
 
@@ -12,10 +12,15 @@ test("citation JSON responses include the required JSON instruction in the input
 		{ kind: "extract", sentence },
 		{ kind: "assess", claim: "the town had 4,000 residents", sourceType: "census", pageText: "Town census data." },
 	]) {
-		const request = citationGenerationRequest(input, "test-model");
+		const request = citationGenerationRequest(input, "test-model", {});
 		assert.equal(request.text.format.type, "json_object");
 		assert.match(request.input, /\bjson\b/i);
+		assert.deepEqual(request.reasoning, { effort: "low" });
 	}
+	assert.deepEqual(citationGenerationRequest({ kind: "extract", sentence }, "test-model",
+		{ OPENAI_REASONING_EFFORT: "high" }).reasoning, { effort: "high" });
+	assert.deepEqual(citationSearchRequest({ claim: "a claim", sourceType: "census" }, "test-model", {}).reasoning,
+		{ effort: "low" });
 });
 
 test("extract accepts distinct exact claims and rejects invented or ambiguous quotes", async () => {

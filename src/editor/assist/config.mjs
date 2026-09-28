@@ -1,10 +1,17 @@
 import "dotenv/config";
 
+export function openAIReasoningEffort(env = process.env) {
+	return env.OPENAI_REASONING_EFFORT?.trim() || "low";
+}
+
 export const assistConfig = {
 	judge: { model: "jev-latest" },
 	providers: {
 		anthropic: { defaultModel: "claude-sonnet-5" },
-		openai: { defaultModel: process.env.OPENAI_MODEL ?? "gpt-6-sol" },
+		openai: {
+			defaultModel: process.env.OPENAI_MODEL ?? "gpt-6-sol",
+			reasoningEffort: openAIReasoningEffort(),
+		},
 		"openai-compatible": { defaultModel: "llama3.1" },
 	},
 	tools: {

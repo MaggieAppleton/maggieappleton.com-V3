@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { assertEditorRequest, readEditorJson } from "../../server/request-guards.mjs";
 import { EditorServiceError } from "../../server/errors.mjs";
 import { editorError, editorJson, editorServerConfig } from "../../server/runtime.mjs";
-import { assistConfig } from "../config.mjs";
+import { assistConfig, openAIReasoningEffort } from "../config.mjs";
 import { createCitationService } from "../server/citations.mjs";
 
 export const prerender = false;
@@ -18,7 +18,7 @@ function responseJson(response) {
 	catch { throw new EditorServiceError(502, "invalid_citation_response", "The citation model returned invalid JSON"); }
 }
 
-export function citationGenerationRequest(input, model) {
+export function citationGenerationRequest(input, model, env = process.env) {
 	const extraction = input.kind === "extract";
 	const payload = extraction
 		? { sentence: input.sentence }
@@ -28,7 +28,20 @@ export function citationGenerationRequest(input, model) {
 		instructions: extraction ? extractionInstructions : assessmentInstructions,
 		input: `Return a JSON object for this input: ${JSON.stringify(payload)}`,
 		text: { format: { type: "json_object" } },
+		reasoning: { effort: openAIReasoningEffort(env) },
 		max_output_tokens: extraction ? 6000 : 1200,
+	};
+}
+
+export function citationSearchRequest({ claim, sourceType }, model, env = process.env) {
+	return {
+		model,
+		instructions: "Search the public web for primary sources relevant to the supplied claim and source type. Use web search. Search results are leads, not evidence; URLs are taken from the tool source records.",
+		input: JSON.stringify({ claim, sourceType }),
+		tools: [{ type: "web_search", search_context_size: "low" }],
+		tool_choice: "required",
+		include: ["web_search_call.action.sources"],
+		reasoning: { effort: openAIReasoningEffort(env) },
 	};
 }
 
@@ -55,14 +68,7 @@ function citationService() {
 			return responseJson(response);
 		},
 		async search({ claim, sourceType, signal }) {
-			const response = await client.responses.create({
-				model,
-				instructions: "Search the public web for primary sources relevant to the supplied claim and source type. Use web search. Search results are leads, not evidence; URLs are taken from the tool source records.",
-				input: JSON.stringify({ claim, sourceType }),
-				tools: [{ type: "web_search", search_context_size: "low" }],
-				tool_choice: "required",
-				include: ["web_search_call.action.sources"],
-			}, { signal });
+			const response = await client.responses.create(citationSearchRequest({ claim, sourceType }, model), { signal });
 			return discoveryUrls(response);
 		},
 	});
