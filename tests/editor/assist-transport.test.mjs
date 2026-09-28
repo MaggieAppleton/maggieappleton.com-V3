@@ -36,3 +36,20 @@ test("stream parser reads SSE text even when a frame crosses chunks", async () =
 	for await (const chunk of transport.stream({ tool: "debug", purpose: "chat", messages: [] })) chunks.push(chunk);
 	assert.deepEqual(chunks, ["Blue", " sky"]);
 });
+
+test("citation extraction and source search use distinct authenticated requests", async () => {
+	const calls = [];
+	const transport = createAssistTransport({ boot: { token: "local-token", documentId: "notes:test" },
+		fetchImpl: async (url, options) => {
+			calls.push({ url, options });
+			return new Response(JSON.stringify({ claims: [], sources: [] }),
+				{ headers: { "Content-Type": "application/json" } });
+		} });
+	await transport.extractCitation("Two claims in one sentence.");
+	await transport.findCitationSources("first claim", "research paper");
+	assert.deepEqual(calls.map(({ url, options }) => [url, JSON.parse(options.body)]), [
+		["/_editor/api/assist/citations", { action: "extract", sentence: "Two claims in one sentence." }],
+		["/_editor/api/assist/citations", { action: "search", claim: "first claim", sourceType: "research paper" }],
+	]);
+	assert.ok(calls.every(({ options }) => options.headers["X-Local-Editor-Token"] === "local-token"));
+});

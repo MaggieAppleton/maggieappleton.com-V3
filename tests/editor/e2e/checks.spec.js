@@ -242,6 +242,7 @@ ${sentences.mixed}
 
 		await page.locator(".writing-assist-marker--citation").click();
 		const citationDialog = page.getByRole("dialog", { name: "Citation needed" });
+		await expect(citationDialog.getByText(`“${sentences.citation}”`)).toBeVisible();
 		const citationChat = citationDialog.getByRole("textbox", { name: "Ask about this…" });
 		await citationChat.fill("What should I cite?");
 		await citationDialog.getByRole("button", { name: "Send message" }).click();
@@ -436,6 +437,13 @@ async function mockChecks(page, { generateRequests = [], dismissals = [] } = {})
 			rewrites: ["Water may boil at 100°C.", "Water usually boils at 100°C.", "Water can boil at 100°C."],
 		} : { objection };
 		return route.fulfill({ json: { json: generated } });
+	});
+	await page.route("**/_editor/api/assist/citations", async (route) => {
+		const request = route.request().postDataJSON();
+		return route.fulfill({ json: request.action === "extract"
+			? { sentence: request.sentence, claims: [{ text: sentences.citation, start: 0,
+				end: sentences.citation.length, sourceType: "Scientific reference" }] }
+			: { sources: [] } });
 	});
 }
 

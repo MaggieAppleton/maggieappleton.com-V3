@@ -289,3 +289,53 @@ button.wa-link-target:focus-visible { outline: 2px solid var(--color-sea-blue); 
 .wa-check-phrase { margin: var(--space-3xs) 0; color: var(--color-gray-600); overflow-wrap: anywhere; }
 .wa-check-hover .wa-check-phrase { padding-right: var(--space-s); }
 .wa-check-phrase strong { color: var(--color-black); }
+
+.wa-citation-popover { display: grid; gap: var(--space-2xs); }
+.wa-check--citation .wa-citation-popover { margin-bottom: 4px; }
+.wa-check-popover.wa-check--citation { max-width: min(440px, calc(100vw - 24px)); }
+.wa-citation-claim { display: grid; gap: var(--space-3xs); padding-top: var(--space-2xs); }
+.wa-citation-claim:first-of-type { margin-top: 4px; padding-top: 0; }
+.wa-citation-claim-heading { position: relative; padding-right: calc(24px + var(--space-3xs)); }
+.wa-citation-quote { margin: 0; color: var(--color-black); font-weight: 400; line-height: var(--leading-snug); }
+.wa-citation-stale { display: inline-flex; vertical-align: -3px; }
+.wa-citation-stale-trigger { display: grid; width: 18px; height: 18px; place-items: center; margin-left: 4px; border: 0; border-radius: var(--border-radius-sm); padding: 0; background: transparent; color: color-mix(in srgb, var(--color-dark-salmon) 70%, var(--color-black)); cursor: help; }
+.wa-citation-stale-trigger:hover { background: color-mix(in srgb, var(--color-gold) 24%, var(--color-white)); }
+.wa-citation-stale-trigger:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }
+.wa-citation-guidance, .wa-citation-publisher, .wa-citation-empty { margin: 0; color: var(--color-gray-600); }
+.wa-citation-guidance { margin-top: -2px; font-size: var(--font-size-2xs, 13px); font-weight: 600; }
+.wa-citation-skeleton { display: grid; gap: var(--space-s); margin-top: 4px; }
+.wa-citation-skeleton-claim { display: grid; gap: 4px; }
+.wa-citation-skeleton-claim i { display: block; width: 70%; height: 16px; border-radius: var(--border-radius-sm); background: linear-gradient(90deg, var(--color-gray-100), var(--color-gray-200), var(--color-gray-100)); background-size: 200% 100%; animation: wa-citation-skeleton-shimmer 1.2s linear infinite; }
+.wa-citation-skeleton-claim i + i { width: 68%; height: 14px; opacity: .8; }
+.wa-citation-skeleton-claim + .wa-citation-skeleton-claim i:first-child { width: 90%; }
+.wa-citation-skeleton-claim + .wa-citation-skeleton-claim i + i { width: 70%; }
+@keyframes wa-citation-skeleton-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .wa-citation-skeleton-claim i { animation: none; } }
+.wa-citation-error { margin: 0; border-radius: var(--border-radius-base); padding: var(--space-3xs) var(--space-2xs); background: color-mix(in srgb, var(--color-crimson) 9%, var(--color-white)); color: var(--color-crimson); }
+.wa-citation-error { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); }
+.wa-citation-empty.wa-citation-no-results { justify-self: stretch; margin-top: 4px; border-radius: var(--border-radius-base); padding: 4px 12px; background: color-mix(in srgb, var(--color-gold) 32%, var(--color-white)); color: color-mix(in srgb, var(--color-dark-salmon) 60%, var(--color-black)); }
+@media (prefers-color-scheme: dark) { .wa-citation-empty.wa-citation-no-results { background: color-mix(in srgb, var(--color-gold) 16%, var(--color-white)); } }
+.wa-citation-source { display: grid; gap: var(--space-3xs); margin-top: 6px; border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-base); padding: 12px 16px; }
+.wa-citation-source-heading { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2xs); color: var(--color-black); }
+.wa-citation-source-heading strong { min-width: 0; overflow-wrap: anywhere; }
+.wa-citation-publisher { max-width: 45%; overflow-wrap: anywhere; text-align: right; font-size: var(--font-size-2xs, 13px); font-weight: 400; }
+.wa-citation-uncertain { justify-self: start; width: max-content; margin: 2px 0; border-radius: 99px; padding: 2px 10px; background: color-mix(in srgb, var(--color-gold) 32%, var(--color-white)); color: color-mix(in srgb, var(--color-dark-salmon) 60%, var(--color-black)); font-size: var(--font-size-2xs, 13px); font-weight: 600; }
+@media (prefers-color-scheme: dark) { .wa-citation-uncertain { background: color-mix(in srgb, var(--color-gold) 16%, var(--color-white)); } }
+.wa-citation-url { overflow-wrap: anywhere; color: var(--color-gray-600); font-size: var(--font-size-2xs, 13px); line-height: var(--leading-snug); }
+.wa-citation-passage { margin: 6px 0 2px; color: var(--color-gray-600); }
+.wa-citation-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3xs); margin-top: 6px; }
+.wa-citation-action { border: 1px solid var(--color-gray-200); border-radius: 99px; padding: var(--space-3xs) var(--space-2xs); background: var(--color-white); color: var(--color-black); font: inherit; font-size: calc(var(--font-size-xs) - 1px); font-weight: 400; text-decoration: none; cursor: pointer; }
+.wa-citation-open { display: grid; width: 28px; height: 28px; flex: none; place-items: center; border: 0; border-radius: var(--border-radius-base); padding: 0; color: var(--color-gray-600); }
+.wa-citation-open svg { width: 18px; height: 18px; }
+.wa-citation-find { position: absolute; top: -2px; right: 0; display: grid; width: 24px; height: 24px; place-items: center; border: 0; border-radius: var(--border-radius-base); padding: 0; background: transparent; color: var(--color-gray-600); cursor: pointer; }
+.wa-citation-find:disabled { cursor: progress; }
+.wa-citation-spinner { animation: wa-citation-spin 1s linear infinite; }
+@keyframes wa-citation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .wa-citation-spinner { animation: none; } }
+.wa-citation-retry { flex: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-size: calc(var(--font-size-xs) - 1px); font-weight: 400; text-decoration: underline; cursor: pointer; }
+.wa-check--citation .wa-popover-apply { font-size: calc(var(--font-size-xs) - 1px); font-weight: 400; }
+.wa-citation-insert { border-color: var(--color-black); background: var(--color-black); color: var(--color-white); }
+.wa-citation-action:hover, .wa-citation-find:hover { background: var(--color-cream); }
+.wa-citation-insert:hover { background: color-mix(in srgb, var(--color-black) 86%, var(--color-white)); }
+.wa-citation-action:focus-visible, .wa-citation-find:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }
+.wa-citation-retry:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }

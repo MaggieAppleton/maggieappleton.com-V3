@@ -25,6 +25,8 @@ import { WordFinder } from "../assist/client/word-finder.mjs";
 import { ChecksHover, ChecksPopover, checkChatSystem } from "../assist/client/popover/ChecksPopover.mjs";
 import { enabledChecks } from "../assist/client/tools/checks.mjs";
 import { BugIcon } from "@phosphor-icons/react";
+import "tippy.js/dist/tippy.css";
+import "../../components/mdx/tooltip-theme.css";
 import "./writing-editor.css";
 import "../assist/client/assist.css";
 import "../assist/client/word-finder.css";
@@ -132,6 +134,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [checkGenerated, setCheckGenerated] = useState({});
 	const checkCache = useRef(new Map());
 	const checkPending = useRef(new Map());
+	const [citationData, setCitationData] = useState({});
+	const citationPending = useRef(new Set());
+	const citationSearchPending = useRef(new Set());
 	const [roleAnnouncement, setRoleAnnouncement] = useState("");
 	const assistPlugin = useMemo(() => createAssistPlugin(setLexicalEditor), []);
 	const assistTransport = useMemo(() => createAssistTransport({ boot }), [boot]);
@@ -260,6 +265,74 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			.finally(() => checkPending.current.delete(key));
 		return undefined;
 	}, [hover, pinned, assistController, assistTransport]);
+	useEffect(() => {
+		const annotation = pinned?.annotation;
+		if (annotation?.tool !== "checks" || annotation.kind !== "citation" || !assistController) return;
+		const key = `${annotation.id}:${annotation.unitHash}`;
+		if (citationData[key] || citationPending.current.has(key)) return;
+		const sentence = assistController.getSentence(annotation.target?.sentenceId)?.sentence.text;
+		if (!sentence) return;
+		citationPending.current.add(key);
+		setCitationData((current) => ({ ...current, [key]: { status: "loading", sentence, claims: [], results: {} } }));
+		void assistTransport.extractCitation(sentence).then(({ claims }) => {
+			setCitationData((current) => ({ ...current, [key]: {
+				...current[key], status: "ready", claims: Array.isArray(claims) ? claims : [],
+			} }));
+		}, () => setCitationData((current) => ({ ...current, [key]: {
+			...current[key], status: "error",
+		} }))).finally(() => citationPending.current.delete(key));
+	}, [pinned, assistController, assistTransport, citationData]);
+	const retryCitationExtraction = () => {
+		const annotation = pinned?.annotation;
+		if (annotation?.tool !== "checks" || annotation.kind !== "citation") return;
+		const key = `${annotation.id}:${annotation.unitHash}`;
+		setCitationData((current) => {
+			if (current[key]?.status !== "error") return current;
+			const next = { ...current };
+			delete next[key];
+			return next;
+		});
+	};
+	const findCitationSources = (claim) => {
+		const annotation = pinned?.annotation;
+		if (annotation?.tool !== "checks" || annotation.kind !== "citation") return;
+		const key = `${annotation.id}:${annotation.unitHash}`;
+		const claimKey = `${claim.start}:${claim.end}`;
+		const requestKey = `${key}:${claimKey}`;
+		if (citationSearchPending.current.has(requestKey)) return;
+		const saved = citationData[key];
+		if (!saved?.claims?.some((item) => item.start === claim.start && item.end === claim.end && item.text === claim.text)) return;
+		if (assistController?.getSentence(annotation.target.sentenceId)?.sentence.text !== saved.sentence) {
+			setCitationData((current) => ({ ...current, [key]: { ...current[key],
+				notice: "The sentence changed. Search again before inserting a citation.", noticeClaimKey: claimKey } }));
+			return;
+		}
+		citationSearchPending.current.add(requestKey);
+		setCitationData((current) => ({ ...current, [key]: { ...current[key], notice: null, noticeClaimKey: null,
+			results: { ...current[key].results, [claimKey]: { status: "loading", sources: [] } },
+		} }));
+		void assistTransport.findCitationSources(claim.text, claim.sourceType).then(({ sources }) => {
+			setCitationData((current) => ({ ...current, [key]: { ...current[key],
+				results: { ...current[key].results, [claimKey]: { status: "ready", sources: Array.isArray(sources) ? sources : [] } },
+			} }));
+		}, () => setCitationData((current) => ({ ...current, [key]: { ...current[key],
+			results: { ...current[key].results, [claimKey]: { status: "error", sources: [] } },
+		} }))).finally(() => citationSearchPending.current.delete(requestKey));
+	};
+	const insertCitation = (claim, source) => {
+		const annotation = pinned?.annotation;
+		if (annotation?.kind !== "citation") return;
+		const key = `${annotation.id}:${annotation.unitHash}`;
+		const saved = citationData[key];
+		const claimKey = `${claim.start}:${claim.end}`;
+		if (!saved?.results?.[claimKey]?.sources?.some((item) => item.url === source.url && item.passage === source.passage)
+			|| !assistController?.insertCitation(annotation, { ...claim, sentence: saved.sentence }, source.url)) {
+			setCitationData((current) => ({ ...current, [key]: { ...current[key],
+				notice: "The sentence changed. Search again before inserting a citation.", noticeClaimKey: claimKey } }));
+			return;
+		}
+		setPinned(null);
+	};
 	useEffect(() => {
 		if (!assistController) return undefined;
 		const updateMap = (annotations) => setMapAnnotation(annotations.find((annotation) =>
@@ -518,6 +591,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		pinned?.annotation?.tool === "checks" && assistController && createPortal(React.createElement(ChecksPopover, {
 			key: pinned.annotation.id,
 			pinned, generated: checkGenerated[`${pinned.annotation.id}:${pinned.annotation.unitHash}`],
+			citation: citationData[`${pinned.annotation.id}:${pinned.annotation.unitHash}`],
+			onFindSources: findCitationSources, onInsertCitation: insertCitation,
+			onRetryCitation: retryCitationExtraction,
 			fallbackFocus: lexicalEditor?.getRootElement(), onClose: () => setPinned(null),
 			onDismiss: () => assistController.dismiss(pinned.annotation),
 			onApply: (value) => pinned.annotation.kind === "mixed-metaphor"

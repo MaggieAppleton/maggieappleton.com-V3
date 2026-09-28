@@ -11,7 +11,7 @@ test("assist routes exist in dev and are absent from production registration", (
 	assert.deepEqual(registered, []);
 	setup({ command: "dev", injectRoute: (route) => registered.push(route.pattern) });
 	assert.deepEqual(registered.filter((path) => path.startsWith("/_editor/api/assist/")), [
-		"/_editor/api/assist/judge", "/_editor/api/assist/generate",
+		"/_editor/api/assist/judge", "/_editor/api/assist/generate", "/_editor/api/assist/citations",
 		"/_editor/api/assist/sidecar", "/_editor/api/assist/status",
 	]);
 });

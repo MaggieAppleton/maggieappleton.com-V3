@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PinnedPopover } from "./PinnedPopover.mjs";
 import { useChatSnapshot } from "./chat-session.mjs";
+import { CitationPopover } from "./CitationPopover.mjs";
 import { checkDetails } from "../tools/checks.mjs";
 export { validateClichePhrase } from "../check-phrase.mjs";
 
@@ -70,7 +71,7 @@ export function ChecksHover({ annotation, generated, onSelect }) {
 }
 
 export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDismiss, onApply, chat,
-	canApply = false, canApplyBlock = false }) {
+	canApply = false, canApplyBlock = false, citation, onFindSources, onInsertCitation, onRetryCitation }) {
 	const annotation = pinned.annotation;
 	const detail = checkDetails(annotation.kind, annotation.data?.direction);
 	const suggestions = annotation.kind === "hedging" ? generated?.rewrites ?? [] : generated?.suggestions ?? [];
@@ -88,7 +89,9 @@ export function ChecksPopover({ pinned, generated, fallbackFocus, onClose, onDis
 		title: detail.title, icon: React.createElement(CheckIcon, { annotation }), triggerRef: pinned.trigger,
 		fallbackFocus, anchorRect: pinned.anchorRect, onClose, onDismiss,
 		applyValue: canApplySuggestion ? selectedValue : null, onApply: canApplySuggestion || chatCanApply ? onApply : undefined, chat,
+		popoverWidth: annotation.kind === "citation" && citation ? 440 : 340,
 		useChatRewrite: !canApplySuggestion && chatCanApply },
+		annotation.kind === "citation" && citation && React.createElement(CitationPopover, { citation, onFindSources, onInsertCitation, onRetryCitation }),
 		!generated && annotation.kind !== "citation" && React.createElement("div", { className: "wa-check-shimmer", "aria-label": "Loading preview" }),
 		generated?.error && React.createElement("p", { className: "wa-check-error" }, "Suggestions unavailable."),
 		annotation.kind !== "citation" && annotation.kind !== "cliche" && reason(annotation, generated)
