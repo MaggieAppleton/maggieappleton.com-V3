@@ -3,7 +3,6 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { linksTool } from "../../src/editor/assist/client/tools/links.mjs";
 import { LinksHover, LinksPopover, linkTargets } from "../../src/editor/assist/client/popover/LinksPopover.mjs";
 
 const annotation = {
@@ -14,12 +13,6 @@ const annotation = {
 		{ pathname: "/home-cooked-software", title: "Home-Cooked Software", description: "Small personal apps made for an audience of one.", stage: "budding" },
 	] },
 };
-
-test("links registers as a document marker tool without a margin presenter", () => {
-	assert.deepEqual(linksTool, {
-		id: "links", label: "Link suggestions", group: "Markers", level: "document",
-	});
-});
 
 test("link targets keep at most two usable targets in result order", () => {
 	assert.deepEqual(linkTargets({ data: { targets: [

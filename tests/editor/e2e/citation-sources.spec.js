@@ -52,9 +52,6 @@ test("pinned citation extracts two claims, searches on click, retains results, a
 		await expect(dialog).toContainText(claims[1].text);
 		await expect(dialog.getByRole("button", { name: /^Find sources for/ })).toHaveCount(2);
 		assert.deepEqual(requests.map(({ action }) => action), ["extract"]);
-		if (process.env.CITATION_REPORT_BEFORE_SCREENSHOT) {
-			await page.screenshot({ path: process.env.CITATION_REPORT_BEFORE_SCREENSHOT, animations: "disabled" });
-		}
 		await dialog.getByRole("button", { name: /^Find sources for/ }).first().evaluate((button) => {
 			button.click();
 			button.click();
@@ -62,9 +59,6 @@ test("pinned citation extracts two claims, searches on click, retains results, a
 		await expect(dialog).toContainText(source.passage);
 		await expect(dialog).toContainText(source.publisher);
 		assert.deepEqual(requests.map(({ action }) => action), ["extract", "search"]);
-		if (process.env.CITATION_REPORT_SCREENSHOT) {
-			await page.screenshot({ path: process.env.CITATION_REPORT_SCREENSHOT, animations: "disabled" });
-		}
 		await dialog.getByRole("button", { name: "Close" }).click();
 		await page.locator(".writing-assist-marker--citation").click();
 		await expect(dialog).toContainText(source.passage);

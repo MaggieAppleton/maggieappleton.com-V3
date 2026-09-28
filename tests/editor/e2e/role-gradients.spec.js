@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
@@ -76,11 +76,8 @@ test("mixed role gradients follow wrapped editor text in both themes", async ({ 
 		await page.evaluate(() => window.scrollTo(0, 0));
 		await page.setViewportSize({ width: 760, height: 740 });
 		await checkGeometry(page);
-		await mkdir(".local-writing-editor", { recursive: true });
-		await page.locator(".prose-wrapper[data-editor-live=true]").screenshot({ path: ".local-writing-editor/issue-296-role-gradient-light.png" });
 		await page.emulateMedia({ colorScheme: "dark" });
 		await expect(first).toHaveCSS("background-image", /linear-gradient/);
-		await page.locator(".prose-wrapper[data-editor-live=true]").screenshot({ path: ".local-writing-editor/issue-296-role-gradient-dark.png" });
 		await page.emulateMedia({ colorScheme: "light" });
 		const hoverPoint = await editor.evaluate((root) => {
 			const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -99,8 +96,6 @@ test("mixed role gradients follow wrapped editor text in both themes", async ({ 
 		await expect(page.locator(".wa-role-hover")).toContainText("37%");
 		await expect(page.locator(".wa-role-hover")).toContainText("36%");
 		await expect(page.locator(".wa-role-hover")).toContainText("19%");
-		await page.locator(".wa-hover-card").evaluate((card) => Promise.all(card.getAnimations().map((animation) => animation.finished)));
-		await page.screenshot({ path: ".local-writing-editor/issue-296-role-gradient-hover.png", animations: "disabled" });
 	} finally {
 		if (server) await server.stop();
 		await fixture.cleanup();

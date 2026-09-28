@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
@@ -96,19 +96,12 @@ test.describe.serial("Writing Assist repetition finder", () => {
 		assert.ok(judgeRequests.some((request) => request.tools.includes("repetition")),
 			"the document-level repetition request must be mocked");
 
-		const screenshotMarker = markers.nth(await markerIndexForSentence(editor, repeatedSentences[1]));
-		await screenshotMarker.click();
+		const selectedMarker = markers.nth(await markerIndexForSentence(editor, repeatedSentences[1]));
+		await selectedMarker.click();
 		const dialog = page.getByRole("dialog", { name: "Same point, 3 times" });
 		await expect(dialog).toBeVisible();
 		await settleAnimations(page);
-		await mkdir(".local-writing-editor", { recursive: true });
-		await page.emulateMedia({ colorScheme: "light" });
-		await page.screenshot({ path: ".local-writing-editor/repetition-light.png" });
-		await page.emulateMedia({ colorScheme: "dark" });
-		await settleAnimations(page);
-		await page.screenshot({ path: ".local-writing-editor/repetition-dark.png" });
-		await page.emulateMedia({ colorScheme: "light" });
-		const screenshotGeometry = await page.evaluate(() => {
+		const markerGeometry = await page.evaluate(() => {
 			const popover = document.querySelector(".wa-pinned-popover").getBoundingClientRect();
 			return [...document.querySelectorAll(".writing-assist-marker--repetition")].map((marker) => {
 				const rect = marker.getBoundingClientRect();
@@ -117,9 +110,9 @@ test.describe.serial("Writing Assist repetition finder", () => {
 						&& rect.top < popover.bottom && rect.bottom > popover.top };
 			});
 		});
-		assert.equal(screenshotGeometry.length, 3);
-		assert.ok(screenshotGeometry.every((marker) => marker.visible && !marker.overlaps),
-			"the natural popover position should leave all three margin markers visible in screenshots");
+		assert.equal(markerGeometry.length, 3);
+		assert.ok(markerGeometry.every((marker) => marker.visible && !marker.overlaps),
+			"the natural popover position should leave all three margin markers visible");
 		const rows = dialog.locator(".wa-repetition-row");
 		await expect(rows).toHaveCount(3);
 		for (const [index, paragraph] of [2, 5, 9].entries()) {

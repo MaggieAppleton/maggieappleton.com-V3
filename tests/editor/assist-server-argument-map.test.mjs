@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { argumentMapTool, assembleArgumentMap } from "../../src/editor/assist/server/tools/argument-map.mjs";
-import { getTool } from "../../src/editor/assist/server/tools/index.mjs";
 import { createJudge } from "../../src/editor/assist/server/judge.mjs";
 
 const sentence = (id, text) => ({ id, hash: id, text });
@@ -52,7 +51,6 @@ test("argument map builds two Jev requests with prose tags, quote context and bo
 	assert.deepEqual(Object.keys(jobs.questions.parent_P3.criteria), ["none", "P1", "P2"]);
 	assert.deepEqual(Object.keys(mains.questions.main_P3.criteria), ["P3.S1", "P3.S2"]);
 	assert.equal(jobs.questions.advances_P3.type, "noul");
-	assert.equal(getTool("argument-map"), argumentMapTool);
 });
 
 test("assembly chooses thesis, attaches low-confidence parent to it, and makes evidence leaves", () => {

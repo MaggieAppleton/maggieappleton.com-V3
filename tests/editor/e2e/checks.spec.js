@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
@@ -133,7 +133,6 @@ ${sentences.mixed}
 		await expect(tooltip.getByText("in a similar position", { exact: true })).toBeVisible();
 		await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get("wa-checks-cliche") ?? [])]
 			.map((range) => range.toString()))).toContain(clichePhrase);
-		await captureThemePair(page, "checks-cliche-hover");
 
 		await page.locator(".writing-assist-marker--hedging").hover();
 		await expect.poll(() => generateRequests.some((request) => request.purpose === "hedging"))
@@ -166,7 +165,6 @@ ${sentences.mixed}
 		await expect(hover).toHaveAttribute("role", "group");
 		await page.waitForTimeout(200);
 		await expect(hover).toBeVisible();
-		await captureThemePair(page, "checks-cliche-hover-handoff");
 		await suggestion.focus();
 		await page.mouse.move(1, 1);
 		await page.waitForTimeout(200);
@@ -208,7 +206,6 @@ ${sentences.mixed}
 				&& phrase.scrollWidth <= phrase.clientWidth;
 		})).toBe(true);
 		await page.setViewportSize({ width: 1280, height: 720 });
-		await captureThemePair(page, "checks-cliche-pinned");
 		for (let index = 0; index < 3; index++) await page.keyboard.press("Tab");
 		await expect(secondSuggestion).toBeFocused();
 		await page.keyboard.press("Enter");
@@ -361,10 +358,6 @@ ${sentences.mixed}
 		for (const text of [synthetic.museum, synthetic.external, synthetic.sweeping, synthetic.overhedged]) {
 			assert.ok(labels.some((label) => label.includes(text)), `Expected a marker for ${text}`);
 		}
-		await page.setViewportSize({ width: 1280, height: 1100 });
-		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-light.png", fullPage: true });
-		await page.emulateMedia({ colorScheme: "dark" });
-		await page.screenshot({ path: ".local-writing-editor/issue-290-synthetic-dark.png", fullPage: true });
 	});
 });
 
@@ -445,13 +438,4 @@ async function mockChecks(page, { generateRequests = [], dismissals = [] } = {})
 				end: sentences.citation.length, sourceType: "Scientific reference" }] }
 			: { sources: [] } });
 	});
-}
-
-async function captureThemePair(page, name) {
-	await mkdir(".local-writing-editor", { recursive: true });
-	await page.emulateMedia({ colorScheme: "light" });
-	await page.screenshot({ path: `.local-writing-editor/${name}-light.png`, animations: "disabled" });
-	await page.emulateMedia({ colorScheme: "dark" });
-	await page.screenshot({ path: `.local-writing-editor/${name}-dark.png`, animations: "disabled" });
-	await page.emulateMedia({ colorScheme: "light" });
 }

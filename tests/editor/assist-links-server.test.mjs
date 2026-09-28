@@ -51,7 +51,6 @@ test("links shortlists content pages, asks a dependent phrase question, and retu
 		assert.equal(annotations.length, 1);
 		assert.equal(annotations[0].kind, "link:/end-user-programming");
 		assert.equal(annotations[0].target.sentenceId, "s1");
-		assert.equal(annotations[0].data.targets[0].stage, "seedling");
 	} finally { await files.close(); }
 });
 

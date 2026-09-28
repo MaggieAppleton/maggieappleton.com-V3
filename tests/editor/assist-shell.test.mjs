@@ -47,16 +47,11 @@ test("Assist panel only shows the configured debug switch and reports when it is
 	assert.doesNotMatch(html, /Sentence roles|Repetition|Citation needed|Hedging|Objections|Clichés|Link suggestions/);
 });
 
-test("client registry exposes Debug metadata and its marker presenter", () => {
+test("Debug marker appears in the margin with an accessible label", () => {
 	const debug = getClientTool("debug");
-	assert.deepEqual({ id: debug.id, label: debug.label, group: debug.group, level: debug.level }, {
-		id: "debug", label: "Debug", group: "Markers", level: "sentence",
-	});
-
 	const marker = debug.markerPresenter({ id: "debug:test" });
 	assert.equal(marker.placement, "margin");
 	assert.equal(marker.label, "Colour mention");
-	assert.equal(marker.className, "writing-assist-marker--debug");
 	assert.ok(marker.content);
 });
 

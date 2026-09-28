@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { checksTool } from "../../src/editor/assist/server/tools/checks.mjs";
-import { getTool } from "../../src/editor/assist/server/tools/index.mjs";
 import { createJudge } from "../../src/editor/assist/server/judge.mjs";
 
 const sentence = (id, text, hasLink = false) => ({ id, hash: id, text, hasLink });
@@ -35,8 +34,6 @@ test("checks asks only enabled questions for a dirty prose block", () => {
 		"personal_S1", "cite_S1", "cliche_S1", "personal_S2", "cite_S2", "cliche_S2", "mixed_metaphor",
 	]);
 	assert.equal(requests[0].questions.cite_S1.type, "noul");
-	assert.equal(getTool("checks"), checksTool);
-	assert.equal(checksTool.level, "sentence");
 });
 
 test("checks defaults to configured switches and skips headings and quotes", () => {

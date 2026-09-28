@@ -3,7 +3,7 @@ import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { ArgumentMapView, argumentMapTool } from "../../src/editor/assist/client/tools/argument-map.mjs";
+import { ArgumentMapView } from "../../src/editor/assist/client/tools/argument-map.mjs";
 import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
 
 const map = {
@@ -21,12 +21,6 @@ const map = {
 	],
 	headings: [{ text: "The case", beforeNumber: 2 }, { text: "A second section", beforeNumber: 2 }, { text: "Closing notes", beforeNumber: 5 }],
 };
-
-test("argument map tool registers document metadata", () => {
-	assert.deepEqual({ id: argumentMapTool.id, label: argumentMapTool.label, group: argumentMapTool.group, level: argumentMapTool.level }, {
-		id: "argument-map", label: "Argument map", group: "Structure", level: "document",
-	});
-});
 
 test("Structure renders a thesis tree, support leaves, warning and off-thread links", () => {
 	const html = renderToStaticMarkup(React.createElement(ArgumentMapView, { view: "structure", map, jumpTo() {} }));

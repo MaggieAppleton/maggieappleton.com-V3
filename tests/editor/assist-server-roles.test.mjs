@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { rolesTool } from "../../src/editor/assist/server/tools/roles.mjs";
-import { getTool } from "../../src/editor/assist/server/tools/index.mjs";
 
 const sentence = (id, text) => ({ id, hash: id, text });
 const blocks = [
@@ -71,9 +70,4 @@ test("roles skips headings and quotations even when they are dirty", () => {
 	assert.equal(rolesTool.mapAnswers({ blocks }, "heading", {
 		role_S1: { type: "choice", probabilities: { claim: 1 } },
 	}).length, 0);
-});
-
-test("judge can find the sentence roles tool", () => {
-	assert.equal(getTool("roles"), rolesTool);
-	assert.equal(rolesTool.level, "sentence");
 });

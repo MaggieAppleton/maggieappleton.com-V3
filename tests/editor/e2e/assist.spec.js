@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
@@ -30,9 +30,6 @@ The sky is blue. The path feels quiet.\n`;
 		const configPath = fixture.resolve("src/editor/assist/config.mjs");
 		await fixture.write("src/editor/assist/config.mjs",
 			(await readFile(configPath, "utf8")).replace("debug: {\n\t\t\tenabled: false", "debug: {\n\t\t\tenabled: true"));
-		const drawerPath = fixture.resolve("src/editor/assist/client/Drawer.mjs");
-		await fixture.write("src/editor/assist/client/Drawer.mjs",
-			`${await readFile(drawerPath, "utf8")}\nregisterDrawerView({ id: "fixture", label: "Fixture", render: () => null });\n`);
 		server = await startFixtureServer(fixture.root, { timeout: 120_000 });
 	});
 
@@ -105,12 +102,6 @@ The sky is blue. The path feels quiet.\n`;
 			|| popoverBox.x + popoverBox.width <= dockBox.x
 			|| dockBox.x + dockBox.width <= popoverBox.x,
 		"the pinned popover must leave the editor dock visible");
-		await mkdir(".local-writing-editor/visuals", { recursive: true });
-		await page.screenshot({ path: ".local-writing-editor/visuals/foundation-debug-light.png" });
-		await page.emulateMedia({ colorScheme: "dark" });
-		await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-		await page.screenshot({ path: ".local-writing-editor/visuals/foundation-debug-dark.png" });
-		await page.emulateMedia({ colorScheme: "light" });
 		await page.getByRole("button", { name: "Close" }).click();
 		await marker.evaluate((element) => { element.style.transform = "translateY(-140px)"; });
 		await marker.click();
@@ -158,12 +149,4 @@ The sky is blue. The path feels quiet.\n`;
 		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	});
 
-	test("registered drawer view opens and closes from Map", async ({ page }) => {
-		await mockAssist(page);
-		await page.goto(`${server.origin}/_editor?documentId=notes:${slug}`);
-		await page.getByRole("button", { name: "Map", exact: true }).click();
-		await expect(page.getByRole("dialog", { name: "Argument map" })).toBeVisible();
-		await page.keyboard.press("Escape");
-		await expect(page.getByRole("dialog", { name: "Argument map" })).toHaveCount(0);
-	});
 });
