@@ -87,6 +87,14 @@ export function createAssistTransport({ boot, fetchImpl = fetch }) {
 		async generate(request, { signal } = {}) {
 			return (await send("generate", { method: "POST", signal, body: request })).json();
 		},
+		async extractCitation(sentence, { signal } = {}) {
+			return (await send("citations", { method: "POST", signal,
+				body: { action: "extract", sentence } })).json();
+		},
+		async findCitationSources(claim, sourceType, { signal } = {}) {
+			return (await send("citations", { method: "POST", signal,
+				body: { action: "search", claim, sourceType } })).json();
+		},
 		async *stream(request, { signal } = {}) {
 			const response = await send("generate", { method: "POST", signal, body: { ...request, stream: true } });
 			yield* sseText(response);

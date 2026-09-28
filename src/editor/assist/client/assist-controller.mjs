@@ -1,8 +1,8 @@
-import { $createRangeSelection, $getNodeByKey, $isTextNode, $setSelection } from "lexical";
+import { $createRangeSelection, $getNodeByKey, $getRoot, $isTextNode, $setSelection } from "lexical";
 import { $toggleLink } from "@lexical/link";
 import { createAnnotationStore } from "./annotation-store.mjs";
 import { validateClichePhrase } from "./check-phrase.mjs";
-import { createSentenceModel } from "./sentence-model.mjs";
+import { buildSentenceSnapshot, createSentenceModel } from "./sentence-model.mjs";
 import { createAssistScheduler } from "./scheduler.mjs";
 import { createHighlightOverlay } from "./overlay/highlights.mjs";
 import { createRoleGradientOverlay, isMixedRole, withoutIntroDropCap } from "./overlay/role-gradients.mjs";
@@ -42,6 +42,36 @@ const CHECK_IDS = ["citation", "hedging", "objection", "cliche"];
 
 function activeChecks(settings) {
 	return CHECK_IDS.filter((id) => settings?.[id]);
+}
+
+function httpUrl(value) {
+	if (typeof value !== "string" || value !== value.trim()) return null;
+	try {
+		const url = new URL(value);
+		return ["http:", "https:"].includes(url.protocol) && url.hostname
+			&& !url.username && !url.password ? url.href : null;
+	} catch { return null; }
+}
+
+function pointAt(pieces, offset, end = false) {
+	let position = 0;
+	for (let index = 0; index < pieces.length; index++) {
+		const piece = pieces[index];
+		const next = position + piece.text.length;
+		if (offset < next || (end && offset === next) || index === pieces.length - 1) {
+			return { key: piece.key, offset: Math.max(0, Math.min(piece.text.length, offset - position)) };
+		}
+		position = next;
+	}
+	return null;
+}
+
+function pointsForSentenceSpan(snapshot, sentenceId, start, end) {
+	const location = snapshot.blocks._locations?.get(sentenceId);
+	if (!location || end > location.end - location.start) return null;
+	const first = pointAt(location.pieces, location.start + start);
+	const last = pointAt(location.pieces, location.start + end, true);
+	return first && last ? { start: first, end: last } : null;
 }
 
 export function plainParagraphSelection(block, model) {
@@ -179,6 +209,19 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 		range.setEnd(last.endContainer, last.endOffset);
 		return range.toString();
 	}
+	function currentCitation(snapshot, annotation, claim) {
+		const current = store.getAnnotations().find((item) => item.id === annotation?.id);
+		const sentenceId = current?.target?.sentenceId;
+		if (current?.kind !== "citation" || !["sentence", "span"].includes(current.target?.type)
+			|| !sentenceId || !Number.isInteger(claim?.start) || !Number.isInteger(claim?.end)
+			|| claim.start < 0 || claim.end <= claim.start || typeof claim.text !== "string" || !claim.text
+			|| typeof claim.sentence !== "string") return null;
+		const sentence = sentenceFor(snapshot, sentenceId)?.sentence;
+		if (!sentence || current.unitHash !== sentence.hash || claim.sentence !== sentence.text
+			|| claim.end > sentence.text.length || sentence.text.slice(claim.start, claim.end) !== claim.text) return null;
+		const points = pointsForSentenceSpan(snapshot, sentenceId, claim.start, claim.end);
+		return points ? { current, sentence, points } : null;
+	}
 
 	return {
 		model, store,
@@ -248,6 +291,31 @@ export function createAssistController({ editor, wrapper, transport, documentId,
 				$toggleLink(pathname);
 			});
 			return true;
+		},
+		insertCitation(annotation, claim, url) {
+			const destination = httpUrl(url);
+			if (!destination) return false;
+			const initial = currentCitation(model.getSnapshot(), annotation, claim);
+			if (!initial || currentSelectionText({ sentenceId: initial.current.target.sentenceId,
+				start: claim.start, end: claim.end }) !== claim.text) return false;
+			let inserted = false;
+			editor.update(() => {
+				const before = currentCitation(buildSentenceSnapshot($getRoot()), annotation, claim);
+				if (!before) return;
+				const selection = $createRangeSelection();
+				selection.anchor.set(before.points.start.key, before.points.start.offset, "text");
+				selection.focus.set(before.points.end.key, before.points.end.offset, "text");
+				if (!plainTextSelection(selection) || selection.getTextContent() !== claim.text) return;
+				$setSelection(selection);
+				const latest = currentCitation(buildSentenceSnapshot($getRoot()), annotation, claim);
+				if (!latest || !plainTextSelection(selection) || selection.getTextContent() !== claim.text
+					|| selection.anchor.key !== latest.points.start.key || selection.anchor.offset !== latest.points.start.offset
+					|| selection.focus.key !== latest.points.end.key || selection.focus.offset !== latest.points.end.offset
+					|| httpUrl(url) !== destination) return;
+				$toggleLink(destination);
+				inserted = true;
+			}, { discrete: true });
+			return inserted;
 		},
 		canApply(annotation) {
 			const current = store.getAnnotations().find((item) => item.id === annotation.id);

@@ -335,6 +335,7 @@
 }
 
 :root {
+  --font-size-2xs: 13px;
   --f--2-min: 14.5;
   --f--2-max: 15;
   --font-size-xs: calc(

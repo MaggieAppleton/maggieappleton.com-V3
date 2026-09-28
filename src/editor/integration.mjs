@@ -16,7 +16,7 @@ export function localWritingEditor() {
 					entrypoint: new URL("./routes/document.js", import.meta.url),
 					prerender: false,
 				});
-				for (const path of ["judge", "generate", "sidecar", "status"]) {
+				for (const path of ["judge", "generate", "citations", "sidecar", "status"]) {
 					injectRoute({
 						pattern: `/_editor/api/assist/${path}`,
 						entrypoint: new URL(`./assist/routes/${path}.js`, import.meta.url),
