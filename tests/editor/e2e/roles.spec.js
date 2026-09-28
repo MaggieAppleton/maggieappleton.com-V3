@@ -103,6 +103,8 @@ This paragraph stays unchanged while the first paragraph is edited.
 		await expect(rolesSwitch).toHaveAttribute("aria-checked", "true");
 		await hoverSentence(page, editor, "The sky is blue.");
 		const roleRows = page.locator(".wa-role-hover-row");
+		await page.waitForTimeout(300);
+		await expect(roleRows).toHaveCount(0);
 		await expect(roleRows).toHaveCount(2);
 		await expect.poll(() => page.locator(".wa-hover-card").evaluate((card) => {
 			const { width } = card.getBoundingClientRect();
@@ -118,6 +120,17 @@ This paragraph stays unchanged while the first paragraph is edited.
 		assert.ok(Math.abs(barWidths[0] / barWidths[1] - 2) < 0.02,
 			"role bars should retain their probability proportions");
 		await expect(page.locator('.wa-role-hover-row[data-role="evidence"]')).toHaveCount(0);
+		await page.mouse.move(2, 2);
+		await expect(page.locator(".wa-hover-card")).toHaveCount(0);
+		await hoverSentence(page, editor, "The sky is blue.");
+		await expect(roleRows).toHaveCount(2);
+		await page.evaluate(() => {
+			document.documentElement.style.minHeight = "200vh";
+			window.scrollTo(0, 100);
+		});
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+		await expect(page.locator(".wa-hover-card")).toHaveCount(0);
+		await page.evaluate(() => { document.documentElement.style.minHeight = ""; window.scrollTo(0, 0); });
 		await editor.focus();
 		await editor.evaluate((root) => {
 			const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

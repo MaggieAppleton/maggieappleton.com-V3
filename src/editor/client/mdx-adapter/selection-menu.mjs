@@ -67,8 +67,8 @@ function selectionDetails(selection) {
 	};
 }
 
-function menuPosition(rect) {
-	const width = Math.min(MENU_WIDTH, window.innerWidth - EDGE * 2);
+function menuPosition(rect, menuWidth = MENU_WIDTH) {
+	const width = Math.min(menuWidth, window.innerWidth - EDGE * 2);
 	const left = Math.max(EDGE, Math.min(rect.left + rect.width / 2 - width / 2,
 		window.innerWidth - width - EDGE));
 	const above = rect.top - MENU_HEIGHT - 7;
@@ -136,7 +136,7 @@ function SelectionMenu() {
 		lastSignature.current = details.signature;
 		if (dismissed.current === details.signature) return;
 		const rect = editor.getEditorState().read(() => getSelectionRectangle(editor));
-		setMenu(rect ? { ...details, ...menuPosition(rect) } : null);
+		setMenu(rect ? { ...details, ...menuPosition(rect, menuRef.current?.offsetWidth) } : null);
 	}, [activeEditor, editor, linkState.type, readOnly, viewMode]);
 
 	useEffect(() => {
@@ -157,6 +157,13 @@ function SelectionMenu() {
 			cancelAnimationFrame(frame.current);
 		};
 	}, [editor, refresh]);
+
+	useEffect(() => {
+		if (!menu || !menuRef.current) return undefined;
+		const observer = new ResizeObserver(refresh);
+		observer.observe(menuRef.current);
+		return () => observer.disconnect();
+	}, [Boolean(menu), refresh]);
 
 	useEffect(() => {
 		if (!menu) return;
@@ -203,7 +210,8 @@ function SelectionMenu() {
 		button("Link", LinkSimple, false, () => { setMenu(null); openLink(); }, false),
 		button("Heading 1", TextHOne, menu.heading === "h1", () => toggleHeading("h1"), true, menu.headingDisabled),
 		button("Heading 2", TextHTwo, menu.heading === "h2", () => toggleHeading("h2"), true, menu.headingDisabled),
-		button("Heading 3", TextHThree, menu.heading === "h3", () => toggleHeading("h3"), true, menu.headingDisabled))), root);
+		button("Heading 3", TextHThree, menu.heading === "h3", () => toggleHeading("h3"), true, menu.headingDisabled),
+		h("span", { className: "local-selection-word-finder" }))), root);
 }
 
 export function createSelectionMenuPlugin() {

@@ -56,13 +56,18 @@ test.describe.serial("Writing Assist word finder", () => {
 		finally { if (fixture) await fixture.cleanup(); }
 	});
 
-	test("selection pill opens ranked rows and sends the marked sentence to both mocked routes", async ({ page }) => {
+	test("selection toolbar opens ranked rows and sends the marked sentence to both mocked routes", async ({ page }) => {
 		const { generateRequests, judgeRequests } = await mockWordFinder(page);
 		await openDocument(page, server.origin, slugs[0]);
 		const editor = page.getByRole("textbox", { name: "Article body" });
 		await selectText(editor, "quiet", 0);
-		const trigger = page.getByRole("button", { name: "Find words" });
+		const menu = page.getByTestId("selection-menu");
+		const trigger = menu.getByRole("button", { name: "Find words" });
 		await expect(trigger).toBeVisible();
+		await expect(trigger).toBeEnabled();
+		for (const label of ["Bold", "Italic", "Link", "Heading 1", "Heading 2", "Heading 3"]) {
+			await expect(menu.getByRole("button", { name: label })).toHaveCSS("border-left-width", "0px");
+		}
 		await trigger.click();
 
 		const dialog = page.getByRole("dialog", { name: "Find words" });

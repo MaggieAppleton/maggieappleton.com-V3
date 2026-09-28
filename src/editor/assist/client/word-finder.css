@@ -1,6 +1,5 @@
 .wa-word-finder-trigger {
-	position: fixed; z-index: 1101; display: inline-flex; align-items: center; gap: 5px;
-	padding: 5px 9px; cursor: pointer;
+	display: inline-flex; align-items: center; cursor: pointer;
 	font: 600 var(--font-size-xs)/var(--leading-tight) var(--font-sans);
 }
 .wa-word-finder-popover {

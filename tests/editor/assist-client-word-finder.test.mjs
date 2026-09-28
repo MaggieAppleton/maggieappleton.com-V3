@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { candidateRows, createWordFinder, isEligibleSelection, normaliseCandidates, popoverPosition, selectionDetails, selectionIdentity, triggerPosition } from "../../src/editor/assist/client/word-finder.mjs";
+import { candidateRows, createWordFinder, isEligibleSelection, normaliseCandidates, popoverPosition, selectionDetails, selectionIdentity } from "../../src/editor/assist/client/word-finder.mjs";
 
 test("word finder only accepts a nonempty, single-block selection of twelve words or fewer", () => {
 	assert.equal(isEligibleSelection({ text: "", blockId: "one", start: 0, end: 0 }), false);
@@ -50,11 +50,6 @@ test("a newly opened selection gets a fresh popover identity and candidate reque
 	await finder(first);
 	await finder(second);
 	assert.deepEqual(requested, ["A ⟦sadness⟧ remains.", "A sadness ⟦remains⟧."]);
-});
-
-test("Find words pill clamps horizontally near the viewport edge", () => {
-	assert.deepEqual(triggerPosition({ right: 380, top: 40 }, 90, { width: 400 }), { left: 298, top: 12 });
-	assert.deepEqual(triggerPosition({ right: -20, top: 100 }, 90, { width: 400 }), { left: 12, top: 66 });
 });
 
 test("popover position flips above and clamps within the viewport", () => {

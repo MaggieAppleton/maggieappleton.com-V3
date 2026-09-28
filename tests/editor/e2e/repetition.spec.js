@@ -97,6 +97,13 @@ test.describe.serial("Writing Assist repetition finder", () => {
 			"the document-level repetition request must be mocked");
 
 		const selectedMarker = markers.nth(await markerIndexForSentence(editor, repeatedSentences[1]));
+		await selectedMarker.hover();
+		const hover = page.locator(".wa-hover-card");
+		await expect(hover).toBeVisible();
+		const hoverBox = await hover.boundingBox();
+		await page.mouse.move(hoverBox.x + 20, hoverBox.y + 20, { steps: 12 });
+		await page.waitForTimeout(200);
+		await expect(hover).toBeVisible();
 		await selectedMarker.click();
 		const dialog = page.getByRole("dialog", { name: "Same point, 3 times" });
 		await expect(dialog).toBeVisible();
