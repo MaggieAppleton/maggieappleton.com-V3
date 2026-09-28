@@ -635,7 +635,7 @@ export function initPoppyField(root: HTMLElement): (() => void) | void {
 	}
 
 	return () => {
-		disposed = true; // block any stray bake after teardown (e.g. an old instance's observer callback across astro:page-load)
+		disposed = true; // block any stray bake after teardown (e.g. a stray observer callback firing late)
 		if (raf) cancelAnimationFrame(raf);
 		if (staticRaf) cancelAnimationFrame(staticRaf);
 		if (swapRaf) cancelAnimationFrame(swapRaf);

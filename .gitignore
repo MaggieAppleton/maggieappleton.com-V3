@@ -11,6 +11,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.playwright-mcp/*
 
 
 # environment variables
@@ -28,3 +29,14 @@ pnpm-debug.log*
 .vscode
 .env*.local
 .cache/jev/
+
+# agent planning artifacts
+docs/superpowers/plans/
+docs/superpowers/specs/
+
+# Local writing editor execution evidence
+.local-writing-editor/
+.writing-assist/
+.superpowers/
+playwright-report/
+test-results/

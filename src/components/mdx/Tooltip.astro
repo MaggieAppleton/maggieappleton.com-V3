@@ -3,6 +3,8 @@ interface Props {
 	maxWidth?: string | number;
 }
 
+import "./tooltip-theme.css";
+
 const { maxWidth = 400 } = Astro.props;
 ---
 
@@ -13,40 +15,9 @@ const { maxWidth = 400 } = Astro.props;
 	<slot />
 </span>
 
-<style is:global>
-	.tippy-box[data-theme~="custom"] {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		line-height: var(--leading-snug);
-		word-break: break-word;
-		padding: var(--space-3xs);
-		margin-bottom: var(--space-3xs);
-		background-color: var(--color-white);
-		color: var(--color-gray-800);
-		box-shadow: var(--box-shadow-lg);
-	}
-
-	.tippy-box[data-theme~="custom"] * {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		line-height: var(--leading-snug);
-		color: var(--color-gray-800);
-	}
-
-	.tippy-box[data-theme~="custom"] p {
-		margin: 0;
-	}
-
-	.tippy-box[data-theme~="custom"] .tippy-arrow {
-		color: var(--color-white);
-	}
-</style>
-
 <script>
 	import tippy, { type Instance, type Props } from "tippy.js";
 	import "tippy.js/dist/tippy.css";
-	import "tippy.js/animations/shift-away.css";
-	import { getTooltipMotion } from "../../utils/tooltipMotion.js";
 
 	const tooltipInstances = new Set<Instance>();
 
@@ -55,7 +26,6 @@ const { maxWidth = 400 } = Astro.props;
 		const reducedMotion = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
 		).matches;
-		const motion = getTooltipMotion(reducedMotion);
 
 		tooltipInstances.forEach((instance) => {
 			if (!instance.reference.isConnected) {
@@ -82,10 +52,10 @@ const { maxWidth = 400 } = Astro.props;
 				{
 					content: template.content.cloneNode(true),
 					maxWidth: parseInt(wrapper.getAttribute("data-maxwidth") || "320"),
-					duration: motion.duration,
+					duration: reducedMotion ? 0 : [240, 160],
 					arrow: true,
 					interactive: true,
-					animation: motion.animation,
+					animation: reducedMotion ? false : "grow",
 					allowHTML: true,
 					appendTo: () => wrapper,
 					theme: "custom",
@@ -102,5 +72,4 @@ const { maxWidth = 400 } = Astro.props;
 	}
 
 	initializeTooltips();
-	document.addEventListener("astro:page-load", initializeTooltips);
 </script>

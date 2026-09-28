@@ -176,11 +176,15 @@ export async function runCli({
 		}),
 	);
 	const requestedEntries = selectNowEntries(entries, { regenerate });
+	const requestedPaths = new Set(requestedEntries.map((entry) => entry.path));
 	const totals = {
 		changed: 0,
 		skipped: entries.length - requestedEntries.length,
 		failed: 0,
 	};
+	for (const entry of entries) {
+		if (!requestedPaths.has(entry.path)) log(`${entry.path}: skipped`);
+	}
 
 	await ensureModelAvailable(model, fetchImpl);
 
@@ -201,9 +205,10 @@ export async function runCli({
 				createTempSuffix,
 			});
 			totals.changed += 1;
+			log(`${entry.path}: changed`);
 		} catch (generationError) {
 			totals.failed += 1;
-			error(`${entry.path}: ${generationError.message}`);
+			error(`${entry.path}: failed - ${generationError.message}`);
 		}
 	}
 

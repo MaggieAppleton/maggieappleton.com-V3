@@ -72,7 +72,7 @@ import { Image } from "astro:assets";
 		border-radius: var(--border-radius-base);
 		box-shadow: var(--box-shadow-lg);
 		opacity: 0;
-		transition: opacity 0.3s ease-in-out;
+		transition: opacity var(--dur-quick) var(--ease-hover);
 	}
 
 	.external-hover-link[data-small="true"] {
@@ -85,7 +85,6 @@ import { Image } from "astro:assets";
 		top: 0;
 		left: 0;
 		flex-direction: column;
-		transition: all 0.3s ease-in-out;
 		margin: 0 var(--space-2xs) var(--space-2xs) 0;
 		padding: 0 var(--space-3xs) var(--space-l) var(--space-3xs);
 	}
@@ -98,18 +97,19 @@ import { Image } from "astro:assets";
 		width: 100%;
 		height: auto;
 		max-width: 100%;
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring),
+			box-shadow var(--dur-quick) var(--ease-hover), opacity var(--dur-quick) var(--ease-hover);
 		border-radius: var(--border-radius-base);
 		box-shadow: var(--box-shadow-sm);
 		border: 1px solid var(--color-tinted-cream);
 	}
 
 	.book-card div {
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 	}
 
 	.book-card div p {
-		transition: all 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		margin: var(--space-xs) 0 var(--space-3xs) 0;
 		line-height: var(--leading-base);
 		color: var(--color-black);
@@ -119,21 +119,46 @@ import { Image } from "astro:assets";
 		margin: var(--space-2xs) 0 var(--space-3xs) 0;
 	}
 
-	a:is(:hover, :focus-visible) .book-card img {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .book-card img {
+			box-shadow: var(--box-shadow-md);
+			transform: scale3d(1.02, 1.02, 1.02);
+			opacity: 0.2;
+		}
+
+		a:hover .book-card p {
+			color: var(--color-crimson);
+		}
+
+		a:hover .book-card div {
+			transform: translateY(4px);
+		}
+
+		a:hover .book-card .external-hover-link {
+			opacity: 1;
+		}
+	}
+
+	a:focus-visible .book-card img {
 		box-shadow: var(--box-shadow-md);
 		transform: scale3d(1.02, 1.02, 1.02);
 		opacity: 0.2;
 	}
 
-	a:is(:hover, :focus-visible) .book-card p {
+	a:focus-visible .book-card p {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus-visible) .book-card div {
+	a:focus-visible .book-card div {
 		transform: translateY(4px);
 	}
 
-	a:is(:hover, :focus-visible) .book-card .external-hover-link {
+	a:focus-visible .book-card .external-hover-link {
 		opacity: 1;
+	}
+
+	a:active .book-card img {
+		transform: scale3d(1, 1, 1);
+		transition-duration: var(--dur-micro);
 	}
 </style>

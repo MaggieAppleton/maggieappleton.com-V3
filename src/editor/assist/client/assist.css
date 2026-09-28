@@ -1,0 +1,32 @@
+@import "./assist-shell.css";
+@import "./overlay/overlay.css";
+@import "./popover/popover.css";
+@import "./argument-map.css";
+
+.writing-assist-marker--check,
+.writing-assist-marker--debug,
+.writing-assist-marker--repetition {
+	background: color-mix(in srgb, var(--wa-marker-accent) 12%, var(--color-white));
+	border: 1px solid color-mix(in srgb, var(--wa-marker-accent) 5%, transparent);
+	color: var(--wa-marker-accent);
+}
+.writing-assist-marker--citation { --wa-marker-accent: var(--color-sea-blue); }
+.writing-assist-marker--hedging { --wa-marker-accent: var(--color-purple); }
+.writing-assist-marker--objection { --wa-marker-accent: var(--color-bright-crimson); }
+.writing-assist-marker--cliche { --wa-marker-accent: var(--color-dark-sea-blue); }
+.writing-assist-marker--mixed-metaphor {
+	--wa-marker-accent: var(--color-gold);
+	color: color-mix(in srgb, var(--color-gold) 42%, var(--color-black));
+}
+
+.writing-assist-marker--debug {
+	--wa-marker-accent: var(--color-sea-blue);
+}
+
+.writing-assist-marker--debug:hover {
+	filter: brightness(1.12);
+}
+
+.writing-assist-marker--repetition {
+	--wa-marker-accent: var(--color-salmon);
+}

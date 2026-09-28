@@ -16,6 +16,7 @@ import { extractPreview } from "../../utils/extractPreview";
 import type { CollectionEntry } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../../utils/versionUtils";
+import { describeTopic } from "../../utils/descriptions.mjs";
 
 type Post =
 	| CollectionEntry<"essays">
@@ -37,6 +38,7 @@ export async function getStaticPaths() {
 
 const { topic } = Astro.params;
 const { topicName } = Astro.props;
+const description = describeTopic(topicName);
 const posts = await getPostsForTopic(topic);
 // Sort posts by date (using updated field for most collections, startDate for now posts and smidgeons)
 const sortedPosts = posts.sort((a, b) => {
@@ -48,7 +50,7 @@ const sortedPosts = posts.sort((a, b) => {
 });
 ---
 
-<Layout title={`${topicName} posts by Maggie Appleton`}>
+<Layout title={`${topicName} posts by Maggie Appleton`} desc={description} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={posts}>
@@ -60,9 +62,12 @@ const sortedPosts = posts.sort((a, b) => {
 				</div>
 				{topicName}
 			</TitleWithCount>
-			<Title2>Essays, notes, patterns, and smidgeons related to {topicName}</Title2>
+			<Title2 class="cascade" style="--cascade: 2">
+				Essays, notes, patterns, and smidgeons related to {topicName}
+			</Title2>
 		</header>
 
+		<div class="cascade-fade" style="--cascade: 3">
 		<MasonryGrid>
 			<div class="grid-sizer"></div>
 			{
@@ -171,6 +176,7 @@ const sortedPosts = posts.sort((a, b) => {
 				})
 			}
 		</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

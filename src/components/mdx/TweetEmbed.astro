@@ -28,8 +28,7 @@ const { tweetId } = Astro.props;
 		}
 	}
 
-	// Initialize on first load and after each SPA navigation
-	document.addEventListener("astro:page-load", loadTwitterWidget);
+	loadTwitterWidget();
 </script>
 
 <style>

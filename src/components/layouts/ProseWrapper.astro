@@ -47,6 +47,19 @@
 		line-height: var(--leading-base);
 	}
 
+	/* Authored Markdown H1s render as h2.title1 to preserve one page H1. Keep
+	   their former Title1 treatment instead of inheriting the generic h2 rules. */
+	.prose-wrapper > :global(h2.title1) {
+		font-size: var(--font-size-2xl);
+		font-family: var(--font-serif);
+		line-height: var(--leading-tighter);
+		font-weight: normal;
+		margin: var(--space-2xl) 0 var(--space-m);
+		max-width: 1200px;
+		color: inherit;
+		transition: none;
+	}
+
 	.prose-wrapper :global(h2.micro) {
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
@@ -109,6 +122,35 @@
 		position: relative;
 		top: 4px;
 		right: 2.5rem;
+		transform-origin: 50% 50%;
+	}
+
+	@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+		.prose-wrapper :global(ul > li:hover::before) {
+			animation: leafBulletWiggle calc(var(--dur-page) + var(--dur-quick)) var(--ease-in-out) 1;
+		}
+	}
+
+	@keyframes leafBulletWiggle {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(10deg);
+		}
+		50% {
+			transform: rotate(-10deg);
+		}
+		75% {
+			transform: rotate(6deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.prose-wrapper :global(ul > li::before) {
+			animation: none;
+		}
 	}
 
 	.prose-wrapper :global(ol > li) {
@@ -163,6 +205,12 @@
 
 		.prose-wrapper :global(h2) {
 			margin: var(--space-l) 0 var(--space-s);
+		}
+
+		.prose-wrapper > :global(h2.title1) {
+			font-size: var(--font-size-2xl);
+			max-width: 100%;
+			margin: var(--space-xl) 0 var(--space-m);
 		}
 
 		.prose-wrapper :global(hr) {

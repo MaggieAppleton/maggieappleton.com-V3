@@ -120,6 +120,7 @@ test("builds canonical content previews over static route defaults", () => {
 		"/garden-history": {
 			title: "Garden History",
 			description: "A history of digital gardens",
+			aliases: ["Digital Gardening"],
 		},
 		"/plain-note": {
 			title: "A Note Without a Description",

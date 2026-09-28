@@ -53,7 +53,7 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 
 	.inner-text h3 {
 		color: var(--color-gray-800);
-		transition: all 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		font-weight: 400;
@@ -96,21 +96,40 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		border-radius: var(--border-radius-base);
 		box-shadow: var(--box-shadow-sm);
 		background: var(--color-light-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		cursor: pointer;
 		will-change: transform, width;
 	}
 
-	a:is(:hover, :focus-visible) .podcast-card {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .podcast-card {
+			transform: scale3d(1.01, 1.01, 1.01);
+		}
+
+		a:hover .podcast-card h3 {
+			color: var(--color-crimson);
+		}
+
+		a:hover .podcast-card img {
+			opacity: 0.05;
+		}
+	}
+
+	a:focus-visible .podcast-card {
 		transform: scale3d(1.01, 1.01, 1.01);
 	}
 
-	a:is(:hover, :focus-visible) .podcast-card h3 {
+	a:focus-visible .podcast-card h3 {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus-visible) .podcast-card img {
+	a:focus-visible .podcast-card img {
 		opacity: 0.05;
+	}
+
+	a:active .podcast-card {
+		transform: scale3d(1, 1, 1);
+		transition-duration: var(--dur-micro);
 	}
 
 	.image-wrapper {
@@ -123,12 +142,11 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		border-radius: 4px;
 		box-shadow: var(--box-shadow-sm);
 		margin-bottom: 0 !important;
-		transition: all 0.3s ease-in-out;
 	}
 
 	.image-wrapper img {
 		border-radius: 4px;
-		transition: all 0.3s ease-in-out;
+		transition: opacity var(--dur-quick) var(--ease-hover);
 	}
 
 	.external-link-container {

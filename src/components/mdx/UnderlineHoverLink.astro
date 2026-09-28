@@ -35,8 +35,8 @@ const { href } = Astro.props;
 		transform-origin: 50% 100%;
 		background: var(--color-sea-blue);
 		transition:
-			clip-path 0.3s,
-			transform 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+			clip-path var(--dur-base) var(--ease-hover),
+			transform var(--dur-base) var(--ease-out);
 		position: absolute;
 		width: 100%;
 		height: 1px;
@@ -57,7 +57,7 @@ const { href } = Astro.props;
 		);
 	}
 
-	.styled-link:is(:hover, :focus)::before {
+	.styled-link:is(:hover, :focus-visible)::before {
 		transform: translate3d(0, 2px, 0) scale3d(1, 2, 1);
 		clip-path: polygon(
 			0% 0%,
@@ -75,12 +75,19 @@ const { href } = Astro.props;
 
 	.styled-link span {
 		display: inline-block;
-		transition: all 0.5s cubic-bezier(0.2, 1, 0.8, 1);
+		transition:
+			transform var(--dur-base) var(--ease-out),
+			color var(--dur-quick) var(--ease-hover);
 		color: var(--color-bright-crimson);
 	}
 
-	.styled-link:is(:hover, :focus) span {
+	.styled-link:is(:hover, :focus-visible) span {
 		transform: translate3d(0, -2px, 0);
 		color: var(--color-crimson);
+	}
+
+	.styled-link:active span {
+		transform: translate3d(0, -1px, 0) scale(0.98);
+		transition-duration: var(--dur-micro);
 	}
 </style>

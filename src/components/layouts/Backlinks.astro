@@ -1,5 +1,6 @@
 ---
 import GrowthIcon from "./GrowthIcon.astro";
+import { normalizeCanonicalPath } from "../../utils/canonical.mjs";
 
 interface Props {
 	backlinks: {
@@ -19,7 +20,7 @@ const { backlinks } = Astro.props;
 		<div class="grid">
 			{
 				backlinks.map((backlink) => (
-					<a href={backlink.slug} class="backlink-card">
+					<a href={normalizeCanonicalPath(`/${backlink.slug}`)} class="backlink-card">
 						{backlink.growthStage && (
 							<GrowthIcon
 								growthStage={

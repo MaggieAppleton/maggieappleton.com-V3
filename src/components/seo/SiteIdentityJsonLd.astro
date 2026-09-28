@@ -1,0 +1,12 @@
+---
+import { createStructuredDataGraph } from "../../utils/pageMetadata.mjs";
+import { serializeJsonLd } from "../../utils/siteIdentity.mjs";
+
+interface Props {
+	pageNode?: Record<string, unknown>;
+}
+
+const { pageNode } = Astro.props;
+---
+
+<script is:inline type="application/ld+json" set:html={serializeJsonLd(createStructuredDataGraph(pageNode))} />

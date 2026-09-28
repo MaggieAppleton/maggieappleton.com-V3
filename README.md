@@ -41,7 +41,12 @@ Poster images are auto-derived by the `ScrollyTalkSection` component (convention
 
 ## Notes to Myself
 
-To run locally: `npm run dev`  
+### Local development
+
+To run locally: `npm run dev`
+
+### Deployment
+
 To deploy: `./deploy.sh`
 
 - Runs `git push`
@@ -49,3 +54,13 @@ To deploy: `./deploy.sh`
 - Runs `vercel deploy --prebuilt --prod` (uploads the prebuilt output — no build or image processing happens on Vercel)
 
 Automatic deploys on push to `main` are disabled in `vercel.json` (`git.deploymentEnabled.main: false`), so this script is the only way production gets deployed. This avoids Vercel re-processing all images remotely, which previously caused builds to exceed the 45-minute limit after a long gap between deploys.
+
+No preview deployments are built for pull requests. The production-only path is `./deploy.sh`: it runs `vercel build --prod` locally, then `vercel deploy --prebuilt --prod`.
+
+## Verification
+
+`npm run verify:html` starts Astro locally and checks representative HTML and XML routes without requesting images. Use it for fast metadata, content, and slashless destination smoke checks. The fast verifier checks local destinations only: it does not prove Vercel's redirect behaviour.
+
+This verifier refuses redirects and does not prove static route completeness, Vercel or production redirects, image correctness or optimisation, third-party embed availability, or a production build. Before a deploy, the evidence is the unit/configuration tests plus this destination verifier. Run `npm run build:local` for image-sensitive changes or final integrated verification when specifically needed; keep Astro's asset cache between full builds when possible. Do not run it immediately before an authorized deployment: `./deploy.sh` performs the single authoritative local production image build itself.
+
+P4 adds a custom, runtime-derived XML sitemap and an absolute `robots.txt` sitemap directive. The no-image verifier requests their 200 responses and checks representative membership; exact synthetic fixtures cover the sitemap policy. The audited base snapshot of 192 sitemap records (14 static, 127 canonical public content, 14 Now details, and 37 topics) is evidence for that audit only, not a durable expected count. Local checks do not prove full production sitemap membership, redirects, image behaviour, or deployment state.

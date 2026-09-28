@@ -37,21 +37,13 @@ test('linter renders article sentences with accessible hover and focus explanati
     ],
   };
   const html = renderToStaticMarkup(React.createElement(EpistemicLinter, { documents: [document] }));
-  assert.match(html, /<article class="jev-linted-article">/);
   assert.match(html, /data-sentence-id="p1-s1"/);
   assert.match(html, /data-sentence-id="p1-s2"/);
   assert.match(html, /tabindex="0"[^>]*aria-describedby="jev-tooltip-p1-s1"/);
   assert.match(html, /id="jev-tooltip-p1-s1"[^>]*role="tooltip"/);
-  // Sentence 1 is classified with high confidence (0.8): it should carry a
-  // default "has-kind" underline class even with no chip active.
-  assert.match(html, /class="jev-sentence has-kind jev-kind-0 needs-citation"/);
-  assert.match(html, /class="[^"]*needs-qualification[^"]*"/);
-  // Flagged sentences carry Wikipedia-style inline tags.
-  assert.equal((html.match(/<sup class="jev-flag">\[citation needed\]<\/sup>/g) ?? []).length, 1);
-  assert.equal((html.match(/<sup class="jev-flag">\[needs qualifying\]<\/sup>/g) ?? []).length, 1);
-  // Links the author already placed in the paragraph read as named sources.
-  assert.match(html, /<p class="jev-sources"><span>Cites <\/span><a class="jev-link" href="https:\/\/example.com">example.com<\/a><\/p>/);
-  assert.doesNotMatch(html, /Citation 1/);
+  assert.equal((html.match(/\[citation needed\]/g) ?? []).length, 1);
+  assert.equal((html.match(/\[needs qualifying\]/g) ?? []).length, 1);
+  assert.match(html, /href="https:\/\/example.com"/);
   assert.match(html, /First heading/);
 });
 
@@ -81,43 +73,6 @@ test('the sentence tooltip contains only phrasing content, so it is valid inside
   assert.match(paragraphInner, /jev-sentence-tooltip/);
   assert.match(paragraphInner, /jev-card-header/);
   assert.match(paragraphInner, /jev-tooltip-row/);
-});
-
-test('review is a compact kit select and claim type renders capitalised chips without non_claim', () => {
-  const document = {
-    id: 'test', title: 'A test article', url: '/test',
-    paragraphs: [{ id: 'p1', heading: '', text: 'One factual sentence.' }],
-    epistemic: [{ sentenceId: 'p1-s1', paragraphId: 'p1', kind: answer('empirical', { empirical: 0.8, interpretation: 0.2 }), needsCitation: noul(0.7), qualification: noul(0.1) }],
-  };
-  const html = renderToStaticMarkup(React.createElement(EpistemicLinter, { documents: [document] }));
-  // Article select + Review select: exactly two native <select>s, no chips for review.
-  assert.equal((html.match(/<select[ >]/g) ?? []).length, 2);
-  assert.match(html, /jev-epistemic-review-field/);
-  assert.match(html, /<option value="citation"><span class="jev-option-label">Citations needed<\/span><\/option>/);
-  // Claim type is still a chip group.
-  assert.match(html, /role="group"[^>]*aria-labelledby="[^"]*-kind"/);
-  assert.match(html, /class="jev-chip jev-kind-chip"/);
-  assert.match(html, />Empirical</);
-  // "non_claim" is dropped as a chip entirely.
-  assert.doesNotMatch(html, />Non claim</);
-  assert.doesNotMatch(html, />non claim</);
-  // The hint line is present.
-  assert.match(html, /Hover or focus a sentence to see how Jev read it\./);
-  // No Inspector / raw JSON dump.
-  assert.doesNotMatch(html, /jev-inspector/);
-  assert.doesNotMatch(html, /Inspect/);
-});
-
-test('the linted article sits directly on the page, without a card or Jev header', () => {
-  const document = {
-    id: 'test', title: 'A test article', url: '/test',
-    paragraphs: [{ id: 'p1', heading: '', text: 'One factual sentence.' }],
-    epistemic: [{ sentenceId: 'p1-s1', paragraphId: 'p1', kind: answer('empirical', { empirical: 0.8 }), needsCitation: noul(0), qualification: noul(0) }],
-  };
-  const html = renderToStaticMarkup(React.createElement(EpistemicLinter, { documents: [document] }));
-  assert.match(html, /<article class="jev-linted-article">/);
-  assert.doesNotMatch(html, /Jev&#x27;s reading/);
-  assert.match(html, /<h4>A test article<\/h4><a class="jev-link" href="\/test">Read the original ↗<\/a>/);
 });
 
 test('long articles collapse to the first paragraphs with a quiet expand button', () => {

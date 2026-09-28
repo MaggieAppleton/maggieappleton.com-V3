@@ -131,9 +131,7 @@ const {
 </div>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const shelves = document.querySelectorAll<HTMLElement>(".bookshelf");
 		if (shelves.length === 0) return;
 
@@ -222,7 +220,7 @@ const {
 		});
 
 		return () => cleanups.forEach((off) => off());
-	});
+	})();
 </script>
 
 <style>

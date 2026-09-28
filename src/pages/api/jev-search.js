@@ -30,7 +30,7 @@ export async function POST({ request, clientAddress }) {
   } catch { return json({ error: 'Invalid search request.' }, 400); }
   const query = typeof body?.query === 'string' ? body.query.trim() : '';
   if (query.length < 3 || query.length > 240) return json({ error: 'Use between 3 and 240 characters.' }, 400);
-  const apiKey = process.env.TYPESAFE_API_KEY || import.meta.env.TYPESAFE_API_KEY;
+  const apiKey = process.env.TYPESAFE_API_KEY || import.meta.env?.TYPESAFE_API_KEY;
   if (!apiKey) return json({ error: 'Live search needs a server API key.' }, 503);
   if (!snapshot.generatedAt) return json({ error: 'Garden data has not been generated yet.' }, 503);
   try { return json(await search(query, { apiKey, retries: 1 })); }

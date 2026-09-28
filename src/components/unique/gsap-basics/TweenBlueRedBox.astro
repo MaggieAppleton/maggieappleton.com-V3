@@ -1,9 +1,7 @@
 <div class="box" id="color-box"></div>
 
 <script>
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const box = document.getElementById("color-box");
 		if (!box) return;
 
@@ -20,7 +18,7 @@
 
 		observer.observe(box);
 		return () => observer.disconnect();
-	});
+	})();
 </script>
 
 <style>

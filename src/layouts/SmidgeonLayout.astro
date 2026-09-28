@@ -5,17 +5,35 @@ import { Icon } from "astro-icon/components";
 import WebMentions from "../components/layouts/WebMentions.astro";
 import Topics from "../components/layouts/Topics.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
+import CalendarDate from "../components/layouts/CalendarDate.astro";
+import { isPublicEntry } from "../utils/publication.mjs";
+import { createDatedWebPageMetadata } from "../utils/pageMetadata.mjs";
+import { describeSmidgeon } from "../utils/descriptions.mjs";
 
 type Props = {
 	frontmatter: CollectionEntry<"smidgeons">["data"];
+	entry: CollectionEntry<"smidgeons">;
 };
 
-const { frontmatter } = Astro.props;
+const { frontmatter, entry } = Astro.props;
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
+const description = isPublicEntry(entry) ? describeSmidgeon(frontmatter.title) : undefined;
+const primaryTitle =
+	frontmatter.external?.title ?? frontmatter.citation?.title ?? frontmatter.title;
+const pageMetadata = createDatedWebPageMetadata({
+	isPublic: isPublicEntry(entry),
+	name: frontmatter.title,
+	datePublished: frontmatter.startDate,
+});
 ---
 
-<Layout title={frontmatter.title} type="smidgeon">
-	<header class="header-section">
+<Layout
+	title={frontmatter.title}
+	type="smidgeon"
+	desc={description}
+	pageMetadata={pageMetadata}
+>
+	<header class="header-section cascade" style="--cascade: 0">
 		<div class="above-title">
 			<div class="back-link">
 				<a href="/smidgeons">
@@ -29,22 +47,17 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 	</header>
 
 	<div class="smidgeon-layout">
-		<div class="metadata">
+		<div class="metadata cascade" style="--cascade: 1">
 			<div class="date-permalink">
-				<time datetime={frontmatter.startDate.toISOString()}>
-					{
-						frontmatter.startDate.toLocaleDateString("en-US", {
-							year: "numeric",
-							month: "long",
-							day: "numeric",
-						})
-					}
-				</time>
+				<CalendarDate value={frontmatter.startDate} />
 			</div>
 			{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 		</div>
 
-		<div class="content">
+		<div class="content cascade" style="--cascade: 2">
+			{!frontmatter.external && !frontmatter.citation && (
+				<h1 class="content-header">{primaryTitle}</h1>
+			)}
 			{/* External Link Format */}
 			{
 				frontmatter.external && (
@@ -71,10 +84,17 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 					<a href={frontmatter.citation.url} target="_blank" rel="noopener noreferrer">
 						<div class="reference-card">
 							<div class="citation-header">
-								<h1 class="content-header">
-									{frontmatter.citation.title}
-									<Icon name="heroicons:arrow-top-right-on-square" size={16} />
-								</h1>
+								{frontmatter.external && frontmatter.citation ? (
+									<h2 class="content-header">
+										{frontmatter.citation.title}
+										<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+									</h2>
+								) : (
+									<h1 class="content-header">
+										{frontmatter.citation.title}
+										<Icon name="heroicons:arrow-top-right-on-square" size={16} />
+									</h1>
+								)}
 								<div class="citation-metadata">
 									<p class="byline">
 										<Icon name="heroicons:users" size={14} />
@@ -119,6 +139,7 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		font-size: var(--font-size-base);
 		font-weight: 400;
 		line-height: var(--leading-tight);
+		color: inherit;
 		margin: 0;
 		margin-bottom: var(--space-2xs);
 		padding: 0;
@@ -180,12 +201,6 @@ const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 		display: flex;
 		align-items: center;
 		gap: var(--space-2xs);
-	}
-
-	time {
-		font-size: var(--font-size-sm);
-		color: var(--color-gray-600);
-		font-family: var(--font-sans);
 	}
 
 	.content {

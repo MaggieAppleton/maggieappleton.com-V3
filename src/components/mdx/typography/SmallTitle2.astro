@@ -1,4 +1,8 @@
-<h2 class="small-title2"><slot /></h2>
+---
+const { class: className, ...rest } = Astro.props;
+---
+
+<h2 class:list={["small-title2", className]} {...rest}><slot /></h2>
 
 <style>
   .small-title2 {

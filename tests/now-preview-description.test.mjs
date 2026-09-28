@@ -306,7 +306,7 @@ test("checks model availability before writes and reports per-entry failures", a
 		"generate:b",
 	]);
 	assert.deepEqual(result, { changed: 1, skipped: 2, failed: 1 });
-	assert.match(output.join("\n"), /b\.mdx: Ollama generation failed with HTTP 500/);
+	assert.match(output.join("\n"), /b\.mdx: failed - Ollama generation failed with HTTP 500/);
 	assert.match(output.at(-1), /changed: 1, skipped: 2, failed: 1/);
 });
 

@@ -1,23 +1,25 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Title1 from "../../components/mdx/typography/Title1.astro";
+import BodyHeading1 from "../../components/mdx/typography/BodyHeading1.astro";
 import Title2 from "../../components/mdx/typography/Title2.astro";
 import Title3 from "../../components/mdx/typography/Title3.astro";
 import PageWrapper from "../../components/layouts/PageWrapper.astro";
 import ProseWrapper from "../../components/layouts/ProseWrapper.astro";
 import TooltipLink from "../../components/mdx/TooltipLink.astro";
-import Content from "./colophon-content.mdx";
+import Content from "../../components/unique/colophon/ColophonContent.mdx";
 import type { MDXComponents } from "mdx/types";
+import { PAGE_DESCRIPTIONS } from "../../utils/descriptions.mjs";
 
 const components = {
-	h1: Title1,
+	h1: BodyHeading1,
 	h2: Title2,
 	h3: Title3,
 	a: TooltipLink,
 } as unknown as MDXComponents;
 ---
 
-<Layout title="Colophon of Maggie Appleton">
+<Layout title="Colophon of Maggie Appleton" desc={PAGE_DESCRIPTIONS.colophon} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin: var(--space-xl) auto; max-width: 800px">
 			<Title1>Colophon</Title1>

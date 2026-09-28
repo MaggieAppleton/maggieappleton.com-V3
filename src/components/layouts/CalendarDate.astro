@@ -1,0 +1,28 @@
+---
+import { toCalendarDate } from "../../utils/pageMetadata.mjs";
+
+interface Props {
+	value: Date;
+}
+
+const { value } = Astro.props;
+const calendarDate = toCalendarDate(value);
+const displayDate = calendarDate
+	? value.toLocaleDateString("en-US", {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+			timeZone: "UTC",
+		})
+	: undefined;
+---
+
+{calendarDate && <time datetime={calendarDate}>{displayDate}</time>}
+
+<style>
+	time {
+		font-size: var(--font-size-sm);
+		color: var(--color-gray-600);
+		font-family: var(--font-sans);
+	}
+</style>

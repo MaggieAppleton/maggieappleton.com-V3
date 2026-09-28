@@ -5,23 +5,24 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import BookCard from "../components/cards/BookCard.astro";
 import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import { getCollection } from "astro:content";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
 const books = await getCollection("books");
 ---
 
-<Layout title="Library of Maggie Appleton">
+<Layout title="Library of Maggie Appleton" desc={PAGE_DESCRIPTIONS.library} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-2xl);">
-			<TitleWithCount posts={books}>
-				Library
-				<div style="color: var(--color-gray-300); display: inline-block">|</div>
-				<a href="/antilibrary" class="styled-link">Antilibrary</a>
+			<TitleWithCount posts={books} countTransitionName="lib-count" cascade={false}>
+				<span class="word word-active lib-word">Library</span>
+				<div class="divider" style="color: var(--color-gray-300); display: inline-block">|</div>
+				<a href="/antilibrary" class="styled-link word word-recede antilib-word">Antilibrary</a>
 			</TitleWithCount>
-			<Title2
-				>Books I've read that significantly influenced how I see the world.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				Books I've read that significantly influenced how I see the world.
+			</Title2>
 		</header>
-		<section class="bookshelf-grid">
+		<section class="bookshelf-grid lib-grid">
 			{
 				books.map((book) => (
 					<BookCard
@@ -52,4 +53,90 @@ const books = await getCollection("books");
 		grid-gap: var(--space-s);
 		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 	}
+
+	.word-active {
+		color: var(--color-black);
+	}
+
+	.word-recede {
+		font-size: 0.82em;
+	}
+</style>
+
+<!-- `is:global` because ::view-transition-* pseudo-elements aren't part of the
+     DOM tree, so scoped-style attribute selectors can't reach them.
+
+     lib-word/antilib-word/lib-count use the SAME view-transition-name here
+     and in antilibrary.astro — the browser pairs old/new snapshots by that
+     name, which is what morphs "Library" into "Library" (and ticks the
+     count) instead of cross-fading the whole page. The grid keyframes are
+     direction-specific: this is the /library side, mirroring antilibrary.astro's. -->
+<style is:global>
+	.lib-word {
+		view-transition-name: lib-word;
+	}
+
+	.antilib-word {
+		view-transition-name: antilib-word;
+	}
+
+	/* The "|" divider isn't named: its position never changes between pages,
+	   so it has nothing to morph and just rides the default root cross-fade. */
+
+	.lib-grid {
+		view-transition-name: lib-grid;
+	}
+
+	::view-transition-group(lib-word),
+	::view-transition-group(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	::view-transition-old(lib-word),
+	::view-transition-new(lib-word),
+	::view-transition-old(antilib-word),
+	::view-transition-new(antilib-word) {
+		animation-duration: 420ms;
+		animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1);
+		height: 100%;
+		object-fit: contain;
+	}
+
+	::view-transition-group(lib-count) {
+		animation-duration: 360ms;
+		animation-timing-function: cubic-bezier(0.34, 1.36, 0.64, 1);
+	}
+
+	/* /library is the "reverse" direction: the old (antilibrary) grid exits
+	   to the right, the new (library) grid enters from the left. */
+	@keyframes mv-grid-exit-right {
+		to {
+			transform: translateX(48px);
+			opacity: 0;
+		}
+	}
+
+	@keyframes mv-grid-enter-from-left {
+		from {
+			transform: translateX(-48px);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+
+	::view-transition-old(lib-grid) {
+		animation: mv-grid-exit-right 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
+	}
+
+	::view-transition-new(lib-grid) {
+		animation: mv-grid-enter-from-left 320ms cubic-bezier(0.16, 1, 0.3, 1)
+			120ms both;
+	}
+
+	/* prefers-reduced-motion is handled globally in global.css — its
+	   wildcard `!important` rule covers these named transitions too. */
 </style>

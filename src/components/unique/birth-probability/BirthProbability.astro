@@ -386,9 +386,6 @@ const firstTimeData = parseCSV(firstTimeProbsCSV);
 
 	// Initialize on page load
 	initializeBirthProbability();
-
-	// Re-initialize after view transitions
-	document.addEventListener("astro:page-load", initializeBirthProbability);
 </script>
 
 <script is:inline define:vars={{ multiBirthData, firstTimeData }}>

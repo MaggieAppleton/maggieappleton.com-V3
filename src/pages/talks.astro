@@ -15,9 +15,11 @@ import talks1 from "../images/general/talks_1.webp";
 import talks2 from "../images/general/talks_2.webp";
 import talks3 from "../images/general/talks_3.webp";
 import talks5 from "../images/general/talks_5.webp";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
-// Get all talks that aren't drafts
-const talks = await getCollection("talks", ({ data }) => !data.draft);
+// Get the latest public version of each talk
+const talks = selectLatestPublicEntries(await getCollection("talks"));
 
 // Sort talks by date
 const sortedTalks = talks.sort(
@@ -26,7 +28,7 @@ const sortedTalks = talks.sort(
 );
 ---
 
-<Layout title="Talks by Maggie Appleton">
+<Layout title="Talks by Maggie Appleton" desc={PAGE_DESCRIPTIONS.talks} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedTalks}>
@@ -38,59 +40,61 @@ const sortedTalks = talks.sort(
 				</div>
 				Talks
 			</TitleWithCount>
-			<Title2
-				>I occassionally give talks. Subjects range from visual programming to
+			<Title2 class="cascade" style="--cascade: 2">
+				I occassionally give talks. Subjects range from visual programming to
 				cultural anthropology to design tactics to the narratives we tell about
 				software to the repercussions of jetspraying the web with thoughtless AI
-				slop.</Title2
-			>
+				slop.
+			</Title2>
 		</header>
-		<div class="image-grid">
-			<Image
-				src={talks1}
-				alt="a photo of maggie speaking on stage"
-				width={660}
-				class="talk-image"
-			/>
-			<Image
-				src={talks2}
-				alt="a photo of maggie answering questions after a talk"
-				width={660}
-				class="talk-image"
-			/>
-			<Image
-				src={talks3}
-				alt="a photo of maggie in front of a large presentation slide"
-				width={660}
-				class="talk-image"
-			/>
-			<Image
-				src={talks5}
-				alt="a photo of maggie in front of a large presentation slide"
-				width={660}
-				class="talk-image"
-			/>
+		<div class="cascade-fade" style="--cascade: 3">
+			<div class="image-grid">
+				<Image
+					src={talks1}
+					alt="a photo of maggie speaking on stage"
+					width={660}
+					class="talk-image"
+				/>
+				<Image
+					src={talks2}
+					alt="a photo of maggie answering questions after a talk"
+					width={660}
+					class="talk-image"
+				/>
+				<Image
+					src={talks3}
+					alt="a photo of maggie in front of a large presentation slide"
+					width={660}
+					class="talk-image"
+				/>
+				<Image
+					src={talks5}
+					alt="a photo of maggie in front of a large presentation slide"
+					width={660}
+					class="talk-image"
+				/>
+			</div>
+
+			<div class="spacer"></div>
+
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedTalks.map((talk) => (
+						<div class="grid-item">
+							<TalkCard
+								id={talk.id}
+								slug={extractBaseSlug(talk.id)}
+								title={talk.data.title}
+								conferences={talk.data.conferences}
+								date={talk.data.updated}
+								cover={talk.data.cover}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
 		</div>
-
-		<div class="spacer"></div>
-
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedTalks.map((talk) => (
-					<div class="grid-item">
-						<TalkCard
-							id={talk.id}
-							slug={extractBaseSlug(talk.id)}
-							title={talk.data.title}
-							conferences={talk.data.conferences}
-							date={talk.data.updated}
-							cover={talk.data.cover}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
 	</PageWrapper>
 </Layout>
 

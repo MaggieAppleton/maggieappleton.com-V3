@@ -116,6 +116,7 @@
   --color-salmon: #fd8370;
   --color-gold: #ffd09c;
   --color-dark-salmon: #e1624f;
+  --color-status-success: #4caf70;
 
   /* Poppy palette for decorative (non-field) accents. The field's own combat/
      disease colours live in poppy-field/params.ts and are baked straight into
@@ -172,7 +173,6 @@
     1.3px 3.1px 6.7px -10px rgba(0, 0, 0, 0.045), 2.5px 5.8px 12.5px -10px rgba(0, 0, 0, 0.06),
     6px 14px 30px -10px rgba(0, 0, 0, 0.08);
 
-  /* Dropdown menus — shared by every select-style menu (GardenFilters, Jev playground) */
   --dropdown-offset: 6px;
   --dropdown-max-height: 360px;
   --dropdown-padding: 4px;
@@ -185,6 +185,22 @@
   --dropdown-option-hover: var(--color-cream);
   --dropdown-option-color: var(--color-gray-800);
   --dropdown-option-selected-color: var(--color-black);
+
+  /* Motion tokens */
+  /* Easing: --ease-out for things entering/exiting, --ease-in-out for on-screen
+     movement, --ease-spring for playful hover lifts (slight overshoot), --ease-hover
+     for simple hover color/shadow fades. Never use ease-in (feels laggy). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-hover: ease;
+
+  /* Durations: micro for presses, quick for hover color/opacity, base for hover
+     transforms, page for larger entering/exiting transitions. */
+  --dur-micro: 120ms;
+  --dur-quick: 180ms;
+  --dur-base: 240ms;
+  --dur-page: 380ms;
 
   /* Fluid spacing */
   --fc-3xs-min: (var(--fc-s-min) * 0.25);
@@ -332,6 +348,7 @@
 }
 
 :root {
+  --font-size-2xs: 13px;
   --f--2-min: 14.5;
   --f--2-max: 15;
   --font-size-xs: calc(
@@ -504,7 +521,7 @@ h2 {
   font-weight: 100;
   line-height: var(--leading-snug);
   margin: var(--space-xs) 0 var(--space-2xs);
-  transition: all 0.3s ease-in-out;
+  transition: color var(--dur-quick) var(--ease-hover);
 }
 
 @media screen and (max-width: 768px) {
@@ -644,4 +661,114 @@ mark {
    layout-neutral. */
 .styled-main:has(.margin-poppies) {
   position: relative;
+}
+
+/* _____________________ View Transitions _____________________ */
+/* Native cross-document view transitions (Chrome 126+/Safari 18.2+); pages
+   are normal full loads and the browser animates between old/new document
+   snapshots. The `@view-transition` opt-in is inlined in Layout.astro's
+   <head> — Layout.astro also has the Firefox fallback script that adds
+   `no-vt` to <html> when unsupported. */
+
+/* Keep the navbar and footer perfectly still across navigations — they're
+   the same UI on every page, so cross-fading them looks like a flicker
+   rather than a transition. */
+.navbar {
+  view-transition-name: site-nav;
+}
+
+.styled-footer {
+  view-transition-name: site-footer;
+}
+
+::view-transition-group(site-nav),
+::view-transition-group(site-footer),
+::view-transition-old(site-nav),
+::view-transition-new(site-nav),
+::view-transition-old(site-footer),
+::view-transition-new(site-footer) {
+  animation: none !important;
+}
+
+/* Sequential, not overlapping: the old page fades out fast, then the new
+   page fades in — no cross-fade means no double-exposed text. */
+::view-transition-old(root) {
+  animation: mv-page-fade-out 120ms ease-out both;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: mv-page-fade-in 200ms ease-out 100ms both;
+  mix-blend-mode: normal;
+}
+
+@keyframes mv-page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes mv-page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* _____________________ Cascade Entrance _____________________ */
+/* Key blocks fade+rise into place top-down, in visual order, on every load
+   (works the same for plain loads, native view transitions, and the
+   Firefox/no-vt fallback). Mark an element `.cascade` (translate + fade) or
+   `.cascade-fade` (opacity-only — use for blocks containing a sticky/fixed
+   descendant, since a transform on an ancestor breaks those), and give it a
+   `--cascade` index via `style="--cascade: N"`. `animation-fill-mode:
+   backwards` means sticky positioning is unaffected once the cascade
+   finishes. Grids/masonry animate as one `.cascade-fade` block, not per
+   card, so entrance doesn't fight the garden's own filter animation. */
+@media (prefers-reduced-motion: no-preference) {
+  .cascade,
+  .cascade-fade {
+    animation-duration: 260ms;
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+    animation-fill-mode: backwards;
+    animation-delay: calc(100ms + var(--cascade, 0) * 45ms);
+  }
+
+  .cascade {
+    animation-name: mv-cascade-in;
+  }
+
+  .cascade-fade {
+    animation-name: mv-cascade-fade-in;
+  }
+}
+
+@keyframes mv-cascade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mv-cascade-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

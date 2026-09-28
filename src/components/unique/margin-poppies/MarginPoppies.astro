@@ -23,9 +23,7 @@ import { MARGIN_POPPIES } from "./config";
 
 <script>
 	import { initMarginPoppies } from "./margin-poppies";
-	import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const layers = document.querySelectorAll<HTMLElement>(".margin-poppies");
 		if (layers.length === 0) return;
 
@@ -36,7 +34,7 @@ import { MARGIN_POPPIES } from "./config";
 		});
 
 		return () => cleanups.forEach((off) => off());
-	});
+	})();
 </script>
 
 <style>

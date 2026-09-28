@@ -48,7 +48,7 @@ function formattedDate(date: Date) {
 
 	.metadata h3 {
 		text-align: center;
-		transition: all 0.3s ease-in-out;
+		transition: color var(--dur-quick) var(--ease-hover);
 		font-family: var(--font-body);
 		font-size: var(--font-size-base);
 		font-weight: 400;
@@ -82,7 +82,7 @@ function formattedDate(date: Date) {
 		flex-direction: column;
 		justify-content: space-between;
 		background: var(--color-cream);
-		transition: all 0.3s ease-in-out;
+		transition: transform var(--dur-base) var(--ease-spring);
 		color: var(--color-gray-800);
 		margin: 0 var(--space-xs) var(--space-xs) 0;
 	}
@@ -90,19 +90,38 @@ function formattedDate(date: Date) {
 	.project-card img,
 	.project-card div:first-child {
 		border-radius: var(--border-radius-base);
-		transition: all 0.3s ease-in-out;
+		transition: box-shadow var(--dur-quick) var(--ease-hover);
 		margin-bottom: 0 !important;
 	}
 
-	a:is(:hover, :focus-visible) .project-card {
+	@media (hover: hover) and (pointer: fine) {
+		a:hover .project-card {
+			transform: scale3d(1.02, 1.02, 1.02);
+		}
+
+		a:hover .project-card h3 {
+			color: var(--color-crimson);
+		}
+
+		a:hover .project-card > div:first-child {
+			box-shadow: var(--box-shadow-md);
+		}
+	}
+
+	a:focus-visible .project-card {
 		transform: scale3d(1.02, 1.02, 1.02);
 	}
 
-	a:is(:hover, :focus-visible) .project-card h3 {
+	a:focus-visible .project-card h3 {
 		color: var(--color-crimson);
 	}
 
-	a:is(:hover, :focus-visible) .project-card > div:first-child {
+	a:focus-visible .project-card > div:first-child {
 		box-shadow: var(--box-shadow-md);
+	}
+
+	a:active .project-card {
+		transform: scale3d(1, 1, 1);
+		transition-duration: var(--dur-micro);
 	}
 </style>

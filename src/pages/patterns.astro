@@ -8,9 +8,11 @@ import PageWrapper from "../components/layouts/PageWrapper.astro";
 import MasonryGrid from "../components/layouts/MasonryGrid.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
-// Get all patterns that aren't drafts
-const patterns = await getCollection("patterns", ({ data }) => !data.draft);
+// Get the latest public version of each pattern
+const patterns = selectLatestPublicEntries(await getCollection("patterns"));
 
 // Sort patterns by date
 const sortedPatterns = patterns.sort(
@@ -19,7 +21,7 @@ const sortedPatterns = patterns.sort(
 );
 ---
 
-<Layout title="Patterns by Maggie Appleton">
+<Layout title="Patterns by Maggie Appleton" desc={PAGE_DESCRIPTIONS.patterns} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedPatterns}>
@@ -31,28 +33,29 @@ const sortedPatterns = patterns.sort(
 				</div>
 				Pattern Catalogue
 			</TitleWithCount>
-			<Title2
-				>A catalogue of design patterns gathered from my own observations and
-				research.</Title2
-			>
+			<Title2 class="cascade" style="--cascade: 2">
+				A catalogue of design patterns gathered from my own observations and research.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedPatterns.map((pattern) => (
-					<div class="grid-item">
-						<PatternCard
-							id={pattern.id}
-							slug={extractBaseSlug(pattern.id)}
-							title={pattern.data.title}
-							growthStage={pattern.data.growthStage}
-							date={pattern.data.updated}
-							description={pattern.data.description}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedPatterns.map((pattern) => (
+						<div class="grid-item">
+							<PatternCard
+								id={pattern.id}
+								slug={extractBaseSlug(pattern.id)}
+								title={pattern.data.title}
+								growthStage={pattern.data.growthStage}
+								date={pattern.data.updated}
+								description={pattern.data.description}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

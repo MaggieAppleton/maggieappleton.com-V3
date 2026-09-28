@@ -109,7 +109,6 @@ const items = config.items.map((item, index) => {
     scaleOvershootProgress,
   } from "../../../lib/jev/motion.js";
   import { placePopover } from "../../../lib/jev/popover.js";
-  import { onPageLifecycle } from "../../../utils/viewTransitionLifecycle";
 
   /* ─────────────────────────────────────────────────────────
    * ANIMATION STORYBOARD
@@ -164,7 +163,7 @@ const items = config.items.map((item, index) => {
       + (2 * inverse * progress * control)
       + (progress * progress * end);
   };
-  onPageLifecycle(() => {
+  const initialize = () => {
     const cleanups: Array<() => void> = [];
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const motionTuning = {
@@ -511,5 +510,11 @@ const items = config.items.map((item, index) => {
     return () => {
       cleanups.forEach(cleanup => cleanup());
     };
+  };
+
+  let cleanup = initialize();
+  window.addEventListener("pagehide", () => cleanup());
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) cleanup = initialize();
   });
 </script>

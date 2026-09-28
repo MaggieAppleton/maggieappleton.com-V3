@@ -8,9 +8,11 @@ import TitleWithCount from "../components/layouts/TitleWithCount.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { Icon } from "astro-icon/components";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
-// Get all essays that aren't drafts
-const essays = await getCollection("essays", ({ data }) => !data.draft);
+// Get the latest public version of each essay
+const essays = selectLatestPublicEntries(await getCollection("essays"));
 
 // Sort essays by date
 const sortedEssays = essays.sort(
@@ -19,7 +21,7 @@ const sortedEssays = essays.sort(
 );
 ---
 
-<Layout title="Essays by Maggie Appleton">
+<Layout title="Essays by Maggie Appleton" desc={PAGE_DESCRIPTIONS.essays} pageMetadata="webpage">
 	<PageWrapper>
 		<header style="margin-bottom: var(--space-xl);">
 			<TitleWithCount posts={sortedEssays}>
@@ -31,26 +33,30 @@ const sortedEssays = essays.sort(
 				</div>
 				Essays
 			</TitleWithCount>
-			<Title2>Opinionated, longform narrative writing with an agenda.</Title2>
+			<Title2 class="cascade" style="--cascade: 2">
+				Opinionated, longform narrative writing with an agenda.
+			</Title2>
 		</header>
-		<MasonryGrid>
-			<div class="grid-sizer"></div>
-			{
-				sortedEssays.map((essay) => (
-					<div class="grid-item">
-						<EssayCard
-							id={essay.id}
-							slug={extractBaseSlug(essay.id)}
-							cover={essay.data.cover}
-							title={essay.data.title}
-							growthStage={essay.data.growthStage}
-							date={essay.data.updated}
-							description={essay.data.description}
-						/>
-					</div>
-				))
-			}
-		</MasonryGrid>
+		<div class="cascade-fade" style="--cascade: 3">
+			<MasonryGrid>
+				<div class="grid-sizer"></div>
+				{
+					sortedEssays.map((essay) => (
+						<div class="grid-item">
+							<EssayCard
+								id={essay.id}
+								slug={extractBaseSlug(essay.id)}
+								cover={essay.data.cover}
+								title={essay.data.title}
+								growthStage={essay.data.growthStage}
+								date={essay.data.updated}
+								description={essay.data.description}
+							/>
+						</div>
+					))
+				}
+			</MasonryGrid>
+		</div>
 	</PageWrapper>
 </Layout>
 

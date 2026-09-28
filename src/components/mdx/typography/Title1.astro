@@ -1,6 +1,22 @@
-<h1 class="title1"><slot /></h1>
+---
+export interface Props {
+	as?: "h1" | "h2";
+	style?: Record<string, string | number>;
+	class?: string;
+}
+
+const { as: Tag = "h1", style, class: className } = Astro.props;
+---
+
+<Tag class:list={["title1", className]} style={style}><slot /></Tag>
 
 <style>
+	h2.title1 {
+		margin-top: 0;
+		color: inherit;
+		transition: none;
+	}
+
 	.title1 {
 		font-size: var(--font-size-3xl);
 		font-family: var(--font-serif);

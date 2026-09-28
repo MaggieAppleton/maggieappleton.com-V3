@@ -12,8 +12,17 @@ import Dates from "../components/layouts/Dates.astro";
 import Topics from "../components/layouts/Topics.astro";
 import VersionWarning from "../components/layouts/VersionWarning.astro";
 import VersionDropdown from "../components/layouts/VersionDropdown.astro";
-import { getCanonicalUrlFromEntry, getCanonicalDates } from "../utils/versionUtils";
+import { getCanonicalDates } from "../utils/versionUtils";
 import { getCollection } from "astro:content";
+import {
+	getPublicationBaseSlug,
+	isPublicEntry,
+	isVersionedPublicationEntry,
+	selectLatestPublicEntries,
+	selectPublicEntries,
+} from "../utils/publication.mjs";
+import { getEntryCanonicalPath } from "../utils/canonical.mjs";
+import { isCanonicalPublicArticle, toCalendarDate } from "../utils/pageMetadata.mjs";
 
 type Props = {
 	frontmatter:
@@ -27,17 +36,15 @@ type Props = {
 		| CollectionEntry<"notes">
 		| CollectionEntry<"patterns">
 		| CollectionEntry<"talks">;
+	editorHmrGuard?: boolean;
 };
 
-const { frontmatter, entry } = Astro.props;
+const { frontmatter, entry, editorHmrGuard = false } = Astro.props;
 
 // Get the current page's slug from the URL
 const currentSlug = Astro.url.pathname.replace(/^\/|\/$/g, "");
 
-// Calculate canonical URL for versioned content
-const canonicalURL = entry
-	? new URL(getCanonicalUrlFromEntry(entry), Astro.site!).toString()
-	: undefined;
+const canonicalPath = getEntryCanonicalPath(entry, Astro.url.pathname);
 
 // Get canonical dates for versioned content (consistent across all versions)
 let canonicalDates: { startDate: Date; updated?: Date } = {
@@ -46,17 +53,29 @@ let canonicalDates: { startDate: Date; updated?: Date } = {
 };
 if (entry) {
 	// Fetch all entries from the same collection to resolve canonical dates across versions
-	const allEntries = (await getCollection(entry.collection)) as (typeof entry)[];
-	const versionedDates = getCanonicalDates(entry, allEntries);
-	canonicalDates = {
-		startDate: new Date(versionedDates.startDate),
-		updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
-	};
+	const allEntries = selectPublicEntries(await getCollection(entry.collection)) as (typeof entry)[];
+	const publicEntryForDates =
+		allEntries.find((candidate) => candidate.id === entry.id) ??
+		(isVersionedPublicationEntry(entry)
+			? selectLatestPublicEntries(allEntries).find(
+					(candidate) => getPublicationBaseSlug(candidate) === getPublicationBaseSlug(entry),
+				)
+			: undefined);
+	if (publicEntryForDates) {
+		const versionedDates = getCanonicalDates(publicEntryForDates, allEntries);
+		canonicalDates = {
+			startDate: new Date(versionedDates.startDate),
+			updated: versionedDates.updated ? new Date(versionedDates.updated) : undefined,
+		};
+	}
 }
 
 // Capitalise the content type for the back-link label (e.g. "essay" → "Essay")
 const contentTypeLabel =
 	frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1);
+const editUrl = import.meta.env.DEV && process.env.LOCAL_WRITING_EDITOR_ORIGIN && !editorHmrGuard && entry
+	&& (entry.collection === "notes" || entry.collection === "essays")
+	? `/_editor?documentId=${encodeURIComponent(`${entry.collection}:${entry.id}`)}` : null;
 
 // Find the current post in linkMaps
 const currentPost = linkMaps.find((post) => post.slug === currentSlug);
@@ -68,25 +87,36 @@ const backlinks = currentPost?.inboundLinks || [];
 const coverImage =
 	frontmatter.type === "essay" || frontmatter.type === "talk" ? frontmatter.cover?.src : undefined;
 
-const startDateISO =
-	canonicalDates.startDate instanceof Date
-		? canonicalDates.startDate.toISOString()
-		: canonicalDates.startDate;
-const updatedISO =
-	canonicalDates.updated instanceof Date
-		? canonicalDates.updated.toISOString()
-		: (canonicalDates.updated ?? "");
+const startDateCalendar = toCalendarDate(canonicalDates.startDate);
+const updatedCalendar = toCalendarDate(canonicalDates.updated);
+if (!startDateCalendar) {
+	throw new Error("Canonical Article publication date must be a valid calendar date");
+}
+const pageMetadata = entry && isCanonicalPublicArticle({
+	collection: entry.collection,
+	isPublic: isPublicEntry(entry),
+	requestPath: Astro.url.pathname,
+	canonicalPath,
+})
+	? {
+		type: "article" as const,
+		datePublished: startDateCalendar,
+		...(updatedCalendar ? { dateModified: updatedCalendar } : {}),
+	}
+	: false;
 ---
 
 <Layout
+	editorHmrGuard={editorHmrGuard}
 	title={frontmatter.title}
 	desc={frontmatter.description}
 	type={frontmatter.type}
 	coverImage={coverImage}
-	canonicalURL={canonicalURL}
+	canonicalPath={canonicalPath}
+	pageMetadata={pageMetadata}
 >
 	<header class="header-section">
-		<div class="above-title">
+		<div class="above-title cascade" style="--cascade: 0">
 			<div class="back-link">
 				<a href={`/${frontmatter.type}s`}>
 					<Icon name="heroicons:arrow-left" size={16} />
@@ -101,19 +131,22 @@ const updatedISO =
 			/>
 			<GrowthStage stage={frontmatter.growthStage as "budding" | "evergreen" | "seedling"} />
 			{frontmatter.draft && <span class="draft-label">Draft</span>}
+			{editUrl && <a href={editUrl} style="margin-left: auto;">Edit</a>}
 		</div>
 		<div class="title-container">
-			<h1>{frontmatter.title}</h1>
-			{frontmatter.description && <p>{frontmatter.description}</p>}
+			<h1 class="cascade" style="--cascade: 1">{frontmatter.title}</h1>
+			{frontmatter.description && (
+				<p class="cascade" style="--cascade: 2">{frontmatter.description}</p>
+			)}
 		</div>
-		<div class="metadata">
+		<div class="metadata cascade" style="--cascade: 3">
 			<div class="metadata-left">
 				{frontmatter.topics && <Topics topics={frontmatter.topics} />}
 			</div>
 			<div class="metadata-right">
 				<Dates
-					startDate={startDateISO}
-					updated={updatedISO}
+					startDate={startDateCalendar}
+					updated={updatedCalendar}
 				/>
 				{entry && <VersionDropdown entry={entry} />}
 			</div>
@@ -122,9 +155,9 @@ const updatedISO =
 	</header>
 
 
-	<main class="styled-main">
+	<div class="styled-main cascade-fade" style="--cascade: 4">
 		<slot />
-	</main>
+	</div>
 
 	{backlinks.length ? <Backlinks backlinks={backlinks} /> : null}
 
@@ -174,6 +207,7 @@ const updatedISO =
 		font-weight: bold;
 		margin: 0;
 	}
+
 
 	.above-title svg {
 		display: block;

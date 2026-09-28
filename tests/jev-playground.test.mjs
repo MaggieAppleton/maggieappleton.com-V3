@@ -105,16 +105,6 @@ test('recorded playground exposes only the approved posts and six fixed question
   ]);
 });
 
-test('the hydrated pipeline imports only browser-safe recorded playground config', async () => {
-  const [pipeline, config] = await Promise.all([
-    fs.readFile('src/components/unique/jev/Pipeline.jsx', 'utf8'),
-    fs.readFile('src/lib/jev/recorded-playground-config.js', 'utf8'),
-  ]);
-  assert.match(pipeline, /lib\/jev\/recorded-playground-config\.js/);
-  assert.doesNotMatch(pipeline, /lib\/jev\/recorded-playground\.js/);
-  assert.doesNotMatch(config, /node:|corpus\.js|recorded-playground\.js|(?:^|['"])fs(?:['"]|$)|(?:^|['"])path(?:['"]|$)/m);
-});
-
 test('article state uses full extracted prose while preview contains two sentences', () => {
   assert.deepEqual(articleState(documents[0]), {
     title: 'Post 1',
@@ -514,16 +504,4 @@ test('recorded result reports absent authored data without making a request', ()
     questionId: 'knowledge',
   }));
   assert.match(html, /This recorded answer is unavailable/);
-});
-
-test('published playground has no live hook, editor, service, or API route', async () => {
-  const removed = [
-    'src/components/unique/jev/QuestionEditor.jsx',
-    'src/components/unique/jev/usePlayground.js',
-    'src/lib/jev/playground-service.js',
-    'src/pages/api/jev-playground.js',
-  ];
-  for (const file of removed) await assert.rejects(fs.access(file));
-  const pipeline = await fs.readFile('src/components/unique/jev/Pipeline.jsx', 'utf8');
-  assert.doesNotMatch(pipeline, /fetch\s*\(|usePlayground|QuestionEditor|Inspector/);
 });

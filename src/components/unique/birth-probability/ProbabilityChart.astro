@@ -694,7 +694,4 @@ const { multiBirthCsv, firstTimeCsv } = Astro.props;
 
 	// Initialize on page load
 	initializeProbabilityChart();
-
-	// Re-initialize after view transitions
-	document.addEventListener("astro:page-load", initializeProbabilityChart);
 </script>

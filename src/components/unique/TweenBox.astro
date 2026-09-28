@@ -7,9 +7,7 @@
 </div>
 
 <script>
-	import { onPageLifecycle } from "../../utils/viewTransitionLifecycle";
-
-	onPageLifecycle(() => {
+	(() => {
 		const boxes = document.querySelectorAll(".animated-box");
 		if (boxes.length === 0) return;
 
@@ -28,7 +26,7 @@
 
 		boxes.forEach((box) => observer.observe(box));
 		return () => observer.disconnect();
-	});
+	})();
 </script>
 
 <style>

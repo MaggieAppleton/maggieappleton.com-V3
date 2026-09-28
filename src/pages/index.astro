@@ -12,10 +12,15 @@ import UnderlineHoverLink from "../components/mdx/UnderlineHoverLink.astro";
 import GrowthIcon from "../components/layouts/GrowthIcon.astro";
 import PageWrapper from "../components/layouts/PageWrapper.astro";
 import { extractBaseSlug } from "../utils/versionUtils";
+import { selectLatestPublicEntries } from "../utils/publication.mjs";
+import { getPublicRouteSlug } from "../utils/publicationRoutes.mjs";
+import { PAGE_DESCRIPTIONS } from "../utils/descriptions.mjs";
 
-const essays = await getCollection("essays", ({ data }) => data.featured === true && !data.draft);
-const notes = await getCollection("notes", ({ data }) => !data.draft);
-const patterns = await getCollection("patterns", ({ data }) => !data.draft);
+const essays = selectLatestPublicEntries(await getCollection("essays")).filter(
+	({ data }) => data.featured === true,
+);
+const notes = selectLatestPublicEntries(await getCollection("notes"));
+const patterns = selectLatestPublicEntries(await getCollection("patterns"));
 const books = await getCollection("books");
 
 const sortedEssays = essays
@@ -31,14 +36,14 @@ const sortedPatterns = patterns
 	.slice(0, 8);
 ---
 
-<Layout title="Maggie Appleton">
+<Layout title="Maggie Appleton" desc={PAGE_DESCRIPTIONS.home} pageMetadata="webpage">
 	<PageWrapper>
 		<header class="page-header">
-			<Title1 class="main-title">
+			<Title1 class="main-title cascade" style={{ "--cascade": 0 }}>
 				<b>Maggie </b>
 				makes visual essays about programming, design, and anthropology.
 			</Title1>
-			<SmallTitle2>
+			<SmallTitle2 class="cascade" style={{ "--cascade": 1 }}>
 				Designer, anthropologist, and mediocre developer
 				<br /> Currently exploring AI & software engineering at
 				<b class="company-name">
@@ -49,6 +54,7 @@ const sortedPatterns = patterns
 
 		<Spacer />
 
+		<div class="cascade-fade" style={{ "--cascade": 2 }}>
 		<section>
 			<a href="/garden" class="garden-link">
 				<h2 class="garden-title">The Garden</h2>
@@ -101,7 +107,7 @@ const sortedPatterns = patterns
 				</div>
 				{
 					sortedNotes.slice(0, 12).map((note) => (
-						<a href={`/${note.id}`} class="index-note-link">
+						<a href={`/${getPublicRouteSlug(note)}`} class="index-note-link">
 							<div class="index-note-card">
 								{note.data.growthStage && (
 									<div class="icon">
@@ -166,6 +172,7 @@ const sortedPatterns = patterns
 				</div>
 			</section>
 		</section>
+		</div>
 	</PageWrapper>
 </Layout>
 
