@@ -83,7 +83,7 @@ Astro.response.headers.set("Cache-Control", "no-store");
 		<section aria-label="Writing editor" class="editor-fallback">
 			<div class="editor-fallback-dock" role="alert">
 				<div class="editor-fallback-panel"><h1>Local writing is unavailable</h1><p>Restart the development server with <code>npm run dev -- --host 127.0.0.1</code> to edit writing.</p></div>
-				<div class="editor-fallback-pill"><a href="/drafts">View drafts</a></div>
+				<div class="editor-fallback-pill"><a href="/notes">Browse notes</a></div>
 			</div>
 		</section>
 	</Layout>
@@ -107,7 +107,7 @@ Astro.response.headers.set("Cache-Control", "no-store");
 				<>
 					<div class="editor-fallback-dock" role="alert">
 						<div class="editor-fallback-panel"><h1>Writing editor unavailable</h1><p>{renderError ?? "Document unavailable"}</p></div>
-						<div class="editor-fallback-pill"><a href="/drafts">Back to drafts</a></div>
+						<div class="editor-fallback-pill"><a href="/notes">Browse notes</a></div>
 					</div>
 					{documentRead && <pre>{documentRead.source}</pre>}
 				</>
@@ -115,7 +115,7 @@ Astro.response.headers.set("Cache-Control", "no-store");
 				<>
 					<h1>Local writing</h1>
 					<p>Open an existing note or essay and choose Edit on its page.</p>
-					<p><a href="/notes">Notes</a> · <a href="/essays">Essays</a> · <a href="/drafts">Drafts</a></p>
+					<p><a href="/notes">Notes</a> · <a href="/essays">Essays</a></p>
 				</>
 			)}
 		</section>

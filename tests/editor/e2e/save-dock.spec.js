@@ -34,8 +34,7 @@ Writing to save.\n`);
 	});
 
 	async function openEditor(page) {
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: title }).click();
+		await page.goto(`${server.origin}/${slug}`, { waitUntil: "domcontentloaded" });
 		await page.getByRole("link", { name: "Edit" }).click();
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 	}

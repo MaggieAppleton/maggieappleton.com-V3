@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
+import { constants } from "node:fs";
 import { createServer } from "node:net";
 import { once } from "node:events";
 import { randomUUID } from "node:crypto";
@@ -25,6 +26,7 @@ const manifestName = ".local-writing-editor-fixture.json";
 const excludedProjectEntries = new Set([
   ".git",
   ".local-writing-editor",
+  ".writing-assist",
   ".astro",
   "dist",
   "node_modules",
@@ -53,10 +55,17 @@ async function writeManifest(projectRoot, update) {
 async function cloneDependencies(sourceRoot, projectRoot) {
   const source = join(sourceRoot, "node_modules");
   const destination = join(projectRoot, "node_modules");
+  // Astro and Vite rebuild these caches while dev servers run. Copying them is
+  // unnecessary and can make cp fail mid-copy, triggering a much slower retry.
+  const cacheNames = new Set([".astro", ".vite"]);
+  const entries = (await readdir(source)).filter((entry) => !cacheNames.has(entry));
+  await mkdir(destination);
   try {
-    await execFileAsync("cp", ["-cR", source, projectRoot]);
+    await execFileAsync("cp", ["-cR", ...entries.map((entry) => join(source, entry)), destination]);
   } catch {
-    await cp(source, destination, { recursive: true, dereference: true, force: true });
+    await cp(source, destination, { recursive: true, dereference: true,
+      force: true, mode: constants.COPYFILE_FICLONE,
+      filter: (entry) => !cacheNames.has(relative(source, entry)) });
   }
 }
 
@@ -71,7 +80,12 @@ export async function createFixtureProject({ name = "editor", sourceRoot = repos
   await cp(sourceRoot, projectRoot, {
     recursive: true,
     dereference: true,
-    filter: (entry) => !excludedProjectEntries.has(relative(sourceRoot, entry)),
+    mode: constants.COPYFILE_FICLONE,
+    filter: (entry) => {
+      const localPath = relative(sourceRoot, entry);
+      return !excludedProjectEntries.has(localPath)
+        && (localPath === ".env.example" || !/^\.env(?:\.|$)/u.test(localPath));
+    },
   });
   await cloneDependencies(sourceRoot, projectRoot);
 

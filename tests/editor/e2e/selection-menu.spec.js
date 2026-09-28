@@ -29,17 +29,17 @@ test.describe("article selection menu", () => {
 	});
 
 	async function openEditor(page, index) {
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: `Selection menu test ${index}` }).click();
-		const editUrl = await page.getByRole("link", { name: "Edit" }).getAttribute("href");
-		const destination = new URL(editUrl, server.origin).href;
-		try {
-			await page.goto(destination, { waitUntil: "domcontentloaded" });
-		} catch (error) {
-			// Vite can reload the fixture between saves and abort this navigation.
-			if (!String(error).includes("net::ERR_ABORTED")) throw error;
-			await page.goto(destination, { waitUntil: "domcontentloaded" });
-		}
+		// Content writes invalidate Astro's dev modules; HMR is unrelated to formatting.
+		await page.routeWebSocket("**", (socket) => socket.close());
+		const destination = `${server.origin}/_editor?documentId=notes:${slugs[index - 1]}`;
+		await expect.poll(async () => {
+			try {
+				return (await page.goto(destination, { waitUntil: "domcontentloaded" }))?.status();
+			} catch (error) {
+				if (String(error).includes("net::ERR_ABORTED")) return 0;
+				throw error;
+			}
+		}, { timeout: 30_000, intervals: [250, 500, 1_000] }).toBe(200);
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 	}
 
@@ -95,9 +95,10 @@ test.describe("article selection menu", () => {
 	}
 
 	async function saveIfPending(page) {
-		await page.getByRole("button", { name: "Save" }).evaluate((button) => {
-			if (!button.disabled) button.click();
-		});
+		const save = page.getByRole("button", { name: "Save" });
+		await expect(save).toBeEnabled();
+		await save.click();
+		await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 	}
 
 	async function mouseSelectText(page, text) {
@@ -149,6 +150,7 @@ test.describe("article selection menu", () => {
 			.toContain("## First plain paragraph with selectable words.");
 		const saved = await readFile(fixture.resolve(`src/content/notes/${slugs[1]}.mdx`), "utf8");
 		expect(saved).toContain("## Second paragraph with [linked words](https://example.com) and more text.");
+		await openEditor(page, 2);
 		await selectText(page, "selectable words", "linked words");
 		for (const level of [2, 1, 3]) {
 			await expect(menu.getByRole("button", { name: `Heading ${level}` })).toHaveAttribute("aria-pressed", "true");
@@ -184,6 +186,7 @@ test.describe("article selection menu", () => {
 		await saveIfPending(page);
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[6]}.mdx`), "utf8"))
 			.toContain("## First plain paragraph with selectable words.\n\n## Second paragraph with [linked words](https://example.com) and more text.");
+		await openEditor(page, 7);
 		await selectText(page, "selectable words", "linked words");
 		await menu.getByRole("button", { name: "Heading 2" }).click();
 		await expect(page.locator(".editor-body > h1, .editor-body > h2, .editor-body > h3")).toHaveCount(0);
@@ -193,6 +196,7 @@ test.describe("article selection menu", () => {
 		await saveIfPending(page);
 		await expect.poll(() => readFile(fixture.resolve(`src/content/notes/${slugs[6]}.mdx`), "utf8"))
 			.toContain("First plain paragraph with selectable words.\n\nSecond paragraph with [linked words](https://example.com) and more text.");
+		await openEditor(page, 7);
 		await selectText(page, "strong words", "plain words");
 		await expect(menu.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "false");
 	});
@@ -224,8 +228,7 @@ test.describe("article selection menu", () => {
 
 	test("excludes metadata and protected content, and reopens after dismissal", async ({ page }) => {
 		test.setTimeout(120_000);
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: "Selection menu test 4" }).click();
+		await page.goto(`${server.origin}/${slugs[3]}`, { waitUntil: "domcontentloaded" });
 		await page.evaluate(() => {
 			const node = document.querySelector("article p").firstChild;
 			const range = document.createRange();

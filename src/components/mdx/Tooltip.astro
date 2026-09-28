@@ -3,6 +3,8 @@ interface Props {
 	maxWidth?: string | number;
 }
 
+import "./tooltip-theme.css";
+
 const { maxWidth = 400 } = Astro.props;
 ---
 
@@ -12,75 +14,6 @@ const { maxWidth = 400 } = Astro.props;
 	</template>
 	<slot />
 </span>
-
-<style is:global>
-	.tippy-box[data-theme~="custom"] {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		line-height: var(--leading-snug);
-		word-break: break-word;
-		padding: var(--space-3xs);
-		margin-bottom: var(--space-3xs);
-		background-color: var(--color-white);
-		color: var(--color-gray-800);
-		box-shadow: var(--box-shadow-lg);
-	}
-
-	.tippy-box[data-theme~="custom"] * {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		line-height: var(--leading-snug);
-		color: var(--color-gray-800);
-	}
-
-	.tippy-box[data-theme~="custom"] p {
-		margin: 0;
-	}
-
-	.tippy-box[data-theme~="custom"] .tippy-arrow {
-		color: var(--color-white);
-	}
-
-	/* Tippy waits for transitionend before unmounting, so this must be a
-	   transition, not a keyframe animation. */
-	.tippy-box[data-animation="grow"] {
-		transition-property: transform, opacity;
-		transition-timing-function: var(--ease-spring), var(--ease-out);
-	}
-
-	.tippy-box[data-animation="grow"][data-state="hidden"] {
-		opacity: 0;
-		transition-timing-function: var(--ease-out);
-	}
-
-	.tippy-box[data-animation="grow"][data-placement^="top"] {
-		transform-origin: bottom center;
-	}
-	.tippy-box[data-animation="grow"][data-placement^="top"][data-state="hidden"] {
-		transform: scale(0.94) translateY(4px);
-	}
-
-	.tippy-box[data-animation="grow"][data-placement^="bottom"] {
-		transform-origin: top center;
-	}
-	.tippy-box[data-animation="grow"][data-placement^="bottom"][data-state="hidden"] {
-		transform: scale(0.94) translateY(-4px);
-	}
-
-	.tippy-box[data-animation="grow"][data-placement^="left"] {
-		transform-origin: right center;
-	}
-	.tippy-box[data-animation="grow"][data-placement^="left"][data-state="hidden"] {
-		transform: scale(0.94) translateX(4px);
-	}
-
-	.tippy-box[data-animation="grow"][data-placement^="right"] {
-		transform-origin: left center;
-	}
-	.tippy-box[data-animation="grow"][data-placement^="right"][data-state="hidden"] {
-		transform: scale(0.94) translateX(-4px);
-	}
-</style>
 
 <script>
 	import tippy, { type Instance, type Props } from "tippy.js";

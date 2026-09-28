@@ -13,7 +13,7 @@ function KeyboardSelectionSync({ realm }) {
 	const [editor] = useLexicalComposerContext();
 	useEffect(() => editor.registerCommand(KEY_DOWN_COMMAND, (event) => {
 		const linkShortcut = event.key.toLowerCase() === "k"
-			&& controlOrMeta(event.metaKey, event.ctrlKey);
+			&& !event.shiftKey && controlOrMeta(event.metaKey, event.ctrlKey);
 		const caretEdit = (event.key === "Enter" || event.key === "Backspace"
 			|| event.key === "Delete")
 			&& !event.altKey && !event.ctrlKey && !event.metaKey;

@@ -10,7 +10,12 @@ import { createSourceDocument } from "../source/document.mjs";
 import { createDocumentTransport } from "./document-transport.mjs";
 import { sourceForBrowserBackup } from "./backup-source.mjs";
 import { EditorDock, MountFailureDock } from "./editor-dock.mjs";
+import { useAssistWorkspace } from "../assist/client/useAssistWorkspace.mjs";
+import "tippy.js/dist/tippy.css";
+import "../../components/mdx/tooltip-theme.css";
 import "./writing-editor.css";
+import "../assist/client/assist.css";
+import "../assist/client/word-finder.css";
 
 function plainTextField(element, label, onChange) {
 	element.contentEditable = "plaintext-only";
@@ -35,6 +40,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
 	const [protectedWarning, setProtectedWarning] = useState(null);
+	const assist = useAssistWorkspace({ article, boot, adapterKey: adapterState.key });
 	const sessionRef = useRef(null);
 	const transportRef = useRef(null);
 	if (!sessionRef.current) {
@@ -194,6 +200,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	return React.createElement(RenderedRegionContext.Provider, { value: adapter.registry },
 		React.createElement(EditorDock, { previewUrl: boot.document.previewUrl, state, recovery, discarded,
 			protectedWarning, onRestoreRecovery: restoreRecovery,
+			...assist.dock,
 			onClearDiscarded: (candidate) => {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
@@ -202,7 +209,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			key: adapterState.key,
 			ref: editorRef,
 			markdown: adapter.markdown,
-			plugins: adapter.plugins,
+			plugins: [...adapter.plugins, assist.plugin],
 			additionalLexicalNodes: adapter.additionalLexicalNodes,
 			contentEditableClassName: "editor-body",
 			onChange: (_markdown, initial) => {
@@ -215,6 +222,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				engineSnapshot: editorRef.current?.getMarkdown(), error: failure,
 			}),
 		}),
+		assist.surface,
 	);
 }
 

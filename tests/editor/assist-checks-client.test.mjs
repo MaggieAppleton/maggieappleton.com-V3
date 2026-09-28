@@ -1,0 +1,153 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { checkDetails, checksTool, enabledChecks } from "../../src/editor/assist/client/tools/checks.mjs";
+import { ChecksHover, ChecksPopover, checkChatSystem, validateClichePhrase } from "../../src/editor/assist/client/popover/ChecksPopover.mjs";
+import { AssistPanel } from "../../src/editor/assist/client/AssistPanel.mjs";
+import { createAnnotationStore } from "../../src/editor/assist/client/annotation-store.mjs";
+
+const cliche = { id: "cliche:one", tool: "checks", kind: "cliche", unitHash: "one", target: { type: "sentence", sentenceId: "s1" },
+	data: { reason: "This is a worn phrase." } };
+
+test("checks tool provides ordered coloured margin markers", () => {
+	assert.deepEqual({ id: checksTool.id, label: checksTool.label, level: checksTool.level }, { id: "checks", label: "Checks", level: "sentence" });
+	const marker = checksTool.markerPresenter({ kind: "mixed-metaphor" });
+	assert.equal(marker.placement, "margin");
+	assert.equal(marker.order, 4);
+	assert.equal(marker.label, "Mixed metaphor");
+	assert.equal(checksTool.markerPresenter(cliche, { targetText: "tip of the iceberg" }).label,
+		"Cliché: tip of the iceberg");
+	assert.equal(checkDetails("hedging", "overclaiming").title, "Hedging: overclaiming");
+	assert.equal(checkDetails("hedging", "over-hedging").title, "Hedging: over-hedging");
+});
+
+test("checks panel renders four independently controlled switches", () => {
+	const html = renderToStaticMarkup(React.createElement(AssistPanel, { open: true,
+		config: { tools: { checks: { enabled: { citation: true, hedging: true, objection: true, cliche: true } } } },
+		status: { tools: { checks: { available: true } } }, enabledTools: { checks: { citation: true, hedging: false, objection: true, cliche: true } },
+		onToggleTool() {} }));
+	assert.match(html, /Citation needed/);
+	assert.match(html, /Hedging/);
+	assert.match(html, /Objections/);
+	assert.match(html, /Clichés &amp; metaphors/);
+	assert.match(html, /editor-assist-label-checks\.citation/);
+	assert.match(html, /aria-checked="false"/);
+});
+
+test("check activation preserves each nested toggle instead of coercing the map to true", () => {
+	assert.deepEqual(enabledChecks({ citation: true, hedging: false, objection: true, cliche: true }, true), {
+		citation: true, hedging: false, objection: true, cliche: true,
+	});
+	assert.deepEqual(enabledChecks({ citation: true, hedging: true }, false), {
+		citation: false, hedging: false, objection: false, cliche: false,
+	});
+});
+
+test("cliché hover shows every suggestion and the pinned popover selects a replacement", () => {
+	const generated = { phrase: "tip of the iceberg", phraseAccepted: true, reason: "A worn phrase.", suggestions: ["a first glimpse", "the visible edge", "an early sign"] };
+	const spanCliche = { ...cliche, target: { type: "span", sentenceId: "s1", start: 4, end: 22 } };
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: spanCliche, generated }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: spanCliche }, generated,
+		fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {}, canApply: true }));
+	assert.match(hover, /Flagged phrase: <strong>“tip of the iceberg”<\/strong>/);
+	assert.match(pinned, /Flagged phrase: <strong>“tip of the iceberg”<\/strong>/);
+	assert.ok(hover.indexOf("wa-check-phrase") < hover.indexOf("a first glimpse"), "hover names the phrase before alternatives");
+	assert.ok(pinned.indexOf("wa-check-phrase") < pinned.indexOf("wa-check-suggestion"), "pinned popover names the phrase before alternatives");
+	assert.match(hover, /a first glimpse/);
+	assert.match(hover, /the visible edge/);
+	assert.match(hover, /an early sign/);
+	assert.doesNotMatch(hover, /A worn phrase\./);
+	assert.doesNotMatch(pinned, /A worn phrase\./);
+	assert.match(pinned, /aria-pressed="true"/);
+	assert.match(pinned, /Apply/);
+});
+
+test("hedging hover shows the same rewrites as the pinned popover", () => {
+	const annotation = { ...cliche, kind: "hedging", data: { direction: "soften", reason: "Too certain." } };
+	const generated = { rewrites: ["One rewrite.", "Another rewrite.", "A third rewrite."] };
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation, generated }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation }, generated }));
+	for (const rewrite of generated.rewrites) {
+		assert.match(hover, new RegExp(rewrite.replaceAll(".", "\\.")));
+		assert.match(pinned, new RegExp(rewrite.replaceAll(".", "\\.")));
+	}
+});
+
+test("pending check previews retain their header and objection text appears once", () => {
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: cliche }));
+	const pinned = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: cliche },
+		onClose() {}, onDismiss() {}, onApply() {} }));
+	assert.match(hover, /Cliché/);
+	assert.match(hover, /wa-check-shimmer/);
+	assert.match(pinned, /wa-check-shimmer/);
+	const objection = renderToStaticMarkup(React.createElement(ChecksPopover, {
+		pinned: { annotation: { ...cliche, kind: "objection" } },
+		generated: { objection: "A sceptic would question the evidence." },
+		onClose() {}, onDismiss() {}, onApply() {},
+	}));
+	assert.equal(objection.split("A sceptic would question the evidence.").length - 1, 1);
+	const error = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: cliche, generated: { error: true } }));
+	assert.match(error, /Suggestions unavailable\./);
+	assert.doesNotMatch(error, /wa-check-shimmer/);
+});
+
+test("citation has no Apply and phrase validation only accepts an exact substring", () => {
+	const citation = { ...cliche, kind: "citation", data: { reason: "This reads as a factual claim without a source." } };
+	const html = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: citation }, generated: citation.data,
+		fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {} }));
+	assert.doesNotMatch(html, />Apply</);
+	assert.deepEqual(validateClichePhrase("The tip of the iceberg remains.", "tip of the iceberg"), { start: 4, end: 22 });
+	assert.equal(validateClichePhrase("The tip of the iceberg remains.", "iceberg tip"), null);
+});
+
+test("cliché Apply stays hidden until the controller accepts its exact phrase span", () => {
+	const generated = { phrase: "not in this sentence", phraseAccepted: false, reason: "A worn phrase.", suggestions: ["one", "two", "three"] };
+	const html = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: cliche }, generated,
+		fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {}, canApply: true }));
+	const hover = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: cliche, generated }));
+	assert.doesNotMatch(html, />Apply</);
+	assert.doesNotMatch(html, /Flagged phrase:/, "unvalidated model phrases must not be shown as source text");
+	assert.doesNotMatch(hover, /Flagged phrase:/, "hover must also hide an unvalidated model phrase");
+	const stale = { ...cliche, target: { type: "span", sentenceId: "s1", start: 0, end: 3 } };
+	const staleHtml = renderToStaticMarkup(React.createElement(ChecksPopover, { pinned: { annotation: stale },
+		generated: { ...generated, phraseAccepted: true }, fallbackFocus: null, onClose() {}, onDismiss() {}, onApply() {} }));
+	assert.doesNotMatch(staleHtml, /Flagged phrase:/, "a phrase must still match the live span length");
+	const longPhrase = "in the very same boat as everyone else";
+	const longAnnotation = { ...cliche, target: { type: "span", sentenceId: "s1", start: 0, end: longPhrase.length } };
+	const longHtml = renderToStaticMarkup(React.createElement(ChecksHover, { annotation: longAnnotation,
+		generated: { phrase: longPhrase, phraseAccepted: true, suggestions: [] } }));
+	assert.match(longHtml, new RegExp(`Flagged phrase: <strong>“${longPhrase}”<\\/strong>`));
+});
+
+test("checks chat gets the live context, reason and exact rewrite scope", () => {
+	const clicheSystem = checkChatSystem({ annotation: cliche, title: "The garden", sentence: "The tip of the iceberg remains.",
+		paragraph: "The tip of the iceberg remains. Another sentence.", generated: { reason: "A worn phrase." } });
+	assert.match(clicheSystem, /Post title: The garden/);
+	assert.match(clicheSystem, /Reason: A worn phrase\./);
+	assert.match(clicheSystem, /Sentence: The tip of the iceberg remains\./);
+	assert.match(clicheSystem, /Paragraph: The tip of the iceberg remains\. Another sentence\./);
+	assert.match(clicheSystem, /only the flagged cliché phrase/);
+	const acceptedClicheSystem = checkChatSystem({ annotation: { ...cliche,
+		target: { type: "span", sentenceId: "s1", start: 4, end: 22 } }, sentence: "The tip of the iceberg remains.",
+		generated: { phrase: "tip of the iceberg", phraseAccepted: true, reason: "A worn phrase." } });
+	assert.match(acceptedClicheSystem, /Flagged phrase: tip of the iceberg\./);
+	const rejectedClicheSystem = checkChatSystem({ annotation: cliche, sentence: "The tip of the iceberg remains.",
+		generated: { phrase: "a different phrase", phraseAccepted: false, reason: "A worn phrase." } });
+	assert.doesNotMatch(rejectedClicheSystem, /Flagged phrase:/);
+	const mixed = checkChatSystem({ annotation: { ...cliche, kind: "mixed-metaphor", target: { type: "block", blockId: "p1" } },
+		paragraph: "The argument is a ship on shaky foundations.", generated: { reason: "Images clash." } });
+	assert.match(mixed, /the whole paragraph/);
+	assert.match(mixed, /Paragraph: The argument is a ship on shaky foundations\./);
+	const citation = checkChatSystem({ annotation: { ...cliche, kind: "citation" }, sentence: "A fact.", paragraph: "A fact." });
+	assert.match(citation, /Never invent specific citations, titles, URLs, or statistics/);
+});
+
+test("annotation store updates a generated span without changing its identity", () => {
+	const store = createAnnotationStore();
+	store.setModel({ blocks: [{ id: "p1", hash: "p1", sentences: [{ id: "s1", hash: "one" }] }] });
+	store.replaceTool("checks", [cliche]);
+	assert.equal(store.updateTarget("cliche:one", { type: "span", sentenceId: "s1", start: 0, end: 3 }), true);
+	assert.deepEqual(store.getAnnotations()[0].target, { type: "span", sentenceId: "s1", start: 0, end: 3 });
+});

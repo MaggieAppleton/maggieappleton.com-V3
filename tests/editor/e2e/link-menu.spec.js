@@ -8,12 +8,14 @@ const initialUrl = "https://example.com/an/intentionally/long/link/path/for/test
 test.describe.serial("normal Markdown links in the local editor", () => {
 	let fixture;
 	let server;
+	const slugs = [];
 
 	test.beforeAll(async () => {
 		test.setTimeout(240_000);
 		fixture = await createFixtureProject({ name: "editor-link-menu" });
 		for (let index = 1; index <= 4; index++) {
 			const slug = `link-menu-${index}-${randomUUID().slice(0, 8)}`;
+			slugs.push(slug);
 			await fixture.write(`src/content/notes/${slug}.mdx`, `---
 title: Link menu test ${index}
 startDate: 2026-09-24
@@ -36,8 +38,7 @@ Try this [linked phrase](${initialUrl} "Original title") in context.
 	});
 
 	async function openEditor(page, index) {
-		await page.goto(`${server.origin}/drafts/`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: `Link menu test ${index}` }).click();
+		await page.goto(`${server.origin}/${slugs[index - 1]}`, { waitUntil: "domcontentloaded" });
 		await page.getByRole("link", { name: "Edit" }).click();
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 	}

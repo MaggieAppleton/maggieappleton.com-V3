@@ -20,6 +20,7 @@
 
 #local-writing-editor .editor-body {
 	display: grid;
+	color: var(--color-black);
 	/* ProseWrapper's 72ch track is measured in its Times grid font (36em). */
 	grid-template-columns: 1fr min(36em, 100%) 1fr;
 	font-family: var(--font-body);
@@ -84,7 +85,7 @@
 	align-items: center;
 	justify-content: center;
 	row-gap: 12px;
-	column-gap: 12px;
+	column-gap: 4px;
 	padding: 6px 12px 6px 8px;
 }
 .editor-dock-pill a,
@@ -106,6 +107,7 @@
 .editor-dock-actions button:hover,
 .editor-dock-section > button:hover { background: rgb(255 255 255 / 12%); }
 .editor-dock-pill button:disabled { cursor: not-allowed; opacity: 0.42; }
+.editor-dock-pill .editor-dock-save-button { padding-inline-start: calc(0.68rem - 6px); }
 .editor-dock-pill > button:not(.editor-dock-icon) {
 	display: inline-flex;
 	align-items: center;

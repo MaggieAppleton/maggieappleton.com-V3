@@ -1,0 +1,62 @@
+#local-writing-editor .prose-wrapper {
+	position: relative;
+	--wa-role-tint-claim: color-mix(in srgb, var(--color-salmon) 18%, transparent);
+	--wa-role-tint-opinion: color-mix(in srgb, var(--color-gold) 39.6%, transparent);
+	--wa-role-tint-evidence: color-mix(in srgb, var(--color-status-success) 18%, transparent);
+	--wa-role-tint-example: color-mix(in srgb, var(--color-sea-blue) 18%, transparent);
+	--wa-role-tint-qualification: color-mix(in srgb, var(--color-purple) 18%, transparent);
+	--wa-role-tint-speculation: color-mix(in srgb, var(--color-bright-crimson) 18%, transparent);
+	--wa-role-tint-concession: color-mix(in srgb, var(--color-dark-sea-blue) 14.4%, color-mix(in srgb, var(--color-status-success) 9%, transparent));
+	--wa-role-tint-framing: color-mix(in srgb, var(--color-gray-400) 18%, transparent);
+}
+#local-writing-editor .editor-body { position: relative; z-index: 1; }
+.writing-assist-role-gradient-layer {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+}
+.writing-assist-role-gradient-line {
+	position: absolute;
+	border-radius: 2px;
+	pointer-events: none;
+}
+::highlight(wa-jump) { background-color: color-mix(in srgb, var(--color-sea-blue) 22%, transparent); }
+::highlight(wa-role-claim) { background-color: var(--wa-role-tint-claim); }
+::highlight(wa-role-opinion) { background-color: var(--wa-role-tint-opinion); }
+::highlight(wa-role-evidence) { background-color: var(--wa-role-tint-evidence); }
+::highlight(wa-role-example) { background-color: var(--wa-role-tint-example); }
+::highlight(wa-role-qualification) { background-color: var(--wa-role-tint-qualification); }
+::highlight(wa-role-speculation) { background-color: var(--wa-role-tint-speculation); }
+::highlight(wa-role-concession) { background-color: var(--wa-role-tint-concession); }
+::highlight(wa-role-framing) { background-color: var(--wa-role-tint-framing); }
+::highlight(wa-checks-cliche) { text-decoration: underline 1px var(--color-dark-sea-blue); text-underline-offset: 2px; }
+::highlight(wa-link) { text-decoration: underline dotted var(--color-purple); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+
+.editor-assist-role--claim, .wa-role-hover-row--claim { --wa-role-colour: var(--color-salmon); }
+.editor-assist-role--opinion, .wa-role-hover-row--opinion { --wa-role-colour: var(--color-gold); }
+.editor-assist-role--evidence, .wa-role-hover-row--evidence { --wa-role-colour: var(--color-status-success); }
+.editor-assist-role--example, .wa-role-hover-row--example { --wa-role-colour: var(--color-sea-blue); }
+.editor-assist-role--qualification, .wa-role-hover-row--qualification { --wa-role-colour: var(--color-purple); }
+.editor-assist-role--speculation, .wa-role-hover-row--speculation { --wa-role-colour: var(--color-bright-crimson); }
+.editor-assist-role--concession, .wa-role-hover-row--concession { --wa-role-colour: color-mix(in srgb, var(--color-dark-sea-blue) 62%, var(--color-status-success)); }
+.editor-assist-role--framing, .wa-role-hover-row--framing { --wa-role-colour: var(--color-gray-400); }
+.writing-assist-marker-layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 2;
+}
+.writing-assist-marker {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	box-sizing: border-box;
+	border: 0;
+	border-radius: 50%;
+	padding: 0;
+	pointer-events: auto;
+	cursor: pointer;
+}
+.writing-assist-marker--margin, .writing-assist-marker--end { width: 28px; height: 28px; }
+.writing-assist-marker:focus-visible { outline: 2px solid var(--color-sea-blue); outline-offset: 2px; }
