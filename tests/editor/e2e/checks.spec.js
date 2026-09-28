@@ -140,6 +140,12 @@ ${sentences.mixed}
 		const hedgingRequest = generateRequests.find((request) => request.purpose === "hedging");
 		assert.ok(hedgingRequest.messages.map((message) => message.content).join("\n").includes("overclaiming"),
 			"hedging direction must be included in the model-visible messages");
+		await page.locator(".writing-assist-marker--citation").hover();
+		await expect(tooltip).toContainText("Citation needed");
+		const citationCard = await tooltip.boundingBox();
+		await page.mouse.move(citationCard.x + 20, citationCard.y + 20, { steps: 12 });
+		await page.waitForTimeout(200);
+		await expect(tooltip).toBeVisible();
 	});
 
 	test("keeps a cliché hover card open across the pointer gap and pins a clicked suggestion", async ({ page }) => {

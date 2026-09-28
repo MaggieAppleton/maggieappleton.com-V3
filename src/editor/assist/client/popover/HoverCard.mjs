@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const defaultClock = {
 	setTimer: (callback, delay) => globalThis.setTimeout(callback, delay),
@@ -54,11 +54,21 @@ function position(anchorRect) {
 
 /** `active` means the target is hovered; the card owns its open/grace timing. */
 export function HoverCard({ active = false, visible: forcedVisible, anchorRect, children, interactive = false,
-	onClose = () => {}, openDelay = 250, leaveDelay = 150 }) {
+	onClose = () => {}, openDelay = 250, leaveDelay = 150, dismissOnScroll = false, passive = false }) {
 	const [visible, setVisible] = useState(false);
 	const onCloseRef = useRef(onClose);
 	onCloseRef.current = onClose;
 	const controller = useRef(null);
+	const cardRef = useRef(null);
+	const enterCard = useCallback(() => controller.current?.enterCard(), []);
+	const leaveCard = useCallback(() => controller.current?.leaveCard(), []);
+	const attachCard = useCallback((card) => {
+		cardRef.current?.removeEventListener("pointerenter", enterCard);
+		cardRef.current?.removeEventListener("pointerleave", leaveCard);
+		cardRef.current = card;
+		card?.addEventListener("pointerenter", enterCard);
+		card?.addEventListener("pointerleave", leaveCard);
+	}, [enterCard, leaveCard]);
 	useEffect(() => {
 		controller.current = createHoverController({
 			openDelay, leaveDelay,
@@ -70,14 +80,19 @@ export function HoverCard({ active = false, visible: forcedVisible, anchorRect, 
 		if (active) controller.current?.enterTarget();
 		else controller.current?.leaveTarget();
 	}, [active]);
+	useEffect(() => {
+		if (!dismissOnScroll) return undefined;
+		const dismiss = () => { controller.current?.dispose(); onCloseRef.current(); };
+		window.addEventListener("scroll", dismiss, true);
+		return () => window.removeEventListener("scroll", dismiss, true);
+	}, [dismissOnScroll]);
 	if (!(forcedVisible ?? visible)) return null;
 	return React.createElement("div", {
+		ref: attachCard,
 		className: "wa-hover-card",
 		role: interactive ? "group" : "tooltip",
 		...(interactive ? { "aria-label": "Writing Assist suggestions" } : {}),
-		style: position(anchorRect),
-		onPointerEnter: () => controller.current?.enterCard(),
-		onPointerLeave: () => controller.current?.leaveCard(),
+		style: { ...position(anchorRect), pointerEvents: passive ? "none" : undefined },
 		onFocus: () => controller.current?.enterFocus(),
 		onBlur: (event) => {
 			if (!event.currentTarget.contains(event.relatedTarget)) controller.current?.leaveFocus();

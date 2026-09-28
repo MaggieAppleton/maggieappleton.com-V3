@@ -350,6 +350,9 @@
 	background: #191b20;
 	box-shadow: 0 2px 5px rgb(0 0 0 / 18%), 0 12px 28px rgb(0 0 0 / 20%);
 }
+#local-writing-editor .local-selection-menu:has(.wa-word-finder-trigger) {
+	width: min(360px, calc(100vw - 24px));
+}
 #local-writing-editor .local-selection-menu .local-link-button-group {
 	display: grid;
 	grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -357,11 +360,17 @@
 	border: 0;
 	background: transparent;
 }
+#local-writing-editor .local-selection-menu:has(.wa-word-finder-trigger) .local-link-button-group {
+	grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(110px, 140px);
+}
 #local-writing-editor .local-selection-menu .local-link-button {
 	width: auto;
 	min-width: 0;
 	min-height: 34px;
+	border: 0;
 }
+#local-writing-editor .local-selection-word-finder { display: contents; }
+#local-writing-editor .local-selection-menu .wa-word-finder-trigger { gap: 6px; padding: 0 8px; }
 #local-writing-editor .local-selection-menu .local-link-button[aria-pressed="true"] {
 	background: #414750;
 	color: white;

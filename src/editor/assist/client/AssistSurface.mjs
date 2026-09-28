@@ -73,6 +73,7 @@ export function AssistSurface({
 			map: mapAnnotation?.data?.map, loading: mapOpen && !mapAnnotation && !mapError, error: mapError }), document.body),
 		hover && createPortal(React.createElement(HoverCard, { key: hover.annotation.id,
 			active: hover.active && !pinned, anchorRect: hover.anchorRect,
+			...(hover.annotation.tool === "roles" ? { openDelay: 550, leaveDelay: 75, dismissOnScroll: true, passive: true } : {}),
 			interactive: hover.annotation.tool === "links" || hover.annotation.tool === "checks"
 				&& ["cliche", "hedging"].includes(hover.annotation.kind),
 			onClose: () => setHover(null),

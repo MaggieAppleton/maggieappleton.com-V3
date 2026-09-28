@@ -46,6 +46,24 @@ test("hover waits 250 ms and gives 150 ms to move from target into card", () => 
 	hover.dispose();
 });
 
+test("sentence role hover can wait longer to open and close shortly after exit", () => {
+	const timer = clock();
+	const changes = [];
+	const hover = createHoverController({ onVisible: (visible) => changes.push(visible),
+		openDelay: 550, leaveDelay: 75, clock: timer });
+	hover.enterTarget();
+	timer.tick(549);
+	assert.deepEqual(changes, []);
+	timer.tick(1);
+	assert.deepEqual(changes, [true]);
+	hover.leaveTarget();
+	timer.tick(74);
+	assert.deepEqual(changes, [true]);
+	timer.tick(1);
+	assert.deepEqual(changes, [true, false]);
+	hover.dispose();
+});
+
 test("default hover timers retain the browser host binding", async () => {
 	const originalSet = globalThis.setTimeout;
 	const originalClear = globalThis.clearTimeout;
@@ -70,7 +88,7 @@ test("default hover timers retain the browser host binding", async () => {
 
 test("hover and pinned popovers keep body slots and accessible controls", () => {
 	const hover = renderToStaticMarkup(React.createElement(HoverCard, {
-		active: true, visible: true, anchorRect: { left: 20, bottom: 30 },
+		active: true, visible: true, passive: true, anchorRect: { left: 20, bottom: 30 },
 		children: React.createElement("span", null, "60% Opinion"),
 	}));
 	assert.match(hover, /60% Opinion/);

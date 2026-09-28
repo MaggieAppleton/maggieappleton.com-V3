@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { hash, normaliseText } from "../shared/hash.mjs";
 
@@ -101,11 +102,6 @@ export function popoverPosition(anchor, panel, viewport) {
 	return { left, top: Math.min(top, Math.max(margin, viewport.height - panel.height - margin)) };
 }
 
-export function triggerPosition(anchor, width, viewport) {
-	return { left: Math.max(12, Math.min(anchor.right, viewport.width - width - 12)),
-		top: Math.max(12, anchor.top - 34) };
-}
-
 export function selectionIdentity(selection) {
 	return hash(selection.blockId, selection.sentence, selection.start, selection.end, selection.text);
 }
@@ -202,22 +198,24 @@ function WordFinderPopover({ selection, finder, controller, onClose, fallbackFoc
 
 export function WordFinder({ controller, transport, root, available = false, pinned, busy = false, onOpen, onClose }) {
 	const [selection, setSelection] = useState(null);
-	const [pillPosition, setPillPosition] = useState({ left: 12, top: 12 });
-	const pill = useRef(null);
+	const [toolbarSlot, setToolbarSlot] = useState(null);
 	const opened = pinned;
 	const openedRef = useRef(opened);
 	openedRef.current = opened || busy;
 	const finder = useRef(createWordFinder({ transport }));
 	useEffect(() => { finder.current = createWordFinder({ transport }); }, [transport]);
-	useLayoutEffect(() => {
-		const view = pill.current?.ownerDocument.defaultView;
-		if (!selection || !view) return undefined;
-		const place = () => setPillPosition(triggerPosition(selection.anchorRect,
-			pill.current.getBoundingClientRect().width, { width: view.innerWidth }));
-		place();
-		view.addEventListener("resize", place);
-		return () => view.removeEventListener("resize", place);
-	}, [selection, busy]);
+	useEffect(() => {
+		const container = root?.closest(".mdxeditor");
+		if (!available || !container) return undefined;
+		const update = () => {
+			const slot = container.querySelector(".local-selection-word-finder");
+			setToolbarSlot((current) => current === slot ? current : slot);
+		};
+		const observer = new MutationObserver(update);
+		observer.observe(container, { childList: true });
+		update();
+		return () => { observer.disconnect(); setToolbarSlot(null); };
+	}, [available, root]);
 	useEffect(() => {
 		if (!available || !root || !controller) return undefined;
 		let timer;
@@ -244,9 +242,10 @@ export function WordFinder({ controller, transport, root, available = false, pin
 	}, [available, root, controller, onOpen]);
 	if (!available) return null;
 	return React.createElement(React.Fragment, null,
-		selection && !busy && React.createElement("button", { ref: pill, type: "button", className: "wa-word-finder-trigger editor-dock-pill",
-			style: pillPosition, onMouseDown: (event) => event.preventDefault(),
-			onClick: () => { setSelection(null); onOpen(selection); } }, React.createElement(MagnifyingGlassIcon, { size: 14 }), "Find words"),
+		toolbarSlot && createPortal(React.createElement("button", { type: "button", className: "wa-word-finder-trigger local-link-button",
+			"data-variant": "ghost", disabled: !selection || busy, title: "Find words",
+			onMouseDown: (event) => event.preventDefault(),
+			onClick: () => { setSelection(null); onOpen(selection); } }, React.createElement(MagnifyingGlassIcon, { size: 14 }), "Find words"), toolbarSlot),
 		opened && React.createElement(WordFinderPopover, { key: selectionIdentity(opened), selection: opened, finder: finder.current, controller,
 			fallbackFocus: root, onClose }));
 }
