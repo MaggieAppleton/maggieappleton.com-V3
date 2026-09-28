@@ -18,6 +18,20 @@ function responseJson(response) {
 	catch { throw new EditorServiceError(502, "invalid_citation_response", "The citation model returned invalid JSON"); }
 }
 
+export function citationGenerationRequest(input, model) {
+	const extraction = input.kind === "extract";
+	const payload = extraction
+		? { sentence: input.sentence }
+		: { claim: input.claim, sourceType: input.sourceType, pageText: input.pageText };
+	return {
+		model,
+		instructions: extraction ? extractionInstructions : assessmentInstructions,
+		input: `Return a JSON object for this input: ${JSON.stringify(payload)}`,
+		text: { format: { type: "json_object" } },
+		max_output_tokens: extraction ? 6000 : 1200,
+	};
+}
+
 export function discoveryUrls(response) {
 	if (!response.output?.some((item) => item.type === "web_search_call")) return [];
 	const urls = [];
@@ -37,16 +51,7 @@ function citationService() {
 	const model = assistConfig.tools.checks.generator.model;
 	return createCitationService({
 		async generate(input) {
-			const extraction = input.kind === "extract";
-			const response = await client.responses.create({
-				model,
-				instructions: extraction ? extractionInstructions : assessmentInstructions,
-				input: extraction
-					? JSON.stringify({ sentence: input.sentence })
-					: JSON.stringify({ claim: input.claim, sourceType: input.sourceType, pageText: input.pageText }),
-				text: { format: { type: "json_object" } },
-				max_output_tokens: extraction ? 6000 : 1200,
-			}, { signal: input.signal });
+			const response = await client.responses.create(citationGenerationRequest(input, model), { signal: input.signal });
 			return responseJson(response);
 		},
 		async search({ claim, sourceType, signal }) {
