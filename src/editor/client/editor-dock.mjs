@@ -152,12 +152,28 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 		if (hadFocus) requestAnimationFrame(() => buttonRef.current?.focus());
 	}
 
-	function onPanelKeyDown(event) {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			closePanel();
+	useEffect(() => {
+		if (!open || !hasActions) return;
+		function onKeyDown(event) {
+			if (event.key === "Escape" && !event.defaultPrevented) {
+				event.preventDefault();
+				// Dismiss before the editor's own Escape shortcut blurs the writing field.
+				event.stopPropagation();
+				closePanel();
+			}
 		}
-	}
+		function onPointerDown(event) {
+			if (panelRef.current?.contains(event.target) || buttonRef.current?.contains(event.target)) return;
+			// Let the clicked control or writing field receive focus naturally.
+			setOpen(false);
+		}
+		document.addEventListener("keydown", onKeyDown, true);
+		document.addEventListener("pointerdown", onPointerDown, true);
+		return () => {
+			document.removeEventListener("keydown", onKeyDown, true);
+			document.removeEventListener("pointerdown", onPointerDown, true);
+		};
+	}, [open, hasActions]);
 
 	return React.createElement("div", { className: "editor-dock" },
 		assistOpen && React.createElement(AssistPanel, {
@@ -167,18 +183,19 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 			onClose: closeAssist,
 		}),
 		open && hasActions && React.createElement("div", { id: "editor-dock-panel", ref: panelRef,
-			className: "editor-dock-panel", role: "region", "aria-label": "Writing editor details",
-			onKeyDown: onPanelKeyDown },
+			className: "editor-dock-panel", role: "region", "aria-label": "Writing editor details" },
 			protectedWarning && React.createElement(PanelSection, { title: "Writing notice", alert: true },
 				React.createElement("p", null, protectedWarning)),
 			copyError && React.createElement(PanelSection, { title: "Copy unavailable", alert: true },
 				React.createElement("p", null, copyError)),
 			recovery.length > 0 && React.createElement(PanelSection, { title: "Unsaved writing found" },
 				React.createElement("p", null, "A browser version from an earlier session is available."),
-				recovery.map((candidate) => React.createElement("button", {
-					key: `${candidate.writerId}:${candidate.generation}`, type: "button",
-					onClick: () => onRestoreRecovery(candidate),
-				}, "Recover browser version"))),
+				React.createElement("div", { className: "editor-dock-actions" },
+					recovery.map((candidate) => React.createElement("button", {
+						key: `${candidate.writerId}:${candidate.generation}`, type: "button",
+						onClick: () => onRestoreRecovery(candidate),
+					}, "Recover browser version")),
+					React.createElement("button", { type: "button", onClick: closePanel }, "Not now"))),
 			discarded.length > 0 && React.createElement(PanelSection, { title: "Previous browser version" },
 				React.createElement("p", null, "A version set aside during recovery is still available."),
 				discarded.map((candidate) => React.createElement("div", { className: "editor-dock-actions", key: candidate.storageKey },

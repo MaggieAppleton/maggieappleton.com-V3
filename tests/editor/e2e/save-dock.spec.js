@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 import { createFixtureProject, startFixtureServer } from "../fixture-project.mjs";
@@ -66,6 +67,58 @@ Writing to save.\n`);
 			await page.keyboard.press("Enter");
 		} else await save.click();
 	}
+
+	test("dismisses recovery without losing the browser copy or leaving the editor", async ({ page }) => {
+		test.setTimeout(120_000);
+		await openEditor(page);
+		const diskSource = await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8");
+		const backup = await page.evaluate(async () => {
+			const { createEditorSession } = await import("/src/editor/client/session.mjs");
+			const boot = JSON.parse(document.getElementById("local-editor-bootstrap").textContent);
+			const writerId = crypto.randomUUID();
+			const session = createEditorSession({
+				documentId: boot.documentId, worktreeId: boot.document.worktreeId,
+				revision: boot.document.revision, source: boot.document.source, writerId,
+				save: () => { throw new Error("The closed session must not save"); },
+			});
+			session.edit(`${boot.document.source}\nAn earlier unsaved paragraph.\n`);
+			session.dispose();
+			const key = `local-writing-editor:v1:${boot.document.worktreeId}:${boot.documentId}:${writerId}`;
+			return { key, value: localStorage.getItem(key) };
+		});
+		await page.reload();
+		const panel = page.getByRole("region", { name: "Writing editor details" });
+		const details = page.getByRole("button", { name: "Details", exact: true });
+		const body = page.getByRole("textbox", { name: "Article body" });
+		await expect(panel).toContainText("Unsaved writing found");
+		await expect(page.getByRole("button", { name: "Not now", exact: true })).toBeVisible();
+		await page.getByRole("button", { name: "Not now", exact: true }).click();
+		await expect(panel).toBeHidden();
+		await expect(details).toBeFocused();
+
+		await details.click();
+		await body.focus();
+		await page.keyboard.press("Escape");
+		await expect(panel).toBeHidden();
+		await expect(body).toBeFocused();
+
+		await details.click();
+		await body.click();
+		await expect(panel).toBeHidden();
+		await expect(body).toBeFocused();
+
+		await details.click();
+		await panel.getByText("Unsaved writing found", { exact: true }).click();
+		await expect(panel).toBeVisible();
+		await page.getByRole("button", { name: "Recover browser version" }).focus();
+		await page.keyboard.press("Escape");
+		await expect(panel).toBeHidden();
+		await expect(details).toBeFocused();
+		await details.click();
+		await expect(page.getByRole("button", { name: "Recover browser version" })).toBeVisible();
+		expect(await page.evaluate((key) => localStorage.getItem(key), backup.key)).toBe(backup.value);
+		expect(await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8")).toBe(diskSource);
+	});
 
 	test("keeps Save accessible while announcing its visual state separately", async ({ page }) => {
 		test.setTimeout(120_000);
