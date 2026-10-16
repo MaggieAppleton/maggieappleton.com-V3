@@ -1,7 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import { file } from "astro/loaders";
-import { createContentDate, createEssaySchema, createNoteSchema } from "./publication-schemas.mjs";
+import { createContentDate, createEssaySchema, createNoteSchema, createTalkSchema } from "./publication-schemas.mjs";
 
 // Validate authored strings before Date coercion can normalize invalid days.
 const contentDate = createContentDate(z);
@@ -36,27 +36,7 @@ const patternsCollection = defineCollection({
 
 const talksCollection = defineCollection({
   loader: glob({ pattern: "**/*.mdx", base: "./src/content/talks" }),
-  schema: ({ image }) =>
-    z.object({
-      title: z.string(),
-      description: z.string(),
-      startDate: contentDate,
-      updated: contentDate,
-      type: z.literal("talk"),
-      topics: z.array(z.string()),
-      growthStage: z.string(),
-      conferences: z.array(
-        z.object({
-          name: z.string(),
-          date: z.string(),
-          location: z.string(),
-        }),
-      ),
-      cover: image(),
-      draft: z.boolean().optional(),
-      version: z.number().optional(),
-      versionSummary: z.string().optional(),
-    }),
+  schema: ({ image }) => createTalkSchema({ z, contentDate, image }),
 });
 
 const podcastsCollection = defineCollection({

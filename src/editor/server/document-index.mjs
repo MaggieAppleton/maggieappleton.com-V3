@@ -4,8 +4,8 @@ import matter from "gray-matter";
 import { getDraftPreviewSlug } from "../../utils/publicationRoutes.mjs";
 import { EditorServiceError } from "./errors.mjs";
 
-const COLLECTIONS = ["notes", "essays"];
-const DOCUMENT_ID = /^(notes|essays):[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
+const COLLECTIONS = ["notes", "essays", "talks"];
+const DOCUMENT_ID = /^(notes|essays|talks):[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 function within(path, root) {
 	return path === root || path.startsWith(`${root}${sep}`);

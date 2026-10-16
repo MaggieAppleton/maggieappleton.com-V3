@@ -23,7 +23,7 @@ export function remarkSourceMarkers() {
 	return (tree, file) => {
 		// render(entry) exposes this frontmatter from the compiled MDX module.
 		// It can lag behind getEntry after a file save, so identify its source.
-		if (/\/src\/content\/(notes|essays)\//.test(file.path?.replaceAll("\\", "/") ?? "")) {
+		if (/\/src\/content\/(notes|essays|talks)\//.test(file.path?.replaceAll("\\", "/") ?? "")) {
 			const frontmatter = file.data.astro.frontmatter;
 			frontmatter[EDITOR_SOURCE_FINGERPRINT] = sourceFingerprint(String(file), frontmatter);
 		}

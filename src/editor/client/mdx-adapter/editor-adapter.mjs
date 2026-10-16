@@ -109,7 +109,7 @@ export function createEditorAdapter({ source, renderedRoot = null, renderedRegis
 		plugins: [
 			headingsPlugin(), listsPlugin(), quotePlugin(), linkPlugin(), linkDialogPlugin({ LinkDialog: LocalLinkDialog }), jsxPlugin(),
 			markdownShortcutPlugin(),
-			createWritingJsxPlugin(identity.owners),
+			createWritingJsxPlugin(identity.owners, registry?.talkLayouts?.forSource(sourceDocument)),
 			createProtectedPlugin(sourceDocument, identity.owners),
 			wiki.plugin,
 			createListTabKeysPlugin(),

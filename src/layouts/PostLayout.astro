@@ -74,7 +74,7 @@ if (entry) {
 const contentTypeLabel =
 	frontmatter.type.charAt(0).toUpperCase() + frontmatter.type.slice(1);
 const editUrl = import.meta.env.DEV && process.env.LOCAL_WRITING_EDITOR_ORIGIN && !editorHmrGuard && entry
-	&& (entry.collection === "notes" || entry.collection === "essays")
+	&& ["notes", "essays", "talks"].includes(entry.collection)
 	? `/_editor?documentId=${encodeURIComponent(`${entry.collection}:${entry.id}`)}` : null;
 
 // Find the current post in linkMaps

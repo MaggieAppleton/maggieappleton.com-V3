@@ -17,6 +17,7 @@ export function createRecoveryAdapter({ candidate, originalSource, originalRegis
 	const originalRegions = protectedRegionDetails(originalSource);
 	const recoveredRegions = protectedRegionDetails(source);
 	const registry = originalRegistry && {
+		talkLayouts: originalRegistry.talkLayouts,
 		isWide(key) {
 			const originalKey = keys[key];
 			return originalRegions[originalKey]?.signature === recoveredRegions[key]?.signature

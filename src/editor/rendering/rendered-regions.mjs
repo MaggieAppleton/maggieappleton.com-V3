@@ -1,3 +1,5 @@
+import { createTalkLayouts } from "./talk-layout.mjs";
+
 export function sourceRegionKey(entry) {
 	// Astro's MDX pipeline may classify a JSX component as flow while the
 	// source parser classifies the same exact span as text JSX (for example
@@ -43,6 +45,7 @@ export function createRenderedRegionRegistry(originalRoot) {
 	}
 	if (endings.size) throw new Error("Rendered source contains unmatched end markers");
 	return {
+		talkLayouts: createTalkLayouts(originalRoot),
 		keys: () => [...regions.keys()],
 		isWide: (key) => regions.get(key)?.wide ?? false,
 		mount(key, target) {

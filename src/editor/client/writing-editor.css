@@ -35,6 +35,9 @@
 #local-writing-editor .editor-body code [data-lexical-text="true"] { white-space: pre-wrap; }
 
 #local-writing-editor .editor-body > * { grid-column: 2; }
+#local-writing-editor .editor-body > [data-writing-component="ScrollyTalkSection"] {
+	grid-column: 1 / -1;
+}
 #local-writing-editor .editor-body > .editor-protected-node:has(.editor-protected-wide) {
 	grid-column: 1 / -1;
 }

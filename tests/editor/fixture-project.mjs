@@ -28,6 +28,8 @@ const excludedProjectEntries = new Set([
   ".local-writing-editor",
   ".writing-assist",
   ".astro",
+  ".vercel",
+  ".playwright-mcp",
   "dist",
   "node_modules",
 ]);

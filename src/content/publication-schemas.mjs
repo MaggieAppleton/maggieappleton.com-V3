@@ -42,3 +42,20 @@ export function createEssaySchema({ z, contentDate, image }) {
 		versionSummary: z.string().optional(),
 	});
 }
+
+export function createTalkSchema({ z, contentDate, image }) {
+	return z.object({
+		title: z.string(),
+		description: z.string(),
+		startDate: contentDate,
+		updated: contentDate,
+		type: z.literal("talk"),
+		topics: z.array(z.string()),
+		growthStage: z.string(),
+		conferences: z.array(z.object({ name: z.string(), date: z.string(), location: z.string() })),
+		cover: image(),
+		draft: z.boolean().optional(),
+		version: z.number().optional(),
+		versionSummary: z.string().optional(),
+	});
+}

@@ -2,19 +2,20 @@ import { z } from "zod";
 import { realpathSync, statSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import sharp from "sharp";
-import { createContentDate, createEssaySchema, createNoteSchema } from "../../content/publication-schemas.mjs";
+import { createContentDate, createEssaySchema, createNoteSchema, createTalkSchema } from "../../content/publication-schemas.mjs";
 import { createSourceDocument } from "../source/document.mjs";
 import { frontmatterPatches } from "../source/frontmatter.mjs";
 import { componentShell } from "../source/jsx-shell.mjs";
 import { isProtected } from "../source/source-ledger.mjs";
+import { isWritingComponent } from "../source/writing-components.mjs";
 import { EditorServiceError } from "./errors.mjs";
 
-const SUPPORTED_COMPONENTS = new Set(["IntroParagraph", "Footnote", "AssumedAudience"]);
 const PATCHABLE = new Set(["title", "description"]);
 const contentDate = createContentDate(z);
 const schemas = {
 	notes: createNoteSchema({ z, contentDate }),
 	essays: createEssaySchema({ z, contentDate, image: () => z.string().min(1) }),
+	talks: createTalkSchema({ z, contentDate, image: () => z.string().min(1) }),
 };
 const checkedCovers = new Map();
 
@@ -46,8 +47,7 @@ function protectedSource(document) {
 function componentWrappers(document) {
 	const wrappers = [];
 	function visit(node) {
-		if ((node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement")
-			&& SUPPORTED_COMPONENTS.has(node.name)) {
+		if (isWritingComponent(node)) {
 			wrappers.push(JSON.stringify([node.name, ...componentShell(node, document.source)]));
 		}
 		for (const child of node.children ?? []) visit(child);
@@ -86,7 +86,7 @@ export async function assertPermittedSourceChange({ originalSource, candidateSou
 	if (!schema || !schema.safeParse(candidate.metadata).success) invalid("Document metadata is invalid");
 	if (record.collection === "essays") await assertEssayCover(candidate.metadata, record);
 	if (!candidate.metadata.title?.trim()
-		|| (record.collection === "essays" && !candidate.metadata.description?.trim())) {
+		|| (["essays", "talks"].includes(record.collection) && !candidate.metadata.description?.trim())) {
 		invalid("Required document metadata cannot be blank");
 	}
 	const metadataPatch = {};

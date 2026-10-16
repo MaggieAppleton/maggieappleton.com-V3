@@ -1,10 +1,8 @@
+import { isWritingComponent } from "./writing-components.mjs";
+
 const EDITABLE_TYPES = new Set([
 	"root", "paragraph", "heading", "blockquote", "list", "listItem",
 	"text", "editorWikiLink", "editorEscapedWiki", "strong", "emphasis", "inlineCode", "link", "break",
-]);
-
-const EDITABLE_COMPONENTS = new Set([
-	"IntroParagraph", "Footnote", "AssumedAudience",
 ]);
 
 export const identityOf = (node) => node?.data?.__editorId;
@@ -13,7 +11,7 @@ export function isProtected(node) {
 	if (node.data?.__editorProtected) return true;
 	if (node.type === "yaml") return true;
 	if (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") {
-		return !EDITABLE_COMPONENTS.has(node.name);
+		return !isWritingComponent(node);
 	}
 	return !EDITABLE_TYPES.has(node.type);
 }
