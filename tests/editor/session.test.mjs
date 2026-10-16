@@ -674,3 +674,94 @@ test("a rejected candidate does not spin, and a later valid edit can save", asyn
   assert.equal(session.snapshot().status, "Saved");
   session.dispose();
 });
+
+test("a restored stale copy keeps its own base, so a later reload cannot autosave it over the disk", async () => {
+  const storage = memoryStorage();
+  const old = makeSession({ storage, writerId: "old-tab" });
+  old.edit("Unsaved before outside edit.");
+  old.dispose();
+  const restoring = makeSession({ storage, writerId: "restoring-tab", revision: "rev-outside",
+    source: "Outside edit." });
+  restoring.restoreRecovery(restoring.recoveryCandidates()[0]);
+  assert.ok(restoring.snapshot().conflict);
+  restoring.dispose();
+
+  const timer = manualClock();
+  const saver = deferredSaver();
+  const reloaded = makeSession({ storage, writerId: "reloaded-tab", revision: "rev-outside",
+    source: "Outside edit.", timer, save: saver.save });
+  const [candidate] = reloaded.recoveryCandidates();
+  assert.equal(candidate.source, "Unsaved before outside edit.");
+  assert.equal(candidate.baseRevision, "rev-0");
+  assert.equal(candidate.baseSource, "Original.");
+  reloaded.restoreRecovery(candidate);
+  assert.ok(reloaded.snapshot().conflict, "the reloaded copy still needs reconciling with the disk");
+  await timer.advance(2_000);
+  assert.equal(saver.calls.length, 0);
+  reloaded.dispose();
+});
+
+test("a conflict resolution is adopted only after the disk accepts it", async () => {
+  const storage = memoryStorage();
+  const saver = deferredSaver();
+  const session = makeSession({ storage, save: saver.save });
+  session.edit("Local edit.");
+  session.observeDisk({ source: "Disk edit.", revision: "rev-outside" });
+  assert.equal(session.snapshot().conflict.revision, "rev-outside");
+
+  const rejected = session.resolveConflict("Merged edit.");
+  assert.equal(saver.calls[0].request.baseRevision, "rev-outside");
+  saver.calls[0].reject(Object.assign(new Error("Document metadata is invalid"),
+    { status: 422, code: "invalid_document" }));
+  await assert.rejects(rejected);
+  assert.equal(session.snapshot().source, "Local edit.");
+  assert.equal(session.snapshot().conflict.revision, "rev-outside");
+  assert.equal(session.snapshot().error.code, "invalid_document");
+
+  const resolved = session.resolveConflict("Merged edit.");
+  saver.calls[1].resolve({ revision: "rev-merged" });
+  await resolved;
+  const state = session.snapshot();
+  assert.equal(state.conflict, null);
+  assert.equal(state.source, "Merged edit.");
+  assert.equal(state.revision, "rev-merged");
+  assert.equal(state.dirty, false);
+  assert.deepEqual(session.recoveryCandidates(), []);
+  session.dispose();
+});
+
+test("loading the disk sets aside only writing that was never saved", () => {
+  const storage = memoryStorage();
+  const clean = makeSession({ storage, writerId: "clean-tab" });
+  clean.observeDisk({ source: "Disk edit.", revision: "rev-outside" });
+  assert.equal(clean.acceptDisk(clean.snapshot().conflict), null);
+  assert.deepEqual(clean.discardedCopies(), []);
+
+  const dirty = makeSession({ storage, writerId: "dirty-tab" });
+  dirty.edit("Unsaved words.");
+  dirty.observeDisk({ source: "Disk edit.", revision: "rev-outside" });
+  dirty.acceptDisk(dirty.snapshot().conflict, { requireArchive: true });
+  assert.deepEqual(dirty.discardedCopies().map((copy) => copy.source), ["Unsaved words."]);
+
+  const full = memoryStorage();
+  const blocked = makeSession({ storage: full, writerId: "full-tab" });
+  blocked.edit("Words with nowhere to go.");
+  blocked.observeDisk({ source: "Disk edit.", revision: "rev-outside" });
+  full.setItem = () => { throw new Error("QuotaExceededError"); };
+  assert.throws(() => blocked.acceptDisk(blocked.snapshot().conflict, { requireArchive: true }));
+  assert.equal(blocked.snapshot().source, "Words with nowhere to go.");
+  assert.ok(blocked.snapshot().conflict, "the writer still chooses after the archive fails");
+});
+
+test("recovery records that already match the disk are forgotten", () => {
+  const storage = memoryStorage();
+  const saved = makeSession({ storage, writerId: "saved-tab" });
+  saved.edit("Saved elsewhere.");
+  saved.dispose();
+  const unsaved = makeSession({ storage, writerId: "unsaved-tab" });
+  unsaved.edit("Never saved.");
+  unsaved.dispose();
+  const reopened = makeSession({ storage, writerId: "reopened-tab", revision: "rev-1", source: "Saved elsewhere." });
+  reopened.pruneRecovery("Saved elsewhere.");
+  assert.deepEqual(reopened.recoveryCandidates().map((candidate) => candidate.source), ["Never saved."]);
+});

@@ -29,8 +29,14 @@ export function createDocumentIndex({ projectRoot, fs = defaultFs, loadEntries }
 	let rootReal;
 	let records = new Map();
 	let trustedPaths = new Map();
+	let rescanning = null;
 	return {
 		get projectRoot() { return rootReal ?? resolve(projectRoot); },
+		/** Share one rescan between concurrent lookups of a missing document. */
+		rescan() {
+			rescanning ??= this.refresh().finally(() => { rescanning = null; });
+			return rescanning;
+		},
 		async refresh() {
 			rootReal = await fs.realpath(projectRoot);
 			const scanned = new Map();
@@ -94,6 +100,8 @@ export function createDocumentIndex({ projectRoot, fs = defaultFs, loadEntries }
 			if (typeof documentId !== "string" || !DOCUMENT_ID.test(documentId)) {
 				throw new EditorServiceError(400, "invalid_document_id", "Invalid document identity");
 			}
+			// Notes created or renamed after the dev server started need a fresh scan.
+			if (!records.has(documentId)) await this.rescan();
 			const record = records.get(documentId);
 			if (!record) throw new EditorServiceError(404, "document_missing", "Document is not indexed");
 			return { ...record };

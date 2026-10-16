@@ -51,7 +51,13 @@ export function createDocumentTransport({ boot, onDisk, onReconnect }) {
 			await renewToken();
 			({ response, body } = await send());
 		}
-		const result = JSON.parse(body);
+		let result;
+		try { result = JSON.parse(body); }
+		catch {
+			// A restarting dev server can answer with an HTML error page. Without a
+			// status this stays an unconfirmed save that retries on reconnect.
+			throw new Error(`The dev server sent an unexpected response (${response.status})`);
+		}
 		if (!response.ok) throw Object.assign(new Error(result.error?.message ?? "Writing request failed"),
 			result.error, { status: response.status });
 		return result;

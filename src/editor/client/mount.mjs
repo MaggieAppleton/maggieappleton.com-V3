@@ -7,6 +7,7 @@ import { createRecoveryAdapter } from "./mdx-adapter/recovery-adapter.mjs";
 import { RenderedRegionContext } from "./mdx-adapter/protected-node.mjs";
 import { createEditorSession } from "./session.mjs";
 import { createSourceDocument } from "../source/document.mjs";
+import { mergeSources } from "../source/merge.mjs";
 import { createDocumentTransport } from "./document-transport.mjs";
 import { sourceForBrowserBackup } from "./backup-source.mjs";
 import { EditorDock, MountFailureDock } from "./editor-dock.mjs";
@@ -28,6 +29,13 @@ function plainTextField(element, label, onChange) {
 	element.addEventListener("input", () => onChange(element.innerText));
 }
 
+const scrollKey = (documentId) => `local-writing-editor:scroll:${documentId}`;
+
+function parses(source) {
+	try { createSourceDocument(source); return true; }
+	catch { return false; }
+}
+
 function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const editorRef = useRef(null);
 	const [adapterState, setAdapterState] = useState({ adapter: initialAdapter, key: "initial" });
@@ -40,6 +48,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
 	const [protectedWarning, setProtectedWarning] = useState(null);
+	// The conflict revision that automatic reconciliation could not settle.
+	const [settledConflict, setSettledConflict] = useState(null);
+	const writerIdRef = useRef(null);
 	const assist = useAssistWorkspace({ article, boot, adapterKey: adapterState.key });
 	const sessionRef = useRef(null);
 	const transportRef = useRef(null);
@@ -48,6 +59,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		// writer for each mount keeps their unsaved records independent; reloads
 		// discover the previous record through recoveryCandidates().
 		const writerId = crypto.randomUUID();
+		writerIdRef.current = writerId;
 		transportRef.current = createDocumentTransport({ boot,
 			onDisk: (current) => sessionRef.current?.observeDisk(current),
 			onReconnect: () => {
@@ -103,6 +115,9 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		};
 		const composing = () => session.compositionStart();
 		const composed = () => queueMicrotask(() => changed(true));
+		// Some input methods never send compositionend when focus leaves mid-word,
+		// which would otherwise suspend autosave indefinitely.
+		const left = () => { if (session.snapshot().composing) queueMicrotask(() => changed(true)); };
 		const beforeUnload = (event) => {
 			if (session.snapshot().dirty || session.snapshot().inFlight) {
 				event.preventDefault();
@@ -119,11 +134,22 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		window.addEventListener("local-editor-protected-edit", blockedProtectedEdit);
 		article.addEventListener("compositionstart", composing);
 		article.addEventListener("compositionend", composed);
+		article.addEventListener("focusout", left);
 		window.addEventListener("beforeunload", beforeUnload);
 		window.addEventListener("keydown", keyboardSave);
-		setRecovery(session.recoveryCandidates().filter((candidate) =>
-			candidate.conversionFailed || candidate.source !== boot.document.source));
+		session.pruneRecovery(boot.document.source);
+		const otherRecovery = () => session.recoveryCandidates().filter((candidate) =>
+			candidate.writerId !== writerIdRef.current
+			&& (candidate.conversionFailed || candidate.source !== session.snapshot().baseSource));
+		setRecovery(otherRecovery());
 		setDiscarded(session.discardedCopies());
+		// Another tab saving its writing retires its record; drop it from this prompt too.
+		const storageChanged = (event) => {
+			if (event.key !== null && !event.key.startsWith("local-writing-editor:v1:")) return;
+			setRecovery((current) => current.length ? otherRecovery() : current);
+			setDiscarded(session.discardedCopies());
+		};
+		window.addEventListener("storage", storageChanged);
 		return () => {
 			transportRef.current.stopObserving();
 			window.removeEventListener("local-editor-metadata-change", metadataChanged);
@@ -131,6 +157,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			clearTimeout(warningTimer);
 			article.removeEventListener("compositionstart", composing);
 			article.removeEventListener("compositionend", composed);
+			article.removeEventListener("focusout", left);
+			window.removeEventListener("storage", storageChanged);
 			window.removeEventListener("beforeunload", beforeUnload);
 			window.removeEventListener("keydown", keyboardSave);
 			session.dispose();
@@ -141,6 +169,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		const captureReadyBaseline = () => {
 			const currentAdapter = adapterRef.current;
 			if (currentAdapter.baselineReady()) {
+				restoreScroll();
 				if (pendingRecoveryKey.current === adapterState.key) {
 					pendingRecoveryKey.current = null;
 					setRecovery([]);
@@ -178,33 +207,103 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		}
 	}
 
-	async function acceptDisk(backupPrepared) {
-		const expected = { generation: state.generation, source: browserCopy(state), conflict: state.conflict };
-		if (!backupPrepared) try {
-			// A clipboard copy survives reload even when recovery storage is denied or full.
-			await navigator.clipboard.writeText(expected.source);
-		} catch {
-			setProtectedWarning("Copy or download the browser version before loading the disk.");
-			return;
-		}
-		const current = session.snapshot();
-		if (current.generation !== expected.generation || browserCopy(current) !== expected.source
-			|| current.conflict?.revision !== expected.conflict?.revision) {
-			setProtectedWarning("Writing changed while preparing a backup. Copy or download the current version before loading the disk.");
-			return;
-		}
-		session.acceptDisk(expected.conflict);
+	function restoreScroll() {
+		try {
+			const saved = sessionStorage.getItem(scrollKey(boot.documentId));
+			if (saved === null) return;
+			sessionStorage.removeItem(scrollKey(boot.documentId));
+			window.scrollTo({ top: Number(saved) || 0, behavior: "instant" });
+		} catch { /* Scroll position is a convenience. */ }
+	}
+	function reloadPage() {
+		try { sessionStorage.setItem(scrollKey(boot.documentId), String(window.scrollY)); }
+		catch { /* Scroll position is a convenience. */ }
 		location.reload();
 	}
+	function lockWriting(locked) {
+		for (const element of [article, document.querySelector(".title-container")]) {
+			element?.toggleAttribute("inert", locked);
+		}
+	}
+	async function saveResolution(source) {
+		lockWriting(true);
+		try {
+			const result = await session.resolveConflict(source);
+			if (result && !result.superseded) {
+				reloadPage();
+				return true;
+			}
+		} catch { /* The session keeps the conflict and its error for the dock. */ }
+		lockWriting(false);
+		return false;
+	}
+
+	// Disk changes resolve themselves wherever no writing can be lost: a clean
+	// editor reloads, and edits to different passages merge and save. Only
+	// overlapping edits ask the writer to choose.
+	useEffect(() => {
+		const conflict = state.conflict;
+		// An unfinished save reports its own outcome first; this runs again after it.
+		if (!conflict || state.resolving || state.inFlight || settledConflict === conflict.revision) return;
+		const live = session.snapshot();
+		const settle = () => setSettledConflict(conflict.revision);
+		if (live.conversionError) return settle();
+		if (!parses(conflict.source)) {
+			setProtectedWarning("The file on disk has an MDX syntax error. Fix it there and the editor will catch up, or keep your edits here.");
+			return settle();
+		}
+		if (!live.dirty && !live.uncertain && conflict.base === undefined && live.source === live.baseSource) {
+			session.acceptDisk(conflict);
+			reloadPage();
+			return;
+		}
+		const base = conflict.base !== undefined ? conflict.base : live.baseSource;
+		const merged = typeof base === "string" ? mergeSources(base, live.source, conflict.source) : null;
+		if (!merged?.clean) return settle();
+		void saveResolution(merged.source).then((saved) => { if (!saved) settle(); });
+	}, [state.conflict, state.resolving, Boolean(state.inFlight), settledConflict]);
+
+	function keepMine() {
+		const live = session.snapshot();
+		const conflict = live.conflict;
+		if (!conflict || live.conversionError) return;
+		const base = conflict.base !== undefined ? conflict.base : live.baseSource;
+		const resolved = typeof base === "string"
+			? mergeSources(base, live.source, conflict.source, { prefer: "mine" }).source
+			: live.source;
+		// The overwritten disk passages stay available beside earlier set-aside copies.
+		session.archiveCopy(conflict.source, { baseRevision: conflict.revision });
+		setDiscarded(session.discardedCopies());
+		void saveResolution(resolved);
+	}
+
+	function acceptDisk(backupPrepared) {
+		const live = session.snapshot();
+		if (!live.conflict) return;
+		try {
+			// A stored browser copy, or a copy the writer made, must exist first.
+			session.acceptDisk(live.conflict, { requireArchive: !backupPrepared });
+		} catch {
+			setProtectedWarning("This browser can’t store a copy right now. Copy or download your version before using the file on disk.");
+			return;
+		}
+		reloadPage();
+	}
+
+	const autoResolving = Boolean(state.conflict) && settledConflict !== state.conflict.revision;
+	const dockState = autoResolving || state.resolving
+		? { ...state, conflict: null, error: null, status: "Updating from disk" }
+		: state;
 
 	return React.createElement(RenderedRegionContext.Provider, { value: adapter.registry },
-		React.createElement(EditorDock, { previewUrl: boot.document.previewUrl, state, recovery, discarded,
+		React.createElement(EditorDock, { previewUrl: boot.document.previewUrl, state: dockState, recovery, discarded,
 			protectedWarning, onRestoreRecovery: restoreRecovery,
 			...assist.dock,
 			onClearDiscarded: (candidate) => {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
-			}, onAcceptDisk: acceptDisk, onRetry: () => session.retry(), sourceForBackup: browserCopy }),
+			}, onAcceptDisk: acceptDisk, onKeepMine: keepMine, onRetry: () => session.retry(),
+			sourceForBackup: browserCopy }),
 		React.createElement(MDXEditor, {
 			key: adapterState.key,
 			ref: editorRef,

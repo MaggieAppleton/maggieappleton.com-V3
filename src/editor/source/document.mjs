@@ -69,9 +69,27 @@ export function createSourceDocument(source) {
 	return { source, body: root, metadata: frontmatter.metadata, ledger, frontmatter };
 }
 
-function markdownFragment(node) {
-	const result = toMarkdown(node, markdownOptions);
-	return result.endsWith("\n") ? result.slice(0, -1) : result;
+const PHRASING_TYPES = new Set(["text", "emphasis", "strong", "delete", "inlineCode", "link", "break"]);
+
+function markdownFragment(node, { first = true, last = true } = {}) {
+	if (!PHRASING_TYPES.has(node.type)) {
+		const result = toMarkdown(node, markdownOptions);
+		return result.endsWith("\n") ? result.slice(0, -1) : result;
+	}
+	// MDX and GFM escapes such as \{, \< and \~ apply only inside a paragraph.
+	// Plain guard letters stand in for neighbouring siblings, so a fragment in
+	// mid-paragraph does not gain the escapes a paragraph edge needs.
+	const guard = () => ({ type: "text", value: "x" });
+	const children = [...(first ? [] : [guard()]), node, ...(last ? [] : [guard()])];
+	let result = toMarkdown({ type: "paragraph", children }, markdownOptions).replace(/\n$/u, "");
+	if (!first) result = result.slice(1);
+	if (!last) result = result.slice(0, -1);
+	return result;
+}
+
+/** A paragraph that opens with import/export would be read as MDX ESM. */
+function guardParagraphStart(source) {
+	return source.replace(/^(?:import|export)\b/u, (word) => `&#${word.codePointAt(0)};${word.slice(1)}`);
 }
 
 function changedTextSource(node, entry, ledger) {
@@ -205,7 +223,8 @@ function renderChildren(node, entry, ledger, renderNode) {
 		} else if (sameOrder) {
 			// The original prefix already contains the exact leading whitespace.
 		}
-		let childSource = preserveUnderscoreEmphasis(renderNode(child), child, children[index + 1], ledger);
+		let childSource = preserveUnderscoreEmphasis(renderNode(child,
+			{ first: index === 0, last: index === children.length - 1 }), child, children[index + 1], ledger);
 		if (node.type === "paragraph" && index === children.length - 1 && child.type === "text"
 			&& child.value.endsWith(" ")) {
 			// Markdown discards literal spaces at a paragraph end. Character references
@@ -224,7 +243,11 @@ function renderBody(document, body) {
 	const { ledger } = document;
 	reconcileIdentities(body, ledger);
 	assertProtectedRegions(body, ledger);
-	function renderNode(node) {
+	function renderNode(node, position) {
+		const source = renderNodeSource(node, position);
+		return node.type === "paragraph" ? guardParagraphStart(source) : source;
+	}
+	function renderNodeSource(node, position) {
 		const entry = ledger.nodes.get(identityOf(node));
 		if (!entry) {
 			if (node.type === "editorWikiLink" || node.type === "editorEscapedWiki") {
@@ -234,7 +257,7 @@ function renderBody(document, body) {
 			if (isProtected(node) || node.type.startsWith("mdxJsx")) {
 				throw new Error(`Cannot insert unsupported ${node.type} content`);
 			}
-			return markdownFragment(node);
+			return markdownFragment(node, position);
 		}
 		if (sameSemantic(node, entry.snapshot)) return ledger.source.slice(entry.start, entry.end);
 		if (entry.protected) throw new Error(`Protected ${entry.type} source cannot be edited`);
@@ -248,10 +271,10 @@ function renderBody(document, body) {
 			if (hasProtectedDescendant(node, ledger)) {
 				throw new Error(`Cannot rewrite ${entry.type} around protected content`);
 			}
-			return markdownFragment(node);
+			return markdownFragment(node, position);
 		}
 		if (node.children) return renderChildren(node, entry, ledger, renderNode);
-		return markdownFragment(node);
+		return markdownFragment(node, position);
 	}
 	return renderNode(body);
 }

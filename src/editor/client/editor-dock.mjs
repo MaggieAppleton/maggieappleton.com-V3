@@ -32,8 +32,24 @@ function TechnicalDetails({ error }) {
 	);
 }
 
+function savedAgo(timestamp, now = Date.now()) {
+	if (!Number.isFinite(timestamp)) return "an earlier session";
+	const minutes = Math.round((now - timestamp) / 60_000);
+	if (minutes < 1) return "just now";
+	if (minutes < 60) return `${minutes} min ago`;
+	const hours = Math.round(minutes / 60);
+	if (hours < 24) return `${hours} hr ago`;
+	return new Date(timestamp).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 function saveFailureCopy(state) {
 	if (state.uncertain) return "Save couldn’t be confirmed. Your writing is still open here.";
+	if (state.error?.code === "document_missing") {
+		return "This file was moved or deleted on disk. Your writing is still open here. Save a backup.";
+	}
+	if (state.error?.code === "invalid_document") {
+		return `This version can’t be saved: ${state.error.message}. Your writing is still open here.`;
+	}
 	if (state.error?.code === "MDX_STRUCTURE_MISMATCH") {
 		return "We couldn’t convert your last edit. Your writing is still here. Undo the last change or save a backup.";
 	}
@@ -41,6 +57,7 @@ function saveFailureCopy(state) {
 }
 
 function saveStatusKind(state) {
+	if (state.resolving || state.status === "Updating from disk") return "saving";
 	const failed = Boolean(state.error || state.conflict)
 		|| state.status === "Couldn't save"
 		|| state.status === "File changed elsewhere";
@@ -80,7 +97,7 @@ function PanelSection({ title, children, alert = false }) {
 
 /** A fixed, quiet writing dock that expands only when there is something to resolve. */
 export function EditorDock({ previewUrl, state, recovery, discarded, protectedWarning,
-	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onRetry, sourceForBackup,
+	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onKeepMine = () => {}, onRetry, sourceForBackup,
 	assistOpen = false, onAssistToggle = () => {}, assistPanelProps = {},
 	mapOpen = false, onMapToggle = () => {}, hasDrawerViews = false, mapAvailable = true, mapReason = "" }) {
 	const [open, setOpen] = useState(false);
@@ -189,25 +206,38 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 			copyError && React.createElement(PanelSection, { title: "Copy unavailable", alert: true },
 				React.createElement("p", null, copyError)),
 			recovery.length > 0 && React.createElement(PanelSection, { title: "Unsaved writing found" },
-				React.createElement("p", null, "A browser version from an earlier session is available."),
+				React.createElement("p", null, recovery.length === 1
+					? "This browser kept writing that never reached the file. Recovering it merges it with the file on disk."
+					: "This browser kept writing from earlier sessions that never reached the file. Recovering one merges it with the file on disk."),
 				React.createElement("div", { className: "editor-dock-actions" },
 					recovery.map((candidate) => React.createElement("button", {
 						key: `${candidate.writerId}:${candidate.generation}`, type: "button",
 						onClick: () => onRestoreRecovery(candidate),
-					}, "Recover browser version")),
+					}, recovery.length === 1 ? "Recover browser version"
+						: `Recover version from ${savedAgo(candidate.updatedAt)}`)),
 					React.createElement("button", { type: "button", onClick: closePanel }, "Not now"))),
 			discarded.length > 0 && React.createElement(PanelSection, { title: "Previous browser version" },
-				React.createElement("p", null, "A version set aside during recovery is still available."),
+				React.createElement("p", null, discarded.length === 1
+					? `A version set aside ${savedAgo(discarded[0].updatedAt)} is still available.`
+					: `${discarded.length} versions set aside while resolving changes are still available.`),
 				discarded.map((candidate) => React.createElement("div", { className: "editor-dock-actions", key: candidate.storageKey },
 					React.createElement("button", { type: "button", onClick: () => copy(sourceForBackup(candidate)) }, "Copy discarded version"),
 					React.createElement("button", { type: "button", onClick: () => download(sourceForBackup(candidate)) }, "Download backup"),
 					React.createElement("button", { type: "button", onClick: () => onClearDiscarded(candidate) }, "Forget discarded version")))),
 			state.conflict && React.createElement(PanelSection, { title: "File changed elsewhere", alert: true },
-				React.createElement("p", null, "Copy or download your browser version before loading the file from disk."),
+				React.createElement("p", null, state.conflict.base === null
+					? "This browser version was written against an older copy of the file, so it can’t be merged automatically."
+					: "The file on disk and this browser both changed the same passage."),
+				React.createElement("p", null, state.conversionError
+					? "Undo your last change to keep your edits, or use the file on disk. Your version is set aside first."
+					: "Keep my edits saves your version of that passage and keeps every other change from disk. Either way, the version you don’t keep is set aside here."),
+				React.createElement("div", { className: "editor-dock-actions" },
+					!state.conversionError && React.createElement("button", { type: "button", onClick: onKeepMine }, "Keep my edits"),
+					React.createElement("button", { type: "button", onClick: () =>
+						onAcceptDisk(preparedBackupKey === conflictBackupKey) }, "Use file on disk")),
 				React.createElement(BackupActions, { source: sourceForBackup(state), backupKey: conflictBackupKey, onCopy: copy, onDownload: download,
-					retry: onRetry, canRetry: false, copyLabel: "Copy browser version" }),
-				React.createElement("button", { type: "button", onClick: () =>
-					onAcceptDisk(preparedBackupKey === conflictBackupKey) }, "Load disk version")),
+					retry: onRetry, canRetry: false, copyLabel: "Copy my version" }),
+				React.createElement(TechnicalDetails, { error: state.error })),
 			hasSaveFailure && React.createElement(PanelSection, { title: "Save issue", alert: true },
 				React.createElement("p", null, saveFailureCopy(state)),
 				React.createElement(BackupActions, { source: sourceForBackup(state), onCopy: copy, onDownload: download, retry: retrySave,
@@ -215,7 +245,7 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 				React.createElement(TechnicalDetails, { error: state.error })),
 			hasStorageWarning && React.createElement(PanelSection, { title: "Browser recovery unavailable", alert: true },
 				React.createElement("p", null, state.conflict
-					? "Browser recovery storage is unavailable. Use the browser-version backup controls above before loading the disk."
+					? "Browser recovery storage is unavailable. Copy or download your version above before using the file on disk."
 					: "Autosave can continue, but browser recovery storage is unavailable. Copy or download a backup."),
 				!state.conflict && React.createElement(BackupActions, { source: sourceForBackup(state), onCopy: copy, onDownload: download,
 					retry: onRetry, canRetry: false, copyLabel: "Copy browser version" }),
@@ -226,7 +256,7 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 				React.createElement(XIcon, { size: 20, "aria-hidden": "true" })),
 			React.createElement("span", { className: "editor-dock-tooltip", "aria-hidden": "true" }, "Exit editor"),
 			React.createElement("button", { type: "button", className: "editor-dock-save-button", ref: saveButtonRef, onClick: onRetry,
-				disabled: Boolean(state.conflict || state.conversionError) },
+				disabled: Boolean(state.conflict || state.conversionError || state.resolving) },
 				React.createElement(SaveStatusIcon, { state }), "Save"),
 			React.createElement(SaveLiveStatus, { state }),
 			hasActions && React.createElement("button", { className: "editor-dock-icon", type: "button", ref: buttonRef,
