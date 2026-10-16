@@ -1,0 +1,30 @@
+.reveal .slides section > .magic-move-exit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.magic-move-shared,
+.magic-move-stack-image {
+  position: relative;
+  z-index: 3;
+}
+
+.reveal .slides section > .magic-move-stack-exit {
+  z-index: 4;
+}
+
+.title-stagger-line {
+  display: inline-block;
+}
+
+.reveal .slides section > .magic-move-background-exit {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}

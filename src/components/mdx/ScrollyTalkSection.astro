@@ -6,9 +6,10 @@ type ImageEntry = string | { src: string; background?: string };
 
 interface Props {
 	images: ImageEntry[];
+	revealSrc?: string;
 }
 
-const { images } = Astro.props;
+const { images, revealSrc } = Astro.props;
 
 // An entry can be a bare src, or an object with a `background` colour. Giving a
 // background makes that slide fill the full 16:9 frame and letterbox onto the
@@ -59,10 +60,14 @@ const matteAttrs = (background?: string) =>
 const widths = [600, 900, 1200];
 ---
 
-<div class="scrolly-section" data-scrolly-id={sectionId}>
+<div class="scrolly-section" data-scrolly-id={sectionId} data-reveal-src={revealSrc}>
 	<!-- Desktop: sticky image panel -->
 	<div class="scrolly-images">
 		<div class="image-stack">
+			{revealSrc ? (
+				<iframe class="reveal-frame" src={revealSrc} title="Animated talk slides" tabindex="-1" />
+			) : (
+				<>
 			{
 				resolvedImages.map((img, i) =>
 					img.isVideo ? (
@@ -100,6 +105,8 @@ const widths = [600, 900, 1200];
 					),
 				)
 			}
+				</>
+			)}
 		</div>
 	</div>
 
@@ -146,10 +153,16 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 <script>
 	import scrollama from "scrollama";
+	import { setupRevealTalk } from "../../scripts/reveal-talk.js";
+
+	const setupRevealTalks = () => document.querySelectorAll<HTMLElement>("[data-reveal-src]").forEach(setupRevealTalk);
+	setupRevealTalks();
+	document.addEventListener("astro:page-load", setupRevealTalks);
 	(() => {
 		const scrollers: any[] = [];
 
 		document.querySelectorAll("[data-scrolly-id]").forEach((section) => {
+			if (section.hasAttribute("data-reveal-src")) return;
 			const images = section.querySelectorAll(".scrolly-img");
 			const steps = section.querySelectorAll("[data-slide]");
 			if (steps.length === 0 || images.length === 0) return;
@@ -203,6 +216,10 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 		padding: 0 var(--space-xs);
 	}
 
+	.scrolly-section[data-reveal-src] {
+		width: 100%;
+	}
+
 	/* --- Left: sticky image panel --- */
 	.scrolly-images {
 		position: sticky;
@@ -222,6 +239,24 @@ ${images.map((_, i) => `  [data-scrolly-id="${sectionId}"] .scrolly-text [data-s
 
 	.image-stack:has(.scrolly-img.active[data-img-index="0"]) {
 		margin-top: -160px;
+	}
+
+	[data-reveal-src][data-first-slide] .image-stack {
+		margin-top: -160px;
+	}
+
+	.reveal-frame {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--color-gray-100);
+		box-shadow: var(--box-shadow-sm);
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		[data-reveal-src] .image-stack { transition: none; }
 	}
 
 	.image-stack :global(picture) {
