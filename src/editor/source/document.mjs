@@ -3,12 +3,12 @@ import remarkParse from "remark-parse";
 import remarkMdx from "remark-mdx";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
-import { toMarkdown } from "mdast-util-to-markdown";
+import { defaultHandlers, toMarkdown } from "mdast-util-to-markdown";
 import { mdxToMarkdown } from "mdast-util-mdx";
 import { gfmToMarkdown } from "mdast-util-gfm";
 import { parseFrontmatter, frontmatterPatches } from "./frontmatter.mjs";
 import { openingTagEnd } from "./jsx-shell.mjs";
-import { spliceDecodedText } from "./text-source.mjs";
+import { preserveLiteralBlankLines, spliceDecodedText } from "./text-source.mjs";
 import {
 	assertProtectedRegions,
 	createSourceLedger,
@@ -32,6 +32,7 @@ const parser = unified()
 
 const markdownOptions = { bullet: "-", extensions: [mdxToMarkdown(), gfmToMarkdown()],
 	handlers: {
+		text: (...args) => preserveLiteralBlankLines(defaultHandlers.text(...args)),
 		editorWikiLink: (node) => node.value,
 		editorEscapedWiki: (node) => `\\${node.value}`,
 	} };
@@ -82,8 +83,10 @@ function markdownFragment(node, { first = true, last = true } = {}) {
 	const guard = () => ({ type: "text", value: "x" });
 	const children = [...(first ? [] : [guard()]), node, ...(last ? [] : [guard()])];
 	let result = toMarkdown({ type: "paragraph", children }, markdownOptions).replace(/\n$/u, "");
-	if (!first) result = result.slice(1);
-	if (!last) result = result.slice(0, -1);
+	// A guard beside punctuation in emphasis may serialize as a character
+	// reference. Remove the complete spelling rather than a single character.
+	if (!first) result = result.replace(/^(?:x|&#(?:x0*78|0*120);)/iu, "");
+	if (!last) result = result.replace(/(?:x|&#(?:x0*78|0*120);)$/iu, "");
 	return result;
 }
 
@@ -225,6 +228,13 @@ function renderChildren(node, entry, ledger, renderNode) {
 		}
 		let childSource = preserveUnderscoreEmphasis(renderNode(child,
 			{ first: index === 0, last: index === children.length - 1 }), child, children[index + 1], ledger);
+		if ((node.type === "emphasis" || node.type === "strong") && child.type === "text") {
+			// A typed space must not turn *words * into literal asterisks. Keep
+			// the authored markers and encode whitespace at their inner edges.
+			const encode = (value) => Array.from(value, (character) => `&#${character.codePointAt(0)};`).join("");
+			if (index === 0) childSource = childSource.replace(/^\s+/u, encode);
+			if (index === children.length - 1) childSource = childSource.replace(/\s+$/u, encode);
+		}
 		if (node.type === "paragraph" && index === children.length - 1 && child.type === "text"
 			&& child.value.endsWith(" ")) {
 			// Markdown discards literal spaces at a paragraph end. Character references

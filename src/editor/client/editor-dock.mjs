@@ -98,6 +98,7 @@ function PanelSection({ title, children, alert = false }) {
 /** A fixed, quiet writing dock that expands only when there is something to resolve. */
 export function EditorDock({ previewUrl, state, recovery, discarded, protectedWarning,
 	onRestoreRecovery, onClearDiscarded, onAcceptDisk, onKeepMine = () => {}, onRetry, sourceForBackup,
+	onBackupPrepared = () => {},
 	assistOpen = false, onAssistToggle = () => {}, assistPanelProps = {},
 	mapOpen = false, onMapToggle = () => {}, hasDrawerViews = false, mapAvailable = true, mapReason = "" }) {
 	const [open, setOpen] = useState(false);
@@ -108,38 +109,50 @@ export function EditorDock({ previewUrl, state, recovery, discarded, protectedWa
 	const assistPanelRef = useRef(null);
 	const saveButtonRef = useRef(null);
 	const panelRef = useRef(null);
-	const previousActionKey = useRef(null);
+	const previousIssues = useRef(new Set());
+	const copiesAnnounced = useRef(false);
 	const restoreFocusAfterRetry = useRef(false);
 	const hasSaveFailure = Boolean(state.error) && !state.conflict;
 	const hasStorageWarning = Boolean(state.storageError);
 	const hasActions = recovery.length > 0 || discarded.length > 0 || Boolean(state.conflict)
 		|| hasSaveFailure || hasStorageWarning || Boolean(protectedWarning) || Boolean(copyError);
-	const actionKey = [recovery.length, discarded.length, state.conflict?.revision,
-		state.error?.code, state.error?.message, state.storageError?.name,
-		state.storageError?.message, protectedWarning, copyError].map((value) => String(value ?? "")).join(":");
+	const issues = [
+		state.conflict && `conflict:${state.conflict.revision}`,
+		hasSaveFailure && `save:${state.error.code ?? state.error.name ?? "error"}`,
+		hasStorageWarning && `storage:${state.storageError.name ?? "error"}`,
+		protectedWarning && `protected:${protectedWarning}`,
+		copyError && `copy:${copyError}`,
+	].filter(Boolean);
+	const issueKey = JSON.stringify(issues);
 	const conflictBackupKey = state.conflict && `${state.generation}:${sourceForBackup(state)}`;
 	function copy(source, backupKey) {
 		void copyWriting(source).then(() => {
 			setCopyError(null);
 			setPreparedBackupKey(backupKey ?? null);
+			onBackupPrepared(source);
 		}, () =>
 			setCopyError("Couldn’t copy writing. Download a backup instead."));
 	}
 	function download(source, backupKey) {
 		try {
 			downloadBackup(source);
+			setCopyError(null);
 			setPreparedBackupKey(backupKey ?? null);
+			onBackupPrepared(source);
 		} catch {
 			setCopyError("Couldn’t download a backup. Try copying the writing instead.");
 		}
 	}
 	useEffect(() => {
-		if (hasActions && actionKey !== previousActionKey.current) {
+		const newIssue = issues.some((issue) => !previousIssues.current.has(issue));
+		const announceCopies = !copiesAnnounced.current && (recovery.length > 0 || discarded.length > 0);
+		if (newIssue || announceCopies) {
 			setOpen(true);
 			closeAssist();
 		}
-		previousActionKey.current = actionKey;
-	}, [actionKey, hasActions, onAssistToggle]);
+		if (announceCopies) copiesAnnounced.current = true;
+		previousIssues.current = new Set(issues);
+	}, [issueKey, recovery.length, discarded.length, onAssistToggle]);
 	useEffect(() => {
 		if (!hasSaveFailure && restoreFocusAfterRetry.current) {
 			restoreFocusAfterRetry.current = false;

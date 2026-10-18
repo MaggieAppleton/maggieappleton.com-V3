@@ -31,15 +31,16 @@ function scalar(value) {
 	return JSON.stringify(value);
 }
 
-export function frontmatterPatches(frontmatter, metadataPatch = {}) {
+export function frontmatterPatches(frontmatter, metadataPatch = {}, { allowBlank = false } = {}) {
 	const keys = Object.keys(metadataPatch);
 	for (const key of keys) {
 		if (!PATCHABLE_FIELDS.has(key)) throw new Error(`Cannot patch metadata field ${key}`);
 	}
 	if (keys.length === 0) return [];
 	const proposed = { ...frontmatter.metadata, ...metadataPatch };
-	if (!proposed.title?.trim()) throw new Error("Title cannot be blank");
-	if (proposed.type === "essay" && !proposed.description?.trim()) {
+	// Recovery copies must retain incomplete writing; file saves stay strict.
+	if (!allowBlank && !proposed.title?.trim()) throw new Error("Title cannot be blank");
+	if (!allowBlank && proposed.type === "essay" && !proposed.description?.trim()) {
 		throw new Error("Essay description cannot be blank");
 	}
 	const patches = [];

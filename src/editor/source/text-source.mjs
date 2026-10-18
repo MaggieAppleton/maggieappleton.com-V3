@@ -8,6 +8,12 @@ const markdownEscape = /^\\[!-/:-@[-`{-~]/u;
 const characterReference = /^&(#(?:\d{1,7}|x[\da-f]{1,6})|[\da-z]{1,31});/iu;
 const markdownOptions = { extensions: [mdxToMarkdown(), gfmToMarkdown()] };
 
+/** Dictation can put blank lines inside one text node, rather than new blocks. */
+export function preserveLiteralBlankLines(source) {
+	return source.replace(/\r?\n(?:[ \t]*\r?\n)+/gu, (lines) =>
+		lines.replace(/[\r\n]/gu, (character) => `&#${character.codePointAt(0)};`));
+}
+
 function sourceAtoms(raw, { jsxWhitespace = false } = {}) {
 	const atoms = [];
 	let decodedOffset = 0;
@@ -46,7 +52,7 @@ function rawBoundary(atoms, offset, end) {
 function markdownText(value) {
 	if (!value) return "";
 	const source = toMarkdown({ type: "paragraph", children: [{ type: "text", value }] }, markdownOptions);
-	return !value.endsWith("\n") && source.endsWith("\n") ? source.slice(0, -1) : source;
+	return preserveLiteralBlankLines(!value.endsWith("\n") && source.endsWith("\n") ? source.slice(0, -1) : source);
 }
 
 /** Splice by decoded offsets, never by a matching substring of authored text. */

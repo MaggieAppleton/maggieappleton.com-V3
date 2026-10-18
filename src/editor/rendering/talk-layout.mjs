@@ -14,9 +14,13 @@ export function createTalkLayouts(originalRoot) {
 			wrapper.style.display = "contents";
 			return [slide.dataset.slide, {
 				slot: slide,
+				restore() {
+					if (image && image.parentNode !== wrapper) wrapper.prepend(image);
+					if (slide.parentNode !== wrapper) wrapper.append(slide);
+				},
 				mount() {
 					slide.replaceChildren();
-					wrapper.replaceChildren(...(image ? [image, slide] : [slide]));
+					this.restore();
 					return wrapper;
 				},
 			}];
@@ -25,7 +29,11 @@ export function createTalkLayouts(originalRoot) {
 			slides,
 			shell: {
 				slot: text,
-				mount() { text.replaceChildren(); return section; },
+				restore() {
+					if (panel && panel.parentNode !== section) section.prepend(panel);
+					if (text.parentNode !== section) section.append(text);
+				},
+				mount() { text.replaceChildren(); this.restore(); return section; },
 			},
 		};
 	});

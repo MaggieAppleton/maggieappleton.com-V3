@@ -52,10 +52,15 @@ export function createEditorAdapter({ source, renderedRoot = null, renderedRegis
 	function exportBody() {
 		if (!baseline.size) throw new Error("Editor baseline is not ready");
 		const body = identity.exportBody();
-		// Lexical keeps blank blocks as caret positions, including before the first
-		// paragraph in an empty draft. Markdown has no empty paragraph AST node.
-		body.children = body.children.filter((node) => node.type !== "paragraph"
-			|| node.children?.length !== 0 || Boolean(identityOf(node)));
+		// Empty blocks hold the caret after Enter or clearing a paragraph. Keep
+		// them in Lexical, but omit them from Markdown, including inside slides.
+		function omitEmptyParagraphs(node) {
+			if (!node.children || isProtected(node)) return;
+			node.children = node.children.filter((child) => child.type !== "paragraph"
+				|| child.children?.length !== 0);
+			for (const child of node.children) omitEmptyParagraphs(child);
+		}
+		omitEmptyParagraphs(body);
 		function restoreUnchanged(node) {
 			const id = identityOf(node);
 			if (id && original.has(id) && (sameSemantic(node, original.get(id))

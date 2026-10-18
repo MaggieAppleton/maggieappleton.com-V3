@@ -25,6 +25,7 @@ const fixturePrefix = "maggie-local-writing-editor-";
 const manifestName = ".local-writing-editor-fixture.json";
 const excludedProjectEntries = new Set([
   ".git",
+  ".claude", // Agent worktrees can contain entire extra checkouts and dependencies.
   ".local-writing-editor",
   ".writing-assist",
   ".astro",

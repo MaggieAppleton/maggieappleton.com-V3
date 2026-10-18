@@ -1,7 +1,7 @@
 import { addExportVisitor$, addImportVisitor$, realmPlugin } from "@mdxeditor/editor";
-import { $applyNodeReplacement, ElementNode } from "lexical";
+import { $applyNodeReplacement, $createParagraphNode, ElementNode } from "lexical";
 import { DropCapTextNode, markIntroDropCap } from "./drop-cap-node.mjs";
-import { isWritingComponent } from "../../source/writing-components.mjs";
+import { isTalkSlide, isWritingComponent } from "../../source/writing-components.mjs";
 
 function attributeValue(attributes, name) {
 	const value = attributes.find((attribute) => attribute.name === name)?.value;
@@ -77,6 +77,12 @@ export class WritingJsxNode extends ElementNode {
 				: element;
 		return super.getDOMSlot(slot);
 	}
+	reconcileObservedMutation(element, editor) {
+		// Native editing can remove the unkeyed DOM around our child slot.
+		// Reattach it before Lexical restores children into a detached subtree.
+		this.__shell?.restore();
+		super.reconcileObservedMutation(element, editor);
+	}
 	updateDOM() { return false; }
 	isInline() { return this.__mdxType === "mdxJsxTextElement"; }
 	canBeEmpty() { return true; }
@@ -106,6 +112,10 @@ export function createWritingJsxPlugin(owners, shells = new Map()) {
 						mdastNode.type, structuredClone(mdastNode.attributes), sourceId, undefined, shells.get(sourceId)));
 					if (sourceId) owners.set(sourceId, node.getKey());
 					actions.addAndStepInto(node);
+					// A cleared slide still needs a paragraph for the caret. Without
+					// one, typing after reload creates bare text inside its JSX shell.
+					if (isTalkSlide(mdastNode) && node.getChildren().every((child) =>
+						child.getType() === "protected-source")) node.append($createParagraphNode());
 				},
 			});
 			realm.pub(addExportVisitor$, {

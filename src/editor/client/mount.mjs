@@ -44,6 +44,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 	adapterRef.current = adapter;
 	const originalRegistry = useRef(initialAdapter.registry);
 	const pendingRecoveryKey = useRef(null);
+	const externalBackupRef = useRef(null);
 	const [view, setView] = useState(null);
 	const [recovery, setRecovery] = useState([]);
 	const [discarded, setDiscarded] = useState([]);
@@ -101,7 +102,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 			if (completedComposition) session.compositionEnd(candidate, options);
 			else session.edit(candidate, options);
 		} catch (failure) {
-			session.conversionFailed({ engineSnapshot: editorRef.current?.getMarkdown(), error: failure });
+			session.conversionFailed({ engineSnapshot: editorRef.current?.getMarkdown(), metadataPatch: metadata,
+				completedComposition, error: failure });
 		}
 	}
 	useEffect(() => {
@@ -119,7 +121,15 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		// which would otherwise suspend autosave indefinitely.
 		const left = () => { if (session.snapshot().composing) queueMicrotask(() => changed(true)); };
 		const beforeUnload = (event) => {
-			if (session.snapshot().dirty || session.snapshot().inFlight) {
+			if (!session.snapshot().dirty && !session.snapshot().inFlight) return;
+			// Capture composition and metadata before checking the actual persisted
+			// record. A failed conversion must not trap the writer in this tab.
+			changed(true);
+			// A manual copy covers only its exact contents, including metadata and
+			// raw writing from a failed conversion. Further edits need a new backup.
+			const externalBackupVerified = externalBackupRef.current !== null
+				&& externalBackupRef.current === browserCopy(session.snapshot());
+			if (!session.prepareToLeave({ externalBackupVerified })) {
 				event.preventDefault();
 				event.returnValue = "";
 			}
@@ -173,6 +183,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				if (pendingRecoveryKey.current === adapterState.key) {
 					pendingRecoveryKey.current = null;
 					setRecovery([]);
+					changed();
 				}
 				return;
 			}
@@ -190,7 +201,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 		try {
 			const recoveredAdapter = createRecoveryAdapter({ candidate,
 				originalSource: boot.document.source, originalRegistry: originalRegistry.current });
-			const recovered = createSourceDocument(candidate.source).metadata;
+			const recovered = { ...createSourceDocument(candidate.source).metadata, ...candidate.metadataPatch };
 			session.restoreRecovery(candidate);
 			setDiscarded(session.discardedCopies());
 			for (const [key, selector] of [["title", ".title-container h1"],
@@ -303,7 +314,8 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				session.clearDiscardedCopy(candidate);
 				setDiscarded(session.discardedCopies());
 			}, onAcceptDisk: acceptDisk, onKeepMine: keepMine, onRetry: () => session.retry(),
-			sourceForBackup: browserCopy }),
+			sourceForBackup: browserCopy,
+			onBackupPrepared: (source) => { externalBackupRef.current = source; } }),
 		React.createElement(MDXEditor, {
 			key: adapterState.key,
 			ref: editorRef,
@@ -318,7 +330,7 @@ function WritingEditor({ article, adapter: initialAdapter, boot, metadata }) {
 				else changed();
 			},
 			onError: (failure) => session.conversionFailed({
-				engineSnapshot: editorRef.current?.getMarkdown(), error: failure,
+				engineSnapshot: editorRef.current?.getMarkdown(), metadataPatch: metadata, error: failure,
 			}),
 		}),
 		assist.surface,

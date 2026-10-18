@@ -1,14 +1,10 @@
-import { createSourceDocument } from "../../source/document.mjs";
 import { mapRecoveryRegionKeys, protectedRegionDetails } from "../../source/recovery-regions.mjs";
 import { createEditorAdapter } from "./editor-adapter.mjs";
+import { sourceForBrowserBackup } from "../backup-source.mjs";
 
 /** Rebuild source identities while reusing the original Astro-rendered nodes. */
 export function createRecoveryAdapter({ candidate, originalSource, originalRegistry }) {
-	const savedDocument = createSourceDocument(candidate.source);
-	const bodyOffset = savedDocument.body.children[0]?.position?.start?.offset ?? candidate.source.length;
-	const source = candidate.conversionFailed && typeof candidate.engineSnapshot === "string"
-		? candidate.source.slice(0, bodyOffset) + candidate.engineSnapshot
-		: candidate.source;
+	const source = sourceForBrowserBackup(candidate);
 	const savedKeys = candidate.renderedRegionKeys
 		?? mapRecoveryRegionKeys(originalSource, candidate.source);
 	const keys = source === candidate.source ? savedKeys

@@ -50,6 +50,13 @@ The second slide's transcript.
     await page.goto(`${server.origin}/editor-talk-fixture`);
     await page.getByRole("link", { name: "Edit", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
+    const liveFrame = page.frames().find((frame) => frame.url().includes("/talk-decks/fortune-telling"));
+    assert.ok(liveFrame);
+    await liveFrame.waitForFunction(() => window.deck?.isReady());
+    let slideReloads = 0;
+    page.on("framenavigated", (frame) => {
+      if (frame === liveFrame) slideReloads++;
+    });
     const slide = page.locator('.editor-body [data-slide="1"]');
     const paragraph = slide.locator("p").first();
     await expect(paragraph).toHaveText("The second slide's transcript.");
@@ -70,6 +77,10 @@ The second slide's transcript.
     const expected = source.replace("The second slide's transcript.",
       "The second slide's transcript. Revised in the editor.\n\nA new paragraph for this slide.");
     await expect.poll(() => readFile(fixture.resolve(path), "utf8")).toBe(expected);
+    // Content updates reach Vite after the file save is acknowledged. The live
+    // presentation must remain stable throughout that update, including typing.
+    await page.waitForTimeout(2000);
+    expect(slideReloads, "Typing and saving must not reload the adjacent slides").toBe(0);
     await page.reload();
     await expect(page.locator('.editor-body [data-slide="1"] p').last())
       .toHaveText("A new paragraph for this slide.");

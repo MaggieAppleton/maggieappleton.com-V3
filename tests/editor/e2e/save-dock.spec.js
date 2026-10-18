@@ -35,8 +35,7 @@ Writing to save.\n`);
 	});
 
 	async function openEditor(page) {
-		await page.goto(`${server.origin}/${slug}`, { waitUntil: "domcontentloaded" });
-		await page.getByRole("link", { name: "Edit" }).click();
+		await page.goto(`${server.origin}/_editor?documentId=notes%3A${slug}`, { waitUntil: "domcontentloaded" });
 		await expect(page.getByRole("textbox", { name: "Article body" })).toBeVisible();
 	}
 
@@ -118,6 +117,52 @@ Writing to save.\n`);
 		await expect(page.getByRole("button", { name: "Recover browser version" })).toBeVisible();
 		expect(await page.evaluate((key) => localStorage.getItem(key), backup.key)).toBe(backup.value);
 		expect(await readFile(fixture.resolve(`src/content/notes/${slug}.mdx`), "utf8")).toBe(diskSource);
+	});
+
+	test("keeps dismissed recovery quiet when backups retire or a save error clears", async ({ page, context }) => {
+		test.setTimeout(120_000);
+		await openEditor(page);
+		const backups = await page.evaluate(async () => {
+			const { createEditorSession } = await import("/src/editor/client/session.mjs");
+			const boot = JSON.parse(document.getElementById("local-editor-bootstrap").textContent);
+			return ["Earlier writing.", "Another earlier version."].map((writing) => {
+				const writerId = crypto.randomUUID();
+				const session = createEditorSession({ documentId: boot.documentId,
+					worktreeId: boot.document.worktreeId, revision: boot.document.revision,
+					source: boot.document.source, writerId, save: () => Promise.reject(new Error("Offline")) });
+				session.edit(`${boot.document.source}\n${writing}\n`);
+				session.dispose();
+				return `local-writing-editor:v1:${boot.document.worktreeId}:${boot.documentId}:${writerId}`;
+			});
+		});
+		await page.reload();
+		const panel = page.getByRole("region", { name: "Writing editor details" });
+		await expect(panel.getByRole("heading", { name: "Unsaved writing found" })).toBeVisible();
+		await panel.getByRole("button", { name: "Not now", exact: true }).click();
+		const otherTab = await context.newPage();
+		await otherTab.goto(`${server.origin}/${slug}`);
+		await otherTab.evaluate((key) => localStorage.removeItem(key), backups[0]);
+		await expect.poll(() => page.getByRole("button", { name: /^Recover/ }).count()).toBe(0);
+		await expect(panel).toBeHidden();
+		await page.getByRole("button", { name: "Details", exact: true }).click();
+		await expect(panel.getByRole("button", { name: "Recover browser version" })).toBeVisible();
+		await panel.getByRole("button", { name: "Not now", exact: true }).click();
+
+		await page.route("**/_editor/api/document", async (route) => {
+			if (route.request().method() !== "PUT") return route.continue();
+			await route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify({
+				error: { code: "fixture_save_failed", message: "The fixture rejected this save." },
+			}) });
+		});
+		await editAndSave(page, " Unsaved words.");
+		await expect(panel.getByRole("heading", { name: "Save issue" })).toBeVisible();
+		await panel.getByRole("button", { name: "Not now", exact: true }).click();
+		await page.unroute("**/_editor/api/document");
+		await page.getByRole("button", { name: "Save", exact: true }).click();
+		await expect(page.locator(".editor-dock-save-live-status")).toHaveText("Saved");
+		await expect(panel).toBeHidden();
+		expect(await page.evaluate((key) => localStorage.getItem(key), backups[1])).not.toBeNull();
+		await otherTab.close();
 	});
 
 	test("keeps Save accessible while announcing its visual state separately", async ({ page }) => {

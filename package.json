@@ -37,7 +37,7 @@
     "@typesafe-ai/sdk": "^0.6.0",
     "astro": "^5.0.2",
     "astro-embed": "^0.9.0",
-    "astro-icon": "^1.1.4",
+    "astro-icon": "1.1.5",
     "astro-seo": "^0.8.4",
     "d3-array": "^3.2.4",
     "d3-axis": "^3.0.0",
