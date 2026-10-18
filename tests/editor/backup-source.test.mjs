@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { sourceForBrowserBackup } from "../../src/editor/client/backup-source.mjs";
+import { createSourceDocument } from "../../src/editor/source/document.mjs";
 
 const source = [
   "---",
@@ -57,15 +58,50 @@ test("live metadata edits are included in the failed-conversion backup", () => {
   ].join("\n"));
 });
 
-test("an invalid live metadata edit cannot prevent backing up the raw editor body", () => {
+test("a blank required title and newer description are both retained in a backup", () => {
   assert.equal(sourceForBrowserBackup({ source, conversionError: new Error("conversion failed"),
-    engineSnapshot: "New body." }, { title: "" }), [
+    engineSnapshot: "New body." }, { title: "", description: "New description." }), [
     "---",
-    'title: "Original" # keep this comment',
-    'description: "Earlier"',
+    'title: "" # keep this comment',
+    'description: "New description."',
     "type: note",
     "---",
     "",
+    'import Widget from "./Widget.astro";',
+    "",
     "New body.",
   ].join("\n"));
+});
+
+test("a blank required essay description does not discard the newer title in a backup", () => {
+  const backup = sourceForBrowserBackup({ source: source.replace("type: note", "type: essay"),
+    conversionFailed: true, engineSnapshot: "Newer essay writing.",
+    metadataPatch: { title: "New essay title", description: "" } });
+  assert.match(backup, /title: "New essay title"/u);
+  assert.match(backup, /description: ""/u);
+  assert.match(backup, /Newer essay writing\.$/u);
+});
+
+test("a failed-conversion backup retains imports omitted by the editor and checkpointed metadata", () => {
+  const candidate = sourceForBrowserBackup({ source, conversionFailed: true,
+    engineSnapshot: "Newer writing.", metadataPatch: { title: "Checkpoint title" } });
+  assert.match(candidate, /title: "Checkpoint title"/u);
+  assert.match(candidate, /import Widget from "\.\/Widget\.astro";/u);
+  assert.match(candidate, /Newer writing\.$/u);
+});
+
+test("an import quoted in the transcript does not replace its actual component binding", () => {
+  const backup = sourceForBrowserBackup({ source, conversionFailed: true,
+    engineSnapshot: 'The component uses `import Widget from "./Widget.astro";`.' });
+  const imports = createSourceDocument(backup).body.children.filter((node) => node.type === "mdxjsEsm");
+  assert.equal(imports.length, 1);
+  assert.equal(imports[0].value, 'import Widget from "./Widget.astro";');
+  assert.match(backup, /The component uses/u);
+});
+
+test("unparseable raw writing still retains the original imports in its backup", () => {
+  const backup = sourceForBrowserBackup({ source, conversionFailed: true,
+    engineSnapshot: 'An unfinished <Widget value={' });
+  assert.match(backup, /import Widget from "\.\/Widget\.astro";/u);
+  assert.ok(backup.endsWith('An unfinished <Widget value={'));
 });

@@ -765,3 +765,81 @@ test("recovery records that already match the disk are forgotten", () => {
   reopened.pruneRecovery("Saved elsewhere.");
   assert.deepEqual(reopened.recoveryCandidates().map((candidate) => candidate.source), ["Never saved."]);
 });
+
+test("navigation verifies a current recovery copy including unsaveable text and metadata", () => {
+  const storage = memoryStorage();
+  const session = makeSession({ storage });
+  session.conversionFailed({ engineSnapshot: "Newer raw writing.",
+    metadataPatch: { title: "New title", description: "New description" },
+    error: new Error("Cannot convert") });
+  storage.values.clear();
+  assert.equal(session.prepareToLeave(), true);
+  const [copy] = session.recoveryCandidates();
+  assert.equal(copy.engineSnapshot, "Newer raw writing.");
+  assert.deepEqual(copy.metadataPatch, { title: "New title", description: "New description" });
+  assert.equal(copy.conversionFailed, true);
+  assert.equal(session.snapshot().dirty, true, "a browser backup is not a disk save");
+});
+
+test("navigation keeps protecting edits when the current recovery write fails or cannot be verified", () => {
+  const storage = memoryStorage();
+  const session = makeSession({ storage });
+  session.edit("Earlier edit.");
+  const older = session.recoveryCandidates()[0];
+  const write = storage.setItem;
+  storage.setItem = () => { throw new Error("Storage full"); };
+  session.edit("Newest edit.");
+  assert.equal(session.prepareToLeave(), false);
+  assert.equal(session.recoveryCandidates()[0].source, older.source);
+  storage.setItem = () => {};
+  assert.equal(session.prepareToLeave(), false, "a stale record must not pass verification");
+  storage.setItem = write;
+  assert.equal(session.prepareToLeave(), true);
+  assert.equal(session.recoveryCandidates()[0].source, "Newest edit.");
+});
+
+test("navigation cannot checkpoint a failed conversion without its newer engine text", () => {
+  const session = makeSession();
+  session.conversionFailed({ error: new Error("Engine unavailable") });
+  assert.equal(session.prepareToLeave(), false);
+});
+
+test("a verified external backup releases navigation when browser storage fails without marking writing saved", () => {
+  const storage = memoryStorage();
+  storage.setItem = () => { throw new Error("Storage full"); };
+  const session = makeSession({ storage });
+  session.conversionFailed({ engineSnapshot: "Writing copied outside the browser.",
+    metadataPatch: { title: "Current title" } });
+  assert.equal(session.prepareToLeave(), false);
+  assert.equal(session.prepareToLeave({ externalBackupVerified: true }), true);
+  assert.equal(session.snapshot().dirty, true);
+  assert.ok(session.snapshot().storageError);
+  assert.notEqual(session.snapshot().status, "Saved");
+});
+
+test("an external backup cannot bypass incomplete composition or missing engine text", () => {
+  const session = makeSession();
+  session.edit("Still composing.");
+  session.compositionStart();
+  assert.equal(session.prepareToLeave({ externalBackupVerified: true }), false);
+  session.conversionFailed({ completedComposition: true, error: new Error("Engine unavailable") });
+  assert.equal(session.prepareToLeave({ externalBackupVerified: true }), false);
+});
+
+test("a finished composition that cannot convert still permits a verified recovery checkpoint", () => {
+  const session = makeSession();
+  session.compositionStart();
+  session.conversionFailed({ engineSnapshot: "Completed dictated text.", completedComposition: true });
+  assert.equal(session.snapshot().composing, false);
+  assert.equal(session.prepareToLeave(), true);
+});
+
+test("archived disk writing does not inherit failed-conversion metadata from the live editor", () => {
+  const session = makeSession();
+  session.conversionFailed({ engineSnapshot: "Browser writing.", metadataPatch: { title: "Browser title" } });
+  session.archiveCopy("Disk writing.");
+  const [archived] = session.discardedCopies();
+  assert.equal(archived.metadataPatch, undefined);
+  session.acceptDisk({ source: "Disk writing.", revision: "rev-disk" });
+  assert.equal(session.snapshot().metadataPatch, undefined);
+});

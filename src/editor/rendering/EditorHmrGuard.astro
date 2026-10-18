@@ -1,0 +1,32 @@
+{import.meta.env.DEV && (
+	<script is:inline>
+		const NativeSocket = window.WebSocket;
+		window.WebSocket = class extends NativeSocket {
+			constructor(url, protocols) {
+				super(url, protocols);
+				if (!(Array.isArray(protocols) ? protocols : [protocols]).includes("vite-hmr")) return;
+				window.WebSocket = NativeSocket;
+				const active = () => {
+					if (location.pathname === "/_editor"
+						|| window.__localDraftFormActive === true
+						|| window.__localDraftCreationPending === true) return true;
+					// The presentation has its own Vite client. Autosaving prose must
+					// not reload that frame underneath an active writing session.
+					try { return parent !== window && parent.location.pathname === "/_editor"; }
+					catch { return false; }
+				};
+				this.addEventListener("message", (event) => {
+					if (!active()) return;
+					let payload;
+					try { payload = JSON.parse(event.data); } catch { return; }
+					if (payload.type === "full-reload" || payload.type === "update") {
+						event.stopImmediatePropagation();
+					}
+				}, true);
+				this.addEventListener("close", (event) => {
+					if (active()) event.stopImmediatePropagation();
+				}, true);
+			}
+		};
+	</script>
+)}

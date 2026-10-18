@@ -1,5 +1,6 @@
 ---
 import type { ImageMetadata } from 'astro';
+import EditorHmrGuard from '../../editor/rendering/EditorHmrGuard.astro';
 import markup from '../../components/unique/fortune-telling/slides.html?raw';
 
 // Resolve the deck's embedded images through Astro, just like the mobile slides.
@@ -15,6 +16,7 @@ for (const [filename, image] of Object.entries(images)) {
 <!doctype html>
 <html lang="en-GB">
   <head>
+    <EditorHmrGuard />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />

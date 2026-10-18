@@ -27,6 +27,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	let acknowledgedSource = source;
 	let baseRevision = revision;
 	let engineSnapshot;
+	let metadataPatch;
 	let renderedRegionKeys;
 	let generation = 0;
 	let acknowledgedGeneration = 0;
@@ -54,7 +55,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			generation, acknowledgedGeneration, conflict, error, storageError,
 			recoveryAvailable: !storageError, discardedCopy, resolving,
 			inFlight: inFlight ? { ...inFlight.request } : null, uncertain: Boolean(uncertain), composing,
-			engineSnapshot, renderedRegionKeys, conversionError };
+			engineSnapshot, metadataPatch, renderedRegionKeys, conversionError };
 	}
 	function notify() { if (!disposed) onState(snapshot()); }
 	function clearTimer() {
@@ -68,13 +69,17 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			baseRevision: conflict?.baseRevision ?? baseRevision,
 			baseSource: conflict?.base !== undefined ? conflict.base : acknowledgedSource,
 			source: buffer, lastValidSource,
-			engineSnapshot, renderedRegionKeys,
+			engineSnapshot, metadataPatch, renderedRegionKeys,
 			conversionFailed: Boolean(conversionError),
 			updatedAt: clock.now(), generation, ...extra };
 	}
-	function persist() {
+	function persist(verify = false) {
 		try {
-			storage.setItem(recoveryKey, JSON.stringify(recoveryRecord()));
+			const serialized = JSON.stringify(recoveryRecord());
+			storage.setItem(recoveryKey, serialized);
+			if (verify && storage.getItem(recoveryKey) !== serialized) {
+				throw new Error("Could not verify the latest browser recovery copy");
+			}
 			storageError = null;
 			return true;
 		} catch (failure) { storageError = failure; return false; }
@@ -116,6 +121,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		if (nextEngineSnapshot !== undefined) engineSnapshot = nextEngineSnapshot;
 		if (nextRenderedRegionKeys !== undefined) renderedRegionKeys = nextRenderedRegionKeys;
 		conversionError = null;
+		metadataPatch = undefined;
 		generation++;
 		error = null;
 		status = conflict ? "File changed elsewhere" : dirty() ? "Unsaved" : "Saved";
@@ -133,10 +139,13 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		composing = false;
 		edit(nextSource, options);
 	}
-	function conversionFailed({ engineSnapshot: nextEngineSnapshot, error: failure } = {}) {
+	function conversionFailed({ engineSnapshot: nextEngineSnapshot, metadataPatch: nextMetadataPatch,
+		completedComposition = false, error: failure } = {}) {
 		if (disposed) return;
 		clearTimer();
+		if (completedComposition) composing = false;
 		engineSnapshot = nextEngineSnapshot;
+		metadataPatch = nextMetadataPatch ? { ...nextMetadataPatch } : undefined;
 		conversionError = failure ?? new Error("The current editor content cannot be saved");
 		error = conversionError;
 		generation++;
@@ -255,6 +264,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		conflict = null;
 		uncertain = null;
 		conversionError = null;
+		metadataPatch = undefined;
 		error = null;
 		status = "Saved";
 		generation++;
@@ -301,6 +311,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			conflict = null;
 			uncertain = null;
 			conversionError = null;
+			metadataPatch = undefined;
 			needsAcknowledgement = false;
 			generation++;
 			acknowledgedGeneration = generation;
@@ -328,7 +339,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		try {
 			storage.setItem(`${recoveryKey}:discarded:${clock.now()}:${globalThis.crypto.randomUUID()}`,
 				JSON.stringify(recoveryRecord({ source: copySource, lastValidSource: copySource,
-					engineSnapshot: undefined, conversionFailed: false, ...extra })));
+					engineSnapshot: undefined, metadataPatch: undefined, conversionFailed: false, ...extra })));
 			pruneDiscardedCopies();
 			return true;
 		} catch (failure) {
@@ -420,6 +431,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		error = null;
 		lastValidSource = candidate.lastValidSource ?? candidate.source;
 		engineSnapshot = candidate.engineSnapshot;
+		metadataPatch = candidate.metadataPatch;
 		renderedRegionKeys = candidate.renderedRegionKeys;
 		conversionError = candidate.conversionFailed
 			? new Error("Recovered editor content has newer unsaved changes") : null;
@@ -438,8 +450,16 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		clearTimer();
 		disposed = true;
 	}
+	/** The caller verifies that any manual backup matches the complete current writing. */
+	function prepareToLeave({ externalBackupVerified = false } = {}) {
+		if (!dirty() && !inFlight) return true;
+		if (composing || (conversionError && typeof engineSnapshot !== "string")) return false;
+		const prepared = persist(true);
+		if (!prepared) notify();
+		return prepared || externalBackupVerified;
+	}
 
-	return { edit, flush, retry, compositionStart, compositionEnd, conversionFailed,
+	return { edit, flush, retry, compositionStart, compositionEnd, conversionFailed, prepareToLeave,
 		observeDisk, acceptDisk, resolveConflict, archiveCopy, recoveryCandidates, restoreRecovery, pruneRecovery,
 		discardedCopies, clearDiscardedCopy, dispose, snapshot };
 }
