@@ -727,3 +727,38 @@ test("an edit-save-edit-undo sequence preserves semantic content and the origina
 test("malformed MDX cannot be opened as a successful editable source document", () => {
   assert.throws(() => createSourceDocument("---\ntitle: [\n---\n<Unclosed"));
 });
+
+test("typed MDX and GFM punctuation in new editor text saves as literal prose", () => {
+  // Lexical returns edited text without a source identity, as the live editor does.
+  const prose = "---\ntitle: T\n---\n\nSome *emphasis* here.\n";
+  for (const typed of ["{braces}", "<angle>", "_under_", "~tilde~", "a } b"]) {
+    const document = createSourceDocument(prose);
+    const body = structuredClone(document.body);
+    const paragraph = body.children[0];
+    const after = paragraph.children.at(-1);
+    paragraph.children[paragraph.children.length - 1] = { type: "text", value: `${after.value} ${typed}` };
+    const saved = serializeSourceDocument(document, { body });
+    const reparsed = createSourceDocument(saved).body.children[0];
+    assert.equal(reparsed.children.at(-1).value, ` here. ${typed}`, typed);
+    assert.ok(saved.startsWith(prose.slice(0, prose.indexOf(" here."))), "untouched emphasis keeps its source");
+  }
+});
+
+test("new text before inline formatting keeps its own escapes and the formatting source", () => {
+  const document = createSourceDocument("---\ntitle: T\n---\n\nStart *emphasis* end.\n");
+  const body = structuredClone(document.body);
+  body.children[0].children[0] = { type: "text", value: "A {brace} and _under_ " };
+  const saved = serializeSourceDocument(document, { body });
+  assert.ok(saved.endsWith("A \\{brace} and \\_under\\_ *emphasis* end.\n"), saved);
+});
+
+test("a new paragraph that starts with import or export stays prose", () => {
+  for (const typed of ["export const x = 1", "import the idea"]) {
+    const document = createSourceDocument("---\ntitle: T\n---\n\nFirst.\n");
+    const body = structuredClone(document.body);
+    body.children.push({ type: "paragraph", children: [{ type: "text", value: typed }] });
+    const reparsed = createSourceDocument(serializeSourceDocument(document, { body })).body.children;
+    assert.deepEqual(reparsed.map((node) => node.type), ["paragraph", "paragraph"]);
+    assert.equal(reparsed[1].children[0].value, typed);
+  }
+});

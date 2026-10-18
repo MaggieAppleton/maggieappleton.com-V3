@@ -1,5 +1,6 @@
 const RECOVERY_VERSION = 1;
 const SAVE_DELAY = 750;
+const MAX_DISCARDED = 10;
 
 function defaultClock() {
 	return { now: () => Date.now(), setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
@@ -43,13 +44,15 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	let authorityEpoch = 0;
 	let needsAcknowledgement = false;
 	let restoredFrom = null;
+	let resolving = false;
 
 	const dirty = () => Boolean(conversionError || needsAcknowledgement || buffer !== acknowledgedSource
 		|| (inFlight && inFlight.request.source !== acknowledgedSource));
 	function snapshot() {
-		return { source: buffer, lastValidSource, revision: baseRevision, status, dirty: dirty(),
+		return { source: buffer, baseSource: acknowledgedSource, lastValidSource, revision: baseRevision,
+			status, dirty: dirty(),
 			generation, acknowledgedGeneration, conflict, error, storageError,
-			recoveryAvailable: !storageError, discardedCopy,
+			recoveryAvailable: !storageError, discardedCopy, resolving,
 			inFlight: inFlight ? { ...inFlight.request } : null, uncertain: Boolean(uncertain), composing,
 			engineSnapshot, renderedRegionKeys, conversionError };
 	}
@@ -60,7 +63,12 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	}
 	function recoveryRecord(extra = {}) {
 		return { version: RECOVERY_VERSION, sessionId, writerId, documentId, worktreeId,
-			baseRevision, source: buffer, lastValidSource, engineSnapshot, renderedRegionKeys,
+			// A restored copy that still conflicts keeps its own base, so a reload
+			// cannot mistake it for writing based on the current disk revision.
+			baseRevision: conflict?.baseRevision ?? baseRevision,
+			baseSource: conflict?.base !== undefined ? conflict.base : acknowledgedSource,
+			source: buffer, lastValidSource,
+			engineSnapshot, renderedRegionKeys,
 			conversionFailed: Boolean(conversionError),
 			updatedAt: clock.now(), generation, ...extra };
 	}
@@ -95,7 +103,7 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	}
 	function schedule() {
 		clearTimer();
-		if (disposed || composing || conflict || conversionError || uncertain || !dirty()) return;
+		if (disposed || composing || conflict || resolving || conversionError || uncertain || !dirty()) return;
 		timer = clock.setTimeout(() => { timer = null; void flush(); }, SAVE_DELAY);
 	}
 	function edit(nextSource, { engineSnapshot: nextEngineSnapshot,
@@ -164,7 +172,8 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			if (submittedEpoch !== authorityEpoch) return;
 			error = failure;
 			if (failure?.status === 409 || failure?.code === "document_conflict") {
-				conflict = { source: failure.details?.source, revision: failure.details?.revision };
+				conflict = { base: conflict?.base, baseRevision: conflict?.baseRevision,
+					source: failure.details?.source, revision: failure.details?.revision };
 				uncertain = null;
 				status = "File changed elsewhere";
 			} else if (failure?.status >= 400 && failure.status < 500) {
@@ -190,13 +199,15 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 
 	function flush() {
 		clearTimer();
-		if (disposed || composing || conflict || conversionError || uncertain || !dirty()) return Promise.resolve();
+		if (disposed || composing || conflict || resolving || conversionError || uncertain || !dirty()) {
+			return Promise.resolve();
+		}
 		if (inFlight) return inFlight.promise;
 		const request = { documentId, baseRevision, requestId: globalThis.crypto.randomUUID(), source: buffer };
 		return submit(request, generation);
 	}
 	function retry() {
-		if (disposed || composing || conflict || conversionError) return Promise.resolve();
+		if (disposed || composing || conflict || resolving || conversionError) return Promise.resolve();
 		if (inFlight) return inFlight.promise;
 		if (uncertain) {
 			const pending = uncertain;
@@ -206,26 +217,36 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 		return flush();
 	}
 	function observeDisk({ source: diskSource, revision: diskRevision }) {
-		if (disposed || diskRevision === baseRevision) return;
+		if (disposed || resolving || diskRevision === baseRevision || conflict?.revision === diskRevision) return;
 		if (inFlight?.request.source === diskSource || uncertain?.request.source === diskSource) return;
 		clearTimer();
 		authorityEpoch++;
-		conflict = { source: diskSource, revision: diskRevision };
+		conflict = { base: conflict?.base, baseRevision: conflict?.baseRevision,
+			source: diskSource, revision: diskRevision };
 		status = "File changed elsewhere";
 		persist();
 		notify();
 	}
-	function acceptDisk({ source: diskSource, revision: diskRevision }) {
+	function acceptDisk({ source: diskSource, revision: diskRevision }, { requireArchive = false } = {}) {
 		if (disposed) return;
+		// Raw editor text that could not be exported is unsaved even when the last
+		// valid source happens to match the disk.
+		const unsaved = Boolean(conversionError) || (buffer !== diskSource && (dirty() || Boolean(uncertain)));
+		const copy = recoveryRecord({ source: buffer });
+		let archived = !unsaved;
+		if (unsaved) try {
+			storage.setItem(`${recoveryKey}:discarded:${clock.now()}:${globalThis.crypto.randomUUID()}`,
+				JSON.stringify(copy));
+			archived = true;
+			pruneDiscardedCopies();
+		} catch (failure) { storageError = failure; }
+		if (!archived && requireArchive) {
+			notify();
+			throw new Error("Could not keep a browser copy before loading the disk version");
+		}
 		clearTimer();
 		authorityEpoch++;
-		discardedCopy = recoveryRecord({ source: buffer, baseRevision });
-		let archived = false;
-		try {
-			storage.setItem(`${recoveryKey}:discarded:${clock.now()}:${globalThis.crypto.randomUUID()}`,
-				JSON.stringify(discardedCopy));
-			archived = true;
-		} catch (failure) { storageError = failure; }
+		if (unsaved) discardedCopy = copy;
 		buffer = diskSource;
 		needsAcknowledgement = false;
 		lastValidSource = diskSource;
@@ -243,7 +264,95 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			retireRestoredRecovery();
 		}
 		notify();
-		return discardedCopy;
+		return unsaved ? copy : null;
+	}
+	/** Write a chosen resolution over the conflicting disk revision; state changes only once it lands. */
+	async function resolveConflict(resolvedSource) {
+		if (disposed) return null;
+		if (!conflict || typeof resolvedSource !== "string") throw new TypeError("There is no conflict to resolve");
+		if (inFlight || resolving) throw new Error("A save is already in progress");
+		const target = conflict;
+		const startedGeneration = generation;
+		const startedSource = buffer;
+		const request = { documentId, baseRevision: target.revision, requestId: globalThis.crypto.randomUUID(),
+			source: resolvedSource };
+		clearTimer();
+		resolving = true;
+		status = "Merging changes";
+		error = null;
+		notify();
+		try {
+			const result = await save(request);
+			if (disposed) return result;
+			if (conflict !== target) return result;
+			if (generation !== startedGeneration) {
+				// Writing continued while the merge was saving. Merge it again from
+				// the version the resolution was built from.
+				conflict = { source: resolvedSource, revision: result.revision, base: startedSource,
+					baseRevision: target.baseRevision ?? baseRevision };
+				status = "File changed elsewhere";
+				persist();
+				return { ...result, superseded: true };
+			}
+			buffer = resolvedSource;
+			lastValidSource = resolvedSource;
+			acknowledgedSource = resolvedSource;
+			baseRevision = result.revision;
+			conflict = null;
+			uncertain = null;
+			conversionError = null;
+			needsAcknowledgement = false;
+			generation++;
+			acknowledgedGeneration = generation;
+			authorityEpoch++;
+			status = "Saved";
+			removeOwnRecovery();
+			retireRestoredRecovery();
+			return result;
+		} catch (failure) {
+			if (disposed || conflict !== target) throw failure;
+			if (failure?.status === 409 || failure?.code === "document_conflict") {
+				if (failure.details?.revision) conflict = { ...target, source: failure.details.source,
+					revision: failure.details.revision };
+			} else error = failure;
+			status = "File changed elsewhere";
+			persist();
+			throw failure;
+		} finally {
+			resolving = false;
+			notify();
+		}
+	}
+	/** Set a source aside with the discarded browser copies, e.g. a disk version being overwritten. */
+	function archiveCopy(copySource, extra = {}) {
+		try {
+			storage.setItem(`${recoveryKey}:discarded:${clock.now()}:${globalThis.crypto.randomUUID()}`,
+				JSON.stringify(recoveryRecord({ source: copySource, lastValidSource: copySource,
+					engineSnapshot: undefined, conversionFailed: false, ...extra })));
+			pruneDiscardedCopies();
+			return true;
+		} catch (failure) {
+			storageError = failure;
+			notify();
+			return false;
+		}
+	}
+	function pruneDiscardedCopies(keep = MAX_DISCARDED) {
+		try {
+			for (const stale of discardedCopies().slice(keep)) storage.removeItem(stale.storageKey);
+		} catch (failure) { storageError = failure; }
+	}
+	/** Forget recovery records whose writing already matches the disk. */
+	function pruneRecovery(diskSource) {
+		try {
+			for (let index = storage.length - 1; index >= 0; index--) {
+				const key = storage.key(index);
+				if (!key?.startsWith(recoveryPrefix) || key.includes(":discarded:") || key === recoveryKey) continue;
+				const value = JSON.parse(storage.getItem(key));
+				if (value?.documentId === documentId && value.worktreeId === worktreeId
+					&& value.source === diskSource && !value.conversionFailed) storage.removeItem(key);
+			}
+		} catch (failure) { storageError = failure; notify(); }
 	}
 	function discardedCopies() {
 		const found = [];
@@ -316,7 +425,9 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 			? new Error("Recovered editor content has newer unsaved changes") : null;
 		generation++;
 		if (candidate.baseRevision !== baseRevision) {
-			conflict = { source: acknowledgedSource, revision: baseRevision };
+			conflict = { source: acknowledgedSource, revision: baseRevision,
+				base: typeof candidate.baseSource === "string" ? candidate.baseSource : null,
+				baseRevision: candidate.baseRevision };
 			status = "File changed elsewhere";
 		} else status = conversionError ? "Couldn't save" : dirty() ? "Unsaved" : "Saved";
 		if (persist()) retireRestoredRecovery();
@@ -329,6 +440,6 @@ export function createEditorSession({ documentId, worktreeId, revision, source, 
 	}
 
 	return { edit, flush, retry, compositionStart, compositionEnd, conversionFailed,
-		observeDisk, acceptDisk, recoveryCandidates, restoreRecovery,
+		observeDisk, acceptDisk, resolveConflict, archiveCopy, recoveryCandidates, restoreRecovery, pruneRecovery,
 		discardedCopies, clearDiscardedCopy, dispose, snapshot };
 }
