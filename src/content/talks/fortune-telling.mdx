@@ -1,12 +1,12 @@
 ---
 title: "Fortune Telling and Speculative Design"
-description: "How design engineers can explore possible futures through speculative design"
+description: "Practical tools for design engineers to explore possible futures through speculative design"
 type: "talk"
 growthStage: "seedling"
 topics: ["Design", "Web Development", "Artificial Intelligence"]
-startDate: "2026-10-16"
+startDate: "2026-10-15"
 updated: "2026-10-16"
-conferences: []
+conferences: [{ name: "Granola Design Engineering Night", date: "2026-10-15", location: "London" }]
 cover: "../../images/posts/fortune-telling/13-title.webp"
 draft: true
 ---
@@ -16,13 +16,11 @@ import slideImages from "../../data/talks/fortune-telling.json";
 
 <IntroParagraph>I recently got the chance to give a talk at [Granola](https://www.granola.ai/)'s [Design Engineering night](https://www.youtube.com/playlist?list=PL4tqAmtnUMjO4EmmwJ-D2edgLardYJrvv) about speculative design and practical tools for developing more interesting theories of the future. I think design engineers, in particular, are the perfect people to imagine and prototype novel software ideas.</IntroParagraph>
 
-At [GitHub Next](https://githubnext.com "GitHub Next"), our team's job is to explore possible futures for software development by building prototypes. I share a bit about how we do that, followed by some practical techniques: collecting weak signals, building theories about where things are heading, and making artefacts that make those theories feel real and tangible.
+At [GitHub Next](https://githubnext.com), our team's job is to explore possible futures for software development by building prototypes. I share a bit about how we do that, followed by some practical techniques: collecting weak signals, building theories about where things are heading, and making artefacts that make those theories feel real and tangible.
 
 <ScrollyTalkSection images={slideImages} revealSrc="/talk-decks/fortune-telling">
 
 <div data-slide="0" data-source-slide="html/01-hello.html" data-fragment="-1">
-
-{/* 01 · Hello */}
 
 Hello
 
@@ -30,31 +28,23 @@ Hello
 
 <div data-slide="1" data-source-slide="html/02-i-m-maggie.html" data-fragment="-1">
 
-{/* 02 · I'm Maggie */}
-
 I'm Maggie.
 
 </div>
 
 <div data-slide="2" data-source-slide="html/03-nominally.html" data-fragment="-1">
 
-{/* 03 · Nominally */}
-
-My title is technically “Staff Research Engineer.”
+My title is nominally “Staff Research Engineer” at GitHub Next
 
 </div>
 
 <div data-slide="3" data-source-slide="html/06-more-accurately.html" data-fragment="-1">
 
-{/* 06 · More accurately */}
-
-But I think it's more accurate to call myself a design engineer. I'm a designer first and engineer second (maybe third)*.*
+But I think it's more accurate to call myself a design engineer. I'm a designer first and engineer second (maybe third).
 
 </div>
 
 <div data-slide="4" data-source-slide="html/04-github-next.html" data-fragment="-1">
-
-{/* 04 · GitHub Next */}
 
 The GitHub Next team is the R&D Labs team. Our job is to ask where the industry is headed and what GitHub should do next in reaction to that.
 
@@ -62,15 +52,11 @@ The GitHub Next team is the R&D Labs team. Our job is to ask where the industry 
 
 <div data-slide="5" data-source-slide="html/05-github-next-not-infra.html" data-fragment="-1">
 
-{/* 05 · GitHub Next: not infra */}
-
-I know the obvious answer to what should GitHub do next is fix up time. Unfortunately, I do not work on infrastructure and I promise we have more than a thousand very smart people working on the problem; I just happen not to be one of them.
+I know the obvious answer to “what should GitHub do next” is fix up time. Unfortunately, I do not work on infrastructure and I promise we have more than a thousand very smart people working on that problem; I just happen not to be one of them.
 
 </div>
 
 <div data-slide="6" data-source-slide="html/07-past-titles.html" data-fragment="-1">
-
-{/* 07 · Past titles */}
 
 I've held many job titles over the years, including illustrator, art director, UI/UX designer, product designer, design engineer, and now research engineer.
 
@@ -78,381 +64,293 @@ I've held many job titles over the years, including illustrator, art director, U
 
 <div data-slide="7" data-source-slide="html/08-what-is-a-design-engineer.html" data-fragment="-1">
 
-{/* 08 · What is a design engineer? */}
-
-Now that I have a relevant soapbox, I've been dying to tell people my revised definition of a design engineer.
+And now that I have a relevant soapbox, I've been dying to tell people my  definition of a design engineer.
 
 </div>
 
 <div data-slide="8" data-source-slide="html/09-it-is-not.html" data-fragment="-1">
 
-{/* 09 · It is not */}
-
-I see a bunch of people, from companies I shan't name, giving everyone the impression that design engineers are people employed to make fancy hover microinteractions and post them to twitter.
+I see a bunch of people, from companies I shan't name, giving everyone the impression that design engineers are people employed to make fancy hover microinteractions and post them to Twitter.
 
 </div>
 
 <div data-slide="9" data-source-slide="html/10-it-is-not-not-a-job.html" data-fragment="-1">
 
-{/* 10 · It is not: not a job */}
-
-&#x20;*Making micorointeractions is not a job.*
+Making cool microinteractions is not a job, especially since agents now make that easier to do than ever.
 
 </div>
 
 <div data-slide="10" data-source-slide="html/11-preferred-definition.html" data-fragment="-1">
 
-{/* 11 · Preferred definition */}
-
-*Transcript to come.*
+So here is my personal definition: a design engineer is a designer deeply involved in the technical craft and material of software. They make decisions about the functionality and architecture of the code, not just the interface layer.
 
 </div>
 
 <div data-slide="11" data-source-slide="html/12-instead.html" data-reveal-stage="0" data-fragment="-1">
 
-{/* 12 · Instead · title only */}
-
-*Transcript to come.*
+I believe design engineers should do three primary things...
 
 </div>
 
 <div data-slide="12" data-source-slide="html/12-instead.html" data-reveal-stage="1" data-fragment="-1">
 
-{/* 12 · Instead · point 1 */}
-
-Understand the material of software beyond interfaces.
+First, understand the material of software beyond interfaces. This means understanding how software works the way engineers do: as intertwined layers of state, data flow, databases, auth, APIs, algorithms, AI models, servers, latency, etc.
 
 
 </div>
 
 <div data-slide="13" data-source-slide="html/12-instead.html" data-reveal-stage="2" data-fragment="-1">
 
-{/* 12 · Instead · points 1–2 */}
-
-Sit between design and engineering.
+Second, act as a translation bridge between design and engineering, able to create product solutions no engineer or designer could imagine from their more limited viewpoint.
 
 
 </div>
 
 <div data-slide="14" data-source-slide="html/12-instead.html" data-reveal-stage="3" data-fragment="-1">
 
-{/* 12 · Instead · points 1–3 */}
+And third, make meaningful decisions about functionality and architecture, not just how things look.
 
-Make decisions about functionality and architecture.
-
-That was the preamble — my soapbox.
-
-I’ve wanted an audience for this definition for a while. Perfect place, but not today’s topic.
+So thank you for indulging my preamble. I’ve wanted an audience for this definition for a while and this was the perfect place. But is not today’s topic.
 
 
 </div>
 
 <div data-slide="15" data-source-slide="html/13-title.html" data-fragment="-1">
 
-{/* 14 · Title */}
-
-*Transcript to come.*
+This talk is about fortune telling and speculative design. For fun and profit.
 
 </div>
 
 <div data-slide="16" data-source-slide="html/14-a-weird-time.html" data-reveal-stage="0" data-fragment="-1">
 
-{/* 15 · A weird time · headline only */}
-
-*Transcript to come.*
+I specifically wanted to talk about this because we're in a very weird, accelerationist time.  Every morning I wake up, get on Twitter, and there is a new model from one of the foundational labs. And if there's not a model, there's a new harness or critical skill or paradigm shift to digest and understand. We all have severe whiplash.
 
 </div>
 
 <div data-slide="17" data-source-slide="html/14-a-weird-time.html" data-reveal-stage="1" data-fragment="-1">
 
-{/* 15 · A weird time · paragraph 1 */}
-
-*Transcript to come.*
+It's hard enough to understand today's ground reality, let alone strategise how to react.
 
 </div>
 
 <div data-slide="18" data-source-slide="html/14-a-weird-time.html" data-reveal-stage="2" data-fragment="-1">
 
-{/* 15 · A weird time · paragraphs 1–2 */}
-
-*Transcript to come.*
+So why even attempt to make sense of and predict the future in this time? Is this just a fool's errand?
 
 </div>
 
 <div data-slide="19" data-source-slide="html/15-scout-mindset.html" data-reveal-stage="0" data-fragment="-1">
 
-{/* 16 · Scout mindset · headline only */}
-
-*Transcript to come.*
+I think it's especially important we all put on our speculative designer scouts hat right now.
 
 </div>
 
 <div data-slide="20" data-source-slide="html/15-scout-mindset.html" data-reveal-stage="1" data-fragment="-1">
 
-{/* 16 · Scout mindset · with explanation */}
-
-*Transcript to come.*
+It's tempting to just opt out because it's hard to keep up. But the pace of change requires that we at least try. More than ever we need people scanning the landscape, making connections, noticing themes, and attempting to read the crystal ball.
 
 </div>
 
 <div data-slide="21" data-source-slide="html/16-why-design-engineers.html" data-reveal-stage="0" data-fragment="-1">
 
-{/* 17 · Why design engineers · headline only */}
-
-*Transcript to come.*
+I'm telling you this, a bunch of design engineers, because I think you are the perfect shaped people to help figure out how the future should unfold...
 
 </div>
 
 <div data-slide="22" data-source-slide="html/16-why-design-engineers.html" data-reveal-stage="1" data-fragment="-1">
 
-{/* 17 · Why design engineers · paragraph 1 */}
-
-*Transcript to come.*
+You are uniquely positioned to prototype convincing theories of the future because you can both design interfaces and wade into the backend enough to make it real.
 
 </div>
 
 <div data-slide="23" data-source-slide="html/16-why-design-engineers.html" data-reveal-stage="2" data-fragment="-1">
 
-{/* 17 · Why design engineers · paragraphs 1–2 */}
-
-*Transcript to come.*
+Especially since agents are now able to “draw the rest of the owl” for your proof-of-concept prototypes without you needing full‑stack skills.
 
 </div>
 
 <div data-slide="24" data-source-slide="html/17-right-and-early.html" data-fragment="-1">
 
-{/* 18 · Right and early */}
-
-*Transcript to come.*
+So before I give you lots of advice on how to predict the future, I should prove I know something about this. There have been a few times that I've made early predictions about the way things were headed and been right about them.
 
 </div>
 
 <div data-slide="25" data-source-slide="html/18-right-and-early-example-1.html" data-fragment="-1">
 
-{/* 19 · Right and early: example 1 */}
+First, in early 2020, in the depths of the COVID lockdown, I wrote a long essay on a concept called [digital gardening](/garden-history). It wasn't particularly well known at the time, but the theory was that the way we publish personal knowledge on the web was changing. It was beginning to move away from blogging, where you published perfect, finished pieces in reverse chronological order, and toward a more iterative, organic, and non-linear way of publishing. Like a garden you tend over time.
 
-2020: long essay on the history of “digital garden”.
-
-Non-chronological personal knowledge on the web; updated slowly over time.
-
-Unlike blogging: finish a perfect piece, then never touch it again.
-
-Built my own garden; the concept took off.
-
-Chicken and egg: did I predict it or fuel it? Either way, I was early.
-
+Digital gardening went on to become a bit of a phenomenon. It had a real peak in popularity around 2021-2022.
 
 </div>
 
 <div data-slide="26" data-source-slide="html/19-right-and-early-example-1-copy.html" data-fragment="-1">
 
-{/* 20 · Right and early: example 1 copy */}
-
-My digital garden — well over 160 things written now.
-
-Update it all the time: a growing, living record of my thoughts.
-
+As part of researching this idea, I built my own digital garden, which is the website you're reading right now. I've published well over 160 pieces and I'm still updating it all the time. It's a growing, living record of my thoughts.
 
 </div>
 
 <div data-slide="27" data-source-slide="html/20-right-and-early-example-2.html" data-fragment="-1">
 
-{/* 21 · Right and early: example 2 */}
+I developed my next pet theory developed between late 2022 and early 2023. This was back in the days of GPT-3. ChatGPT had only just come out. I was working at [Elicit](https://elicit.com), a startup that uses language models to speed up the scientific literature review process.
 
-Called AI slop before I had evidence of it happening online.
+There weren't many people using language models at the time, but I started to look ahead to what I thought was going to happen to content on the web once they did. And I correctly predicted the open web would be drowned in what, at the time, I called “AI-generated crap” because we didn't have the word “AI slop” yet.
 
-April 2023 talk, written February–April.
-
-ChatGPT had just come out in December 2022.
-
-At Elicit: using GPT-3 to speed up scientific literature review. Very early.
-
+So I wrote this talk called [The Expanding Dark Forest and Generative AI](/forest-talk). When I first gave the talk, I didn't really have much evidence of this happening. I only had some very mild indicators to point to. I continued to give this talk multiple times over the next two years, and by the final version, I had _way_ too much evidence. Just piles of horrifying Facebook posts to point to.
 
 </div>
 
 <div data-slide="28" data-source-slide="html/21-right-and-early-example-3.html" data-fragment="-1">
 
-{/* 22 · Right and early: example 3 */}
+I developed my next theory in early 2024, which led to my talk "[Home Cooked Software and Barefoot Developers](/home-cooked-software)" presented at the Local-First conference in May.
 
-May 2024: still scepticism that language models could write good-quality code.
+At the time, people were still quite sceptical that language models would ever be able to write production-quality code. This was pre-agents and pre-Claude Code. We were still in the days of using tab to autocomplete in IDEs.
 
-Autocomplete days: tab for the next line. No coding agents or Claude Code.
+I predicted that language models would soon become as good as professional, human software developers, which would lead to an explosion in personal software, as well as the rise of "barefoot developers" semi-professional technical builders for local neighbourhoods and communities. I think it's quite easy to argue this has now come to pass.
 
-Predicted an explosion of personal software — I’d argue it’s come to pass.
-
+Even at the time, a lot of people argued with me about the feasibility of language models writing working software end-to-end. I think most holdouts with that opinion finally caved in late 2025 with the release of Opus-4.5 and GPT-5.2, a year and a half after I gave this talk.
 
 </div>
 
 <div data-slide="29" data-source-slide="html/22-two-things-today.html" data-fragment="-1">
 
-{/* 23 · Two things today */}
-
-*Transcript to come.*
+Now that I've established some credibility, there's two things I want to talk to you about today. First, a little about how GitHub Next does speculative design as a team, in case you ever want to do labs work yourself and are curious how it looks.
 
 </div>
 
 <div data-slide="30" data-source-slide="html/22-two-things-today.html" data-fragment="0">
 
-{/* 23 · Two things today · reveal 1 */}
-
-*Transcript to come.*
+And second, some practical tools to do this sort of speculative work yourself.
 
 </div>
 
 <div data-slide="31" data-source-slide="html/23-section-how-github-next-does-it.html" data-fragment="-1">
 
-{/* 24 · Section: how GitHub Next does it */}
-
-*Transcript to come.*
+So first, what is life on a labs team like, and how do we create and present intresting bets about the future.
 
 </div>
 
 <div data-slide="32" data-source-slide="html/24-the-dream-of-labs-work.html" data-fragment="-1">
 
-{/* 25 · The dream of labs work */}
-
-*Transcript to come.*
+I think there's a stereotype that being on a labs team means you get to play around making prototypes all day, without having to worry about shipping to production.
 
 </div>
 
 <div data-slide="33" data-source-slide="html/25-kind-of-but-not-entirely.html" data-fragment="-1">
 
-{/* 26 · Kind of, but not entirely */}
-
-*Transcript to come.*
+Sadly, that's not really the case.
 
 </div>
 
 <div data-slide="34" data-source-slide="html/26-lots-of-prototypes.html" data-fragment="-1">
 
-{/* 27 · Lots of prototypes */}
-
-*Transcript to come.*
+We do get to make _lots and lots_ of prototypes...
 
 </div>
 
 <div data-slide="35" data-source-slide="html/27-nextcloud.html" data-fragment="-1">
 
-{/* 28 · NextCloud */}
+In fact, we have an internal platform just for our team called Next Cloud where we all post our prototypes throughout the day. Everything goes on here, no matter how rough, small, silly, or early it is. Experiments and side discoveries go up alongside regular updates to our big, headline projects.
 
-Nextcloud: our internal platform for prototypes and experiments.
+If you work on any kind of team trying to solve novel problems, having visiblity into what other people are exploring and playing with is essential. As well as having ways to react to, comment on, and riff off each other's ideas.
 
-Share extremely rough work and early explorations openly within the team.
-
-Quick feedback calibrates our theories of the future.
-
-Find somewhere to share rough work early and often. We post pretty much daily.
-
+Getting this kind of quick feedback and working in the open works really well for us. I think it helps us calibrate and align our theories of the future.
 
 </div>
 
 <div data-slide="36" data-source-slide="html/28-nextcloud-copy.html" data-fragment="-1">
 
-{/* 28 · NextCloud copy */}
+Just to show you some examples of the sort of things we put up: here is a demo from my coworker [Alex Gorischek](https://alexgorischek.com/) exploring a system that enforces a maintainer's guidelines for creating GitHub issues.
 
-Coworker Alex’s prototype: guidelines for GitHub issues.
-
-GEV judges whether you’ve met all the requirements before you can post the issue.
-
+This is powered by a System One decision model like [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev), which instantly judges whether you’ve met all the stated requirements before you can post the issue.
 
 </div>
 
 <div data-slide="37" data-source-slide="html/29-nextcloud-copy-2.html" data-fragment="-1">
 
-{/* 28 · NextCloud copy 2 */}
+Here's another from my coworker [Luke Edwards](https://lukeed.com/) exploring different primitives as first-class citizens on GitHub. Here he's playing with a real-time multiplayer canvas within a repo for drawing ideas with coworkers before turning them into agent work.
 
-Coworker Luke’s prototype: a different GitHub, with different primitives.
-
-Real-time multiplayer canvas: draw ideas with coworkers before turning them into agent work.
-
+So those two examples are quite small and not-very-serious explorations of what _could_ exist on GitHub. But making tangible objects like these to look at is the first step in figuring out if these directions are interesting or useful to us.
 
 </div>
 
 <div data-slide="38" data-source-slide="html/30-figjam-ideas.html" data-fragment="-1">
 
-{/* 29 · FigJam ideas */}
+We also regularly do group theory building inside a giant FigJam board. We recently all braindumped stickies in here on themes, specific ideas, and directions we think software and agentic development is headed. These could be anything from trends we're seeing to something we want to figure out to unanswered questions.
 
-Group theory building: FigJam stickies on interesting software and agent developments.
+We then grouped these into buckets: new interactions and visual mediums, conceptual shifts and new nouns, new agent capabilities, types of validation, etc.
 
-Themes: new interactions and visual mediums; conceptual nouns; agentic capabilities; types of validation.
-
-Find shared interests and excitement, then team up and collab.
-
+Doing this helps us figure out what everyone is seeing, what they're excited about, and what problems we can team up on.
 
 </div>
 
 <div data-slide="39" data-source-slide="html/31-but-we-also-need-to.html" data-fragment="-1">
 
-{/* 30 · But, we also need to */}
+But (obviously) we need to do a lot more than come up with plausible theories and make cool prototypes all day.
 
-*Transcript to come.*
+We need to prove our theories are ~likely to be correct with evidence.  
+We need to have good intuition and good quality data. 
+We need to play politics and convince other people our ideas are worth listening to.
+
+And we _do_ need to have a credible exit to production. This is not a dreams lab, and this team in particular has a very good track record of shipping their wild bets to GitHub proper. For example: [GitHub Copilot](), [GitHub Spark](), [GitHub Workspaces](), and [Agentic Workflows]().
 
 </div>
 
 <div data-slide="40" data-source-slide="html/32-the-actual-job.html" data-fragment="-1">
 
-{/* 31 · The actual job */}
+The job involves looking around at the wider software engineering industry, noticing trends and patterns.
 
-*Transcript to come.*
+Then extrapolating from those signals to predict where things are headed.
+
+Building compelling prototypes that explore what those predictions look like in practice and on screens. As well as showing what the right strategic play for GitHub in particular would be.
+
+And lastly convincing our leaders and wider organisation that these ideas are worth investing in. That means dedicating time, people, and money to them when they seem especially promising.
 
 </div>
 
 <div data-slide="41" data-source-slide="html/33-the-actual-job-is-actually-hard.html" data-fragment="-1">
 
-{/* 32 · The actual job: is actually hard */}
-
-*Transcript to come.*
+And that actual job is actually really hard. It is simple to describe, but both intellectually challenging and strategically complex to really do it well.
 
 </div>
 
 <div data-slide="42" data-source-slide="html/34-the-politics.html" data-fragment="-1">
 
-{/* 33 · The politics */}
+And the political struggles are very real. Trying to make a large organisation made up of thousands of people, with many hundreds of millions of users, change course is challenging. This isn't because of any nefarious actors or specific dysfunction.
 
-*Transcript to come.*
+It's because any truly ambitious idea that changes the existing plan would mean disrupting existing roadmaps, convincing people to do a 180 on everything they care about, and will inevitably threathen some egos. “Not invented here” syndrome can happen anywhere.
 
 </div>
 
 <div data-slide="43" data-source-slide="html/35-the-politics-copy.html" data-fragment="-1">
 
-{/* 34 · The politics copy */}
-
-*Transcript to come.*
+But that is a whole different talk.
 
 </div>
 
 <div data-slide="44" data-source-slide="html/36-section-the-toolkit.html" data-fragment="-1">
 
-{/* 35 · Section: the toolkit */}
-
-*Transcript to come.*
+I mostly want to talk to you about practical tools for speculative design and give you a gentle shove to start doing it.
 
 </div>
 
 <div data-slide="45" data-source-slide="html/37-the-toolkit.html" data-fragment="-1">
 
-{/* 36 · The toolkit */}
-
-*Transcript to come.*
+We're going to talk through six tools today: the futures cone, weak signals, second and third order effects, playing with ideas, future artefacts, and making your theories concrete and public.
 
 </div>
 
 <div data-slide="46" data-source-slide="html/38-futures-cone.html" data-fragment="-1">
 
-{/* 37 · Futures cone */}
+I feel obliged to start with the futures cone because it's a hallmark of the field of futures studies and speculative design. Many of today’s tools come from that world.
 
-Futures cone: foundational to futures work and speculative design.
+The idea is simple. We sit on the “now” mark and look forward into the cone. The wider the angle of the cone, the more uncertain we are about the futures within in. Probable future scenarios 
 
-Many of today’s tools come from that world.
-
-Which ring: possible, plausible, probable or preferable?
+Whenever you develop a new idea about the future, it's useful to ask yourself: which ring does it live in? The possible, plausible, probable or preferable?
 
 
 </div>
 
 <div data-slide="47" data-source-slide="html/39-futures-cone-copy.html" data-fragment="-1">
-
-{/* 38 · Futures cone copy */}
 
 *Transcript to come.*
 
@@ -460,15 +358,11 @@ Which ring: possible, plausible, probable or preferable?
 
 <div data-slide="48" data-source-slide="html/40-futures-cone-copy-2.html" data-fragment="-1">
 
-{/* 39 · Futures cone copy 2 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="49" data-source-slide="html/41-weak-signals-copy-2.html" data-fragment="-1">
-
-{/* 40 · Weak signals copy 2 */}
 
 Notice weak signals while surveying your information streams.
 
@@ -481,15 +375,11 @@ Explicitly look for themes across them.
 
 <div data-slide="50" data-source-slide="html/42-weak-signals-copy-3.html" data-fragment="-1">
 
-{/* 41 · Weak signals copy 3 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="51" data-source-slide="html/43-weak-signals-copy-4.html" data-fragment="-1">
-
-{/* 42 · Weak signals copy 4 */}
 
 *Transcript to come.*
 
@@ -497,15 +387,11 @@ Explicitly look for themes across them.
 
 <div data-slide="52" data-source-slide="html/44-weak-signals-copy-5.html" data-fragment="-1">
 
-{/* 43 · Weak signals copy 5 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="53" data-source-slide="html/45-weak-signals-copy-6.html" data-fragment="-1">
-
-{/* 44 · Weak signals copy 6 */}
 
 *Transcript to come.*
 
@@ -513,15 +399,11 @@ Explicitly look for themes across them.
 
 <div data-slide="54" data-source-slide="html/46-weak-signals-copy-7.html" data-fragment="-1">
 
-{/* 45 · Weak signals copy 7 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="55" data-source-slide="html/47-weak-signals-copy-9.html" data-fragment="-1">
-
-{/* 46 · Weak signals copy 9 */}
 
 *Transcript to come.*
 
@@ -529,15 +411,11 @@ Explicitly look for themes across them.
 
 <div data-slide="56" data-source-slide="html/48-weak-signals-copy-8.html" data-fragment="-1">
 
-{/* 47 · Weak signals copy 8 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="57" data-source-slide="html/49-weak-signals-copy-10.html" data-fragment="-1">
-
-{/* 48 · Weak signals copy 10 */}
 
 *Transcript to come.*
 
@@ -545,15 +423,11 @@ Explicitly look for themes across them.
 
 <div data-slide="58" data-source-slide="html/50-weak-signals-copy.html" data-fragment="-1">
 
-{/* 49 · Weak signals copy */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="59" data-source-slide="html/51-weak-signals-2.html" data-fragment="-1">
-
-{/* 50 · Weak signals 2 */}
 
 *Transcript to come.*
 
@@ -561,15 +435,11 @@ Explicitly look for themes across them.
 
 <div data-slide="60" data-source-slide="html/52-weak-signals-2-copy.html" data-fragment="-1">
 
-{/* 50 · Weak signals 2 copy */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="61" data-source-slide="html/53-weak-signals-2-copy-2.html" data-fragment="-1">
-
-{/* 50 · Weak signals 2 copy 2 */}
 
 *Transcript to come.*
 
@@ -577,15 +447,11 @@ Explicitly look for themes across them.
 
 <div data-slide="62" data-source-slide="html/54-play-with-your-ideas.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="63" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="-1">
-
-{/* 52 · Play: flip it, split it */}
 
 *Transcript to come.*
 
@@ -593,15 +459,11 @@ Explicitly look for themes across them.
 
 <div data-slide="64" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="0">
 
-{/* 52 · Play: flip it, split it · reveal 1 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="65" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="-1">
-
-{/* 53 · Play: ask why, exaggerate */}
 
 Max/min as a thought experiment. In tech, we love to maximise.
 
@@ -616,15 +478,11 @@ Scarcity; things going to shit. More interesting constraints to work with.
 
 <div data-slide="66" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="0">
 
-{/* 53 · Play: ask why, exaggerate · reveal 1 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="67" data-source-slide="html/57-play-ask-why-exaggerate-copy.html" data-fragment="-1">
-
-{/* 53 · Play: ask why, exaggerate copy */}
 
 *Transcript to come.*
 
@@ -632,15 +490,11 @@ Scarcity; things going to shit. More interesting constraints to work with.
 
 <div data-slide="68" data-source-slide="html/58-play-with-your-ideas-copy-2.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 2 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="69" data-source-slide="html/59-play-with-your-ideas-copy-3.html" data-fragment="-1">
-
-{/* 51 · Play with your ideas copy 3 */}
 
 Cricket-powder cereal: an artefact from the future.
 
@@ -654,8 +508,6 @@ Speculative design makes that future familiar and domestic: breakfast cereal.
 </div>
 
 <div data-slide="70" data-source-slide="html/60-play-with-your-ideas-copy.html" data-fragment="-1">
-
-{/* 51 · Play with your ideas copy */}
 
 Stay-at-home mums using OpenClaw for homeschooling and household organisation.
 
@@ -672,8 +524,6 @@ ChatGPT handles cognitive labour: next-size-up clothes, weekly meals, contractor
 
 <div data-slide="71" data-source-slide="html/61-play-with-your-ideas-copy-4.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 4 */}
-
 Throwback adverts about that trend: love the retro look and the promise of agents.
 
 A historical parallel with women, feminism and labour — not the trad wife dream. Some people on Twitter missed that.
@@ -687,15 +537,11 @@ The contrast: built mainly by single 20-year-olds in San Francisco with no domes
 
 <div data-slide="72" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 5 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="73" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="0">
-
-{/* 51 · Play with your ideas copy 5 · reveal 1 */}
 
 *Transcript to come.*
 
@@ -703,15 +549,11 @@ The contrast: built mainly by single 20-year-olds in San Francisco with no domes
 
 <div data-slide="74" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="1">
 
-{/* 51 · Play with your ideas copy 5 · reveal 2 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="75" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="2">
-
-{/* 51 · Play with your ideas copy 5 · reveal 3 */}
 
 *Transcript to come.*
 
@@ -719,15 +561,11 @@ The contrast: built mainly by single 20-year-olds in San Francisco with no domes
 
 <div data-slide="76" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="3">
 
-{/* 51 · Play with your ideas copy 5 · reveal 4 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="77" data-source-slide="html/63-play-with-your-ideas-copy-6.html" data-fragment="-1">
-
-{/* 51 · Play with your ideas copy 6 */}
 
 *Transcript to come.*
 
@@ -735,23 +573,17 @@ The contrast: built mainly by single 20-year-olds in San Francisco with no domes
 
 <div data-slide="78" data-source-slide="html/64-play-with-your-ideas-copy-7.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 7 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="79" data-source-slide="html/65-play-with-your-ideas-copy-8.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 8 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="80" data-source-slide="html/68-artefact-video.html" data-fragment="-1">
-
-{/* Artefact demonstration video */}
 
 My prototype: explain an agent’s technical plan to designers, PMs and leadership.
 
@@ -766,8 +598,6 @@ Different prototypes for different audiences and problems.
 
 <div data-slide="81" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="-1">
 
-{/* 51 · Play with your ideas copy 9 */}
-
 We don’t do enough theory building in London.
 
 Go to San Francisco and talk to people: everyone has theories.
@@ -781,15 +611,11 @@ Build a theory, test it against reality, then let what you learn shape the next 
 
 <div data-slide="82" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="0">
 
-{/* 51 · Play with your ideas copy 9 · reveal 1 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="83" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="1">
-
-{/* 51 · Play with your ideas copy 9 · reveal 2 */}
 
 *Transcript to come.*
 
@@ -797,23 +623,17 @@ Build a theory, test it against reality, then let what you learn shape the next 
 
 <div data-slide="84" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="2">
 
-{/* 51 · Play with your ideas copy 9 · reveal 3 */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="85" data-source-slide="html/67-github-next-copy.html" data-fragment="-1">
 
-{/* 04 · GitHub Next copy */}
-
 *Transcript to come.*
 
 </div>
 
 <div data-slide="86" data-source-slide="html/69-thank-you.html" data-fragment="-1">
-
-{/* Thank you. */}
 
 *Transcript to come.*
 
