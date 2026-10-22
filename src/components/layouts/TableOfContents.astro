@@ -7,42 +7,28 @@ interface Props {
 }
 
 const { headings } = Astro.props;
+const tocHeadings = headings.filter(({ depth }) => depth > 1 && depth < 4);
+const tocIcon = "lucide:scroll-text";
 ---
 
 <div class="desktop-container">
-	<h4>
-		<button
-			class="title"
-			id="desktop-toc-header"
-			type="button"
-			aria-expanded="true"
-			aria-controls="desktop-toc-content"
-		>
-			<svg width="8" height="8" aria-hidden="true">
-				<circle r="4" cx="4" cy="4" fill="var(--color-sea-blue)"></circle>
-			</svg>
-			<span class="title-text">Table of Contents</span>
-			<Icon name="heroicons:chevron-up" size={18} class="arrow-icon" aria-hidden="true" />
-		</button>
-	</h4>
-
-	<nav class="toc" id="desktop-toc-content">
-		<div class="toc-track">
-			<span class="toc-marker" aria-hidden="true"></span>
-			<ul>
-				{
-					headings
-						.filter(({ depth }) => depth > 1 && depth < 4)
-						.map((heading) => (
-							<li class="toc-item" data-level={heading.depth}>
-								<a href={`#${heading.slug}`} class="toc-link">
-									{heading.text}
-								</a>
-							</li>
-						))
-				}
-			</ul>
-		</div>
+	<nav class="toc-panel" aria-labelledby="desktop-toc-title">
+		<h4 class="title" id="desktop-toc-title">
+			<Icon name={tocIcon} size={15} class="title-icon" aria-hidden="true" />
+			Table of Contents
+		</h4>
+		<ul>
+			{
+				tocHeadings.map((heading, i) => (
+					<li class="toc-item" data-level={heading.depth} style={`--i: ${i}`}>
+						<a href={`#${heading.slug}`} class="toc-link">
+							<span class="tick" aria-hidden="true" />
+							<span class="label">{heading.text}</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
 	</nav>
 </div>
 
@@ -55,7 +41,7 @@ const { headings } = Astro.props;
 			aria-expanded="false"
 			aria-controls="mobile-toc-content"
 		>
-			<Icon name="heroicons:chevron-right" size={18} class="arrow-icon" aria-hidden="true" />
+			<Icon name={tocIcon} size={15} class="title-icon" aria-hidden="true" />
 			<span class="collapse-header-text">Table of Contents</span>
 		</button>
 	</h4>
@@ -63,15 +49,13 @@ const { headings } = Astro.props;
 		<nav class="toc">
 			<ul>
 				{
-					headings
-						.filter(({ depth }) => depth > 1 && depth < 4)
-						.map((heading) => (
-							<li class="toc-item" data-level={heading.depth}>
-								<a href={`#${heading.slug}`} class="toc-link">
-									{heading.text}
-								</a>
-							</li>
-						))
+					tocHeadings.map((heading, i) => (
+						<li class="toc-item" data-level={heading.depth} style={`--i: ${i}`}>
+							<a href={`#${heading.slug}`} class="toc-link">
+								{heading.text}
+							</a>
+						</li>
+					))
 				}
 			</ul>
 		</nav>
@@ -79,65 +63,165 @@ const { headings } = Astro.props;
 </div>
 
 <style>
-	.arrow-icon {
-		color: var(--color-gray-600);
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
-	}
-
-	.arrow-icon.collapsed {
-		transform: rotate(180deg);
-	}
-
 	.desktop-container {
 		grid-column: 1;
 		height: 0;
 		max-width: 300px;
 		margin-left: 6%;
-		margin-right: 24px;
+		margin-right: var(--space-s);
 		position: sticky;
-		top: 16px;
+		top: var(--space-m);
 		z-index: 10;
 	}
 
-	.desktop-container .title {
-		display: flex;
-		gap: 0.85rem;
-		align-items: center;
-		margin-top: 0.5rem;
-		cursor: pointer;
-		padding: var(--space-s);
-		background: none;
-		border: none;
-		width: 100%;
-		text-align: left;
-		font: inherit;
-		color: inherit;
+	/* At rest: a column of ticks, one per section, sized by section length.
+	   On hover or keyboard focus, the ticks give way to the section names. */
+	.toc-panel {
+		--row-rest: var(--space-2xs);
+		--row-open: var(--space-m);
+		--label-width: 260px;
+		--blur-dur: var(--dur-page);
+		--pad-y: var(--space-3xs);
+		--pad-x: var(--space-2xs);
+		width: 180px;
+		padding: var(--pad-y) var(--pad-x);
+		margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x));
+		border-radius: var(--border-radius-lg);
+		transition:
+			background-color var(--dur-quick) var(--ease-hover),
+			backdrop-filter var(--dur-quick) var(--ease-hover);
 	}
 
-	.desktop-container > h4,
+	.toc-panel:is(:hover, :focus-within) {
+		width: calc(var(--label-width) + 2 * var(--pad-x));
+	}
+
+	/* Frosted only while a wide figure passes underneath, so the panel
+	   doesn't show against the page gradient the rest of the time. */
+	.desktop-container.over-wide .toc-panel {
+		background: color-mix(in srgb, var(--color-white) 75%, transparent);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+	}
+
+	.toc-panel .title {
+		display: flex;
+		gap: var(--space-2xs);
+		align-items: center;
+		margin: 0 0 var(--space-2xs);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		color: var(--color-gray-800);
+		white-space: nowrap;
+	}
+
+	.title-icon {
+		flex-shrink: 0;
+		color: var(--color-gray-600);
+	}
+
+	.toc-panel ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.toc-panel li.toc-item {
+		height: var(--row-rest);
+		margin: 0 !important;
+		transition: height var(--blur-dur) var(--ease-out);
+	}
+
+	.toc-panel:is(:hover, :focus-within) li.toc-item {
+		height: var(--row-open);
+	}
+
+	.toc-panel .toc-link {
+		position: relative;
+		display: flex;
+		align-items: center;
+		height: 100%;
+		text-decoration: none;
+	}
+
+	.tick {
+		position: absolute;
+		left: 0;
+		top: 50%;
+		width: var(--tick, 16px);
+		height: 2px;
+		margin-top: -1px;
+		border-radius: 1px;
+		background: var(--color-gray-300);
+		transition:
+			opacity var(--blur-dur) var(--ease-out),
+			background-color var(--dur-quick) var(--ease-hover);
+	}
+
+	.toc-item[data-level="3"] .tick {
+		left: var(--space-3xs);
+	}
+
+	.toc-link.active .tick {
+		background: var(--color-sea-blue);
+	}
+
+	.toc-panel .label {
+		width: var(--label-width);
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		color: var(--color-gray-600);
+		opacity: 0;
+		filter: blur(10px);
+		pointer-events: none;
+		transition:
+			opacity var(--blur-dur) var(--ease-out),
+			filter var(--blur-dur) var(--ease-out),
+			color var(--dur-quick) var(--ease-hover);
+	}
+
+	.toc-item[data-level="3"] .label {
+		padding-left: var(--space-xs);
+	}
+
+	.toc-panel:is(:hover, :focus-within) .tick {
+		opacity: 0;
+	}
+
+	/* Labels sharpen top-down in a quick cascade */
+	.toc-panel:is(:hover, :focus-within) .label {
+		opacity: 1;
+		filter: blur(0);
+		pointer-events: auto;
+		transition-delay: calc(var(--i) * 35ms);
+	}
+
+	.toc-panel .toc-link:hover .label {
+		color: var(--color-medium-sea-blue);
+	}
+
+	.toc-panel .toc-link.active .label {
+		color: var(--color-sea-blue);
+		font-weight: 500;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.toc-panel li.toc-item,
+		.toc-panel .label {
+			transition-duration: 0ms;
+			transition-delay: 0ms !important;
+		}
+		.toc-panel .label {
+			filter: none;
+		}
+	}
+
 	.mobile-container > h4 {
 		margin: 0;
-	}
-
-	.desktop-container .title-text {
-		margin: 0;
-		font-size: 0.96rem;
-		color: var(--color-gray-800);
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
-	}
-
-	.desktop-container.collapsed .toc {
-		max-height: 0;
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.toc {
-		max-height: 80vh;
-		opacity: 1;
-		overflow: hidden;
-		padding-right: var(--space-m);
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
 	}
 
 	.mobile-container {
@@ -158,9 +242,9 @@ const { headings } = Astro.props;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2xs);
 		border-bottom: 1px solid var(--color-gray-100);
-		padding-bottom: var(--space-xs);
+		padding: var(--space-xs) 0;
 		background: none;
 		border-top: none;
 		border-left: none;
@@ -171,133 +255,136 @@ const { headings } = Astro.props;
 		color: inherit;
 	}
 
-	.collapse-header .arrow-icon {
-		color: var(--color-sea-blue);
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
-	}
-
 	.collapse-header-text {
 		display: inline-block;
 		margin: 0;
-		font-size: 0.96rem;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
 		color: var(--color-gray-800);
 		font-weight: 600;
-		transition: all 0.3s cubic-bezier(0.2, 1, 0.8, 1);
+		transition: color var(--dur-quick) var(--ease-hover);
 	}
 
-	.collapse-header:hover .collapse-header-text {
+	.collapse-header .title-icon {
+		transition: color var(--dur-quick) var(--ease-hover);
+	}
+
+	.collapse-header:hover .collapse-header-text,
+	.collapse-header:hover .title-icon {
 		color: var(--color-medium-sea-blue);
 	}
 
-	.collapse-header:hover .arrow-icon {
-		fill: var(--color-medium-sea-blue);
-	}
-
+	/* Grid rows animate between 0fr and 1fr so the list opens to its
+	   natural height; items blur in with the same cascade as desktop. */
 	.collapse-content {
-		padding-bottom: var(--space-xs);
-		margin: var(--space-s) 0;
-		border-bottom: 1px solid var(--color-gray-100);
-		display: none;
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows var(--blur-dur) var(--ease-out);
 	}
 
 	.collapse-content.expanded {
-		display: block;
+		grid-template-rows: 1fr;
 	}
 
-	.toc-track {
-		position: relative;
+	.mobile-container {
+		--blur-dur: var(--dur-page);
 	}
 
-	.toc-marker {
-		position: absolute;
-		left: 2px;
-		top: 0;
-		width: 2px;
-		height: 1px;
-		border-radius: var(--border-radius-sm);
-		background: var(--color-sea-blue);
-		opacity: 0;
-		transform-origin: top;
-		transform: translateY(0) scaleY(0);
-		transition:
-			transform var(--dur-page) var(--ease-in-out),
-			opacity var(--dur-quick) var(--ease-hover);
-		pointer-events: none;
+	.mobile-container .toc {
+		min-height: 0;
+		overflow: hidden;
+		/* Keeps collapsed links out of the tab order, after the close finishes */
+		visibility: hidden;
+		transition: visibility 0s var(--blur-dur);
 	}
 
-	.toc ul {
+	.collapse-content.expanded .toc {
+		visibility: visible;
+		transition-delay: 0s;
+	}
+
+	.mobile-container .toc ul {
 		list-style: none;
-		padding: 0;
+		padding: var(--space-s) 0 var(--space-xs);
 		margin: 0;
+		border-bottom: 1px solid var(--color-gray-100);
 	}
 
-	li.toc-item {
-		margin-left: 22px !important;
-		margin-bottom: 0.75rem !important;
+	.mobile-container li.toc-item {
+		margin-left: 0 !important;
+		margin-bottom: var(--space-2xs) !important;
+		opacity: 0;
+		filter: blur(10px);
+		transition:
+			opacity var(--blur-dur) var(--ease-out),
+			filter var(--blur-dur) var(--ease-out);
+	}
+
+	.collapse-content.expanded li.toc-item {
+		opacity: 1;
+		filter: blur(0);
+		transition-delay: calc(var(--i) * 35ms);
 	}
 
 	.toc-item::before {
 		display: none !important;
 	}
 
-	.toc-link {
+	.mobile-container .toc-link {
 		font-family: var(--font-sans);
 		display: block;
 		line-height: var(--leading-base);
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-xs);
 		cursor: pointer;
 		transition: color var(--dur-quick) var(--ease-hover);
 		color: var(--color-gray-600);
 		text-decoration: none;
 	}
 
-	.toc-item[data-level="1"] .toc-link,
-	.toc-item[data-level="2"] .toc-link {
-		margin-left: 0;
+	.mobile-container .toc-item[data-level="3"] .toc-link {
+		margin-left: var(--space-xs);
 	}
 
-	.toc-item[data-level="3"] .toc-link,
-	.toc-item[data-level="4"] .toc-link {
-		margin-left: 24px;
-	}
-
-	.toc-link:hover {
+	.mobile-container .toc-link:hover {
 		color: var(--color-medium-sea-blue);
 	}
 
-	.toc-link.active {
+	.mobile-container .toc-link.active {
 		color: var(--color-sea-blue);
 		font-weight: 500;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.collapse-content,
+		.mobile-container li.toc-item {
+			transition-duration: 0ms;
+			transition-delay: 0ms !important;
+		}
+		.mobile-container li.toc-item {
+			filter: none;
+		}
 	}
 </style>
 
 <script>
 	(() => {
-		let scrollTimeoutId: ReturnType<typeof setTimeout> | undefined;
-		let isCollapsed = false;
-		let isAutoCollapsed = false;
-		let isScrollingToSection = false;
-		let disableAutoCollapse = false;
 
-		const desktopContainer = document.querySelector(".desktop-container") as HTMLElement;
-		const tocHeader = document.getElementById("desktop-toc-header");
-		const arrowIcon = tocHeader?.querySelector(".arrow-icon");
+		const desktopContainer = document.querySelector(".desktop-container") as HTMLElement | null;
+		const panelEl = desktopContainer?.querySelector(".toc-panel") as HTMLElement | null;
+		const listEl = panelEl?.querySelector("ul") ?? null;
+		const proseEl = desktopContainer?.parentElement ?? null;
 
 		// Ensure desktop container has correct positioning after view transitions
 		if (desktopContainer) {
 			desktopContainer.style.gridColumn = "1";
 			desktopContainer.style.position = "sticky";
-			desktopContainer.style.top = "16px";
 			desktopContainer.style.zIndex = "10";
 		}
 
 		// Handle mobile TOC
 		const header = document.querySelector(".collapse-header");
 		const content = document.querySelector(".collapse-content");
-		const mobileArrow = header?.querySelector(".arrow-icon");
 
-		const trackEl = document.querySelector(".desktop-container .toc-track") as HTMLElement | null;
-		const markerEl = trackEl?.querySelector(".toc-marker") as HTMLElement | null;
 		const desktopLinks = Array.from(
 			document.querySelectorAll(".desktop-container .toc-link")
 		) as HTMLAnchorElement[];
@@ -309,6 +396,23 @@ const { headings } = Astro.props;
 				return heading ? { link, heading } : null;
 			})
 			.filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => entry !== null);
+
+		// Tick width tracks how much page each section takes up
+		const MIN_TICK = 6;
+		const MAX_TICK = 32;
+		const updateTickWidths = () => {
+			if (!proseEl || sections.length === 0) return;
+			const end = proseEl.getBoundingClientRect().bottom;
+			const lengths = sections.map(({ heading }, i) => {
+				const next = sections[i + 1]?.heading.getBoundingClientRect().top ?? end;
+				return Math.max(0, next - heading.getBoundingClientRect().top);
+			});
+			const longest = Math.max(...lengths, 1);
+			sections.forEach(({ link }, i) => {
+				const width = MIN_TICK + (MAX_TICK - MIN_TICK) * (lengths[i] / longest);
+				link.style.setProperty("--tick", `${Math.round(width)}px`);
+			});
+		};
 
 		let activeIndex: number | null = null;
 		// Top 30% counts as "current" so clicking a TOC link (which lands the
@@ -328,32 +432,7 @@ const { headings } = Astro.props;
 			});
 		};
 
-		const positionMarker = (animate: boolean) => {
-			if (!markerEl || !trackEl) return;
-
-			if (!animate) markerEl.style.transition = "none";
-
-			if (activeIndex === null) {
-				markerEl.style.opacity = "0";
-			} else {
-				const trackRect = trackEl.getBoundingClientRect();
-				const linkRect = sections[activeIndex].link.getBoundingClientRect();
-				const top = linkRect.top - trackRect.top;
-				const height = linkRect.height;
-				markerEl.style.transform = `translateY(${top}px) scaleY(${height})`;
-				markerEl.style.opacity = "1";
-			}
-
-			if (!animate) {
-				// Force layout to commit the transition-less position before re-enabling.
-				markerEl.getBoundingClientRect();
-				requestAnimationFrame(() => {
-					markerEl.style.transition = "";
-				});
-			}
-		};
-
-		const updateActiveHeading = (animate: boolean) => {
+		const updateActiveHeading = () => {
 			let newIndex: number | null = null;
 			for (let i = 0; i < sections.length; i++) {
 				const top = sections[i].heading.getBoundingClientRect().top;
@@ -364,91 +443,102 @@ const { headings } = Astro.props;
 				}
 			}
 
-			if (newIndex === activeIndex) {
-				if (!animate) positionMarker(false);
-				return;
-			}
-
+			if (newIndex === activeIndex) return;
 			activeIndex = newIndex;
 			setActiveClasses();
-			positionMarker(animate);
 		};
 
-		let markerTicking = false;
-		const scheduleMarkerUpdate = (animate: boolean) => {
-			if (markerTicking) return;
-			markerTicking = true;
+		// Wide figures break out of the prose column and slide under the TOC.
+		// While one does, frost the panel so it reads on top.
+		const proseSiblings = Array.from(proseEl?.children ?? []).filter((el) => el !== desktopContainer);
+
+		const overlapsProse = (box: { left: number; right: number; top: number; bottom: number }) =>
+			proseSiblings.some((el) => {
+				const r = el.getBoundingClientRect();
+				return r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top;
+			});
+
+		// Spacing tokens are fluid calc()s, so resolve them by measuring
+		const resolveLength = (value: string) => {
+			if (!panelEl) return 0;
+			const probe = document.createElement("div");
+			probe.style.cssText = `position:absolute;visibility:hidden;width:${value}`;
+			panelEl.appendChild(probe);
+			const px = probe.getBoundingClientRect().width;
+			probe.remove();
+			return px;
+		};
+
+		const updateWideOverlap = () => {
+			// Hidden below the desktop breakpoint
+			if (!desktopContainer || !panelEl || panelEl.getClientRects().length === 0) return;
+
+			const rect = panelEl.getBoundingClientRect();
+			let box = rect.toJSON();
+			// Judge the open state by its final footprint, not mid-transition
+			if (panelEl.matches(":hover, :focus-within")) {
+				const style = getComputedStyle(panelEl);
+				const openRow = resolveLength("var(--row-open)");
+				const labelWidth = resolveLength("var(--label-width)");
+				const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+				box = {
+					...box,
+					right: rect.left + labelWidth + padX,
+					bottom: (listEl?.getBoundingClientRect().top ?? rect.top) + sections.length * openRow + parseFloat(style.paddingBottom),
+				};
+			}
+			// Before it sticks, the panel sits on the header gradient where
+			// the frost reads as a stray box
+			const stickyTop = parseFloat(getComputedStyle(desktopContainer).top);
+			const isStuck = desktopContainer.getBoundingClientRect().top <= stickyTop + 1;
+			desktopContainer.classList.toggle("over-wide", isStuck && overlapsProse(box));
+		};
+
+		let ticking = false;
+		const scheduleUpdate = () => {
+			if (ticking) return;
+			ticking = true;
 			requestAnimationFrame(() => {
-				markerTicking = false;
-				updateActiveHeading(animate);
+				ticking = false;
+				updateActiveHeading();
+				updateWideOverlap();
 			});
 		};
 
-		const markerScrollHandler = () => scheduleMarkerUpdate(true);
-		const markerResizeHandler = () => scheduleMarkerUpdate(false);
+		const layoutChangeHandler = () => {
+			updateTickWidths();
+			scheduleUpdate();
+		};
 
-		let markerResizeObserver: ResizeObserver | undefined;
-		if (sections.length > 0 && markerEl && trackEl) {
-			// Set synchronously with transitions disabled so it doesn't slide
-			// in from a resting state on first paint.
-			updateActiveHeading(false);
+		let proseResizeObserver: ResizeObserver | undefined;
+		if (sections.length > 0) {
+			updateTickWidths();
+			updateActiveHeading();
+			updateWideOverlap();
 
-			window.addEventListener("scroll", markerScrollHandler, { passive: true });
-			window.addEventListener("resize", markerResizeHandler);
+			window.addEventListener("scroll", scheduleUpdate, { passive: true });
+			window.addEventListener("resize", layoutChangeHandler);
 
-			const list = trackEl.querySelector("ul");
-			if (list && "ResizeObserver" in window) {
-				markerResizeObserver = new ResizeObserver(() => scheduleMarkerUpdate(false));
-				markerResizeObserver.observe(list);
+			// Images loading in reflow the page and change section lengths
+			if (proseEl && "ResizeObserver" in window) {
+				proseResizeObserver = new ResizeObserver(layoutChangeHandler);
+				proseResizeObserver.observe(proseEl);
 			}
 
-			document.fonts?.ready?.then(() => scheduleMarkerUpdate(false));
+			document.fonts?.ready?.then(layoutChangeHandler);
 		}
 
-		// Desktop toggle handler
-		const desktopClickHandler = () => {
-			isCollapsed = !isCollapsed;
-			isAutoCollapsed = false;
-			disableAutoCollapse = false;
-			desktopContainer?.classList.toggle("collapsed", isCollapsed);
-			arrowIcon?.classList.toggle("collapsed", isCollapsed);
-			(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", String(!isCollapsed));
-		};
+		const panelEvents = ["pointerenter", "pointerleave", "focusin", "focusout"];
+		panelEvents.forEach((type) => panelEl?.addEventListener(type, scheduleUpdate));
 
 		// Mobile toggle handler
 		const mobileClickHandler = () => {
 			content?.classList.toggle("expanded");
-			mobileArrow?.classList.toggle("expanded");
 			const isExpanded = content?.classList.contains("expanded") ?? false;
 			(header as HTMLButtonElement)?.setAttribute("aria-expanded", String(isExpanded));
 		};
 
-		// Scroll handler for desktop auto-collapse
-		const scrollHandler = () => {
-			if (!desktopContainer || isScrollingToSection || disableAutoCollapse) return;
-
-			const containerRect = desktopContainer.getBoundingClientRect();
-			const isAtTop = containerRect.top <= 32;
-
-			if (!isAtTop) {
-				isCollapsed = false;
-				isAutoCollapsed = false;
-				desktopContainer.classList.remove("collapsed");
-				arrowIcon?.classList.remove("collapsed");
-				(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", "true");
-			} else if (!isAutoCollapsed && !isCollapsed) {
-				isAutoCollapsed = true;
-				isCollapsed = true;
-				desktopContainer.classList.add("collapsed");
-				arrowIcon?.classList.add("collapsed");
-				(tocHeader as HTMLButtonElement)?.setAttribute("aria-expanded", "false");
-			}
-		};
-
-		// Add event listeners
-		tocHeader?.addEventListener("click", desktopClickHandler);
 		header?.addEventListener("click", mobileClickHandler);
-		window.addEventListener("scroll", scrollHandler);
 
 		const onScrollSettled = (fn: () => void) => {
 			if ("onscrollend" in window) {
@@ -470,9 +560,6 @@ const { headings } = Astro.props;
 				const targetElement = document.getElementById(targetId);
 				if (!targetElement) return;
 
-				isScrollingToSection = true;
-				disableAutoCollapse = true;
-
 				targetElement.scrollIntoView({
 					behavior: "smooth",
 					block: "start",
@@ -490,11 +577,6 @@ const { headings } = Astro.props;
 				};
 				onScrollSettled(correctScroll);
 
-				clearTimeout(scrollTimeoutId);
-				scrollTimeoutId = setTimeout(() => {
-					isScrollingToSection = false;
-				}, 1000);
-
 				history.pushState(null, "", `#${targetId}`);
 			};
 
@@ -503,13 +585,11 @@ const { headings } = Astro.props;
 		});
 
 		return () => {
-			clearTimeout(scrollTimeoutId);
-			tocHeader?.removeEventListener("click", desktopClickHandler);
 			header?.removeEventListener("click", mobileClickHandler);
-			window.removeEventListener("scroll", scrollHandler);
-			window.removeEventListener("scroll", markerScrollHandler);
-			window.removeEventListener("resize", markerResizeHandler);
-			markerResizeObserver?.disconnect();
+			window.removeEventListener("scroll", scheduleUpdate);
+			window.removeEventListener("resize", layoutChangeHandler);
+			proseResizeObserver?.disconnect();
+			panelEvents.forEach((type) => panelEl?.removeEventListener(type, scheduleUpdate));
 			linkHandlers.forEach(({ link, handler }) => {
 				link.removeEventListener("click", handler);
 			});
