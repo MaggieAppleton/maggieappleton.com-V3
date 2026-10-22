@@ -25,11 +25,11 @@ import RelativeDate from "../layouts/RelativeDate.astro";
 		<div class="inner-text">
 			<h3>{title}</h3>
 			{
-				conferences && (
+				conferences?.length > 0 && (
 					<div class="conferences-container">
 						<p>
 							<Icon name="heroicons:map-pin-20-solid" size={18} />
-							{conferences[0].name}, {conferences[0].location}
+							{[conferences[0].name, conferences[0].location].filter(Boolean).join(", ")}
 							{conferences.length > 1 && <span class="conf-count">+{conferences.length - 1}</span>}
 						</p>
 					</div>
