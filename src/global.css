@@ -489,7 +489,7 @@ h1 {
   font-family: var(--font-serif);
   line-height: var(--leading-tighter);
   font-weight: normal;
-  margin-bottom: var(--space-s);
+  margin-bottom: var(--space-xs);
   max-width: 1200px;
 }
 
@@ -497,7 +497,6 @@ h1 {
   h1 {
     font-size: var(--font-size-2xl);
     max-width: 100%;
-    margin-bottom: var(--space-xs);
   }
 }
 
