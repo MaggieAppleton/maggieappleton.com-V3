@@ -28,10 +28,24 @@
         {
           "key": "Permissions-Policy",
           "value": "camera=(), microphone=(), geolocation=()"
-        },
+        }
+      ]
+    },
+    {
+      "source": "/((?!fortune-telling$).*)",
+      "headers": [
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://platform.twitter.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; media-src 'self' https://media.maggieappleton.com; frame-src https://twitter.com https://platform.twitter.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.figma.com https://share.transistor.fm; connect-src 'self' https://syndication.twitter.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+        }
+      ]
+    },
+    {
+      "source": "/fortune-telling",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://platform.twitter.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; media-src 'self' https://media.maggieappleton.com; frame-src https://maggieappleton.com/talk-decks/fortune-telling https://www.maggieappleton.com/talk-decks/fortune-telling https://twitter.com https://platform.twitter.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.figma.com https://share.transistor.fm; connect-src 'self' https://syndication.twitter.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         }
       ]
     }
