@@ -2,7 +2,7 @@
 import { Picture } from "astro:assets";
 import type { ImageMetadata } from "astro";
 
-type ImageEntry = string | { src: string; background?: string };
+type ImageEntry = string | { src: string; background?: string; title?: string };
 
 interface Props {
 	images: ImageEntry[];
@@ -15,7 +15,7 @@ const { images, revealSrc } = Astro.props;
 // background makes that slide fill the full 16:9 frame and letterbox onto the
 // colour, rather than the frame hugging the media's own aspect ratio.
 const entries = images.map((entry) =>
-	typeof entry === "string" ? { src: entry, background: undefined } : entry,
+	typeof entry === "string" ? { src: entry, background: undefined, title: undefined } : entry,
 );
 
 // Generate unique ID
@@ -34,21 +34,21 @@ const imageGlobs = import.meta.glob<{ default: ImageMetadata }>(
 );
 
 const resolvedImages = await Promise.all(
-	entries.map(async ({ src, background }) => {
+	entries.map(async ({ src, background, title }) => {
 		if (isVideo(src)) {
-			return { src, background, isRemote: true, resolved: null, isVideo: true };
+			return { src, background, title, isRemote: true, resolved: null, isVideo: true };
 		}
 		const isRemote = src.startsWith("http://") || src.startsWith("https://");
 		if (isRemote) {
-			return { src, background, isRemote: true, resolved: null, isVideo: false };
+			return { src, background, title, isRemote: true, resolved: null, isVideo: false };
 		}
 		const globKey = "/src" + src;
 		if (!imageGlobs[globKey]) {
 			console.warn(`ScrollyTalkSection: Image not found: ${src}`);
-			return { src, background, isRemote: true, resolved: null, isVideo: false };
+			return { src, background, title, isRemote: true, resolved: null, isVideo: false };
 		}
 		const resolved = (await imageGlobs[globKey]()).default;
-		return { src, background, isRemote: false, resolved, isVideo: false };
+		return { src, background, title, isRemote: false, resolved, isVideo: false };
 	}),
 );
 
@@ -77,6 +77,7 @@ const widths = [600, 900, 1200];
 							{...matteAttrs(img.background)}
 							src={img.src}
 							poster={getPosterUrl(img.src)}
+							aria-label={img.title}
 							muted
 							loop
 							playsinline
@@ -120,6 +121,7 @@ const widths = [600, 900, 1200];
 							{...matteAttrs(img.background)}
 							src={img.src}
 							poster={getPosterUrl(img.src)}
+							aria-label={img.title}
 							muted
 							loop
 							playsinline

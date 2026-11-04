@@ -1,0 +1,26 @@
+.talk-video-container { position: relative; }
+.talk-video-container > video { display: block; }
+.talk-video-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+}
+.talk-video-actions button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-gray-300, #d5d1c7);
+  border-radius: 6px;
+  background: var(--paper, #fffdf7);
+  color: var(--ink, #1e2a1b);
+  font: 500 14px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.talk-video-actions button:hover { background: var(--cream, #f4f0e6); }
+.talk-video-actions button:focus-visible {
+  outline: 2px solid var(--green, #397568);
+  outline-offset: 2px;
+}

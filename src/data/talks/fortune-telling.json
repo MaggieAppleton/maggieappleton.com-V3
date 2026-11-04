@@ -25,7 +25,11 @@
   "/images/posts/fortune-telling/16-why-design-engineers-stage-2.webp",
   "/images/posts/fortune-telling/17-right-and-early.webp",
   "/images/posts/fortune-telling/18-right-and-early-example-1.webp",
-  "/images/posts/fortune-telling/19-right-and-early-example-1-copy.webp",
+  {
+    "src": "/videos/fortune-telling/digital-garden-walkthrough.mp4",
+    "background": "#f3f0ed",
+    "title": "Digital garden walkthrough"
+  },
   "/images/posts/fortune-telling/20-right-and-early-example-2.webp",
   "/images/posts/fortune-telling/21-right-and-early-example-3.webp",
   "/images/posts/fortune-telling/22-two-things-today-stage-0.webp",
@@ -34,10 +38,26 @@
   "/images/posts/fortune-telling/24-the-dream-of-labs-work.webp",
   "/images/posts/fortune-telling/25-kind-of-but-not-entirely.webp",
   "/images/posts/fortune-telling/26-lots-of-prototypes.webp",
-  "/images/posts/fortune-telling/27-nextcloud.webp",
-  "/images/posts/fortune-telling/28-nextcloud-copy.webp",
-  "/images/posts/fortune-telling/29-nextcloud-copy-2.webp",
-  "/images/posts/fortune-telling/30-figjam-ideas.webp",
+  {
+    "src": "/videos/fortune-telling/next-cloud-walkthrough.mp4",
+    "background": "#e9e6dd",
+    "title": "Next Cloud walkthrough"
+  },
+  {
+    "src": "/videos/fortune-telling/github-issue-guidelines.mp4",
+    "background": "#1c2328",
+    "title": "GitHub issue guidelines demo"
+  },
+  {
+    "src": "/videos/fortune-telling/github-multiplayer-canvas.mp4",
+    "background": "#fdfdfd",
+    "title": "GitHub multiplayer canvas demo"
+  },
+  {
+    "src": "/videos/fortune-telling/figjam-theory-building.mp4",
+    "background": "#f2f2f2",
+    "title": "FigJam theory-building walkthrough"
+  },
   "/images/posts/fortune-telling/31-but-we-also-need-to.webp",
   "/images/posts/fortune-telling/32-the-actual-job.webp",
   "/images/posts/fortune-telling/33-the-actual-job-is-actually-hard.webp",
@@ -81,7 +101,11 @@
   "/images/posts/fortune-telling/63-play-with-your-ideas-copy-6.webp",
   "/images/posts/fortune-telling/64-play-with-your-ideas-copy-7.webp",
   "/images/posts/fortune-telling/65-play-with-your-ideas-copy-8.webp",
-  "/images/posts/fortune-telling/66-artefact-video.webp",
+  {
+    "src": "/videos/fortune-telling/chopin-altitude-lenses.mp4",
+    "background": "#f0f0ee",
+    "title": "Technical plan reading levels demo"
+  },
   "/images/posts/fortune-telling/66-play-with-your-ideas-copy-9-stage-0.webp",
   "/images/posts/fortune-telling/66-play-with-your-ideas-copy-9-stage-1.webp",
   "/images/posts/fortune-telling/66-play-with-your-ideas-copy-9-stage-2.webp",

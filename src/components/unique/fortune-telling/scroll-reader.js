@@ -6,6 +6,7 @@ export function connectScrollReader(deck) {
       source: slide.dataset.sourceSlide,
       title: slide.getAttribute('aria-label'),
       stage: slide.dataset.progressiveStage,
+      video: Boolean(slide.querySelector('video')),
     };
     const fragments = [...new Set([...slide.querySelectorAll('.fragment')]
       .map(fragment => Number(fragment.dataset.fragmentIndex)))].sort((a, b) => a - b);
@@ -15,9 +16,16 @@ export function connectScrollReader(deck) {
   window.addEventListener('message', event => {
     if (event.source !== parent || event.origin !== location.origin) return;
     if (event.data?.type === 'talk:connect') send();
+    if (event.data?.type === 'talk:suspend') {
+      deck.getPlugin('local-videos')?.suspend();
+      return;
+    }
     if (event.data?.type !== 'talk:go' || !Number.isInteger(event.data.index)) return;
     const state = states[event.data.index];
-    if (state) deck.slide(state.h, state.v, state.f);
+    if (state) {
+      deck.slide(state.h, state.v, state.f);
+      deck.getPlugin('local-videos')?.resume();
+    }
   });
   send();
 }
