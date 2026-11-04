@@ -3490,6 +3490,16 @@
   },
   {
     "ids": [
+      "Fortune Telling and Speculative Design"
+    ],
+    "slug": "fortune-telling",
+    "growthStage": "evergreen",
+    "description": "Practical tools for design engineers to explore possible futures through speculative design",
+    "outboundLinks": [],
+    "inboundLinks": []
+  },
+  {
+    "ids": [
       "Home-Cooked Software and Barefoot Developers"
     ],
     "slug": "home-cooked-software",

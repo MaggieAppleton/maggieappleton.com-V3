@@ -278,6 +278,10 @@
       "Expanding Dark Forest and Generative AI"
     ]
   },
+  "/fortune-telling": {
+    "title": "Fortune Telling and Speculative Design",
+    "description": "Practical tools for design engineers to explore possible futures through speculative design"
+  },
   "/fruit-comparison": {
     "title": "A Fruitful Guide to JavaScript's Comparison Operators",
     "description": "Illustrated notes on how JavaScript's comparison operators work"
