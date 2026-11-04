@@ -13,16 +13,21 @@ draft: true
 
 import ScrollyTalkSection from "../../components/mdx/ScrollyTalkSection.astro";
 import slideImages from "../../data/talks/fortune-telling.json";
+import Video from "../../components/mdx/Video.astro";
 
 <IntroParagraph>I recently got the chance to give a talk at [Granola](https://www.granola.ai/)'s [Design Engineering night](https://www.youtube.com/playlist?list=PL4tqAmtnUMjO4EmmwJ-D2edgLardYJrvv) about speculative design and practical tools for developing more interesting theories of the future. I think design engineers, in particular, are the perfect people to imagine and prototype novel software ideas.</IntroParagraph>
 
 At [GitHub Next](https://githubnext.com), our team's job is to explore possible futures for software development by building prototypes. I share a bit about how we do that, followed by some practical techniques: collecting weak signals, building theories about where things are heading, and making artefacts that make those theories feel real and tangible.
 
+## Video Recording
+
+<Video src="https://www.youtube.com/embed/hpZ4tfZYMAo" title="Fortune Telling and Speculative Design — Granola Design Engineering Night" />
+
 <ScrollyTalkSection images={slideImages} revealSrc="/talk-decks/fortune-telling">
 
 <div data-slide="0" data-source-slide="html/01-hello.html" data-fragment="-1">
 
-Hi! I'm really excited to be here. I've loved Granola and this meetup for a long time. The only social cred I have to my name is that I knew both founders before they started Granola. I didn't introduce them, but it's a good claim. I'm very glad to be here and talk.
+Hi! I'm really excited to be here. I've loved Granola and this meetup for a long time. The only social cred I have to my name is that I knew both founders before they started Granola. I didn't introduce them, but I could claim that I did. I'm very glad to be here doing this talk.
 
 </div>
 
@@ -344,7 +349,7 @@ Weak signals can be toys and prototypes other people share, hot takes, product a
 
 This rewards people who are chronically online. If you work in AI research, I'm afraid you do need to be on X and Hacker News. That's where everything happens.
 
-Here's an example. A friend, Flo, made a global keyboard shortcut that summarises what's on his screen in 100 milliseconds, using a local Cerebras model on a chip. He made it in response to agents being too verbose. That felt like a signal: something is changing.
+Here's an example. Flo Crivello made a global keyboard shortcut that summarises what's on his screen in 100 milliseconds, using a local Cerebras model. He made it in response to agents being too verbose. That felt like a signal: something is changing.
 
 </div>
 
@@ -412,113 +417,127 @@ Once you have a signal that seems worth following, look for its second- and thir
 
 <div data-slide="61" data-source-slide="html/51-weak-signals-2.html" data-fragment="-1">
 
+Take sandboxed machines and always-on agents like OpenClaw and Muse.
+
 </div>
 
 <div data-slide="62" data-source-slide="html/52-weak-signals-2-copy.html" data-fragment="-1">
 
-Take sandboxed machines and always-on agents like OpenClaw and Muse. If agents become the way we browse the web, we might give up on CAPTCHAs and stop trying to block bots.
+If agents become the way we browse the web, we might give up on CAPTCHAs and stop trying to block bots.
 
 </div>
 
 <div data-slide="63" data-source-slide="html/53-weak-signals-2-copy-2.html" data-fragment="-1">
 
-Then we have to rethink web economics and advertising. An agent might ask a site for sports news, and the site could say: “Sure, if you show this advert to your human.” Sites might also be designed for machines first, with structured data and less emphasis on visual design.
+Then we have to rethink web economics and advertising. An agent might ask a site for sports news, and the site could say: “Sure, if you show this advert to your human.”
 
 </div>
 
-<div data-slide="64" data-source-slide="html/54-play-with-your-ideas.html" data-fragment="-1">
+<div data-slide="64" data-source-slide="html/53-weak-signals-2-copy-2.html" data-fragment="0">
+
+Sites might also be designed for machines first, with structured data and less emphasis on visual design.
+
+</div>
+
+<div data-slide="65" data-source-slide="html/54-play-with-your-ideas.html" data-fragment="-1">
 
 The next tool is to play with your ideas. These are slightly cheesy, structured exercises in creative thinking, but they're useful for getting deeper into a theory and picking it apart.
 
 </div>
 
-<div data-slide="65" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="-1">
+<div data-slide="66" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="-1">
 
 First, invert the idea. If we usually prompt agents, what happens when the agent prompts us? If we build software with agents, what happens when the software builds itself?
 
 </div>
 
-<div data-slide="66" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="0">
+<div data-slide="67" data-source-slide="html/55-play-flip-it-split-it.html" data-fragment="0">
 
 The other exercise is to split an idea into its parts and look at one at a time. OpenClaw has a sandbox, memory, permissions and initiative. What if an agent shared memories with a team or family? Surely we'll need multiplayer OpenClaw soon. Could it tactfully forget sensitive facts? There's a forgetting curve built in; how could that work differently? Could an agent choose to delete evidence to protect its human? At some point, could we see a court case where someone's OpenClaw is subpoenaed? You can end up in some interesting places.
 
 </div>
 
-<div data-slide="67" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="-1">
+<div data-slide="68" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="-1">
 
 Another exercise is to maximise and minimise. Our industry loves maximising: what if you had 100,000 agents? I don't even have a hundred. What if you had a thousand agents that cost a pound a day? What's possible then?
-</div>
-
-<div data-slide="68" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="0">
 
 Minimising is useful, too. What if agent intelligence became ten times more expensive? We'd have to ration it. How would we adapt? Those constraints can lead to more interesting futures.
 
 </div>
 
-<div data-slide="69" data-source-slide="html/57-play-ask-why-exaggerate-copy.html" data-fragment="-1">
+<div data-slide="69" data-source-slide="html/56-play-ask-why-exaggerate.html" data-fragment="0">
 
 Another technique is brute think. Pick a random concept – usually something metaphorical that maps onto your idea – and ask how it could change the shape of the future.
 
-</div>
-
-<div data-slide="70" data-source-slide="html/58-play-with-your-ideas-copy-2.html" data-fragment="-1">
-
 Take seasonal harvesting and agents: could agents work in seasons or harvest rounds, waiting until a piece of work is ripe? Or take the postal service: how do agents mail each other, and who's Royal Mail for agents?
 
-Mapping a metaphor onto your idea can take you somewhere interesting. Two classic books of structured creative-thinking exercises are *Lateral Thinking* and *Thinkertoys*. They sound a bit lame until you try them and realise they help you come up with new ideas.
+Mapping a metaphor onto your idea can take you somewhere interesting.
 
 </div>
 
-<div data-slide="71" data-source-slide="html/59-play-with-your-ideas-copy-3.html" data-fragment="-1">
+<div data-slide="70" data-source-slide="html/57-play-ask-why-exaggerate-copy.html" data-fragment="-1">
 
-Here's an artefact from the future: Cricket Crunch, a cereal made with powdered crickets. The Near Future Laboratory made it to explore a world where climate change has constrained food supplies and there isn't enough animal protein for everyone. Insects are high in protein, but how do you get people to eat them? Put them in a familiar, everyday box of cereal.
+Two classic books of structured creative-thinking exercises are [*Lateral Thinking*](https://www.penguin.co.uk/books/178835/lateral-thinking-by-edward-de-bono/9780241257548) and [*Thinkertoys*](https://www.penguinrandomhouse.com/books/198264/thinkertoys-by-michael-michalko/). They sound a bit lame until you try them and realise they help you come up with new ideas.
+
 </div>
 
-<div data-slide="72" data-source-slide="html/60-play-with-your-ideas-copy.html" data-fragment="-1">
+<div data-slide="71" data-source-slide="html/58-play-with-your-ideas-copy-2.html" data-fragment="-1">
+
+The next tool is called artefacts from the future. This is about making provocative artefacts that make your potential future feel more tangible and real. The academic name is “diegetic prototypes”.
+
+</div>
+
+<div data-slide="72" data-source-slide="html/59-play-with-your-ideas-copy-3.html" data-fragment="-1">
+
+Here's an artefact from the future: [Cricket Crunch](https://nearfuturelaboratory.com/blog/2020/12/whats-breakfast-cereal-got-to-do-with-the-future/), a cereal made with powdered crickets. The [Near Future Laboratory](https://nearfuturelaboratory.com/) made it to explore a world where climate change has constrained food supplies and there isn't enough animal protein for everyone. Insects are high in protein, but how do you get people to eat them? Put them in a familiar, everyday box of cereal.
+
+</div>
+
+<div data-slide="73" data-source-slide="html/60-play-with-your-ideas-copy.html" data-fragment="-1">
 
 I've seen stay-at-home mums using OpenClaw to make elaborate homeschooling routines for their kids. It feels like the cognitive labour of the household is starting to be automated. I have a small child and a house to renovate, and ChatGPT helps me plan meals, email contractors and remember when to buy the next size of clothes.
 
 It reminds me of the early twentieth century, when washing machines, dishwashers and microwaves reduced some of the manual work women did at home and helped more of them return to work. I had to dig up statistics when people challenged that comparison; that's another reason to keep evidence close at hand.
+
 </div>
 
-<div data-slide="73" data-source-slide="html/61-play-with-your-ideas-copy-4.html" data-fragment="-1">
+<div data-slide="74" data-source-slide="html/61-play-with-your-ideas-copy-4.html" data-fragment="-1">
 
 I asked ChatGPT to make old-fashioned adverts for Codex and Claude. I love the retro look and the promise of agents doing things like planning a day out, checking the trains and remembering what everyone needs.
 
 Some people on Twitter took it as an advert for being a tradwife. It wasn't. I was trying to connect a historical shift in women's labour to the present: agents might relieve some of the cognitive work of running a household, which still falls more heavily on women. There's also an interesting contrast in tools built mostly by twenty-something men in San Francisco with little domestic life, and the people who might benefit from them.
-</div>
-
-<div data-slide="74" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="-1">
-
-I like to ask: what artefact would make this future evocative? It's better to be playful, provocative and specific than to be realistic or correct. Interesting is good; correct is less useful here.
 
 </div>
 
-<div data-slide="75" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="0">
+<div data-slide="75" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="-1">
+
+I like to ask: what artefact would make this future evocative?
+
+</div>
+
+<div data-slide="76" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="0">
+
+It's better to be playful, provocative and specific than to be realistic or correct. Interesting is good; correct is less useful here.
+
+</div>
+
+<div data-slide="77" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="1">
 
 An artefact could be an image, an object or an advert. It could also be a specific interface pattern.
-
-</div>
-
-<div data-slide="76" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="1">
 
 You could make a changelog from the future, a code review from the future, or an error state. Pick one small thing and make it feel real.
 
 </div>
 
-<div data-slide="77" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="2">
+<div data-slide="78" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="2">
 
 I often find failure states reveal more than happy paths. Nothing works perfectly; there are always gaps in the system. When things go wrong, ask what interesting ways they might fail.
 
 </div>
 
-<div data-slide="78" data-source-slide="html/62-play-with-your-ideas-copy-5.html" data-fragment="3">
-
-Soren Iverson on X makes really good satire about slightly dystopian futures. He's got a whole book of it now – good for him. Great publishing deal.
-
-</div>
-
 <div data-slide="79" data-source-slide="html/63-play-with-your-ideas-copy-6.html" data-fragment="-1">
+
+Soren Iverson on X makes really good satire about slightly dystopian futures.
 
 One of his designs asks what would happen if deleting your ChatGPT account made all your messages public.
 
@@ -540,41 +559,47 @@ Different prototypes do different jobs for different audiences. Far-future work 
 
 Yesterday I was prototyping a way to make technical plans more accessible to designers, PMs and other people new to a project. It's for a prototype we're working on about planning with agents. You could take a technical document and read it as if you were ten, in high school or a colleague. I tried putting the versions side by side, then shrinking them to a postcard and expanding back to the full text.
 
-It's the sort of thing we might ship tomorrow. It's more near-term and less forward-thinking – though Codex will have it next week, as always.
+It's the sort of thing we might ship tomorrow. It's more near-term and less forward-thinking.
+
 </div>
 
 <div data-slide="83" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="-1">
 
-The last tool is to make your theories public and concrete. I've had success using writing and conference talks to build theories. Writing helps me clarify: once I have to put an idea into a talk and back it up with data, I get specific about what I'm saying.
+The last tool is to make your theories public and concrete.
+
 </div>
 
 <div data-slide="84" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="0">
 
-Tell other people your theories. If one comes true, you get the credit; if it doesn't, no one remembers the bad theory.
+I've had success using writing and conference talks to build theories. Writing helps me clarify: once I have to put an idea into a talk and back it up with data, I get specific about what I'm saying.
 
 </div>
 
 <div data-slide="85" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="1">
 
-I don't know that we do enough theory-building in London. When I go to San Francisco – which I officially hate – everyone has theories. You go to a party and people tell you their theories, though often they're all the same one.
+Tell other people your theories. If one comes true, you get the credit; if it doesn't, no one remembers the bad theory.
+
+We don't do enough theory building in London. When I go to San Francisco – which I officially hate – everyone has theories. You go to a party and people tell you their theories, though often they're all the same one.
+
+Theory-building matters to a technical scene or culture because saying what you think will happen makes you more likely to act on it. Theory begets action, which begets another theory.
 
 </div>
 
 <div data-slide="86" data-source-slide="html/66-play-with-your-ideas-copy-9.html" data-fragment="2">
 
-Theory-building matters to a technical scene or culture because saying what you think will happen makes you more likely to act on it. Theory begets action, which begets another theory. And you do have to back it up with data. If you're claiming all models will be local and run on Mac minis, for example, ask whether Qwen is as good as Opus 5.5 – and whether it will be. Look at inference costs, electricity forecasts and the other numbers that could support your claim.
+And you do have to back it up with data. If you're claiming all models will be local and run on Mac minis, for example, ask whether Qwen is as good as Opus 5.5 – and whether it will be. Look at inference costs, electricity forecasts and the other numbers that could support your claim.
 
 </div>
 
 <div data-slide="87" data-source-slide="html/67-github-next-copy.html" data-fragment="-1">
 
-GitHub Next is hiring. We're looking for a design engineer or a very senior front-end designer with good design taste. You can find the contact details on X and message me or my manager, Dawn.
+GitHub Next is hiring. We're looking for a design engineer or a very senior front-end designer with good design taste. You can find the contact details on X and message me or my manager, Idan.
 
 </div>
 
 <div data-slide="88" data-source-slide="html/69-thank-you.html" data-fragment="-1">
 
-Thank you for having me. You can find more at maggieappleton.com and githubnext.com.
+Thank you for having me. You can find more at [maggieappleton.com](https://maggieappleton.com) and [githubnext.com](https://githubnext.com).
 
 </div>
 

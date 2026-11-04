@@ -27,6 +27,7 @@ export function configureManualReveals(slidesElement = document.querySelector('.
   return [
     ...columns,
     ...configureConclusionReveals(slidesElement),
+    ...configureEffectsReveals(slidesElement),
     ...configureArtefactReveals(slidesElement),
     ...configureTheoryReveals(slidesElement),
   ];
@@ -50,16 +51,22 @@ function configureConclusionReveals(slidesElement) {
   return items.slice(1);
 }
 
+function configureEffectsReveals(slidesElement) {
+  const slide = slidesElement?.querySelector('[data-source-slide="html/53-weak-signals-2-copy-2.html"]');
+  const items = [...(slide?.querySelectorAll('[data-effect="machine-first"]') || [])];
+  items.forEach(element => markFragment(slide, element, 0));
+  return items;
+}
+
 function configureArtefactReveals(slidesElement) {
   const slide = slidesElement?.querySelector('[data-source-slide="html/62-play-with-your-ideas-copy-5.html"]');
   const heading = [...(slide?.querySelectorAll('h2') || [])].find(element =>
     element.textContent.replace(/\s+/g, ' ').trim() === 'What artefact would make this future evocative?');
   const items = [...(heading?.parentElement.children || [])];
   if (items.length !== 4 || items[0] !== heading || !items.slice(1).every(element => element.matches('p'))) return [];
-  // Keep the section label automatic; reveal the question and each paragraph
-  // independently in their authored order without changing their geometry.
-  items.forEach((element, index) => markFragment(slide, element, index));
-  return items;
+  // The question is visible from the start; each paragraph appears with its text.
+  items.slice(1).forEach((element, index) => markFragment(slide, element, index));
+  return items.slice(1);
 }
 
 function configureTheoryReveals(slidesElement) {
