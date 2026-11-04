@@ -24,13 +24,30 @@ export function configureManualReveals(slidesElement = document.querySelector('.
     markFragment(slide, right, 0);
     return [right];
   });
-  return [...columns, ...configureArtefactReveals(slidesElement), ...configureTheoryReveals(slidesElement)];
+  return [
+    ...columns,
+    ...configureConclusionReveals(slidesElement),
+    ...configureArtefactReveals(slidesElement),
+    ...configureTheoryReveals(slidesElement),
+  ];
 }
 
 function markFragment(slide, element, index) {
   slide.dataset.manualReveal = '';
   element.classList.add('fragment', 'fade-up');
   element.dataset.fragmentIndex = index;
+}
+
+function configureConclusionReveals(slidesElement) {
+  const slide = slidesElement?.querySelector('[data-source-slide="html/49-weak-signals-copy-10.html"]');
+  const heading = [...(slide?.querySelectorAll('h2') || [])].find(element =>
+    element.textContent.replace(/\s+/g, ' ').trim() === 'What can we conclude?');
+  const list = heading?.parentElement.querySelector(':scope > div');
+  const items = [...(list?.children || [])];
+  if (items.length !== 4 || !items.every((item, index) =>
+    item.querySelector('span')?.textContent.trim() === String(index + 1))) return [];
+  items.slice(1).forEach((item, index) => markFragment(slide, item, index));
+  return items.slice(1);
 }
 
 function configureArtefactReveals(slidesElement) {
