@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext.js";
 import {
 	$getSelection, $isElementNode, $isNodeSelection, $isRangeSelection, $isTextNode,
 	COMMAND_PRIORITY_CRITICAL, CONTROLLED_TEXT_INSERTION_COMMAND, CUT_COMMAND,

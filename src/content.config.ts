@@ -1,7 +1,8 @@
-import { defineCollection, z } from "astro:content";
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
 import { glob } from "astro/loaders";
 import { file } from "astro/loaders";
-import { createContentDate, createEssaySchema, createNoteSchema, createTalkSchema } from "./publication-schemas.mjs";
+import { createContentDate, createEssaySchema, createNoteSchema, createTalkSchema } from "./content/publication-schemas.mjs";
 
 // Validate authored strings before Date coercion can normalize invalid days.
 const contentDate = createContentDate(z);

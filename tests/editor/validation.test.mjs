@@ -180,7 +180,7 @@ test("rejects invalid essay cover paths or non-image files before permitting a p
   const essayPath = join(root, "src/content/essays/example.mdx");
   await mkdir(covers, { recursive: true });
   await mkdir(join(root, "src/content/essays"), { recursive: true });
-  const validPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Zl8AAAAASUVORK5CYII=", "base64");
+  const validPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAX+XDSwAAAABJRU5ErkJggg==", "base64");
   await writeFile(join(covers, "valid.png"), validPng);
   await writeFile(join(root, "src/images/outside.png"), validPng);
   await writeFile(essayPath, essay);

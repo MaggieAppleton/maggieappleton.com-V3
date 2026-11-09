@@ -778,7 +778,7 @@ export async function runVerifier({
   const baseURL = `http://${host}:${port}`;
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
   await assertPortAvailableImpl({ host, port });
-  const child = spawnImpl(npmCommand, ["run", "dev", "--", "--host", host, "--port", String(port), "--strictPort"], {
+  const child = spawnImpl(npmCommand, ["run", "dev", "--", "--ignore-lock", "--host", host, "--port", String(port), "--strictPort"], {
     cwd: repoRoot,
     env: { ...process.env },
     detached: process.platform !== "win32",

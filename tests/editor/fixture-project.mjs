@@ -26,6 +26,7 @@ const manifestName = ".local-writing-editor-fixture.json";
 const excludedProjectEntries = new Set([
   ".git",
   ".claude", // Agent worktrees can contain entire extra checkouts and dependencies.
+  ".lane",
   ".local-writing-editor",
   ".writing-assist",
   ".astro",
@@ -173,6 +174,12 @@ async function waitForReady(origin, markerPath, marker, child, timeout = 30_000)
   throw new Error(`Fixture server did not become ready at ${origin}: ${lastError?.message ?? "timeout"}`);
 }
 
+async function astroCliPath(projectRoot) {
+  const astroRoot = join(projectRoot, "node_modules/astro");
+  const { bin } = JSON.parse(await readFile(join(astroRoot, "package.json"), "utf8"));
+  return join(astroRoot, bin.astro);
+}
+
 async function runFixtureCommand(projectRoot, executable, args) {
   const child = spawn(executable, args, { cwd: projectRoot, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
@@ -261,7 +268,7 @@ export async function startFixturePreview(projectRoot, build, { timeout } = {}) 
   const logDirectory = fixturePath(projectRoot, ".local-writing-editor");
   const logPath = join(logDirectory, "fixture-production-preview.log");
   await mkdir(logDirectory, { recursive: true });
-  const child = spawn(process.execPath, [join(projectRoot, "node_modules/astro/astro.js"), "preview", "--host", "127.0.0.1", "--port", String(port)], {
+  const child = spawn(process.execPath, [await astroCliPath(projectRoot), "preview", "--host", "127.0.0.1", "--port", String(port)], {
     cwd: projectRoot,
     stdio: ["ignore", "pipe", "pipe"],
     detached: true,
@@ -314,7 +321,7 @@ export async function startFixtureServer(projectRoot, { timeout, port: requested
   await writeFile(fixturePath(projectRoot, join("public", markerPath)), marker);
   let output = await runFixtureCommand(projectRoot, process.execPath, ["src/scripts/generate-links.js"]);
   output += await runFixtureCommand(projectRoot, process.execPath, [join("node_modules/tsx/dist/cli.mjs"), "src/scripts/generate-topics.ts"]);
-  const child = spawn(process.execPath, [join(projectRoot, "node_modules/astro/astro.js"), "dev", "--host", "127.0.0.1", "--port", String(port)], {
+  const child = spawn(process.execPath, [await astroCliPath(projectRoot), "dev", "--ignore-lock", "--host", "127.0.0.1", "--port", String(port)], {
     cwd: projectRoot,
     stdio: ["ignore", "pipe", "pipe"],
     detached: true,
